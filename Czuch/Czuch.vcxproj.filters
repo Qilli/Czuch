@@ -1,33 +1,83 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Pliki źródłowe">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="Core">
+      <UniqueIdentifier>{2EB4837C-1AEB-840D-C3D7-6A10AFED000F}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Pliki nagłówkowe">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    <Filter Include="Events">
+      <UniqueIdentifier>{3A8963B1-262B-8E87-0FE6-A1DBFB2615D8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Pliki zasobów">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="Events\EventsTypes">
+      <UniqueIdentifier>{B33846EE-9F1C-0744-087D-0197F47FF1C5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Subsystems">
+      <UniqueIdentifier>{67E939EA-53A1-7B37-BCA8-5493A87F1628}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Czuch\EngineRoot.h">
-      <Filter>Pliki nagłówkowe</Filter>
+    <ClInclude Include="source\Core\Common.h">
+      <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Czuch\Core\EngineCore.h">
-      <Filter>Pliki nagłówkowe</Filter>
+    <ClInclude Include="source\Core\EngineCore.h">
+      <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Czuch.h">
-      <Filter>Pliki nagłówkowe</Filter>
+    <ClInclude Include="source\Core\Singleton.h">
+      <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="source\Core\StringID.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\Time.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\TimeDiffCounter.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Czuch.h" />
+    <ClInclude Include="source\EngineRoot.h" />
+    <ClInclude Include="source\Events\Event.h">
+      <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Events\EventsTypes\KeyDownEvent.h">
+      <Filter>Events\EventsTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Events\IEventsListener.h">
+      <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\BaseSubsystem.h">
+      <Filter>Subsystems</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\EventsManager.h">
+      <Filter>Subsystems</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Logging.h">
+      <Filter>Subsystems</Filter>
+    </ClInclude>
+    <ClInclude Include="source\czpch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Czuch\EngineRoot.cpp">
-      <Filter>Pliki źródłowe</Filter>
+    <ClCompile Include="source\Core\StringID.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="source\Core\Time.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Core\TimeDiffCounter.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\EngineRoot.cpp" />
+    <ClCompile Include="source\Events\Event.cpp">
+      <Filter>Events</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Events\EventsTypes\KeyDownEvent.cpp">
+      <Filter>Events\EventsTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\EventsManager.cpp">
+      <Filter>Subsystems</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Logging.cpp">
+      <Filter>Subsystems</Filter>
+    </ClCompile>
+    <ClCompile Include="source\czpch.cpp" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <Link>
+      <AdditionalDependencies>benchmarkd.lib;benchmark_maind.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <Link>
+      <AdditionalDependencies>benchmark.lib;benchmark_main.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <Link>
+      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\lib\native\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x86'">
+    <Link>
+      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\lib\native\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+   </ItemDefinitionGroup>
+</Project>
