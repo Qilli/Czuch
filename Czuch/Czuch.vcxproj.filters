@@ -54,6 +54,7 @@
       <Filter>Subsystems</Filter>
     </ClInclude>
     <ClInclude Include="source\czpch.h" />
+    <ClInclude Include="source\Core\Window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\StringID.cpp">

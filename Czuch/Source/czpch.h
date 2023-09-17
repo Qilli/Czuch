@@ -1,5 +1,6 @@
 #pragma once
 
+#include<queue>
 #include<iostream>
 #include<memory>
 #include<string>
@@ -8,7 +9,6 @@
 #include<algorithm>
 #include<utility>
 #include<cassert>
-#include<queue>
 
 #ifdef CZUCH_PLATFORM_WINDOWS
 #include<Windows.h>

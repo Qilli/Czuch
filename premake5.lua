@@ -10,6 +10,11 @@ workspace "Czuch"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
+IncludeDir = {}
+IncludeDir["GLFW"] = "Czuch/vendors/GLFW/include"
+
+include "premake-glfw.lua"
+
 project "Czuch"
 
 	location "Czuch"
@@ -31,7 +36,14 @@ project "Czuch"
 	includedirs
 	{
 		"%{prj.name}/source",
-		"%{prj.name}/vendors/spdlog/include"
+		"%{prj.name}/vendors/spdlog/include",
+		"%{IncludeDir.GLFW}"
+	}
+
+	links
+	{
+		"GLFW",
+		"opengl32.lib"
 	}
 
 	filter "system:windows"
@@ -54,7 +66,8 @@ project "Czuch"
 	filter "configurations:Debug"
 		defines
 		{
-			"CZUCH_DEBUG"
+			"CZUCH_DEBUG",
+			"CZUCH_ENABLE_ASSERTS"
 		}
 		optimize "On"
 

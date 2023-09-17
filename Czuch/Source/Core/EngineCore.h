@@ -1,6 +1,5 @@
 #pragma once
-#include<cassert>
-#include<string>
+#include <memory>
 
 #ifdef CZUCH_PLATFORM_WINDOWS
 	#ifdef CZUCH_BUILD_DLL
@@ -12,12 +11,13 @@
 	#error Czuch do not support this platform
 #endif
 
-#ifdef CZUCH_PLATFORM_WINDOWS
-#include <windows.h>
+#ifdef CZUCH_ENABLE_ASSERTS
+#define CZUCH_BE_ASSERT(x,...) if(!(x)){LOG_BE_ERROR("Assertion failed: {0}",__VA_ARGS__); __debugbreak();}
+#define CZUCH_ASSERT(x,...) if(!(x)){LOG_FE_ERROR("Assertion failed: {0}",__VA_ARGS__); __debugbreak();}
+#else
+#define CZUCH_BE_ASSERT(x,...)
+#define CZUCH_ASSERT(x,...)
 #endif
-
-#define AssertCheck(x) if(!(x))assert(false);
-#define AssertWithMsg(xm,msg) if(!(x))assert(false);
 
 
 typedef unsigned long U64;
@@ -33,3 +33,25 @@ typedef unsigned int ID;
 typedef std::string CzuchStr;
 
 const CzuchStr EMPTY_STRING = "";
+
+namespace Czuch
+{
+	template<typename T>
+	using Scope = std::unique_ptr<T>;
+
+	template<typename T, typename ... Args>
+	constexpr Scope<T> CreateScoped(Args&& ... args)
+	{
+		return std::make_unique<T>(std::forward<Args>(args)...);
+	}
+
+	template<typename T>
+	using Ref = std::shared_ptr<T>;
+
+	template<typename T,typename ... Args>
+	constexpr Ref<T> CreateRef(Args&& ... args)
+	{
+		return std::make_shared<T>*std::forward<Args>(args)...);
+	}
+
+}

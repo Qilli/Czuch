@@ -1,3 +1,4 @@
+#include"czpch.h"
 #include<Czuch.h>
 #include <typeinfo> 
 #include <iostream> 

@@ -13,25 +13,25 @@ namespace Czuch
 
 		Singleton(void)
 		{
-			AssertCheck(!m_Target);
+			assert(!m_Target);
 			m_Target = static_cast<T*>(this);
 		}
 
 		~Singleton()
 		{
-			AssertCheck(m_Target);
+			assert(m_Target);
 			m_Target = nullptr;
 		}
 
 		static T& Get(void) 
 		{
-			AssertCheck(m_Target);
+			assert(m_Target);
 			return *m_Target;
 		}
 
 		static T* GetPtr(void) 
 		{
-			AssertCheck(m_Target);
+			assert(m_Target);
 			return m_Target;
 		}
 	};

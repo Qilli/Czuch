@@ -3,7 +3,6 @@
 #include"../Events/Event.h"
 #include"../Events/IEventsListener.h"
 
-
 namespace Czuch
 {
 	class CZUCH_API EventsManager: public BaseSubsystem<EventsManager>
@@ -19,8 +18,8 @@ namespace Czuch
 		void Clear();
 	private:
 		class ListenersContainer;
-		std::unordered_map<EventTypeID, ListenersContainer> m_listeners;
 		std::queue<Event*> m_EventsToDispatch;
+		std::unordered_map<EventTypeID, ListenersContainer> m_listeners;
 	private:
 
 		struct Listener
@@ -47,6 +46,8 @@ namespace Czuch
 	private:
 		ListenersContainer& GetContainerOfType(const EventTypeID& type);
 	};
+
+#define DISPATCH_EVENT(evt)EventsManager::GetPtr()->DispatchEvent(evt);
 
 }
 
