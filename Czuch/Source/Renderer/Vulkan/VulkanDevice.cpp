@@ -7,6 +7,7 @@
 #include"VulkanCore.h"
 #include"Subsystems/EventsManager.h"
 #include"Events/EventsTypes/ApplicationEvents.h"
+#include"Core/Common.h"
 #include<set>
 
 namespace Czuch
@@ -234,9 +235,74 @@ namespace Czuch
 		return cmdBuffer;;
 	}
 
+	Buffer* VulkanDevice::CreateBuffer(const BufferDesc* desc) const
+	{
+		CZUCH_BE_ASSERT(desc != nullptr, "Invalid buffer desc.");
+
+		Buffer* buffer = new Buffer();
+		buffer->desc = *desc;
+		buffer->m_InternalResourceState = std::make_shared<Buffer_Vulkan>();
+
+		VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+
+		buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+		if (HasFlag(desc->bind_flags, BindFlag::VERTEX_BUFFER))
+		{
+			buffer_info.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		}
+		if (HasFlag(buffer->desc.bind_flags, BindFlag::INDEX_BUFFER))
+		{
+			buffer_info.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+		}
+		if (HasFlag(buffer->desc.bind_flags, BindFlag::CONSTANT_BUFFER))
+		{
+			buffer_info.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		}
+		if (HasFlag(buffer->desc.bind_flags, BindFlag::SHADER_RESOURCE))
+		{
+			buffer_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT; // read only ByteAddressBuffer is also storage buffer
+			buffer_info.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+		}
+		if (HasFlag(buffer->desc.bind_flags, BindFlag::UNORDERED_ACCESS))
+		{
+			buffer_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+			buffer_info.usage |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+		}
+
+		buffer_info.size = desc->size > 0 ? desc->size : 1;
+		buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		buffer_info.flags = 0;
+
+		auto bufferVulkan = Internal_to_Buffer(buffer);
+		bufferVulkan->device = m_Device;
+		bufferVulkan->flags = buffer_info.usage;
+		bufferVulkan->size = buffer_info.size;
+
+		if (vkCreateBuffer(m_Device, &buffer_info, nullptr, &bufferVulkan->buffer) != VK_SUCCESS) {
+			LOG_BE_ERROR("{0} Failed to create nw vulkan buffer", Tag);
+			return nullptr;
+		}
+
+		bufferVulkan->memory = AllocateBufferMemory(bufferVulkan->buffer);
+
+		//map memory
+		void* data = nullptr;
+		vkMapMemory(m_Device, bufferVulkan->memory, 0, bufferVulkan->size, 0, &data);
+		memcpy(data, desc->initData, (U32)bufferVulkan->size);
+		vkUnmapMemory(m_Device, bufferVulkan->memory);
+
+		return buffer;
+	}
+
 #pragma endregion
 
 #pragma region Release
+
+	bool VulkanDevice::ReleaseBuffer(Buffer* buffer) const
+	{
+		return false;
+	}
 
 	bool VulkanDevice::ReleasePipeline(Pipeline* pipeline) const
 	{
@@ -388,6 +454,41 @@ namespace Czuch
 	}
 
 #pragma region helpers
+
+	U32 VulkanDevice::FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags properties) const
+	{
+		for (U32 i = 0; i < m_MemProperties.memoryTypeCount; i++) {
+			if ((typeFilter & (1 << i)) && (m_MemProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+				return i;
+			}
+		}
+
+		LOG_BE_ERROR("{0} Failed to find fitting memory type.", Tag);
+	}
+
+	VkDeviceMemory VulkanDevice::AllocateBufferMemory(VkBuffer buffer) const
+	{
+		VkMemoryRequirements memRequirements;
+		vkGetBufferMemoryRequirements(m_Device, buffer, &memRequirements);
+
+		U32 memoryType = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+		VkMemoryAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = memoryType;
+
+		VkDeviceMemory vertexBufferMemory;
+
+		if (vkAllocateMemory(m_Device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
+			LOG_BE_ERROR("{0} Failed to allocate memory for a buffer.", Tag);
+			return nullptr;
+		}
+
+		vkBindBufferMemory(m_Device, buffer, vertexBufferMemory, 0);
+
+		return vertexBufferMemory;
+	}
 
 	VkImageView VulkanDevice::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
 	{
@@ -901,6 +1002,9 @@ namespace Czuch
 		}
 
 		m_PhysicalDevice = physicalDevice;
+
+		vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &m_MemProperties);
+
 		return true;
 	}
 

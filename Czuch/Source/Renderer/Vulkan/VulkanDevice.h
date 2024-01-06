@@ -106,6 +106,8 @@ namespace Czuch
 		VkCommandPool m_CommandPool;
 		RenderPass* m_SwapChainRenderPass;
 
+		VkPhysicalDeviceMemoryProperties m_MemProperties;
+
 		bool m_FrameBufferResized;
 
 	private:
@@ -120,6 +122,9 @@ namespace Czuch
 		bool CreateSwapChainFrameBuffers(bool createRenderPass=true);
 		bool ReleaseSwapChainRenderPass();
 		bool RecreateSwapChain();
+	private:
+		U32 FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags properties) const;
+		VkDeviceMemory AllocateBufferMemory(VkBuffer buffer) const;
 	private:
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 	private:

@@ -9,7 +9,7 @@ namespace Czuch
 	struct FrameBuffer_Vulkan;
 	struct DescriptorSetLayout_Vulkan;
 	struct Image_Vulkan;
-
+	struct Buffer_Vulkan;
 #pragma region Converters
 
 	inline Shader_Vulkan* Internal_To_Shader(const Shader* shader)
@@ -40,6 +40,11 @@ namespace Czuch
 	inline Image_Vulkan* Internal_to_Image(const Texture* tex)
 	{
 		return (Image_Vulkan*)tex->m_InternalResourceState.get();
+	}
+
+	inline Buffer_Vulkan* Internal_to_Buffer(const Buffer* buffer)
+	{
+		return (Buffer_Vulkan*)buffer->m_InternalResourceState.get();
 	}
 
 	inline VkShaderStageFlagBits ConvertShaderStage(ShaderStage stage)
@@ -457,6 +462,15 @@ namespace Czuch
 		VkBufferUsageFlags flags;
 		U32 offset = 0;
 		bool ready = true;
+
+		~Buffer_Vulkan()
+		{
+			if (buffer)
+			{
+				vkDestroyBuffer(device, buffer, nullptr);
+				vkFreeMemory(device, memory, nullptr);
+			}
+		}
 	};
 
 	struct DescriptorSetLayout_Vulkan : public VulkanDeviceRef

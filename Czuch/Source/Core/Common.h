@@ -30,4 +30,10 @@ namespace Czuch
         return crc32(str);
     }
 
+    template<typename E>
+    constexpr bool HasFlag(E lhs, E rhs)
+    {
+        return (lhs & rhs) == rhs;
+    }
+
 }

@@ -103,6 +103,9 @@ namespace Czuch
 
 	void VulkanCommandBuffer::BindVertexBuffer(Buffer* buffer, U32 binding, U32 offset)
 	{
+		VkBuffer vertexBuffers[] = { Internal_to_Buffer(buffer)->buffer };
+		VkDeviceSize offsets[] = { offset };
+		vkCmdBindVertexBuffers(m_Cmd, 0, 1, vertexBuffers, offsets);
 	}
 
 	void VulkanCommandBuffer::BindIndexBuffer(Buffer* buffer, U32 offset)
