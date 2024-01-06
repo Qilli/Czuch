@@ -4,7 +4,7 @@
 
 namespace Czuch
 {
-	void KeyDownEvent::CreateAndDispatch(KeyCode keyCode,bool repeated=false)
+	void KeyDownEvent::CreateAndDispatch(KeyCode keyCode,bool repeated)
 	{
 		KeyDownEvent* evt = new KeyDownEvent(keyCode,repeated);
 		DISPATCH_EVENT(evt);

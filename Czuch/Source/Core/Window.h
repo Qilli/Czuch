@@ -27,7 +27,7 @@ namespace Czuch
 		virtual bool IsVsSync() const = 0;
 		virtual void* GetNativeWindowPtr() const = 0;
 
-		static Scope<Window> Create(const WindowParams& params = WindowParams())
+		static Scope<Window> Create(const WindowParams& params = WindowParams());
 	};
 
 }

@@ -5,14 +5,14 @@
 
 namespace Czuch
 {
-	std::unordered_map<ID, CzuchStr> StringID::s_NameLookup;
+	std::unordered_map<Guid, CzuchStr> StringID::s_NameLookup;
 
 	const CzuchStr& StringID::GetStrName() const
 	{
 		return m_str;
 	}
 
-	ID StringID::GetID() const
+	Guid StringID::GetGuid() const
 	{
 		return m_id;
 	}
@@ -22,7 +22,7 @@ namespace Czuch
 		return comp.m_id == m_id ? 0 : (m_id>comp.m_id?-1:1);
 	}
 
-	StringID::StringID(ID id,const CzuchStr& str)
+	StringID::StringID(Guid id,const CzuchStr& str)
 	{
 		m_id = id;
 		m_str = str;

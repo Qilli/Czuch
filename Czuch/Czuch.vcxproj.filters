@@ -10,6 +10,18 @@
     <Filter Include="Events\EventsTypes">
       <UniqueIdentifier>{B33846EE-9F1C-0744-087D-0197F47FF1C5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Platform">
+      <UniqueIdentifier>{2AC788B4-1694-E3BF-3FAD-D1672BD9184E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\Windows">
+      <UniqueIdentifier>{64FBD71A-50F4-F66C-7926-DCF1657ED678}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{7CCE658F-689B-C09A-91B4-AE427DE0F528}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Vulkan">
+      <UniqueIdentifier>{7C380408-E8C3-71CC-F1D4-F4C05DDFCDCC}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Subsystems">
       <UniqueIdentifier>{67E939EA-53A1-7B37-BCA8-5493A87F1628}</UniqueIdentifier>
     </Filter>
@@ -19,6 +31,15 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="source\Core\EngineCore.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\FileHelper.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\KeyCodes.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\MouseCodes.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="source\Core\Singleton.h">
@@ -33,16 +54,55 @@
     <ClInclude Include="source\Core\TimeDiffCounter.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="source\Core\Window.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="source\Czuch.h" />
     <ClInclude Include="source\EngineRoot.h" />
     <ClInclude Include="source\Events\Event.h">
       <Filter>Events</Filter>
     </ClInclude>
-    <ClInclude Include="source\Events\EventsTypes\KeyDownEvent.h">
+    <ClInclude Include="source\Events\EventsTypes\ApplicationEvents.h">
+      <Filter>Events\EventsTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Events\EventsTypes\InputEvents.h">
+      <Filter>Events\EventsTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Events\EventsTypes\MouseEvents.h">
       <Filter>Events\EventsTypes</Filter>
     </ClInclude>
     <ClInclude Include="source\Events\IEventsListener.h">
       <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Platform\Windows\WinWindow.h">
+      <Filter>Platform\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\CommandBuffer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Graphics.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\GraphicsDevice.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Renderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanCommandBuffer.h">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanCore.h">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanDevice.h">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanPipelineBuilder.h">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanRenderer.h">
+      <Filter>Renderer\Vulkan</Filter>
     </ClInclude>
     <ClInclude Include="source\Subsystems\BaseSubsystem.h">
       <Filter>Subsystems</Filter>
@@ -54,7 +114,12 @@
       <Filter>Subsystems</Filter>
     </ClInclude>
     <ClInclude Include="source\czpch.h" />
-    <ClInclude Include="source\Core\Window.h" />
+    <ClInclude Include="source\Renderer\Vulkan\VulkanBase.h" />
+    <ClInclude Include="source\Subsystems\Resources\Resource.h" />
+    <ClInclude Include="source\Subsystems\Resources\ShaderResource.h" />
+    <ClInclude Include="source\Subsystems\Resources\ResourceManager.h" />
+    <ClInclude Include="source\Subsystems\Resources\ShaderResourceManager.h" />
+    <ClInclude Include="source\Subsystems\Resources\ResourcesManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\StringID.cpp">
@@ -66,12 +131,39 @@
     <ClCompile Include="source\Core\TimeDiffCounter.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="source\Core\Window.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="source\EngineRoot.cpp" />
     <ClCompile Include="source\Events\Event.cpp">
       <Filter>Events</Filter>
     </ClCompile>
-    <ClCompile Include="source\Events\EventsTypes\KeyDownEvent.cpp">
+    <ClCompile Include="source\Events\EventsTypes\ApplicationEvents.cpp">
       <Filter>Events\EventsTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Events\EventsTypes\InputEvents.cpp">
+      <Filter>Events\EventsTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Events\EventsTypes\MouseEvents.cpp">
+      <Filter>Events\EventsTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Platform\Windows\WinWindow.cpp">
+      <Filter>Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Graphics.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\VulkanCommandBuffer.cpp">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\VulkanDevice.cpp">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\VulkanPipelineBuilder.cpp">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\VulkanRenderer.cpp">
+      <Filter>Renderer\Vulkan</Filter>
     </ClCompile>
     <ClCompile Include="source\Subsystems\EventsManager.cpp">
       <Filter>Subsystems</Filter>
@@ -80,5 +172,10 @@
       <Filter>Subsystems</Filter>
     </ClCompile>
     <ClCompile Include="source\czpch.cpp" />
+    <ClCompile Include="source\Subsystems\Resources\Resource.cpp" />
+    <ClCompile Include="source\Subsystems\Resources\ShaderResource.cpp" />
+    <ClCompile Include="source\Subsystems\Resources\ResourceManager.cpp" />
+    <ClCompile Include="source\Subsystems\Resources\ShaderResourceManager.cpp" />
+    <ClCompile Include="source\Subsystems\Resources\ResourcesManager.cpp" />
   </ItemGroup>
 </Project>

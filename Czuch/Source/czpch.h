@@ -9,7 +9,11 @@
 #include<algorithm>
 #include<utility>
 #include<cassert>
+#include <limits> 
+#include <cstdint>
 
 #ifdef CZUCH_PLATFORM_WINDOWS
 #include<Windows.h>
 #endif
+
+#include"Subsystems/Logging.h"

@@ -10,15 +10,27 @@ project "GLFW"
 
 	files
 	{
-		 repodir .. "include/GLFW/glfw3.h",
-		 repodir .. "include/GLFW/glfw3native.h",
-		 repodir .. "src/glfw_config.h",
-		 repodir .. "src/context.c",
-		 repodir .. "src/init.c",
-		 repodir .. "src/input.c",
-		 repodir .. "src/monitor.c",
-		 repodir .. "src/vulkan.c",
-		 repodir .. "src/window.c"
+		repodir .. "include/GLFW/glfw3.h",
+		repodir .. "include/GLFW/glfw3native.h",
+		repodir .."src/internal.h",
+		repodir .."src/platform.h",
+		repodir .."src/mappings.h",
+		repodir .."src/context.c",
+		repodir .."src/init.c",
+		repodir .."src/input.c",
+		repodir .."src/monitor.c",
+		repodir .."src/platform.c",
+		repodir .."src/vulkan.c",
+		repodir .."src/window.c",
+		repodir .."src/egl_context.c",
+		repodir .."src/osmesa_context.c",
+		repodir .."src/null_platform.h",
+		repodir .."src/null_joystick.h",
+		repodir .."src/null_init.c",
+		repodir .."src/null_monitor.c",
+		repodir .."src/null_window.c",
+		repodir .."src/null_joystick.c"
+		 
 	}
 
 	filter "system:windows"
@@ -28,15 +40,18 @@ project "GLFW"
 		
 		files
 		{
-		   repodir .. "src/win32_init.c",
-		   repodir .. "src/win32_joystick.c",
-		   repodir .. "src/win32_monitor.c",
-		   repodir .. "src/win32_time.c",
-		   repodir .. "src/win32_thread.c",
-		   repodir .. "src/win32_window.c",
-		   repodir .. "src/wgl_context.c",
-		   repodir .. "src/egl_context.c",
-		   repodir .. "src/osmesa_context.c"
+		repodir .."src/win32_init.c",
+		repodir .."src/win32_module.c",
+		repodir .."src/win32_joystick.c",
+		repodir .."src/win32_monitor.c",
+		repodir .."src/win32_time.h",
+		repodir .."src/win32_time.c",
+		repodir .."src/win32_thread.h",
+		repodir .."src/win32_thread.c",
+		repodir .."src/win32_window.c",
+		repodir .."src/wgl_context.c",
+		repodir .."src/egl_context.c",
+		repodir .."src/osmesa_context.c"
 		}
 
 		defines

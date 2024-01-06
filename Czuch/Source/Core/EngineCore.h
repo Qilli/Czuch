@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <string>
 
 #ifdef CZUCH_PLATFORM_WINDOWS
 	#ifdef CZUCH_BUILD_DLL
@@ -29,7 +30,7 @@ typedef unsigned short U16;
 typedef short I16;
 typedef unsigned char U8;
 typedef char I8;
-typedef unsigned int ID;
+typedef unsigned int Guid;
 typedef std::string CzuchStr;
 
 const CzuchStr EMPTY_STRING = "";
@@ -51,7 +52,7 @@ namespace Czuch
 	template<typename T,typename ... Args>
 	constexpr Ref<T> CreateRef(Args&& ... args)
 	{
-		return std::make_shared<T>*std::forward<Args>(args)...);
+		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
 
 }

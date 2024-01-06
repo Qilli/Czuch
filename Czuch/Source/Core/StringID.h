@@ -1,5 +1,6 @@
 #pragma once
 #include"EngineCore.h"
+#include<unordered_map>
 
 namespace Czuch
 {
@@ -7,18 +8,20 @@ namespace Czuch
 	{
 	public:
 		const CzuchStr& GetStrName() const;
-		ID GetID() const;
+		Guid GetGuid() const;
 		U32 Compare(const StringID& comp);
+		inline bool IsValid() const { return m_id != 0; }
 		static StringID MakeStringID(const CzuchStr& rhl);
-	private:
-		StringID(ID id,const CzuchStr& str);
 		StringID();
 	private:
-		ID m_id;
+		StringID(Guid id,const CzuchStr& str);
+	private:
+		Guid m_id;
 		CzuchStr m_str;
 	private:
-		static std::unordered_map<ID, CzuchStr> s_NameLookup;
+		static std::unordered_map<Guid, CzuchStr> s_NameLookup;
 	};
 
 #define sID(name)StringID::MakeStringID(name)
+#define InvalidID 0
 }

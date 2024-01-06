@@ -12,8 +12,14 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
 IncludeDir["GLFW"] = "Czuch/vendors/GLFW/include"
+IncludeDir["Glad"] = "Czuch/vendors/Glad/include"
+IncludeDir["ImGui"] = "Czuch/vendors/ImgGui"
+IncludeDir["Vulkan"] = "F:/VulkanSDK/Include"
 
 include "premake-glfw.lua"
+include "premake-imgui.lua"
+include "Czuch/vendors/Glad/premake-glad.lua"
+
 
 project "Czuch"
 
@@ -37,13 +43,20 @@ project "Czuch"
 	{
 		"%{prj.name}/source",
 		"%{prj.name}/vendors/spdlog/include",
-		"%{IncludeDir.GLFW}"
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.Glad}",
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.Vulkan}"
+
 	}
 
 	links
 	{
 		"GLFW",
-		"opengl32.lib"
+		"Glad",
+		"opengl32.lib",
+		"ImGui",
+		"$(VULKAN_SDK)/lib/vulkan-1.lib"
 	}
 
 	filter "system:windows"
@@ -55,7 +68,8 @@ project "Czuch"
 		defines
 		{
 			"CZUCH_PLATFORM_WINDOWS",
-			"CZUCH_BUILD_DLL"
+			"CZUCH_BUILD_DLL",
+			"GLFW_INCLUDE_NONE"
 		}
 
 		postbuildcommands
@@ -70,6 +84,7 @@ project "Czuch"
 			"CZUCH_ENABLE_ASSERTS"
 		}
 		optimize "On"
+		buildoptions "/MDd"
 
 	filter "configurations:Release"
 		defines
@@ -77,6 +92,7 @@ project "Czuch"
 			"CZUCH_RELEASE"
 		}
 		optimize "On"
+		buildoptions "/MD"
 
 	filter "configurations:Dist"
 		defines
@@ -84,6 +100,7 @@ project "Czuch"
 			"CZUCH_DIST"
 		}
 		optimize "On"
+		buildoptions "/MD"
 
 project "Playground"
 	
@@ -122,6 +139,7 @@ project "Playground"
 			"CZUCH_DEBUG"
 		}
 		optimize "On"
+		buildoptions "/MDd"
 
 	filter "configurations:Release"
 		defines
@@ -129,6 +147,7 @@ project "Playground"
 			"CZUCH_RELEASE"
 		}
 		optimize "On"
+		buildoptions "/MD"
 
 	filter "configurations:Dist"
 		defines
@@ -136,3 +155,4 @@ project "Playground"
 			"CZUCH_DIST"
 		}
 		optimize "On"
+		buildoptions "/MD"

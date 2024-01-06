@@ -79,22 +79,23 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;CZUCH_DEBUG;CZUCH_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DEBUG;CZUCH_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/MDd %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;$(VULKAN_SDK)\lib\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>..\bin\Debug-windows-x86_64\Czuch\Czuch.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
@@ -106,22 +107,23 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;CZUCH_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/MD %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;$(VULKAN_SDK)\lib\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>..\bin\Release-windows-x86_64\Czuch\Czuch.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
@@ -133,22 +135,23 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;CZUCH_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/MD %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;$(VULKAN_SDK)\lib\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>..\bin\Dist-windows-x86_64\Czuch\Czuch.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
@@ -156,8 +159,16 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="source\Subsystems\Resources\ResourcesManager.h" />
+    <ClInclude Include="source\Subsystems\Resources\ShaderResourceManager.h" />
+    <ClInclude Include="source\Subsystems\Resources\ResourceManager.h" />
+    <ClInclude Include="source\Subsystems\Resources\ShaderResource.h" />
+    <ClInclude Include="source\Subsystems\Resources\Resource.h" />
     <ClInclude Include="source\Core\Common.h" />
     <ClInclude Include="source\Core\EngineCore.h" />
+    <ClInclude Include="source\Core\FileHelper.h" />
+    <ClInclude Include="source\Core\KeyCodes.h" />
+    <ClInclude Include="source\Core\MouseCodes.h" />
     <ClInclude Include="source\Core\Singleton.h" />
     <ClInclude Include="source\Core\StringID.h" />
     <ClInclude Include="source\Core\Time.h" />
@@ -166,20 +177,47 @@
     <ClInclude Include="source\Czuch.h" />
     <ClInclude Include="source\EngineRoot.h" />
     <ClInclude Include="source\Events\Event.h" />
-    <ClInclude Include="source\Events\EventsTypes\KeyDownEvent.h" />
+    <ClInclude Include="source\Events\EventsTypes\ApplicationEvents.h" />
+    <ClInclude Include="source\Events\EventsTypes\InputEvents.h" />
+    <ClInclude Include="source\Events\EventsTypes\MouseEvents.h" />
     <ClInclude Include="source\Events\IEventsListener.h" />
+    <ClInclude Include="source\Platform\Windows\WinWindow.h" />
+    <ClInclude Include="source\Renderer\CommandBuffer.h" />
+    <ClInclude Include="source\Renderer\Graphics.h" />
+    <ClInclude Include="source\Renderer\GraphicsDevice.h" />
+    <ClInclude Include="source\Renderer\Renderer.h" />
+    <ClInclude Include="source\Renderer\Vulkan\VulkanBase.h" />
+    <ClInclude Include="source\Renderer\Vulkan\VulkanCommandBuffer.h" />
+    <ClInclude Include="source\Renderer\Vulkan\VulkanCore.h" />
+    <ClInclude Include="source\Renderer\Vulkan\VulkanDevice.h" />
+    <ClInclude Include="source\Renderer\Vulkan\VulkanPipelineBuilder.h" />
+    <ClInclude Include="source\Renderer\Vulkan\VulkanRenderer.h" />
     <ClInclude Include="source\Subsystems\BaseSubsystem.h" />
     <ClInclude Include="source\Subsystems\EventsManager.h" />
     <ClInclude Include="source\Subsystems\Logging.h" />
     <ClInclude Include="source\czpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Subsystems\Resources\ResourcesManager.cpp" />
+    <ClCompile Include="source\Subsystems\Resources\ShaderResourceManager.cpp" />
+    <ClCompile Include="source\Subsystems\Resources\ResourceManager.cpp" />
+    <ClCompile Include="source\Subsystems\Resources\ShaderResource.cpp" />
+    <ClCompile Include="source\Subsystems\Resources\Resource.cpp" />
     <ClCompile Include="source\Core\StringID.cpp" />
     <ClCompile Include="source\Core\Time.cpp" />
     <ClCompile Include="source\Core\TimeDiffCounter.cpp" />
+    <ClCompile Include="source\Core\Window.cpp" />
     <ClCompile Include="source\EngineRoot.cpp" />
     <ClCompile Include="source\Events\Event.cpp" />
-    <ClCompile Include="source\Events\EventsTypes\KeyDownEvent.cpp" />
+    <ClCompile Include="source\Events\EventsTypes\ApplicationEvents.cpp" />
+    <ClCompile Include="source\Events\EventsTypes\InputEvents.cpp" />
+    <ClCompile Include="source\Events\EventsTypes\MouseEvents.cpp" />
+    <ClCompile Include="source\Platform\Windows\WinWindow.cpp" />
+    <ClCompile Include="source\Renderer\Graphics.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\VulkanCommandBuffer.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\VulkanDevice.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\VulkanPipelineBuilder.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\VulkanRenderer.cpp" />
     <ClCompile Include="source\Subsystems\EventsManager.cpp" />
     <ClCompile Include="source\Subsystems\Logging.cpp" />
     <ClCompile Include="source\czpch.cpp">
@@ -189,6 +227,12 @@
   <ItemGroup>
     <ProjectReference Include="vendors\GLFW\GLFW.vcxproj">
       <Project>{154B857C-0182-860D-AA6E-6C109684020F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendors\Glad\Glad.vcxproj">
+      <Project>{BDD6857C-A90D-870D-52FA-6C103E10030F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendors\ImGui\Imgui.vcxproj">
+      <Project>{E087650D-4C9C-8DBE-151E-311E81F189EF}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

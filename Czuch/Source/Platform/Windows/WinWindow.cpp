@@ -44,14 +44,14 @@ namespace Czuch
 	{
 		m_WndParams.VSync = enabled;
 
-		if (enabled)
+		/*if (enabled)
 		{
 			glfwSwapInterval(1);
 		}
 		else
 		{
 			glfwSwapInterval(0);
-		}
+		}*/
 	}
 
 	bool WinWindow::IsVsSync() const
@@ -65,7 +65,7 @@ namespace Czuch
 		m_WndParams.Width = params.Width;
 		m_WndParams.Height = params.Height;
 
-		LOG_BE_INFO("Creating window {0} ({1}, {2}", m_WndParams.title, m_WndParams.Width, m_WndParams.Height);
+		LOG_BE_INFO("Creating window {0} ({1}, {2})", m_WndParams.title, m_WndParams.Width, m_WndParams.Height);
 
 		if (s_GLFWWindowCount == 0)
 		{
@@ -80,10 +80,18 @@ namespace Czuch
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 		}
 #endif
+		if (Renderer::GetUsedAPI() == RendererAPI::Vulkan)
+		{
+			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		}
 
 		m_Window = glfwCreateWindow(m_WndParams.Width, m_WndParams.Height, m_WndParams.title.c_str(), nullptr, nullptr);
 		++s_GLFWWindowCount;
 
+		if (Renderer::GetUsedAPI() != RendererAPI::Vulkan)
+		{
+			glfwMakeContextCurrent(m_Window);
+		}
 		glfwSetWindowUserPointer(m_Window, &m_WndParams);
 		SetVSync(true);
 

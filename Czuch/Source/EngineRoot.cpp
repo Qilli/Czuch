@@ -2,11 +2,16 @@
 #include "EngineRoot.h"
 #include "Core/TimeDiffCounter.h"
 #include "Core/Time.h"
-
+#include "Events/EventsTypes/ApplicationEvents.h"
+#include "Renderer/Vulkan/VulkanRenderer.h"
+#include "Subsystems/Resources/ResourcesManager.h"
+#include "Subsystems/Resources/ShaderResourceManager.h"
 namespace Czuch
 {
 	void EngineRoot::Init(const std::string& configFilePath)
 	{
+		m_ShouldStopLoop = false;
+
 		//create subsystems
 		m_Logging = new Logging();
 		m_EventsMgr = new EventsManager();
@@ -14,17 +19,38 @@ namespace Czuch
 		//Init subsystems
 		m_Logging->Init();
 		m_EventsMgr->Init();
+
+		const WindowParams wndParams{};
+
+		//create window
+		m_Window = Window::Create(wndParams);
+
+		//create renderer
+		m_Renderer = new VulkanRenderer(m_Window.get(), ValidationMode::Enabled);
+		m_Renderer->Init();
+
+		//create resources managers
+		m_ResourcesMgr = new ResourcesManager();
+		m_ResourcesMgr->Init();
+		m_ResourcesMgr->RegisterManager(new ShaderResourceManager(m_Renderer->GetDevice()));
+
+		//listen to events
+		m_EventsMgr->AddListener(WindowClosedEvent::GetStaticEventType(), this);
 	}
 
 	void EngineRoot::Shutdown()
 	{
 		//Shutdown
+		m_ResourcesMgr->Shutdown();
 		m_EventsMgr->Shutdown();
 		m_Logging->Shutdown();
 		
 		//free memory
+		delete m_ResourcesMgr;
+		delete m_Renderer;
 		delete m_EventsMgr;
 		delete m_Logging;
+		
 	}
 
 	void EngineRoot::Run()
@@ -36,9 +62,11 @@ namespace Czuch
 		{
 			//Update events
 			m_EventsMgr->Update();
-
+			m_Window->Update();
 			UpdateDeltaTime(counter);
+			m_Renderer->DrawFrame();
 		}
+		m_Renderer->AwaitDeviceIdle();
 	}
 	void EngineRoot::UpdateDeltaTime(Czuch::TimeDiffCounter& counter)
 	{
@@ -54,7 +82,14 @@ namespace Czuch
 	}
 	bool EngineRoot::ShouldStopGameLoop()
 	{
-		return false;
+		return m_ShouldStopLoop;
+	}
+	void EngineRoot::OnEvent(const Event& e)
+	{
+		if (e.GetEventType() == WindowClosedEvent::GetStaticEventType())
+		{
+			m_ShouldStopLoop = true;
+		}
 	}
 }
 

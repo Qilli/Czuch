@@ -47,9 +47,9 @@ namespace Czuch
 
 	void EventsManager::Clear()
 	{
-		for (U32 i = 0; i < m_listeners.size(); i++)
+		for (auto current= m_listeners.begin(); current != m_listeners.end();current++)
 		{
-			m_listeners[i].RemoveAll();
+			current->second.RemoveAll();
 		}
 		m_listeners.clear();
 	}
@@ -106,13 +106,13 @@ namespace Czuch
 
 	const void EventsManager::ListenersContainer::Invoke(Event& e)
 	{
-		for each (Listener list in m_listeners)
+		for(Listener list: m_listeners)
 		{
 			list.TryInvoke(e);
 		}
 	}
 
-	bool EventsManager::Listener::operator==(const Listener& comp)
+	bool EventsManager::Listener::operator==(Listener& comp)
 	{
 		return m_listener == comp.m_listener;
 	}

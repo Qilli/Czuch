@@ -16,13 +16,6 @@ int main()
 {
 	Czuch::EngineRoot* root = new Czuch::EngineRoot();
 	root->Init("engineConfig.cfg");
-	LOG_BE_INFO("Test log only {0}", 12);
-
-	EventHandler handler;
-
-	Czuch::EventsManager::GetPtr()->AddListener(Czuch::KeyDownEvent::GetStaticEventType(), &handler);
-
-	Czuch::KeyDownEvent::CreateAndDispatch(12);
 
 	root->Run();
 	root->Shutdown();

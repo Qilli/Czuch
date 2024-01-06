@@ -25,7 +25,7 @@ namespace Czuch
 		struct Listener
 		{
 			IEventsListener* m_listener;
-			bool operator==(const Listener& comp);
+			bool operator==(Listener& comp);
 			void TryInvoke(Event& e);
 		};
 

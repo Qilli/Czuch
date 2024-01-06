@@ -7,3 +7,6 @@
 [submodule "Czuch/vendors/GLFW"]
 	path = Czuch/vendors/GLFW
 	url = https://github.com/glfw/glfw.git
+[submodule "Czuch/vendors/imgui"]
+	path = Czuch/vendors/imgui
+	url = https://github.com/ocornut/imgui.git

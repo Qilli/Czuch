@@ -1,0 +1,28 @@
+#pragma once
+#include"GraphicsDevice.h"
+
+namespace Czuch
+{
+
+	class CommandBuffer
+	{
+	public:
+		virtual void Init(const GraphicsDevice* gpu)=0;
+		virtual void Release()=0;
+	public:
+		virtual void Begin()=0;
+		virtual void End()=0;
+		virtual void EndCurrentRenderPass()=0;
+		virtual void BindPass(RenderPass* renderpass, FrameBuffer* framebuffer)=0;
+		virtual void BindPipeline(Pipeline* pipeline)=0;
+		virtual void BindVertexBuffer(Buffer* buffer, U32 binding, U32 offset)=0;
+		virtual void BindIndexBuffer(Buffer* buffer, U32 offset)=0;
+		virtual void BindDescriptorSet(DescriptorSet* descriptor, U32 num, U32* offsets, U32 num_offsets)=0;
+		virtual void SetClearColor(float r, float g, float b, float a) = 0;
+		virtual void SetDepthStencil(float depth, U8 stencil) = 0;
+		virtual void SetViewport(ViewportDesc viewport) = 0;
+		virtual void SetScrissors(ScissorsDesc scissors) = 0;
+		virtual void Draw(U32 vertexCount, U32 firstVertex, U32 instanceCount, U32 firstInstance) = 0;
+	};
+
+}
