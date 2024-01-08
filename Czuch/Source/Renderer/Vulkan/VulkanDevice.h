@@ -104,6 +104,7 @@ namespace Czuch
 
 		SwapChainData m_SwapChainData;
 		VkCommandPool m_CommandPool;
+		VkCommandPool m_CopyCommandPool;
 		RenderPass* m_SwapChainRenderPass;
 
 		VkPhysicalDeviceMemoryProperties m_MemProperties;
@@ -124,7 +125,9 @@ namespace Czuch
 		bool RecreateSwapChain();
 	private:
 		U32 FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags properties) const;
-		VkDeviceMemory AllocateBufferMemory(VkBuffer buffer) const;
+		VkDeviceMemory AllocateBufferMemory(VkBuffer buffer,VkMemoryPropertyFlags memoryProperty) const;
+		bool CreateBuffer_Internal(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const;
+		bool CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
 	private:
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 	private:

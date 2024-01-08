@@ -243,57 +243,90 @@ namespace Czuch
 		buffer->desc = *desc;
 		buffer->m_InternalResourceState = std::make_shared<Buffer_Vulkan>();
 
-		VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-
-		buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+		VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 		if (HasFlag(desc->bind_flags, BindFlag::VERTEX_BUFFER))
 		{
-			buffer_info.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+			usage|= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 		}
 		if (HasFlag(buffer->desc.bind_flags, BindFlag::INDEX_BUFFER))
 		{
-			buffer_info.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+			usage|= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 		}
 		if (HasFlag(buffer->desc.bind_flags, BindFlag::CONSTANT_BUFFER))
 		{
-			buffer_info.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+			usage|= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 		}
 		if (HasFlag(buffer->desc.bind_flags, BindFlag::SHADER_RESOURCE))
 		{
-			buffer_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT; // read only ByteAddressBuffer is also storage buffer
-			buffer_info.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+			usage|= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT; // read only ByteAddressBuffer is also storage buffer
+			usage|= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
 		}
 		if (HasFlag(buffer->desc.bind_flags, BindFlag::UNORDERED_ACCESS))
 		{
-			buffer_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-			buffer_info.usage |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+			usage|= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+			usage|= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
 		}
-
-		buffer_info.size = desc->size > 0 ? desc->size : 1;
-		buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		buffer_info.flags = 0;
 
 		auto bufferVulkan = Internal_to_Buffer(buffer);
 		bufferVulkan->device = m_Device;
-		bufferVulkan->flags = buffer_info.usage;
-		bufferVulkan->size = buffer_info.size;
+		bufferVulkan->flags = usage;
+		bufferVulkan->size = desc->size > 0 ? desc->size : 1;
 
-		if (vkCreateBuffer(m_Device, &buffer_info, nullptr, &bufferVulkan->buffer) != VK_SUCCESS) {
-			LOG_BE_ERROR("{0} Failed to create nw vulkan buffer", Tag);
+		if (!CreateBuffer_Internal(bufferVulkan->size,usage, HasFlag(desc->bind_flags, BindFlag::VERTEX_BUFFER)|| HasFlag(desc->bind_flags, BindFlag::INDEX_BUFFER) ?VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT: VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,bufferVulkan->buffer,bufferVulkan->memory)) {
+			LOG_BE_ERROR("{0} Failed to create new vulkan buffer", Tag);
 			return nullptr;
 		}
 
-		bufferVulkan->memory = AllocateBufferMemory(bufferVulkan->buffer);
 
-		//map memory
-		void* data = nullptr;
-		vkMapMemory(m_Device, bufferVulkan->memory, 0, bufferVulkan->size, 0, &data);
-		memcpy(data, desc->initData, (U32)bufferVulkan->size);
-		vkUnmapMemory(m_Device, bufferVulkan->memory);
+		if (HasFlag(desc->bind_flags, BindFlag::VERTEX_BUFFER) || HasFlag(desc->bind_flags, BindFlag::INDEX_BUFFER))
+		{
+			VkDeviceSize bufferSize = bufferVulkan->size;
+			VkBuffer stagingBuffer;
+			VkDeviceMemory stagingBufferMemory;
+
+			if (!CreateBuffer_Internal(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory))
+			{
+				LOG_BE_ERROR("{0} Failed to create new vulkan staging buffer", Tag);
+				return nullptr;
+			}
+
+			//map memory
+			void* data = nullptr;
+			vkMapMemory(m_Device, stagingBufferMemory, 0, bufferSize, 0, &data);
+			memcpy(data, desc->initData, (U32)bufferSize);
+			vkUnmapMemory(m_Device, stagingBufferMemory);
+
+			if (!CopyBuffer(stagingBuffer, bufferVulkan->buffer, bufferSize))
+			{
+				LOG_BE_ERROR("{0} Failed to copy data from staging buffer", Tag);
+				vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
+				vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
+				return nullptr;
+			}
+			vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
+			vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
+		}
 
 		return buffer;
 	}
+
+	bool VulkanDevice::CreateBuffer_Internal(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const
+	{
+		VkBufferCreateInfo bufferInfo{};
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = size;
+		bufferInfo.usage = usage;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+		if (vkCreateBuffer(m_Device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+			return false;
+		}
+
+		bufferMemory=AllocateBufferMemory(buffer, properties);
+		return true;
+	}
+
 
 #pragma endregion
 
@@ -466,12 +499,12 @@ namespace Czuch
 		LOG_BE_ERROR("{0} Failed to find fitting memory type.", Tag);
 	}
 
-	VkDeviceMemory VulkanDevice::AllocateBufferMemory(VkBuffer buffer) const
+	VkDeviceMemory VulkanDevice::AllocateBufferMemory(VkBuffer buffer,VkMemoryPropertyFlags memoryProperty) const
 	{
 		VkMemoryRequirements memRequirements;
 		vkGetBufferMemoryRequirements(m_Device, buffer, &memRequirements);
 
-		U32 memoryType = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		U32 memoryType = FindMemoryType(memRequirements.memoryTypeBits, memoryProperty);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -624,6 +657,44 @@ namespace Czuch
 		{
 			m_FrameBufferResized = true;
 		}
+	}
+
+	bool VulkanDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const
+	{
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandPool = m_CopyCommandPool;
+		allocInfo.commandBufferCount = 1;
+
+		VkCommandBuffer commandBuffer;
+		vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer);
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+		VkBufferCopy copyRegion{};
+		copyRegion.srcOffset = 0; // Optional
+		copyRegion.dstOffset = 0; // Optional
+		copyRegion.size = size;
+		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+		vkEndCommandBuffer(commandBuffer);
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(m_GraphicsQueue);
+
+		vkFreeCommandBuffers(m_Device, m_CopyCommandPool, 1, &commandBuffer);
+
+		return true;
 	}
 
 	bool VulkanDevice::RecreateSwapChain()
@@ -1066,6 +1137,16 @@ namespace Czuch
 			LOG_BE_ERROR("{0} Failed to create command pool.", Tag);
 			return false;
 		}
+
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+		if (vkCreateCommandPool(m_Device, &poolInfo, nullptr, &m_CopyCommandPool) != VK_SUCCESS) {
+			LOG_BE_ERROR("{0} Failed to create command pool.", Tag);
+			return false;
+		}
+
 		return true;
 	}
 

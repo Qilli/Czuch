@@ -25,7 +25,8 @@ namespace Czuch
 		void SetDepthStencil(float depth, U8 stencil) override;
 		void SetViewport(ViewportDesc viewport) override;
 		void SetScrissors(ScissorsDesc scissors) override;
-		void Draw(U32 vertexCount, U32 firstVertex, U32 instanceCount, U32 firstInstance) override;
+		void Draw(U32 vertexCount, U32 firstVertex=0, U32 instanceCount=1, U32 firstInstance=0) override;
+		void DrawIndexed(U32 indicesCount, U32 firstIndex=0, U32 instanceCount=1, U32 firstnstance=0, U32 vertexOffset=0) override;
 	private:
 		VkCommandBuffer m_Cmd;
 		VulkanDevice* m_Device;

@@ -23,6 +23,7 @@ namespace Czuch
 		virtual void SetViewport(ViewportDesc viewport) = 0;
 		virtual void SetScrissors(ScissorsDesc scissors) = 0;
 		virtual void Draw(U32 vertexCount, U32 firstVertex, U32 instanceCount, U32 firstInstance) = 0;
+		virtual void DrawIndexed(U32 indicesCount, U32 firstIndex, U32 instanceCount, U32 firstnstance, U32 vertexOffset) = 0;
 	};
 
 }

@@ -178,4 +178,8 @@
     <ClCompile Include="source\Subsystems\Resources\ShaderResourceManager.cpp" />
     <ClCompile Include="source\Subsystems\Resources\ResourcesManager.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Data\Shaders\Base.vert" />
+    <None Include="Data\Shaders\Base.frag" />
+  </ItemGroup>
 </Project>

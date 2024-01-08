@@ -110,6 +110,7 @@ namespace Czuch
 
 	void VulkanCommandBuffer::BindIndexBuffer(Buffer* buffer, U32 offset)
 	{
+		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(buffer)->buffer, 0, VK_INDEX_TYPE_UINT16);
 	}
 
 	void VulkanCommandBuffer::BindDescriptorSet(DescriptorSet* descriptor, U32 num, U32* offsets, U32 num_offsets)
@@ -149,7 +150,12 @@ namespace Czuch
 
 	void VulkanCommandBuffer::Draw(U32 vertexCount, U32 firstVertex, U32 instanceCount, U32 firstInstance)
 	{
-		vkCmdDraw(m_Cmd, vertexCount, firstVertex, instanceCount, firstInstance);
+		vkCmdDraw(m_Cmd, vertexCount, instanceCount, firstVertex, firstInstance);
+	}
+
+	void VulkanCommandBuffer::DrawIndexed(U32 indicesCount, U32 firstIndex, U32 instanceCount, U32 firstnstance,U32 vertexOffset)
+	{
+		vkCmdDrawIndexed(m_Cmd, indicesCount, instanceCount, firstIndex, vertexOffset, firstnstance);
 	}
 
 }
