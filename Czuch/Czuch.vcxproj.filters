@@ -25,6 +25,9 @@
     <Filter Include="Subsystems">
       <UniqueIdentifier>{67E939EA-53A1-7B37-BCA8-5493A87F1628}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Subsystems\Resources">
+      <UniqueIdentifier>{913B5FB2-7DCA-E87B-26E9-FC761257F921}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Core\Common.h">
@@ -89,6 +92,9 @@
     <ClInclude Include="source\Renderer\Renderer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanBase.h">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClInclude>
     <ClInclude Include="source\Renderer\Vulkan\VulkanCommandBuffer.h">
       <Filter>Renderer\Vulkan</Filter>
     </ClInclude>
@@ -113,13 +119,22 @@
     <ClInclude Include="source\Subsystems\Logging.h">
       <Filter>Subsystems</Filter>
     </ClInclude>
+    <ClInclude Include="source\Subsystems\Resources\Resource.h">
+      <Filter>Subsystems\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Resources\ResourceManager.h">
+      <Filter>Subsystems\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Resources\ResourcesManager.h">
+      <Filter>Subsystems\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Resources\ShaderResource.h">
+      <Filter>Subsystems\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Resources\ShaderResourceManager.h">
+      <Filter>Subsystems\Resources</Filter>
+    </ClInclude>
     <ClInclude Include="source\czpch.h" />
-    <ClInclude Include="source\Renderer\Vulkan\VulkanBase.h" />
-    <ClInclude Include="source\Subsystems\Resources\Resource.h" />
-    <ClInclude Include="source\Subsystems\Resources\ShaderResource.h" />
-    <ClInclude Include="source\Subsystems\Resources\ResourceManager.h" />
-    <ClInclude Include="source\Subsystems\Resources\ShaderResourceManager.h" />
-    <ClInclude Include="source\Subsystems\Resources\ResourcesManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\StringID.cpp">
@@ -171,15 +186,25 @@
     <ClCompile Include="source\Subsystems\Logging.cpp">
       <Filter>Subsystems</Filter>
     </ClCompile>
+    <ClCompile Include="source\Subsystems\Resources\Resource.cpp">
+      <Filter>Subsystems\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Resources\ResourceManager.cpp">
+      <Filter>Subsystems\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Resources\ResourcesManager.cpp">
+      <Filter>Subsystems\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Resources\ShaderResource.cpp">
+      <Filter>Subsystems\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Resources\ShaderResourceManager.cpp">
+      <Filter>Subsystems\Resources</Filter>
+    </ClCompile>
     <ClCompile Include="source\czpch.cpp" />
-    <ClCompile Include="source\Subsystems\Resources\Resource.cpp" />
-    <ClCompile Include="source\Subsystems\Resources\ShaderResource.cpp" />
-    <ClCompile Include="source\Subsystems\Resources\ResourceManager.cpp" />
-    <ClCompile Include="source\Subsystems\Resources\ShaderResourceManager.cpp" />
-    <ClCompile Include="source\Subsystems\Resources\ResourcesManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Data\Shaders\Base.vert" />
     <None Include="Data\Shaders\Base.frag" />
+    <None Include="Data\Shaders\Base.vert" />
   </ItemGroup>
 </Project>

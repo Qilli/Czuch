@@ -10,6 +10,8 @@ namespace Czuch
 		Vulkan
 	};
 
+	class GraphicsDevice;
+
 	class CZUCH_API Renderer
 	{
 	public:

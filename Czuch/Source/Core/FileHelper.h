@@ -23,7 +23,7 @@ namespace Czuch
     }
 
 
-    static bool ReadBinaryFile(const std::string& filename,std::vector<char> targetBuffer) {
+    static bool ReadBinaryFile(const std::string& filename,std::vector<char>& targetBuffer) {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {

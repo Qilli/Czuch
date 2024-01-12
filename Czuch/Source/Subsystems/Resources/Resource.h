@@ -35,8 +35,8 @@ namespace Czuch
 		inline bool IsLoaded() { return m_State; }
 		inline ResourceHandle GetHandle() { return {m_GUID.GetGuid()}; }
 
-		static CzuchStr& GetNameFromPath(const CzuchStr& inStr);
-		static CzuchStr& GetTypeFromPath(const CzuchStr& inStr);
+		static CzuchStr GetNameFromPath(const CzuchStr& inStr);
+		static CzuchStr GetTypeFromPath(const CzuchStr& inStr);
 
 		virtual bool LoadResource() = 0;
 		virtual void UnloadResource() = 0;

@@ -14,11 +14,11 @@ namespace Czuch
 		GraphicsDevice* m_Device;
 	};
 
-	ShaderResourceManager::ShaderResourceManager(GraphicsDevice* device):m_Device(device)
+	inline ShaderResourceManager::ShaderResourceManager(GraphicsDevice* device):m_Device(device)
 	{
 	}
 
-	Resource* ShaderResourceManager::CreateResource(const CzuchStr& path)
+	inline Resource* ShaderResourceManager::CreateResource(const CzuchStr& path)
 	{
 		ShaderResource* shaderRes = new ShaderResource(path,m_Device);
 		return shaderRes;

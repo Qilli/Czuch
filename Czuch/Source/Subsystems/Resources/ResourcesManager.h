@@ -13,7 +13,7 @@ namespace Czuch
 		void Shutdown() override;
 		void Update() override;
 
-		virtual void RegisterManager(ResourceManager* newMgr);
+		virtual void RegisterManager(ResourceManager* newMgr,std::type_index type);
 
 		template<class T>
 		ResourceHandle LoadResource(const CzuchStr& path);
@@ -40,7 +40,7 @@ namespace Czuch
 			if (res == nullptr)
 			{
 				LOG_BE_ERROR("Failed to load resource with path: {0} in manager of type {1}", path, result->first.name());
-				return nullptr;
+				return {InvalidID};
 			}
 
 			return res->GetHandle();

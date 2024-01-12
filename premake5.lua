@@ -43,6 +43,7 @@ project "Czuch"
 	{
 		"%{prj.name}/source",
 		"%{prj.name}/vendors/spdlog/include",
+		"%{prj.name}/vendors/glm",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
@@ -61,7 +62,7 @@ project "Czuch"
 
 	filter "system:windows"
 
-		cppdialect "C++17"
+		cppdialect "C++20"
 		staticruntime "On"
 		systemversion "latest"
 
@@ -120,6 +121,7 @@ project "Playground"
 	includedirs
 	{
 		"Czuch/vendors/spdlog/include",
+		"Czuch/vendors/glm",
 		"Czuch/source"
 	}
 

@@ -14,6 +14,7 @@ namespace Czuch
         ~ShaderResource();
         bool LoadResource() override;
         void UnloadResource() override;
+        inline Shader* GetShaderAsset() const { return m_ShaderAsset; }
     private:
         GraphicsDevice* m_Device;
         Shader* m_ShaderAsset;

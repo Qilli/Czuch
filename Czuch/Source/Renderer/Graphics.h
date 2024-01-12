@@ -408,12 +408,14 @@ namespace Czuch
 
 	struct BufferDesc
 	{
-		uint64_t size = 0;
+		U64 size = 0;
+		U64 elementsCount = 0;
 		Usage usage = Usage::DEFAULT;
 		BindFlag bind_flags = BindFlag::NONE;
-		uint32_t stride = 0;
+		U32 stride = 0;
 		Format format = Format::UNKNOWN;
 		void* initData = nullptr;
+
 	};
 
 	struct DescriptorSetLayoutDesc
@@ -531,8 +533,8 @@ namespace Czuch
 
 	struct PipelineStateDesc
 	{
-		Shader vs;
-		Shader ps;
+		Shader *vs;
+		Shader *ps;
 		BlendState bs;
 		RasterizerState rs;
 		DepthStencilState dss;

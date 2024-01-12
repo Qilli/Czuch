@@ -27,7 +27,11 @@ namespace Czuch
 	Pipeline* VulkanDevice::CreatePipelineState(const PipelineStateDesc* desc, const RenderPass* rpass) const
 	{
 		CZUCH_BE_ASSERT(desc, "CreatePipelineState NULL desc input");
-		CZUCH_BE_ASSERT(rpass, "RenderPass is null");
+		
+		if (rpass == nullptr)
+		{
+			rpass = m_SwapChainRenderPass;
+		}
 
 		Pipeline* ps = new Pipeline();
 		ps->m_InternalResourceState = std::make_shared<Pipeline_Vulkan>();
@@ -1112,6 +1116,8 @@ namespace Czuch
 			framebufferInfo.layers = 1;
 
 			FrameBuffer_Vulkan* fbuffer = Internal_to_Framebuffer(framebuffer);
+
+			fbuffer->createInfo = framebufferInfo;
 			fbuffer->device = m_Device;
 
 			if (vkCreateFramebuffer(m_Device, &framebufferInfo, nullptr,&fbuffer->framebuffer) != VK_SUCCESS) {

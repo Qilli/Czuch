@@ -12,14 +12,14 @@ namespace Czuch
 		m_State = ResourceInnerState::CREATED;
 	}
 
-	CzuchStr& Resource::GetNameFromPath(const CzuchStr& inStr)
+	CzuchStr Resource::GetNameFromPath(const CzuchStr& inStr)
 	{
 		size_t result=inStr.find_last_of("/\\");
 		CzuchStr str=inStr.substr(result + 1);
 		return str;
 	}
 
-	CzuchStr& Resource::GetTypeFromPath(const CzuchStr& inStr)
+	CzuchStr Resource::GetTypeFromPath(const CzuchStr& inStr)
 	{
 		size_t result = inStr.find_last_of(".");
 		CzuchStr str = inStr.substr(result + 1);

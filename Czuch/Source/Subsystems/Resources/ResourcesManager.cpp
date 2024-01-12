@@ -23,9 +23,9 @@ namespace Czuch
 	{
 	}
 
-	void ResourcesManager::RegisterManager(ResourceManager* newMgr)
+	void ResourcesManager::RegisterManager(ResourceManager* newMgr, std::type_index type)
 	{
-		m_ResourcesMgrs.insert({typeid(*newMgr),newMgr});
+		m_ResourcesMgrs.insert({type,newMgr});
 	}
 
 }

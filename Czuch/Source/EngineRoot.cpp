@@ -32,7 +32,7 @@ namespace Czuch
 		//create resources managers
 		m_ResourcesMgr = new ResourcesManager();
 		m_ResourcesMgr->Init();
-		m_ResourcesMgr->RegisterManager(new ShaderResourceManager(m_Renderer->GetDevice()));
+		m_ResourcesMgr->RegisterManager(new ShaderResourceManager(m_Renderer->GetDevice()),typeid(ShaderResource));
 
 		//listen to events
 		m_EventsMgr->AddListener(WindowClosedEvent::GetStaticEventType(), this);

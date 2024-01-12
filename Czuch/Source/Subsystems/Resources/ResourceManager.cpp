@@ -98,11 +98,11 @@ namespace Czuch
 	Resource* ResourceManager::GetResource(ResourceHandle handle)
 	{
 		auto result = m_Resources.find(handle.id);
-		if (result == m_Resources.end())
+		if (result != m_Resources.end())
 		{
-			return nullptr;
+			return result->second;
 		}
-		return result->second;
+		return nullptr;
 	}
 
 }

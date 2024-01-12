@@ -101,16 +101,16 @@ namespace Czuch
 		m_CurrentPipeline = pipeline;
 	}
 
-	void VulkanCommandBuffer::BindVertexBuffer(Buffer* buffer, U32 binding, U32 offset)
+	void VulkanCommandBuffer::BindVertexBuffer(Buffer* buffer, U32 binding=0, U32 offset=0)
 	{
 		VkBuffer vertexBuffers[] = { Internal_to_Buffer(buffer)->buffer };
 		VkDeviceSize offsets[] = { offset };
-		vkCmdBindVertexBuffers(m_Cmd, 0, 1, vertexBuffers, offsets);
+		vkCmdBindVertexBuffers(m_Cmd, binding, 1, vertexBuffers, offsets);
 	}
 
-	void VulkanCommandBuffer::BindIndexBuffer(Buffer* buffer, U32 offset)
+	void VulkanCommandBuffer::BindIndexBuffer(Buffer* buffer, U32 offset=0)
 	{
-		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(buffer)->buffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(buffer)->buffer, offset, VK_INDEX_TYPE_UINT16);
 	}
 
 	void VulkanCommandBuffer::BindDescriptorSet(DescriptorSet* descriptor, U32 num, U32* offsets, U32 num_offsets)

@@ -24,6 +24,8 @@ namespace Czuch
 		VkDevice device;
 		const PipelineStateDesc* pipelineDescPtr;
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+		VkVertexInputBindingDescription bindingDescription[s_max_vertex_streams];
+		VkVertexInputAttributeDescription attributeDescription[s_max_vertex_attributes];
 	};
 
 }

@@ -13,15 +13,15 @@ namespace Czuch
     {
         pipeline->device = device;
 
-        if (pipelineDescPtr->vs.IsValid())
+        if (pipelineDescPtr->vs->IsValid())
         {
-            Shader_Vulkan* vulkan_shader_vs = Internal_To_Shader(&pipelineDescPtr->vs);
+            Shader_Vulkan* vulkan_shader_vs = Internal_To_Shader(pipelineDescPtr->vs);
             shaderStages.push_back(vulkan_shader_vs->shaderStageInfo);
         }
 
-        if (pipelineDescPtr->ps.IsValid())
+        if (pipelineDescPtr->ps->IsValid())
         {
-            Shader_Vulkan* vulkan_shader_ps = Internal_To_Shader(&pipelineDescPtr->ps);
+            Shader_Vulkan* vulkan_shader_ps = Internal_To_Shader(pipelineDescPtr->ps);
             shaderStages.push_back(vulkan_shader_ps->shaderStageInfo);
         }
 
@@ -35,7 +35,7 @@ namespace Czuch
         dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicState.pDynamicStates = dynamicStates.data();
 
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo = CreateVertexInputInfo();
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo= CreateVertexInputInfo();
         VkPipelineMultisampleStateCreateInfo multiSamplingInfo = CreateMultisamplingInfo();
         CreateInputAssemblyInfo();
         CreateRasterizationStateInfo();
@@ -45,6 +45,7 @@ namespace Czuch
         viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         viewportState.viewportCount = 1;
         viewportState.scissorCount = 1;
+        viewportState.pNext = nullptr;
 
         CreatePipelineLayout();
 
@@ -60,10 +61,12 @@ namespace Czuch
         pipelineInfo.pRasterizationState = &pipeline->rasterizer;
         pipelineInfo.pMultisampleState = &multiSamplingInfo;
         pipelineInfo.pColorBlendState = &blendingInfo;
+        pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = pipeline->pipelineLayout;
         pipelineInfo.renderPass = renderPass;
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+        pipelineInfo.basePipelineIndex = -1;
 
         if (vkCreateGraphicsPipelines(
             device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline) != VK_SUCCESS) {
@@ -80,9 +83,6 @@ namespace Czuch
     {
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
-        VkVertexInputBindingDescription bindingDescription[s_max_vertex_streams];
-
         const InputVertexLayout& vertLayout = pipelineDescPtr->il;
 
         for (int a = 0; a < vertLayout.vertexStreamsCount; ++a)
@@ -93,8 +93,6 @@ namespace Czuch
         }
         
         vertexInputInfo.vertexBindingDescriptionCount = vertLayout.vertexStreamsCount;
-
-        VkVertexInputAttributeDescription attributeDescription[s_max_vertex_attributes];
 
         for (int a = 0; a < vertLayout.vertexAttributesCount; ++a)
         {
@@ -117,7 +115,7 @@ namespace Czuch
         pipeline->inputAssembly.sType= VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         pipeline->inputAssembly.topology = ConvertTopology(pipelineDescPtr->pt);
         pipeline->inputAssembly.primitiveRestartEnable = VK_FALSE;
-        pipeline->inputAssembly.pNext = 0;
+        pipeline->inputAssembly.pNext = nullptr;
     }
 
     void VulkanPipelineBuilder::CreateRasterizationStateInfo()
