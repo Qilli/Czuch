@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
 #include <string>
+#include <type_traits>
+#include<functional>
 
 #ifdef CZUCH_PLATFORM_WINDOWS
 	#ifdef CZUCH_BUILD_DLL
@@ -54,5 +56,35 @@ namespace Czuch
 	{
 		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
+
+
+#define ENUM_FLAG_OPERATORS(T)                                                                                                                                            \
+    inline T operator~ (T a) { return static_cast<T>( ~static_cast<std::underlying_type<T>::type>(a) ); }                                                                       \
+    inline T operator| (T a, T b) { return static_cast<T>( static_cast<std::underlying_type<T>::type>(a) | static_cast<std::underlying_type<T>::type>(b) ); }                   \
+    inline T operator& (T a, T b) { return static_cast<T>( static_cast<std::underlying_type<T>::type>(a) & static_cast<std::underlying_type<T>::type>(b) ); }                   \
+    inline T operator^ (T a, T b) { return static_cast<T>( static_cast<std::underlying_type<T>::type>(a) ^ static_cast<std::underlying_type<T>::type>(b) ); }                   \
+    inline T& operator|= (T& a, T b) { return reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) |= static_cast<std::underlying_type<T>::type>(b) ); }   \
+    inline T& operator&= (T& a, T b) { return reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) &= static_cast<std::underlying_type<T>::type>(b) ); }   \
+    inline T& operator^= (T& a, T b) { return reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) ^= static_cast<std::underlying_type<T>::type>(b) ); }
+
+
+	struct DeletionQueue
+	{
+		std::deque<std::function<void()>> deletors;
+
+		void PushFunction(std::function<void()>&& function) {
+			deletors.push_back(function);
+		}
+
+		void Flush() {
+			// reverse iterate the deletion queue to execute all the functions
+			for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
+				(*it)(); //call functors
+			}
+
+			deletors.clear();
+		}
+	};
+
 
 }

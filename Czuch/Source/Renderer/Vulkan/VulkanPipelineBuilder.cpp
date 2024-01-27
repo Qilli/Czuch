@@ -136,10 +136,17 @@ namespace Czuch
 
     bool VulkanPipelineBuilder::CreatePipelineLayout()
     {
+        VkDescriptorSetLayout layouts[k_max_descriptor_set_layouts];
+
+        for (int a = 0; a < pipelineDescPtr->layoutsCount; ++a)
+        {
+            layouts[a] = Internal_to_DescriptorSetLayout(pipelineDescPtr->layouts[a])->layout;
+        }
+
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 0; // Optional
-        pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+        pipelineLayoutInfo.setLayoutCount = pipelineDescPtr->layoutsCount; // Optional
+        pipelineLayoutInfo.pSetLayouts = layouts; // Optional
         pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
         pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 

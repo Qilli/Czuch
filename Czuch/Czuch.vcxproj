@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DEBUG;CZUCH_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -108,7 +108,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -136,7 +136,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -159,6 +159,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h" />
+    <ClInclude Include="source\Renderer\Vulkan\DescriptorAllocator.h" />
     <ClInclude Include="source\Core\Common.h" />
     <ClInclude Include="source\Core\EngineCore.h" />
     <ClInclude Include="source\Core\FileHelper.h" />
@@ -198,6 +200,8 @@
     <ClInclude Include="source\czpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\DescriptorAllocator.cpp" />
     <ClCompile Include="source\Core\StringID.cpp" />
     <ClCompile Include="source\Core\Time.cpp" />
     <ClCompile Include="source\Core\TimeDiffCounter.cpp" />
@@ -210,6 +214,7 @@
     <ClCompile Include="source\Platform\Windows\WinWindow.cpp" />
     <ClCompile Include="source\Renderer\Graphics.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanCommandBuffer.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\VulkanCore.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanDevice.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanPipelineBuilder.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanRenderer.cpp" />
@@ -234,10 +239,6 @@
     <ProjectReference Include="vendors\ImGui\Imgui.vcxproj">
       <Project>{E087650D-4C9C-8DBE-151E-311E81F189EF}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Data\Shaders\Base.frag" />
-    <None Include="Data\Shaders\Base.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

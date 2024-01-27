@@ -135,6 +135,8 @@
       <Filter>Subsystems\Resources</Filter>
     </ClInclude>
     <ClInclude Include="source\czpch.h" />
+    <ClInclude Include="source\Renderer\Vulkan\DescriptorAllocator.h" />
+    <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\StringID.cpp">
@@ -202,9 +204,8 @@
       <Filter>Subsystems\Resources</Filter>
     </ClCompile>
     <ClCompile Include="source\czpch.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Data\Shaders\Base.frag" />
-    <None Include="Data\Shaders\Base.vert" />
+    <ClCompile Include="source\Renderer\Vulkan\DescriptorAllocator.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\VulkanCore.cpp" />
   </ItemGroup>
 </Project>

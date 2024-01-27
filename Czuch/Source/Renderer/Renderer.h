@@ -10,6 +10,14 @@ namespace Czuch
 		Vulkan
 	};
 
+	struct SceneData
+	{
+		mat4 view;
+		mat4 proj;
+		mat4 viewproj;
+		vec4 ambientColor;
+	};
+
 	class GraphicsDevice;
 
 	class CZUCH_API Renderer

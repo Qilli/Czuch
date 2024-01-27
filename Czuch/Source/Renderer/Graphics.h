@@ -1,6 +1,7 @@
 #pragma once
 #include"./Core/EngineCore.h"
 #include<memory>
+#include"glm.hpp"
 
 namespace Czuch
 {
@@ -8,6 +9,10 @@ namespace Czuch
 	static const U8 s_max_descriptors_per_set = 32;
 	static const U8 s_max_vertex_streams = 16;
 	static const U8 s_max_vertex_attributes = 16;
+	static const U8 k_max_descriptor_set_layouts = 8;
+
+#define mat4 glm::mat4
+#define vec4 glm::vec4
 
 	enum QUEUE_TYPE
 	{
@@ -134,9 +139,11 @@ namespace Czuch
 
 	enum class Usage
 	{
-		DEFAULT,	// CPU no access, GPU read/write
-		UPLOAD,	    // CPU write, GPU read
-		READBACK,	// CPU read, GPU write
+		DEFAULT,	
+		MEMORY_USAGE_GPU_ONLY,	    // GPU local memory
+		MEMORY_USAGE_CPU_ONLY,	// CPU write, can be read by GPU but with performance hit
+		MEMORY_USAGE_CPU_TO_GPU, //CPU write, can be read by GPU and is faster than access from cpu(special small memory region on gpu)
+		MEMORY_USAGE_GPU_TO_CPU, //memory that can be safely read from CPU
 	};
 
 	enum class BindFlag
@@ -150,6 +157,7 @@ namespace Czuch
 		DEPTH_STENCIL = 1 << 5,
 		UNORDERED_ACCESS = 1 << 6,
 		SHADING_RATE = 1 << 7,
+		UNIFORM_BUFFER= 1<<8,
 	};
 
 	enum DescriptorType
@@ -197,20 +205,22 @@ namespace Czuch
 		ONE,
 	};
 
-	enum class ShaderStage
+	enum class ShaderStage: U32
 	{
-		MS,		// Mesh Shader
-		AS,		// Amplification Shader
-		VS,		// Vertex Shader
-		HS,		// Hull Shader
-		DS,		// Domain Shader
-		GS,		// Geometry Shader
-		PS,		// Pixel Shader
-		CS,		// Compute Shader
-		LIB,	// Shader Library
+		MS= (1 << 0),		// Mesh Shader
+		AS= (1 << 1),		// Amplification Shader
+		VS=(1 << 2),		// Vertex Shader
+		HS = (1 << 3),		// Hull Shader
+		DS = (1 << 4),		// Domain Shader
+		GS = (1 << 5),		// Geometry Shader
+		PS = (1 << 6),		// Pixel Shader
+		CS= (1 << 7),		// Compute Shader
+		LIB = (1 << 8),	// Shader Library
+		ALL=0xFF,
 		Count,
 	};
 
+	ENUM_FLAG_OPERATORS(ShaderStage)
 
 	ShaderStage StringToShaderStage(const CzuchStr& stage);
 
@@ -346,6 +356,13 @@ namespace Czuch
 		ALL,	// Enables depth write
 	};
 
+	enum class BindPoint
+	{
+		BIND_POINT_GRAPHICS = 0,
+		BIND_POINT_COMPUTE = 1,
+		_BIND_POINT_RAY_TRACING=2,
+	};
+
 #pragma region Info definitions
 	struct Texture;
 	struct RenderPass;
@@ -414,6 +431,7 @@ namespace Czuch
 		BindFlag bind_flags = BindFlag::NONE;
 		U32 stride = 0;
 		Format format = Format::UNKNOWN;
+		bool createMapped = false;
 		void* initData = nullptr;
 
 	};
@@ -430,14 +448,29 @@ namespace Czuch
 		Binding bindings[s_max_descriptors_per_set];
 		U32 bindingsCount = 0;
 		U32 setIndex = 0;
+		U32 shaderStage;
 
 		DescriptorSetLayoutDesc& Reset();
-		DescriptorSetLayoutDesc& AddBinding(DescriptorType type, U32 index, U32 count);
+		DescriptorSetLayoutDesc& AddBinding(DescriptorType type, U32 bindingIndex, U32 count);
 	};
 
+	struct Buffer;
+	struct DescriptorSetLayout;
 	struct DescriptorSetDesc
 	{
+		struct DescriptorInfo
+		{
+			void* resource;
+			DescriptorType type;
+			U16 binding;
+		};
 
+		DescriptorInfo descriptors[s_max_descriptors_per_set];
+		DescriptorSetLayout* layout;
+		U16 descriptorsCount;
+
+		DescriptorSetDesc& Reset();
+		DescriptorSetDesc& AddBuffer(Buffer* buffer,U16 binding);
 	};
 
 	union ClearValue
@@ -540,6 +573,18 @@ namespace Czuch
 		DepthStencilState dss;
 		InputVertexLayout il;
 		PrimitiveTopology pt = PrimitiveTopology::TRIANGLELIST;
+		DescriptorSetLayout* layouts[k_max_descriptor_set_layouts];
+		U16 layoutsCount = 0;
+		BindPoint bindPoint;
+
+		void AddLayout(DescriptorSetLayout* layout)
+		{
+			if (layoutsCount >= k_max_descriptor_set_layouts)
+			{
+				return;
+			}
+			layouts[layoutsCount++] = layout;
+		}
 	};
 
 	struct TextureDesc
@@ -593,12 +638,6 @@ namespace Czuch
 	{
 		BufferDesc desc;
 		constexpr const BufferDesc& GetResourceInfo() const { return desc; }
-	};
-
-	struct DescriptorSet : public GraphicsDeviceResource
-	{
-		DescriptorSetDesc desc;
-		constexpr const DescriptorSetDesc& GetResourceInfo() const { return desc; }
 	};
 
 	struct DescriptorSetLayout : public GraphicsDeviceResource

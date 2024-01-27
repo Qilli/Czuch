@@ -7,6 +7,9 @@
 namespace Czuch
 {
 	class Window;
+	class DescriptorLayoutCache;
+	class DescriptorAllocator;
+	struct BufferInternalSettings;
 
 	class VulkanDevice final : public GraphicsDevice, public Czuch::IEventsListener
 	{
@@ -25,8 +28,11 @@ namespace Czuch
 		FrameBuffer* CreateFrameBuffer(const FrameBufferDesc* desc) const override;
 		CommandBuffer* CreateCommandBuffer(bool isPrimary) const override;
 		Buffer* CreateBuffer(const BufferDesc* desc) const override;
+		DescriptorAllocator* CreateDescriptorAllocator() const;
 
+		void AwaitDevice() const;
 
+		void ReleaseDescriptorAllocator(DescriptorAllocator* allocator);
 		bool ReleasePipeline(Pipeline* pipeline) const override;
 		bool ReleaseShader(Shader* shader) const override;
 		bool ReleaseRenderPass(RenderPass* rp) const override;
@@ -111,11 +117,16 @@ namespace Czuch
 
 		bool m_FrameBufferResized;
 
+		VmaAllocator m_VmaAllocator;
+		DescriptorLayoutCache* m_DescriptorLayoutCache;
+		DescriptorAllocator* m_PersistentDescriptorAllocator;
+
 	private:
 		bool CreateVulkanInstance();
 		bool CreateSurface();
 		bool CreateLogicalDevice();
 		bool SelectPhysicalDevice();
+		bool CreateAllocatorObject();
 		bool CreateCommandsPool();
 
 	private:
@@ -126,7 +137,7 @@ namespace Czuch
 	private:
 		U32 FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags properties) const;
 		VkDeviceMemory AllocateBufferMemory(VkBuffer buffer,VkMemoryPropertyFlags memoryProperty) const;
-		bool CreateBuffer_Internal(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const;
+		bool CreateBuffer_Internal(BufferInternalSettings& settings) const;
 		bool CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
 	private:
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);

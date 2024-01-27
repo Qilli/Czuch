@@ -115,6 +115,8 @@ namespace Czuch
 
 	void VulkanCommandBuffer::BindDescriptorSet(DescriptorSet* descriptor, U32 num, U32* offsets, U32 num_offsets)
 	{
+		auto vulkanPipeline = Internal_To_Pipeline(m_CurrentPipeline);
+		vkCmdBindDescriptorSets(m_Cmd, ConvertBindPoint(m_CurrentPipeline->m_desc.bindPoint), vulkanPipeline->pipelineLayout, 0, num,&descriptor->descriptorSet,num_offsets,offsets);
 	}
 
 	void VulkanCommandBuffer::SetClearColor(float r, float g, float b, float a)

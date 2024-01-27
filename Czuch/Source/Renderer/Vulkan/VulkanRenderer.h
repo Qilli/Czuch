@@ -7,12 +7,14 @@ namespace Czuch
 	class VulkanDevice;
 	class VulkanCommandBuffer;
 	class Window;
+	class DescriptorAllocator;
+	struct DescriptorSet;
 
 	class CZUCH_API VulkanRenderer final: public Renderer
 	{
 	public:
 		static RendererAPI GetUsedAPI() { return RendererAPI::Vulkan; }
-		const int MAX_FRAMES_IN_FLIGHT = 2;
+		static const int MAX_FRAMES_IN_FLIGHT = 2;
 	public:
 		VulkanRenderer(Window* window,ValidationMode validationMode = ValidationMode::Disabled);
 		~VulkanRenderer() override;
@@ -26,15 +28,47 @@ namespace Czuch
 		void ReleaseSyncObjects();
 		void RecordCommandBuffer(uint32_t imageIndex);
 		void SubmitCommandBuffer();
+
+		void InitSceneData();
+		void SetSceneData();
+
 	private:
+
+		struct FrameData
+		{
+			DescriptorAllocator* descriptorAllocator;
+			VulkanCommandBuffer* commandBuffer;
+			VkSemaphore imageAvailableSemaphore;
+			VkSemaphore renderFinishedSemaphote;
+			VkFence inFlightFence;
+			DeletionQueue frameDeletionQueue;
+
+			void Reset();
+		};
+
+		struct SceneDataContainer
+		{
+			SceneData data;
+			BufferDesc bufferDesc;
+			DescriptorSetLayout* layout;
+			DescriptorSet* descriptor;
+			DescriptorSetDesc descriptorSet;
+			Buffer* buffer[MAX_FRAMES_IN_FLIGHT];
+		};
+
+	private:
+		inline FrameData& GetCurrentFrame() {
+			return m_FramesData[m_CurrentFrame];
+		}
+
+	private:
+
+		FrameData m_FramesData[MAX_FRAMES_IN_FLIGHT];
 		ValidationMode m_RendererValidationMode;
 		Window* m_AttachedWindow;
 		VulkanDevice* m_Device;
-		std::vector<VulkanCommandBuffer*> m_CmdBuffers;
-		std::vector<VkSemaphore> m_ImageAvailableSemaphores;
-		std::vector<VkSemaphore> m_RenderFinishedSemaphores;
-		std::vector<VkFence> m_InFlightFences;
 		uint32_t m_CurrentFrame = 0;
+		SceneDataContainer m_SceneData;
 	};
 
 }

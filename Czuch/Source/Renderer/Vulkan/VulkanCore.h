@@ -1,5 +1,8 @@
 #pragma once
+#include"./Core/Common.h"
 #include"VulkanBase.h"
+#include"./Renderer/Graphics.h"
+#include"./Subsystems/Logging.h"
 
 namespace Czuch
 {
@@ -47,16 +50,76 @@ namespace Czuch
 		return (Buffer_Vulkan*)buffer->m_InternalResourceState.get();
 	}
 
-	inline VkShaderStageFlagBits ConvertShaderStage(ShaderStage stage)
+	inline VkShaderStageFlags ConvertShaderStage(U32 stage)
 	{
-		switch (stage)
+		VkShaderStageFlags flags=0;
+
+		if ((stage&(U32)ShaderStage::VS) == (U32)ShaderStage::VS)
 		{
-		case ShaderStage::VS:
+			flags|= VK_SHADER_STAGE_VERTEX_BIT;
+		}
+
+		if ((stage & (U32)ShaderStage::PS) == (U32)ShaderStage::PS)
+		{
+			flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+		}
+
+		if ((stage & (U32)ShaderStage::ALL) == (U32)ShaderStage::ALL)
+		{
+			flags |= VK_SHADER_STAGE_ALL;
+		}
+
+	
+		return flags;
+	}
+
+
+	constexpr VkShaderStageFlagBits ConvertShaderStageBits(ShaderStage stage)
+	{
+		if (stage == ShaderStage::VS)
+		{
 			return VK_SHADER_STAGE_VERTEX_BIT;
-		case ShaderStage::PS:
+		}
+		else if (stage == ShaderStage::PS)
+		{
 			return VK_SHADER_STAGE_FRAGMENT_BIT;
-		default:
+		}
+		else if (stage == ShaderStage::ALL)
+		{
 			return VK_SHADER_STAGE_ALL;
+		}
+
+		return VK_SHADER_STAGE_VERTEX_BIT;
+	}
+
+	constexpr VkPipelineBindPoint ConvertBindPoint(BindPoint bp)
+	{
+		switch (bp)
+		{
+		case BindPoint::BIND_POINT_GRAPHICS:
+			return VK_PIPELINE_BIND_POINT_GRAPHICS;
+		case BindPoint::BIND_POINT_COMPUTE:
+			return VK_PIPELINE_BIND_POINT_COMPUTE;
+		case BindPoint::_BIND_POINT_RAY_TRACING:
+			return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+		}
+		return VK_PIPELINE_BIND_POINT_GRAPHICS;
+	}
+
+	constexpr VmaMemoryUsage ConvertMemoryUsage(Usage memUsage)
+	{
+		switch (memUsage)
+		{
+		case Usage::DEFAULT:
+			return VMA_MEMORY_USAGE_AUTO;
+		case Usage::MEMORY_USAGE_CPU_ONLY:
+			return VMA_MEMORY_USAGE_CPU_ONLY;
+		case Usage::MEMORY_USAGE_CPU_TO_GPU:
+			return VMA_MEMORY_USAGE_CPU_TO_GPU;
+		case Usage::MEMORY_USAGE_GPU_ONLY:
+			return VMA_MEMORY_USAGE_GPU_ONLY;
+		default:
+			return VMA_MEMORY_USAGE_AUTO;
 		}
 	}
 
@@ -359,9 +422,23 @@ namespace Czuch
 
 #pragma endregion
 
+	struct BufferInternalSettings
+	{
+		//out
+		VkBuffer outBuffer;
+		VmaAllocation outMemAlloc;
+		//in
+		VkDeviceSize inSize;
+		VkBufferUsageFlags inFlags;
+		Usage inUsage;
+		bool inStagingBuffer;
+		bool inCreateMapped;
+	};
+
 	struct VulkanDeviceRef
 	{
 		VkDevice device;
+		VmaAllocator allocator;
 	};
 
 	struct FrameBuffer_Vulkan : public VulkanDeviceRef
@@ -456,19 +533,22 @@ namespace Czuch
 
 	struct Buffer_Vulkan : public VulkanDeviceRef
 	{
-		VkBuffer buffer;
-		VkDeviceMemory memory;
+		VkBuffer buffer= VK_NULL_HANDLE;
 		VkDeviceSize size;
 		VkBufferUsageFlags flags;
 		U32 offset = 0;
 		bool ready = true;
+		bool mapped = false;
+		VmaAllocation allocation;
+
+		void* GetMappedData();
 
 		~Buffer_Vulkan()
 		{
-			if (buffer)
+			if (buffer!=VK_NULL_HANDLE)
 			{
-				vkDestroyBuffer(device, buffer, nullptr);
-				vkFreeMemory(device, memory, nullptr);
+				vmaDestroyBuffer(allocator, buffer, allocation);
+				buffer = VK_NULL_HANDLE;
 			}
 		}
 	};
@@ -478,10 +558,14 @@ namespace Czuch
 		VkDescriptorSetLayout layout;
 		~DescriptorSetLayout_Vulkan()
 		{
-			if (layout)
-			{
-				vkDestroyDescriptorSetLayout(device, layout, nullptr);
-			}
+			
 		}
+	};
+
+	struct DescriptorSet : public VulkanDeviceRef
+	{
+		VkDescriptorSet descriptorSet;
+		DescriptorSetDesc desc;
+		DescriptorSetLayout* descriptorLayout;
 	};
 }

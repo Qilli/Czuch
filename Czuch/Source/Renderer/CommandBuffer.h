@@ -3,7 +3,7 @@
 
 namespace Czuch
 {
-
+	struct DescriptorSet;
 	class CommandBuffer
 	{
 	public:

@@ -7,6 +7,7 @@
 
 #include"Subsystems/Resources/ResourcesManager.h"
 #include"Subsystems/Resources/ShaderResource.h"
+#include"DescriptorAllocator.h"
 #include <glm.hpp>
 
 namespace Czuch
@@ -17,25 +18,52 @@ namespace Czuch
 		m_AttachedWindow = window;
 	}
 
+	Pipeline* pipeline = nullptr;
+	Buffer* vertexBufferPos = nullptr;
+	Buffer* vertexBufferColor = nullptr;
+	Shader* vertexShader = nullptr;
+	Buffer* indexBuffer = nullptr;
+	Shader* fragmentShader = nullptr;
+	bool inited = false;
 
 	VulkanRenderer::~VulkanRenderer()
 	{
+		m_Device->AwaitDevice();
+
+		m_Device->ReleaseShader(fragmentShader);
+		m_Device->ReleaseShader(vertexShader);
+		m_Device->ReleaseBuffer(indexBuffer);
+		m_Device->ReleaseBuffer(vertexBufferColor);
+		m_Device->ReleaseBuffer(vertexBufferPos);
+		m_Device->ReleasePipeline(pipeline);
+		
+
+		m_Device->ReleaseDescriptorSetLayout(m_SceneData.layout);
+
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			m_FramesData[a].frameDeletionQueue.Flush();
+		}
+
+
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			if (m_SceneData.buffer[a] != nullptr)
+			{
+				m_Device->ReleaseBuffer(m_SceneData.buffer[a]);
+			}
+		}
+		
 		ReleaseSyncObjects();
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
-			m_Device->ReleaseCommandBuffer(m_CmdBuffers[a]);
+			m_FramesData[a].descriptorAllocator->CleanUp();
+			m_Device->ReleaseDescriptorAllocator(m_FramesData[a].descriptorAllocator);
+			m_Device->ReleaseCommandBuffer(m_FramesData[a].commandBuffer);
 		}
 		
 		delete m_Device;
 	}
-
-	Pipeline* pipeline = nullptr;
-	Buffer* vertexBufferPos = nullptr;
-	Buffer* vertexBufferColor = nullptr;
-	Buffer* indexBuffer = nullptr;
-	Shader* vertexShader = nullptr;
-	Shader* fragmentShader = nullptr;
-	bool inited = false;
 
 	void VulkanRenderer::Init()
 	{
@@ -47,15 +75,16 @@ namespace Czuch
 			LOG_BE_ERROR("[Vulkan]Failed to create vulkan device.");
 		}
 
-		m_CmdBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
-			m_CmdBuffers[a] = (VulkanCommandBuffer*)m_Device->CreateCommandBuffer(true);
-			m_CmdBuffers[a]->Init(m_Device);
+			m_FramesData[a].commandBuffer = (VulkanCommandBuffer*)m_Device->CreateCommandBuffer(true);
+			m_FramesData[a].commandBuffer->Init(m_Device);
+
+			m_FramesData[a].descriptorAllocator = m_Device->CreateDescriptorAllocator();
 		}
 
 		CreateSyncObjects();
+		InitSceneData();
 	}
 
 	void VulkanRenderer::DrawFrame()
@@ -84,6 +113,8 @@ namespace Czuch
 			desc.dss.depth_enable = true;
 			desc.dss.depth_func = CompFunc::ALWAYS;
 			desc.dss.depth_write_mask = DepthWriteMask::ZERO;
+
+			desc.AddLayout(m_SceneData.layout);
 
 			desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 2,.input_rate = InputClassification::PER_VERTEX_DATA });
 			desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
@@ -142,27 +173,31 @@ namespace Czuch
 
 
 		VkDevice device = m_Device->GetNativeDevice();
-		vkWaitForFences(device, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
-		
+		vkWaitForFences(device, 1, &GetCurrentFrame().inFlightFence, VK_TRUE, UINT64_MAX);
+		GetCurrentFrame().Reset();
+		GetCurrentFrame().frameDeletionQueue.Flush();
+
 		bool failedToAcquire = false;
-		uint32_t imageIndex = m_Device->AcquireNextSwapChainImage(m_ImageAvailableSemaphores[m_CurrentFrame],failedToAcquire);
+		uint32_t imageIndex = m_Device->AcquireNextSwapChainImage(GetCurrentFrame().imageAvailableSemaphore,failedToAcquire);
 		if (failedToAcquire)
 		{
 			return;
 		}
-		vkResetFences(device, 1, &m_InFlightFences[m_CurrentFrame]);
+
+		SetSceneData();
+		vkResetFences(device, 1, &GetCurrentFrame().inFlightFence);
 		
 		RecordCommandBuffer(imageIndex);
 
 		SubmitCommandBuffer();
-		m_Device->Present(imageIndex, m_RenderFinishedSemaphores[m_CurrentFrame]);
+		m_Device->Present(imageIndex, GetCurrentFrame().renderFinishedSemaphote);
 
 		m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
 	void VulkanRenderer::AwaitDeviceIdle()
 	{
-		vkDeviceWaitIdle(m_Device->GetNativeDevice());
+		m_Device->AwaitDevice();
 	}
 
 	GraphicsDevice* VulkanRenderer::GetDevice()
@@ -172,15 +207,12 @@ namespace Czuch
 
 	void VulkanRenderer::CreateSyncObjects()
 	{
-		m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
-			m_ImageAvailableSemaphores[a] = m_Device->CreateNewSemaphore();
-			m_RenderFinishedSemaphores[a] = m_Device->CreateNewSemaphore();
-			m_InFlightFences[a] = m_Device->CreateNewFence(true);
+			m_FramesData[a].imageAvailableSemaphore = m_Device->CreateNewSemaphore();
+			m_FramesData[a].renderFinishedSemaphote = m_Device->CreateNewSemaphore();
+			m_FramesData[a].inFlightFence = m_Device->CreateNewFence(true);
 		}
 	}
 
@@ -188,18 +220,19 @@ namespace Czuch
 	{
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
-			m_Device->ReleaseSemaphore(m_ImageAvailableSemaphores[a]);
-			m_Device->ReleaseSemaphore(m_RenderFinishedSemaphores[a]);
-			m_Device->ReleaseFence(m_InFlightFences[a]);
+			m_Device->ReleaseSemaphore(m_FramesData[a].imageAvailableSemaphore);
+			m_Device->ReleaseSemaphore(m_FramesData[a].renderFinishedSemaphote);
+			m_Device->ReleaseFence(m_FramesData[a].inFlightFence);
 		}
 	}
 
 	void VulkanRenderer::RecordCommandBuffer(uint32_t imageIndex)
 	{
-		m_CmdBuffers[m_CurrentFrame]->Begin();
+		auto cmdBuffer = GetCurrentFrame().commandBuffer;
+		cmdBuffer->Begin();
 
-		m_CmdBuffers[m_CurrentFrame]->SetClearColor(0.0f, 1.0f, 0.0f, 1.0f);
-		m_Device->BindSwapChainRenderPass(m_CmdBuffers[m_CurrentFrame], imageIndex);
+		cmdBuffer->SetClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+		m_Device->BindSwapChainRenderPass(cmdBuffer, imageIndex);
 
 		ViewportDesc vpdesc{};
 		vpdesc.x = 0;
@@ -208,23 +241,24 @@ namespace Czuch
 		vpdesc.maxDepth = 1.0f;
 		vpdesc.width = m_Device->GetSwapchainWidth();
 		vpdesc.height = m_Device->GetSwapchainHeight();
-		m_CmdBuffers[m_CurrentFrame]->SetViewport(vpdesc);
+		cmdBuffer->SetViewport(vpdesc);
 
 		ScissorsDesc scissors{};
 		scissors.offsetX = 0;
 		scissors.offsetY = 0;
 		scissors.width = m_Device->GetSwapchainWidth();
 		scissors.height = m_Device->GetSwapchainHeight();
-		m_CmdBuffers[m_CurrentFrame]->SetScrissors(scissors);
+		cmdBuffer->SetScrissors(scissors);
 
-		m_CmdBuffers[m_CurrentFrame]->BindPipeline(pipeline);
-		m_CmdBuffers[m_CurrentFrame]->BindVertexBuffer(vertexBufferPos,0,0);
-		m_CmdBuffers[m_CurrentFrame]->BindVertexBuffer(vertexBufferColor, 1, 0);
-		m_CmdBuffers[m_CurrentFrame]->BindIndexBuffer(indexBuffer,0);
-		m_CmdBuffers[m_CurrentFrame]->DrawIndexed(indexBuffer->desc.elementsCount);
+		cmdBuffer->BindPipeline(pipeline);
+		cmdBuffer->BindVertexBuffer(vertexBufferPos,0,0);
+		cmdBuffer->BindVertexBuffer(vertexBufferColor, 1, 0);
+		cmdBuffer->BindIndexBuffer(indexBuffer,0);
+		cmdBuffer->BindDescriptorSet(m_SceneData.descriptor,1,nullptr,0);
+		cmdBuffer->DrawIndexed(indexBuffer->desc.elementsCount);
 
-		m_CmdBuffers[m_CurrentFrame]->EndCurrentRenderPass();
-		m_CmdBuffers[m_CurrentFrame]->End();
+		cmdBuffer->EndCurrentRenderPass();
+		cmdBuffer->End();
 	}
 
 	void VulkanRenderer::SubmitCommandBuffer()
@@ -232,9 +266,9 @@ namespace Czuch
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-		VkCommandBuffer cmdBuffer = m_CmdBuffers[m_CurrentFrame]->GetNativeBuffer();
+		VkCommandBuffer cmdBuffer = GetCurrentFrame().commandBuffer->GetNativeBuffer();
 
-		VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[m_CurrentFrame] };
+		VkSemaphore waitSemaphores[] = { GetCurrentFrame().imageAvailableSemaphore };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
@@ -242,11 +276,61 @@ namespace Czuch
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &cmdBuffer;
 
-		VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_CurrentFrame] };
+		VkSemaphore signalSemaphores[] = { GetCurrentFrame().renderFinishedSemaphote };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		m_Device->SubmitToGraphicsQueue(submitInfo, m_InFlightFences[m_CurrentFrame]);
+		m_Device->SubmitToGraphicsQueue(submitInfo, GetCurrentFrame().inFlightFence);
+	}
+
+	void VulkanRenderer::InitSceneData()
+	{
+		DescriptorSetLayoutDesc desc{};
+		desc.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
+		desc.AddBinding(DescriptorType::UNIFORM_BUFFER, 0, 1);
+		m_SceneData.layout = m_Device->CreateDescriptorSetLayout(&desc);
+
+		m_SceneData.bufferDesc.createMapped = true;
+		m_SceneData.bufferDesc.elementsCount = 1;
+		m_SceneData.bufferDesc.bind_flags = BindFlag::UNIFORM_BUFFER;
+		m_SceneData.bufferDesc.size = sizeof(SceneData);
+		m_SceneData.bufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
+
+		m_SceneData.data.ambientColor = vec4(1, 0, 0, 1);
+
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			m_SceneData.buffer[a] = nullptr;
+		}
+
+	}
+
+	void VulkanRenderer::SetSceneData()
+	{
+		m_SceneData.buffer[m_CurrentFrame] = m_Device->CreateBuffer(&m_SceneData.bufferDesc);
+		GetCurrentFrame().frameDeletionQueue.PushFunction([=, this]() {
+			if (m_SceneData.buffer[m_CurrentFrame] != nullptr) { m_Device->ReleaseBuffer(m_SceneData.buffer[m_CurrentFrame]); m_SceneData.buffer[m_CurrentFrame] = nullptr; } });
+		auto bufferVulkan =Internal_to_Buffer(m_SceneData.buffer[m_CurrentFrame]);
+
+		m_SceneData.data.ambientColor = vec4(1, 1, 0, 1);
+
+		SceneData* data=(SceneData*)bufferVulkan->GetMappedData();
+		*data = m_SceneData.data;
+
+		//fill descriptor
+		m_SceneData.descriptorSet.Reset();
+		m_SceneData.descriptorSet.AddBuffer(m_SceneData.buffer[m_CurrentFrame],0);
+
+		m_SceneData.descriptor =GetCurrentFrame().descriptorAllocator->Allocate(m_SceneData.descriptorSet, m_SceneData.layout);
+
+		DescriptorWriter writer;
+		writer.WriteBuffer(0, m_SceneData.buffer[m_CurrentFrame], sizeof(SceneData), 0, DescriptorType::UNIFORM_BUFFER);
+		writer.UpdateSet(m_Device->GetNativeDevice(), m_SceneData.descriptor);
+	}
+
+	void VulkanRenderer::FrameData::Reset()
+	{
+		descriptorAllocator->ResetPools();
 	}
 
 }

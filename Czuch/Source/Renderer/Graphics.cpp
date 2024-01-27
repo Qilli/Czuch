@@ -9,9 +9,9 @@ namespace Czuch
 		setIndex = 0;
 		return *this;
 	}
-	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(DescriptorType type, U32 index, U32 count)
+	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(DescriptorType type, U32 bindingIndex, U32 count)
 	{
-		bindings[bindingsCount++] = { type, (U16)index, (U16)count };
+		bindings[bindingsCount++] = { type, (U16)bindingIndex, (U16)count };
 		return *this;
 	}
 
@@ -48,5 +48,25 @@ namespace Czuch
 		{
 			streams[vertexStreamsCount++] = stream;
 		}
+	}
+
+	DescriptorSetDesc& DescriptorSetDesc::Reset()
+	{
+		descriptorsCount = 0;
+		return *this;
+	}
+
+	DescriptorSetDesc& DescriptorSetDesc::AddBuffer(Buffer* buffer, U16 binding)
+	{
+		if (descriptorsCount >= s_max_descriptors_per_set)
+		{
+			return *this;
+		}
+
+		descriptors[descriptorsCount].binding = binding;
+		descriptors[descriptorsCount].resource = (void*)buffer;
+		descriptors[descriptorsCount++].type = DescriptorType::UNIFORM_BUFFER;
+
+		return *this;
 	}
 }

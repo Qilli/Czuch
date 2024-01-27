@@ -8,7 +8,10 @@
 #include"Subsystems/EventsManager.h"
 #include"Events/EventsTypes/ApplicationEvents.h"
 #include"Core/Common.h"
+#include"DescriptorLayoutCache.h"
+#include"DescriptorAllocator.h"
 #include<set>
+
 
 namespace Czuch
 {
@@ -73,7 +76,7 @@ namespace Czuch
 		vulkan_shader->shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vulkan_shader->shaderStageInfo.module = vulkan_shader->shaderModule;
 		vulkan_shader->shaderStageInfo.pName = "main";
-		vulkan_shader->shaderStageInfo.stage = ConvertShaderStage(shaderStage);
+		vulkan_shader->shaderStageInfo.stage = ConvertShaderStageBits(shaderStage);
 
 		return shader;
 	}
@@ -132,13 +135,13 @@ namespace Czuch
 		return rp;
 	}
 
-	VkDescriptorSetLayoutBinding CreateBinding(const DescriptorSetLayoutDesc::Binding& binding)
+	VkDescriptorSetLayoutBinding CreateBinding(const DescriptorSetLayoutDesc::Binding& binding,U32 stages)
 	{
 		VkDescriptorSetLayoutBinding vkBinding{};
 		vkBinding.binding = binding.index;
 		vkBinding.descriptorCount = binding.count;
 		vkBinding.descriptorType = ConvertDescriptorType(binding.type);
-		vkBinding.stageFlags = VK_SHADER_STAGE_ALL;
+		vkBinding.stageFlags = ConvertShaderStage(stages);
 		vkBinding.pImmutableSamplers = nullptr;
 		return vkBinding;
 	}
@@ -155,18 +158,20 @@ namespace Czuch
 
 		for (int a = 0; a < desc->bindingsCount; a++)
 		{
-			bindingsArray[a] = CreateBinding(desc->bindings[a]);
+			bindingsArray[a] = CreateBinding(desc->bindings[a],desc->shaderStage);
 		}
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		layoutInfo.bindingCount = desc->bindingsCount;
-		layoutInfo.pBindings = &bindingsArray[0];
+		layoutInfo.pBindings = bindingsArray;
 
 		DescriptorSetLayout_Vulkan* dslayout = Internal_to_DescriptorSetLayout(dsl);
 		dslayout->device = m_Device;
 
-		if (vkCreateDescriptorSetLayout(m_Device, &layoutInfo, nullptr, &dslayout->layout) != VK_SUCCESS) {
+		dslayout->layout=m_DescriptorLayoutCache->CreateDescriptorLayout(&layoutInfo);
+
+		if (dslayout->layout==nullptr) {
 			LOG_BE_ERROR("{0} Failed to create new descriptor set layout", Tag);
 			delete dsl;
 			return nullptr;
@@ -236,7 +241,7 @@ namespace Czuch
 		cmdBuffer = new VulkanCommandBuffer(commandBuffer);
 		cmdBuffer->Init(this);
 
-		return cmdBuffer;;
+		return cmdBuffer;
 	}
 
 	Buffer* VulkanDevice::CreateBuffer(const BufferDesc* desc) const
@@ -272,24 +277,44 @@ namespace Czuch
 			usage|= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
 		}
 
+		if (HasFlag(buffer->desc.bind_flags, BindFlag::UNIFORM_BUFFER))
+		{
+			usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		}
+
 		auto bufferVulkan = Internal_to_Buffer(buffer);
 		bufferVulkan->device = m_Device;
 		bufferVulkan->flags = usage;
 		bufferVulkan->size = desc->size > 0 ? desc->size : 1;
+		bufferVulkan->allocator = m_VmaAllocator;
+		bufferVulkan->mapped = desc->createMapped;
 
-		if (!CreateBuffer_Internal(bufferVulkan->size,usage, HasFlag(desc->bind_flags, BindFlag::VERTEX_BUFFER)|| HasFlag(desc->bind_flags, BindFlag::INDEX_BUFFER) ?VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT: VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,bufferVulkan->buffer,bufferVulkan->memory)) {
+		BufferInternalSettings settings{};
+		settings.inSize = bufferVulkan->size;
+		settings.inUsage = desc->usage;
+		settings.inStagingBuffer = false;
+		settings.inCreateMapped = desc->createMapped;
+		settings.inFlags = usage;
+
+		if (!CreateBuffer_Internal(settings)) {
 			LOG_BE_ERROR("{0} Failed to create new vulkan buffer", Tag);
 			return nullptr;
 		}
 
+		bufferVulkan->buffer = settings.outBuffer;
+		bufferVulkan->allocation = settings.outMemAlloc;
 
-		if (HasFlag(desc->bind_flags, BindFlag::VERTEX_BUFFER) || HasFlag(desc->bind_flags, BindFlag::INDEX_BUFFER))
+
+		if ((HasFlag(desc->bind_flags, BindFlag::VERTEX_BUFFER) || HasFlag(desc->bind_flags, BindFlag::INDEX_BUFFER)) && desc->initData!=nullptr)
 		{
-			VkDeviceSize bufferSize = bufferVulkan->size;
-			VkBuffer stagingBuffer;
-			VkDeviceMemory stagingBufferMemory;
+			BufferInternalSettings settingsStageBuffer{};
+			settingsStageBuffer.inSize = bufferVulkan->size;
+			settingsStageBuffer.inFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+			settingsStageBuffer.inStagingBuffer = true;
+			settingsStageBuffer.inCreateMapped = false;
+			settingsStageBuffer.inUsage = Usage::MEMORY_USAGE_CPU_ONLY;
 
-			if (!CreateBuffer_Internal(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory))
+			if (!CreateBuffer_Internal(settingsStageBuffer))
 			{
 				LOG_BE_ERROR("{0} Failed to create new vulkan staging buffer", Tag);
 				return nullptr;
@@ -297,37 +322,48 @@ namespace Czuch
 
 			//map memory
 			void* data = nullptr;
-			vkMapMemory(m_Device, stagingBufferMemory, 0, bufferSize, 0, &data);
-			memcpy(data, desc->initData, (U32)bufferSize);
-			vkUnmapMemory(m_Device, stagingBufferMemory);
+			vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
+			memcpy(data, desc->initData, desc->size);
+			vmaUnmapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc);
 
-			if (!CopyBuffer(stagingBuffer, bufferVulkan->buffer, bufferSize))
+			if (!CopyBuffer(settingsStageBuffer.outBuffer, bufferVulkan->buffer, settingsStageBuffer.inSize))
 			{
 				LOG_BE_ERROR("{0} Failed to copy data from staging buffer", Tag);
-				vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
-				vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
+				vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer,settingsStageBuffer.outMemAlloc);
 				return nullptr;
 			}
-			vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
-			vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
+			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
 		}
 
 		return buffer;
 	}
 
-	bool VulkanDevice::CreateBuffer_Internal(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const
+	bool VulkanDevice::CreateBuffer_Internal(BufferInternalSettings& settings) const
 	{
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = size;
-		bufferInfo.usage = usage;
+		bufferInfo.size = settings.inSize;
+		bufferInfo.usage = settings.inFlags;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(m_Device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+		VmaAllocationCreateInfo memory_info{};
+		if (settings.inStagingBuffer == true)
+		{
+			memory_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+		}
+		
+		if (settings.inCreateMapped)
+		{
+			memory_info.flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		}
+		memory_info.usage = ConvertMemoryUsage(settings.inUsage);
+
+		VmaAllocationInfo allocation_info{};
+
+		if (vmaCreateBuffer(m_VmaAllocator, &bufferInfo, &memory_info, &settings.outBuffer, &settings.outMemAlloc, nullptr)!= VK_SUCCESS)
+		{
 			return false;
 		}
-
-		bufferMemory=AllocateBufferMemory(buffer, properties);
 		return true;
 	}
 
@@ -338,6 +374,9 @@ namespace Czuch
 
 	bool VulkanDevice::ReleaseBuffer(Buffer* buffer) const
 	{
+		CZUCH_BE_ASSERT(buffer != nullptr, "Invalid buffer passed to release.");
+		delete buffer;
+		buffer = nullptr;
 		return false;
 	}
 
@@ -388,6 +427,23 @@ namespace Czuch
 		delete cb;
 		cb = nullptr;
 		return true;
+	}
+
+	DescriptorAllocator* VulkanDevice::CreateDescriptorAllocator() const
+	{
+		auto allocator = new DescriptorAllocator();
+		allocator->Init(m_Device);
+		return allocator;
+	}
+
+
+	void VulkanDevice::ReleaseDescriptorAllocator(DescriptorAllocator* allocator)
+	{
+		if (allocator != nullptr)
+		{
+			allocator->CleanUp();
+			delete allocator;
+		}
 	}
 
 	VkSemaphore VulkanDevice::CreateNewSemaphore()
@@ -655,6 +711,22 @@ namespace Czuch
 		return swapChainDetails;
 	}
 
+	bool VulkanDevice::CreateAllocatorObject()
+	{
+		VmaAllocatorCreateInfo createInfo{};
+		createInfo.device = m_Device;
+		createInfo.instance = m_Instance;
+		createInfo.physicalDevice = m_PhysicalDevice;
+
+		if (vmaCreateAllocator(&createInfo, &m_VmaAllocator) != VK_SUCCESS)
+		{
+			LOG_BE_ERROR("{0} Failed to create VMA allocator", Tag);
+			return false;
+		}
+
+		return true;
+	}
+
 	void VulkanDevice::OnEvent(const Czuch::Event& e)
 	{
 		if (e.GetEventType() == WindowSizeChangedEvent::GetStaticEventType())
@@ -717,6 +789,11 @@ namespace Czuch
 		CreateSwapChainFrameBuffers(false);
 		
 		return true;
+	}
+
+	void VulkanDevice::AwaitDevice() const
+	{
+		vkDeviceWaitIdle(m_Device);
 	}
 
 	bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface)
@@ -809,15 +886,21 @@ namespace Czuch
 
 	VulkanDevice::~VulkanDevice()
 	{	
+		m_DescriptorLayoutCache->CleanUp();
+		delete m_DescriptorLayoutCache;
+
 		EventsManager::Get().RemoveListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
 		vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
+		vkDestroyCommandPool(m_Device, m_CopyCommandPool, nullptr);
 		m_SwapChainData.Release(m_Device);
 		ReleaseSwapChainRenderPass();
+		vmaDestroyAllocator(m_VmaAllocator);
 		vkDestroyDevice(m_Device, nullptr);
 		if (m_Surface != nullptr)
 		{
 			vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
 		}
+		
 		vkDestroyInstance(m_Instance, nullptr);
 	}
 
@@ -844,6 +927,11 @@ namespace Czuch
 			return false;
 		}
 
+		if (CreateAllocatorObject() == false)
+		{
+			return false;
+		}
+
 		if (CreateSwapChain() == false)
 		{
 			return false;
@@ -860,6 +948,9 @@ namespace Czuch
 		}
 
 		EventsManager::Get().AddListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
+
+		m_DescriptorLayoutCache = new DescriptorLayoutCache();
+		m_DescriptorLayoutCache->Init(m_Device);
 
 		return true;
 	}
