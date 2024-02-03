@@ -45,6 +45,7 @@ project "Czuch"
 		"%{prj.name}/vendors/spdlog/include",
 		"%{prj.name}/vendors/glm",
 		"%{prj.name}/vendors/vma",
+		"%{prj.name}/vendors/stb",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",

@@ -2,26 +2,27 @@
 #include "VulkanPipelineBuilder.h"
 #include"./Subsystems/Logging.h"
 #include"VulkanCore.h"
+#include"VulkanDevice.h"
 
 namespace Czuch
 {
-    VulkanPipelineBuilder::VulkanPipelineBuilder(const VkDevice deviceObj, Pipeline_Vulkan* pipelineObj,const PipelineStateDesc* pipelineDesc):pipeline(pipelineObj),device(deviceObj),pipelineDescPtr(pipelineDesc)
+    VulkanPipelineBuilder::VulkanPipelineBuilder(VulkanDevice* deviceObj, Pipeline_Vulkan* pipelineObj,const PipelineStateDesc* pipelineDesc):pipeline(pipelineObj),device(deviceObj),pipelineDescPtr(pipelineDesc)
     {
     }
 
      bool VulkanPipelineBuilder::BuildPipeline(const VkRenderPass renderPass)
     {
-        pipeline->device = device;
+        pipeline->device = device->GetNativeDevice();
 
-        if (pipelineDescPtr->vs->IsValid())
+        if (HANDLE_IS_VALID(pipelineDescPtr->vs))
         {
-            Shader_Vulkan* vulkan_shader_vs = Internal_To_Shader(pipelineDescPtr->vs);
+            Shader_Vulkan* vulkan_shader_vs = Internal_To_Shader(device->AccessShader(pipelineDescPtr->vs));
             shaderStages.push_back(vulkan_shader_vs->shaderStageInfo);
         }
 
-        if (pipelineDescPtr->ps->IsValid())
+        if (HANDLE_IS_VALID(pipelineDescPtr->ps))
         {
-            Shader_Vulkan* vulkan_shader_ps = Internal_To_Shader(pipelineDescPtr->ps);
+            Shader_Vulkan* vulkan_shader_ps = Internal_To_Shader(device->AccessShader(pipelineDescPtr->ps));
             shaderStages.push_back(vulkan_shader_ps->shaderStageInfo);
         }
 
@@ -69,7 +70,7 @@ namespace Czuch
         pipelineInfo.basePipelineIndex = -1;
 
         if (vkCreateGraphicsPipelines(
-            device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline) != VK_SUCCESS) {
+            device->GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline) != VK_SUCCESS) {
             LOG_BE_ERROR("{0} Failed to create new graphics pipeline.", "[VulkanPipelineBuilder]");
             return false;
         }
@@ -140,7 +141,7 @@ namespace Czuch
 
         for (int a = 0; a < pipelineDescPtr->layoutsCount; ++a)
         {
-            layouts[a] = Internal_to_DescriptorSetLayout(pipelineDescPtr->layouts[a])->layout;
+            layouts[a] = Internal_to_DescriptorSetLayout(device->AccessDescriptorSetLayout(pipelineDescPtr->layouts[a]))->layout;
         }
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -150,7 +151,7 @@ namespace Czuch
         pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
         pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &this->pipeline->pipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(device->GetNativeDevice(), &pipelineLayoutInfo, nullptr, &this->pipeline->pipelineLayout) != VK_SUCCESS) {
             LOG_BE_ERROR("{0} Failed to create pipeline layout.", "[VulkanPipelineBuilder]");
             return false;
         }

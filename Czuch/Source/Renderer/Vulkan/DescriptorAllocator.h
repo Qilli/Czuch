@@ -5,17 +5,20 @@
 
 namespace Czuch
 {
+	class VulkanDevice;
 	struct DescriptorSet;
 	struct DescriptorSetDesc;
 	struct DescriptorSetLayout;
 	enum DescriptorType;
 	struct Buffer;
+	struct Texture;
 
 	struct DescriptorWriter
 	{
 		void WriteBuffer(int binding, Buffer* buffer, size_t size, size_t offset, DescriptorType type);
+		void WriteTexture(int binding, Texture* texture, DescriptorType type);
 		void Clear();
-		void UpdateSet(VkDevice device,DescriptorSet* descriptorSet);
+		void UpdateSet(VulkanDevice* device,DescriptorSet* descriptorSet);
 
 		std::deque<VkDescriptorImageInfo> imageInfos;
 		std::deque<VkDescriptorBufferInfo> bufferInfos;
@@ -46,12 +49,12 @@ namespace Czuch
 
 		void ResetPools();
 		DescriptorSet* Allocate(DescriptorSetDesc& desc,DescriptorSetLayout* layout);
-		void Init(VkDevice device);
+		void Init(VulkanDevice* device);
 		void CleanUp();
 	private:
 		DescriptorWriter m_Writer;
 		VkDescriptorPool GrabPool();
-		VkDevice m_Device;
+		VulkanDevice* m_Device;
 		VkDescriptorPool m_CurrentPool{ VK_NULL_HANDLE };
 		PoolSizes m_DescriptorSizes;
 		std::vector<VkDescriptorPool> m_UsedPools;

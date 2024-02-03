@@ -37,7 +37,7 @@ namespace Czuch
 		struct FrameData
 		{
 			DescriptorAllocator* descriptorAllocator;
-			VulkanCommandBuffer* commandBuffer;
+			CommandBufferHandle commandBuffer;
 			VkSemaphore imageAvailableSemaphore;
 			VkSemaphore renderFinishedSemaphote;
 			VkFence inFlightFence;
@@ -50,10 +50,14 @@ namespace Czuch
 		{
 			SceneData data;
 			BufferDesc bufferDesc;
-			DescriptorSetLayout* layout;
+			DescriptorSetLayoutHandle layout;
+			DescriptorSetLayoutHandle texLayout;
 			DescriptorSet* descriptor;
+			DescriptorSet* descriptorTex;
 			DescriptorSetDesc descriptorSet;
-			Buffer* buffer[MAX_FRAMES_IN_FLIGHT];
+			DescriptorSetDesc descriptorSetTex;
+			TextureHandle tex;
+			BufferHandle buffer[MAX_FRAMES_IN_FLIGHT];
 		};
 
 	private:

@@ -9,7 +9,7 @@
 namespace Czuch
 {
 	class Renderer;
-	class ResourcesManager;
+	class AssetsManager;
 
 	class CZUCH_API EngineRoot: public IEventsListener
 	{
@@ -27,7 +27,7 @@ namespace Czuch
 		EventsManager* m_EventsMgr;
 		Renderer* m_Renderer;
 		Scope<Window> m_Window;
-		ResourcesManager* m_ResourcesMgr;
+		AssetsManager* m_ResourcesMgr;
 	private:
 		bool m_ShouldStopLoop;
 	};

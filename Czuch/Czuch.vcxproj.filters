@@ -25,11 +25,20 @@
     <Filter Include="Subsystems">
       <UniqueIdentifier>{67E939EA-53A1-7B37-BCA8-5493A87F1628}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Subsystems\Resources">
-      <UniqueIdentifier>{913B5FB2-7DCA-E87B-26E9-FC761257F921}</UniqueIdentifier>
+    <Filter Include="Subsystems\Assets">
+      <UniqueIdentifier>{69B648CB-D5CC-4661-1E44-D2828A9917E9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Subsystems\Assets\Asset">
+      <UniqueIdentifier>{B8D5970D-240D-E0A4-2D17-44C899CD069E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Subsystems\Assets\AssetManagersTypes">
+      <UniqueIdentifier>{3B8EA5E0-2775-67D8-D0C5-CDF5BC8BE03E}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\Core\AccessContainer.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="source\Core\Common.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -89,8 +98,17 @@
     <ClInclude Include="source\Renderer\GraphicsDevice.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="source\Renderer\GraphicsResourceAccessContainer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="source\Renderer\Renderer.h">
       <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\DescriptorAllocator.h">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h">
+      <Filter>Renderer\Vulkan</Filter>
     </ClInclude>
     <ClInclude Include="source\Renderer\Vulkan\VulkanBase.h">
       <Filter>Renderer\Vulkan</Filter>
@@ -110,6 +128,30 @@
     <ClInclude Include="source\Renderer\Vulkan\VulkanRenderer.h">
       <Filter>Renderer\Vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\Asset.h">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\ShaderAsset.h">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\TextureAsset.h">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManager.h">
+      <Filter>Subsystems\Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.h">
+      <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\TextureAssetManager.h">
+      <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetsManager.h">
+      <Filter>Subsystems\Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\LoadSettingsPerType.h">
+      <Filter>Subsystems\Assets</Filter>
+    </ClInclude>
     <ClInclude Include="source\Subsystems\BaseSubsystem.h">
       <Filter>Subsystems</Filter>
     </ClInclude>
@@ -119,26 +161,12 @@
     <ClInclude Include="source\Subsystems\Logging.h">
       <Filter>Subsystems</Filter>
     </ClInclude>
-    <ClInclude Include="source\Subsystems\Resources\Resource.h">
-      <Filter>Subsystems\Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Subsystems\Resources\ResourceManager.h">
-      <Filter>Subsystems\Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Subsystems\Resources\ResourcesManager.h">
-      <Filter>Subsystems\Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Subsystems\Resources\ShaderResource.h">
-      <Filter>Subsystems\Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Subsystems\Resources\ShaderResourceManager.h">
-      <Filter>Subsystems\Resources</Filter>
-    </ClInclude>
     <ClInclude Include="source\czpch.h" />
-    <ClInclude Include="source\Renderer\Vulkan\DescriptorAllocator.h" />
-    <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Core\AccessContainer.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="source\Core\StringID.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -170,7 +198,19 @@
     <ClCompile Include="source\Renderer\Graphics.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="source\Renderer\GraphicsResourceAccessContainer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\DescriptorAllocator.cpp">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClCompile>
     <ClCompile Include="source\Renderer\Vulkan\VulkanCommandBuffer.cpp">
+      <Filter>Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\VulkanCore.cpp">
       <Filter>Renderer\Vulkan</Filter>
     </ClCompile>
     <ClCompile Include="source\Renderer\Vulkan\VulkanDevice.cpp">
@@ -182,30 +222,33 @@
     <ClCompile Include="source\Renderer\Vulkan\VulkanRenderer.cpp">
       <Filter>Renderer\Vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\Asset.cpp">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\ShaderAsset.cpp">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\TextureAsset.cpp">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManager.cpp">
+      <Filter>Subsystems\Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.cpp">
+      <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\TextureAssetManager.cpp">
+      <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetsManager.cpp">
+      <Filter>Subsystems\Assets</Filter>
+    </ClCompile>
     <ClCompile Include="source\Subsystems\EventsManager.cpp">
       <Filter>Subsystems</Filter>
     </ClCompile>
     <ClCompile Include="source\Subsystems\Logging.cpp">
       <Filter>Subsystems</Filter>
     </ClCompile>
-    <ClCompile Include="source\Subsystems\Resources\Resource.cpp">
-      <Filter>Subsystems\Resources</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Subsystems\Resources\ResourceManager.cpp">
-      <Filter>Subsystems\Resources</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Subsystems\Resources\ResourcesManager.cpp">
-      <Filter>Subsystems\Resources</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Subsystems\Resources\ShaderResource.cpp">
-      <Filter>Subsystems\Resources</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Subsystems\Resources\ShaderResourceManager.cpp">
-      <Filter>Subsystems\Resources</Filter>
-    </ClCompile>
     <ClCompile Include="source\czpch.cpp" />
-    <ClCompile Include="source\Renderer\Vulkan\DescriptorAllocator.cpp" />
-    <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp" />
-    <ClCompile Include="source\Renderer\Vulkan\VulkanCore.cpp" />
   </ItemGroup>
 </Project>

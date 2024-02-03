@@ -56,7 +56,7 @@ namespace Czuch
 		return *this;
 	}
 
-	DescriptorSetDesc& DescriptorSetDesc::AddBuffer(Buffer* buffer, U16 binding)
+	DescriptorSetDesc& DescriptorSetDesc::AddBuffer(BufferHandle buffer, U16 binding)
 	{
 		if (descriptorsCount >= s_max_descriptors_per_set)
 		{
@@ -64,8 +64,23 @@ namespace Czuch
 		}
 
 		descriptors[descriptorsCount].binding = binding;
-		descriptors[descriptorsCount].resource = (void*)buffer;
+		descriptors[descriptorsCount].resource = buffer.handle;
 		descriptors[descriptorsCount++].type = DescriptorType::UNIFORM_BUFFER;
+
+		return *this;
+	}
+
+
+	DescriptorSetDesc& DescriptorSetDesc::AddSampler(TextureHandle texture, U16 binding)
+	{
+		if (descriptorsCount >= s_max_descriptors_per_set)
+		{
+			return *this;
+		}
+
+		descriptors[descriptorsCount].binding = binding;
+		descriptors[descriptorsCount].resource = texture.handle;
+		descriptors[descriptorsCount++].type = DescriptorType::SAMPLER;
 
 		return *this;
 	}

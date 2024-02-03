@@ -27,31 +27,39 @@ namespace Czuch
 
 #pragma region Create methods
 
-	Pipeline* VulkanDevice::CreatePipelineState(const PipelineStateDesc* desc, const RenderPass* rpass) const
+	PipelineHandle VulkanDevice::CreatePipelineState(const PipelineStateDesc* desc, const RenderPassHandle rpass)
 	{
 		CZUCH_BE_ASSERT(desc, "CreatePipelineState NULL desc input");
 		
-		if (rpass == nullptr)
+		RenderPass* rp = nullptr;
+		if (!HANDLE_IS_VALID(rpass))
 		{
-			rpass = m_SwapChainRenderPass;
+			rp = AccessRenderPass(m_SwapChainRenderPass);
+		}
+		else
+		{
+			m_ResContainer.renderPasses.Get(rpass.handle, &rp);
 		}
 
 		Pipeline* ps = new Pipeline();
 		ps->m_InternalResourceState = std::make_shared<Pipeline_Vulkan>();
 		ps->m_desc = *desc;
 
-		VulkanPipelineBuilder builder(m_Device,Internal_To_Pipeline(ps),desc);
-		if (!builder.BuildPipeline(Internal_to_RenderPass(rpass)->renderPass))
+		VulkanPipelineBuilder builder(this,Internal_To_Pipeline(ps),desc);
+		if (!builder.BuildPipeline(Internal_to_RenderPass(rp)->renderPass))
 		{
 			LOG_BE_ERROR("[{0}] Failed to Build new pipeline",Tag);
 			delete ps;
-			return nullptr;
+			return INVALID_HANDLE(PipelineHandle);
 		}
 
-		return ps;
+		PipelineHandle h;
+		h.handle=m_ResContainer.pipelines.Add(ps);
+
+		return h;
 	}
 
-	Shader* VulkanDevice::CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize) const
+	ShaderHandle VulkanDevice::CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize) 
 	{
 		CZUCH_BE_ASSERT(shaderCode, "CreateShader NULL shader code input");
 
@@ -70,7 +78,7 @@ namespace Czuch
 		if (vkCreateShaderModule(m_Device, &createInfo, nullptr, &vulkan_shader->shaderModule) != VK_SUCCESS) {
 			LOG_BE_ERROR("{0} Failed to create new shader module",Tag);
 			delete shader;
-			return nullptr;
+			return INVALID_HANDLE(ShaderHandle);
 		}
 
 		vulkan_shader->shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -78,10 +86,13 @@ namespace Czuch
 		vulkan_shader->shaderStageInfo.pName = "main";
 		vulkan_shader->shaderStageInfo.stage = ConvertShaderStageBits(shaderStage);
 
-		return shader;
+		ShaderHandle h;
+		h.handle = m_ResContainer.shaders.Add(shader);
+
+		return h;
 	}
 
-	RenderPass* VulkanDevice::CreateRenderPass(const RenderPassDesc* desc) const
+	RenderPassHandle VulkanDevice::CreateRenderPass(const RenderPassDesc* desc)
 	{
 		RenderPass* rp = new RenderPass();
 		rp->m_InternalResourceState = std::make_shared<RenderPass_Vulkan>();
@@ -129,10 +140,12 @@ namespace Czuch
 		if (vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &(rpass->renderPass)) != VK_SUCCESS) {
 			LOG_BE_ERROR("{0} Failed to create new render pass",Tag);
 			delete rp;
-			return nullptr;
+			return INVALID_HANDLE(RenderPassHandle);
 		}
 
-		return rp;
+		RenderPassHandle h;
+		h.handle = m_ResContainer.renderPasses.Add(rp);
+		return h;
 	}
 
 	VkDescriptorSetLayoutBinding CreateBinding(const DescriptorSetLayoutDesc::Binding& binding,U32 stages)
@@ -146,7 +159,7 @@ namespace Czuch
 		return vkBinding;
 	}
 
-	DescriptorSetLayout* VulkanDevice::CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc) const
+	DescriptorSetLayoutHandle VulkanDevice::CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc) 
 	{
 		CZUCH_BE_ASSERT(desc != nullptr, "Invalid descriptor set layout desc.");
 
@@ -156,7 +169,7 @@ namespace Czuch
 
 		VkDescriptorSetLayoutBinding bindingsArray[s_max_descriptors_per_set];
 
-		for (int a = 0; a < desc->bindingsCount; a++)
+		for (U32 a = 0; a < desc->bindingsCount; a++)
 		{
 			bindingsArray[a] = CreateBinding(desc->bindings[a],desc->shaderStage);
 		}
@@ -174,13 +187,16 @@ namespace Czuch
 		if (dslayout->layout==nullptr) {
 			LOG_BE_ERROR("{0} Failed to create new descriptor set layout", Tag);
 			delete dsl;
-			return nullptr;
+			return INVALID_HANDLE(DescriptorSetLayoutHandle);
 		}
 
-		return dsl;
+
+		DescriptorSetLayoutHandle h;
+		h.handle = m_ResContainer.descriptorSetLayouts.Add(dsl);
+		return h;
 	}
 
-	FrameBuffer* VulkanDevice::CreateFrameBuffer(const FrameBufferDesc* desc) const
+	FrameBufferHandle VulkanDevice::CreateFrameBuffer(const FrameBufferDesc* desc) 
 	{
 		CZUCH_BE_ASSERT(desc != nullptr, "Invalid frame buffer desc.");
 
@@ -190,10 +206,10 @@ namespace Czuch
 
 		CZUCH_BE_ASSERT(desc->texture != nullptr, "Invalid frame buffer desc's texture.");
 
-		auto vulkanImage = Internal_to_Image(desc->texture);
+		auto vulkanTexture = Internal_to_Texture(desc->texture);
 
 		VkImageView attachments[] = {
-			vulkanImage->imageView
+			vulkanTexture->imageView
 		};
 
 		CZUCH_BE_ASSERT(desc->renderPass != nullptr, "Invalid frame buffer desc's render pass.");
@@ -216,13 +232,15 @@ namespace Czuch
 		if (vkCreateFramebuffer(m_Device, &framebufferInfo, nullptr, &vulkanFramebuffer->framebuffer) != VK_SUCCESS) {
 			LOG_BE_ERROR("{0} Failed to create new frame buffer", Tag);
 			delete fb;
-			return nullptr;
+			return INVALID_HANDLE(FrameBufferHandle);
 		}
 
-		return fb;
+		FrameBufferHandle h;
+		h.handle = m_ResContainer.frameBuffers.Add(fb);
+		return h;
 	}
 
-	CommandBuffer* VulkanDevice::CreateCommandBuffer(bool isPrimary) const
+	CommandBufferHandle VulkanDevice::CreateCommandBuffer(bool isPrimary)
 	{
 		VulkanCommandBuffer* cmdBuffer = nullptr;
 		VkCommandBuffer commandBuffer;
@@ -235,16 +253,92 @@ namespace Czuch
 
 		if (vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
 			LOG_BE_ERROR("{0} Failed to create new command buffer", Tag);
-			return nullptr;
+			return INVALID_HANDLE(CommandBufferHandle);
 		}
 
 		cmdBuffer = new VulkanCommandBuffer(commandBuffer);
 		cmdBuffer->Init(this);
 
-		return cmdBuffer;
+		CommandBufferHandle h;
+		h.handle = m_ResContainer.commandBuffers.Add(cmdBuffer);
+		return h;
 	}
 
-	Buffer* VulkanDevice::CreateBuffer(const BufferDesc* desc) const
+	TextureHandle VulkanDevice::CreateTexture(const TextureDesc* desc)
+	{
+		CZUCH_BE_ASSERT(desc != nullptr, "Invalid texture desc.");
+
+		Texture* texture = new Texture();
+		texture->desc = *desc;
+		texture->m_InternalResourceState = std::make_shared<Texture_Vulkan>();
+
+		auto vulkanTexture = Internal_to_Texture(texture);
+		vulkanTexture->allocator = m_VmaAllocator;
+		vulkanTexture->device = m_Device;
+
+		BufferInternalSettings settingsStageBuffer{};
+		settingsStageBuffer.inSize = desc->GetSize();
+		settingsStageBuffer.inFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		settingsStageBuffer.inStagingBuffer = true;
+		settingsStageBuffer.inCreateMapped = false;
+		settingsStageBuffer.inUsage = Usage::MEMORY_USAGE_CPU_ONLY;
+
+		if (!CreateBuffer_Internal(settingsStageBuffer))
+		{
+			LOG_BE_ERROR("{0} Failed to create staging buffer for texture copy.", Tag);
+			return INVALID_HANDLE(TextureHandle);
+		}
+
+		void* data;
+		vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
+		memcpy(data, desc->texData, settingsStageBuffer.inSize);
+		vmaUnmapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc);
+
+		VkImageCreateInfo imageInfo{};
+		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageInfo.imageType = ConvertImageType(desc->type);
+		imageInfo.extent.width = static_cast<uint32_t>(desc->width);
+		imageInfo.extent.height = static_cast<uint32_t>(desc->height);
+		imageInfo.extent.depth = desc->depth;
+		imageInfo.mipLevels = desc->mip_levels;
+		imageInfo.arrayLayers = 1;
+		imageInfo.format = ConvertFormat(desc->format);
+		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT|VK_IMAGE_USAGE_SAMPLED_BIT;
+		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		imageInfo.flags = 0;
+
+		VmaAllocationCreateInfo memory_info{};
+		memory_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;//ConvertMemoryUsage(desc->usage);
+
+		if (vmaCreateImage(m_VmaAllocator, &imageInfo, &memory_info, &vulkanTexture->image, &vulkanTexture->allocation, nullptr)!=VK_SUCCESS)
+		{
+			LOG_BE_ERROR("{0} Failed to create new vulkan image", Tag);
+			return INVALID_HANDLE(TextureHandle);
+		}
+
+		//transition
+		TransitionImageLayout(vulkanTexture->image, imageInfo.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+		//copy staging buffe to target image
+		CopyBufferToImage(settingsStageBuffer.outBuffer, vulkanTexture->image, desc->width, desc->height);
+
+		//transition for read in ps
+		TransitionImageLayout(vulkanTexture->image, imageInfo.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		vmaDestroyBuffer(m_VmaAllocator,settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
+
+		vulkanTexture->imageView = CreateImageView(vulkanTexture->image, ConvertFormat(desc->format), VK_IMAGE_ASPECT_COLOR_BIT);
+		vulkanTexture->sampler = CreateImageSampler(desc->samplerDesc);
+
+		TextureHandle h;
+		h.handle = m_ResContainer.textures.Add(texture);
+		return h;
+	}
+
+	BufferHandle VulkanDevice::CreateBuffer(const BufferDesc* desc)
 	{
 		CZUCH_BE_ASSERT(desc != nullptr, "Invalid buffer desc.");
 
@@ -298,7 +392,7 @@ namespace Czuch
 
 		if (!CreateBuffer_Internal(settings)) {
 			LOG_BE_ERROR("{0} Failed to create new vulkan buffer", Tag);
-			return nullptr;
+			return INVALID_HANDLE(BufferHandle);
 		}
 
 		bufferVulkan->buffer = settings.outBuffer;
@@ -317,7 +411,7 @@ namespace Czuch
 			if (!CreateBuffer_Internal(settingsStageBuffer))
 			{
 				LOG_BE_ERROR("{0} Failed to create new vulkan staging buffer", Tag);
-				return nullptr;
+				return INVALID_HANDLE(BufferHandle);
 			}
 
 			//map memory
@@ -330,12 +424,14 @@ namespace Czuch
 			{
 				LOG_BE_ERROR("{0} Failed to copy data from staging buffer", Tag);
 				vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer,settingsStageBuffer.outMemAlloc);
-				return nullptr;
+				return INVALID_HANDLE(BufferHandle);
 			}
 			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
 		}
 
-		return buffer;
+		BufferHandle h;
+		h.handle = m_ResContainer.buffers.Add(buffer);
+		return h;
 	}
 
 	bool VulkanDevice::CreateBuffer_Internal(BufferInternalSettings& settings) const
@@ -367,75 +463,194 @@ namespace Czuch
 		return true;
 	}
 
+	void VulkanDevice::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout) const
+	{
+		VkCommandBuffer cmd = BeginSingleTimeCommands();
+
+		VkImageMemoryBarrier barrier{};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.oldLayout = currentLayout;
+		barrier.newLayout = targetLayout;
+
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+		barrier.image = image;
+		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		barrier.subresourceRange.baseMipLevel = 0;
+		barrier.subresourceRange.levelCount = 1;
+		barrier.subresourceRange.baseArrayLayer = 0;
+		barrier.subresourceRange.layerCount = 1;
+
+		VkPipelineStageFlags sourceStage;
+		VkPipelineStageFlags destinationStage;
+
+		if (currentLayout == VK_IMAGE_LAYOUT_UNDEFINED && targetLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+			barrier.srcAccessMask = 0;
+			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if (currentLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && targetLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		}
+		else {
+			LOG_BE_ERROR("{0} Failed to find proper source and destinations settings for image transition layer.", Tag);
+			return;
+		}
+
+
+		vkCmdPipelineBarrier(
+			cmd,
+			sourceStage, destinationStage,
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier
+		);
+
+		EndSingleTimeCommands(cmd);
+	}
+
+
+	void VulkanDevice::CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, U32 w, U32 h) const
+	{
+		VkCommandBuffer cmd = BeginSingleTimeCommands();
+
+		VkBufferImageCopy region{};
+		region.bufferOffset = 0;
+		region.bufferRowLength = 0;
+		region.bufferImageHeight = 0;
+
+		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		region.imageSubresource.mipLevel = 0;
+		region.imageSubresource.baseArrayLayer = 0;
+		region.imageSubresource.layerCount = 1;
+
+		region.imageOffset = { 0, 0, 0 };
+		region.imageExtent = {
+			w,
+			h,
+			1
+		};
+
+		vkCmdCopyBufferToImage(
+			cmd,
+			srcBuffer,
+			dstImage,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1,
+			&region
+		);
+
+		EndSingleTimeCommands(cmd);
+	}
+
 
 #pragma endregion
 
 #pragma region Release
 
-	bool VulkanDevice::ReleaseBuffer(Buffer* buffer) const
+	bool VulkanDevice::Release(BufferHandle& buffer) 
 	{
-		CZUCH_BE_ASSERT(buffer != nullptr, "Invalid buffer passed to release.");
-		delete buffer;
-		buffer = nullptr;
-		return false;
-	}
-
-	bool VulkanDevice::ReleasePipeline(Pipeline* pipeline) const
-	{
-		CZUCH_BE_ASSERT(pipeline != nullptr, "Invalid pipeline passed to release.");
-		delete pipeline;
-		pipeline = nullptr;
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(buffer), "Invalid buffer passed to release.");
+		Buffer* b = nullptr;
+		m_ResContainer.buffers.Get(buffer.handle, &b);
+		m_ResContainer.buffers.Remove(buffer.handle);
+		delete b;
+		INVALIDATE_HANDLE(buffer)
 		return true;
 	}
 
-	bool VulkanDevice::ReleaseShader(Shader* shader) const
+	bool VulkanDevice::Release(PipelineHandle& pipeline) 
 	{
-		CZUCH_BE_ASSERT(shader != nullptr, "Invalid shader passed to release.");
-		delete shader;
-		shader = nullptr;
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(pipeline), "Invalid pipeline passed to release.");
+		Pipeline* p = nullptr;
+		m_ResContainer.pipelines.Get(pipeline.handle, &p);
+		m_ResContainer.pipelines.Remove(pipeline.handle);
+		delete p;
+		INVALIDATE_HANDLE(pipeline)
 		return true;
 	}
 
-	bool VulkanDevice::ReleaseRenderPass(RenderPass* rp) const
+	bool VulkanDevice::Release(ShaderHandle& shader) 
 	{
-		CZUCH_BE_ASSERT(rp != nullptr, "Invalid render pass passed to release.");
-		delete rp;
-		rp = nullptr;
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(shader), "Invalid shader passed to release.");
+		Shader* s = nullptr;
+		m_ResContainer.shaders.Get(shader.handle, &s);
+		m_ResContainer.shaders.Remove(shader.handle);
+		delete s;
+		INVALIDATE_HANDLE(shader)
 		return true;
 	}
 
-	bool VulkanDevice::ReleaseDescriptorSetLayout(DescriptorSetLayout* dsl) const
+	bool VulkanDevice::Release(RenderPassHandle& rp) 
 	{
-		CZUCH_BE_ASSERT(dsl != nullptr, "Invalid descriptor set layout to release");
-		delete dsl;
-		dsl = nullptr;
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(rp), "Invalid render pass passed to release.");
+		RenderPass* r = nullptr;
+		m_ResContainer.renderPasses.Get(rp.handle, &r);
+		m_ResContainer.renderPasses.Remove(rp.handle);
+		delete r;
+		INVALIDATE_HANDLE(rp)
 		return true;
 	}
 
-	bool VulkanDevice::ReleaseFrameBuffer(FrameBuffer* fb) const
+	bool VulkanDevice::Release(DescriptorSetLayoutHandle& dsl) 
 	{
-		CZUCH_BE_ASSERT(fb != nullptr, "Invalid frame buffer to release");
-		delete fb;
-		fb = nullptr;
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(dsl), "Invalid descriptor set layout to release");
+		DescriptorSetLayout* d = nullptr;
+		m_ResContainer.descriptorSetLayouts.Get(dsl.handle, &d);
+		m_ResContainer.descriptorSetLayouts.Remove(dsl.handle);
+		delete d;
+		INVALIDATE_HANDLE(dsl)
 		return true;
 	}
 
-	bool VulkanDevice::ReleaseCommandBuffer(CommandBuffer* cb) const
+	bool VulkanDevice::Release(FrameBufferHandle& fb) 
 	{
-		CZUCH_BE_ASSERT(cb != nullptr, "Invalid frame buffer to release");
-		cb->Release();
-		delete cb;
-		cb = nullptr;
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(fb), "Invalid frame buffer to release");
+		FrameBuffer* f = nullptr;
+		m_ResContainer.frameBuffers.Get(fb.handle, &f);
+		m_ResContainer.frameBuffers.Remove(fb.handle);
+		delete f;
+		INVALIDATE_HANDLE(fb)
 		return true;
 	}
 
-	DescriptorAllocator* VulkanDevice::CreateDescriptorAllocator() const
+	bool VulkanDevice::Release(CommandBufferHandle& cb)
+	{
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(cb), "Invalid frame buffer to release");
+		CommandBuffer* c = nullptr;
+		m_ResContainer.commandBuffers.Get(cb.handle, &c);
+		m_ResContainer.commandBuffers.Remove(cb.handle);
+		c->Release();
+		delete c;
+		INVALIDATE_HANDLE(cb)
+		return true;
+	}
+
+	bool VulkanDevice::Release(TextureHandle& texture) 
+	{
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(texture), "Invalid texture to release");
+		Texture* t = nullptr;
+		m_ResContainer.textures.Get(texture.handle, &t);
+		m_ResContainer.textures.Remove(texture.handle);
+		delete t;
+		INVALIDATE_HANDLE(texture)
+		return true;
+	}
+
+	DescriptorAllocator* VulkanDevice::CreateDescriptorAllocator()
 	{
 		auto allocator = new DescriptorAllocator();
-		allocator->Init(m_Device);
+		allocator->Init(this);
 		return allocator;
 	}
-
 
 	void VulkanDevice::ReleaseDescriptorAllocator(DescriptorAllocator* allocator)
 	{
@@ -538,14 +753,6 @@ namespace Czuch
 		return imageIndex;
 	}
 
-	bool VulkanDevice::ReleaseSwapChainRenderPass()
-	{
-		delete m_SwapChainRenderPass;
-		m_SwapChainRenderPass = nullptr;
-
-		return true;
-	}
-
 #pragma region helpers
 
 	U32 VulkanDevice::FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags properties) const
@@ -583,7 +790,37 @@ namespace Czuch
 		return vertexBufferMemory;
 	}
 
-	VkImageView VulkanDevice::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	VkSampler VulkanDevice::CreateImageSampler(const SamplerDesc& desc) const
+	{
+		VkSamplerCreateInfo samplerInfo{};
+		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.magFilter = ConvertFilterType(desc.magFilter);
+		samplerInfo.minFilter = ConvertFilterType(desc.minFilter);
+		samplerInfo.addressModeU = ConvertAddressMode(desc.addressModeU);
+		samplerInfo.addressModeV = ConvertAddressMode(desc.addressModeV);
+		samplerInfo.addressModeW = ConvertAddressMode(desc.addressModeW);
+		samplerInfo.anisotropyEnable = desc.anisoEnabled;
+		samplerInfo.maxAnisotropy = m_DeviceProperties.limits.maxSamplerAnisotropy;
+		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+		samplerInfo.unnormalizedCoordinates = VK_FALSE;
+		samplerInfo.compareEnable = VK_FALSE;
+		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		samplerInfo.mipLodBias = 0.0f;
+		samplerInfo.minLod = 0.0f;
+		samplerInfo.maxLod = 0.0f;
+
+		VkSampler sampler;
+		if (vkCreateSampler(m_Device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+		{
+			LOG_BE_ERROR("{0} failed to create texture sampler!", Tag);
+			return nullptr;
+		}
+
+		return sampler;
+	}
+
+	VkImageView VulkanDevice::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -735,7 +972,22 @@ namespace Czuch
 		}
 	}
 
-	bool VulkanDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const
+	void VulkanDevice::EndSingleTimeCommands(VkCommandBuffer cmd) const
+	{
+		vkEndCommandBuffer(cmd);
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &cmd;
+
+		vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(m_GraphicsQueue);
+
+		vkFreeCommandBuffers(m_Device, m_CopyCommandPool, 1, &cmd);
+	}
+
+	VkCommandBuffer VulkanDevice::BeginSingleTimeCommands() const
 	{
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -751,24 +1003,20 @@ namespace Czuch
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+		return commandBuffer;
+	}
+
+	bool VulkanDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const
+	{
+		auto cmd = BeginSingleTimeCommands();
 
 		VkBufferCopy copyRegion{};
 		copyRegion.srcOffset = 0; // Optional
 		copyRegion.dstOffset = 0; // Optional
 		copyRegion.size = size;
-		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+		vkCmdCopyBuffer(cmd, srcBuffer, dstBuffer, 1, &copyRegion);
 
-		vkEndCommandBuffer(commandBuffer);
-
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer;
-
-		vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(m_GraphicsQueue);
-
-		vkFreeCommandBuffers(m_Device, m_CopyCommandPool, 1, &commandBuffer);
+		EndSingleTimeCommands(cmd);
 
 		return true;
 	}
@@ -890,10 +1138,11 @@ namespace Czuch
 		delete m_DescriptorLayoutCache;
 
 		EventsManager::Get().RemoveListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
+		m_ResContainer.ReleaseAll();
+
 		vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
 		vkDestroyCommandPool(m_Device, m_CopyCommandPool, nullptr);
 		m_SwapChainData.Release(m_Device);
-		ReleaseSwapChainRenderPass();
 		vmaDestroyAllocator(m_VmaAllocator);
 		vkDestroyDevice(m_Device, nullptr);
 		if (m_Surface != nullptr)
@@ -951,6 +1200,8 @@ namespace Czuch
 
 		m_DescriptorLayoutCache = new DescriptorLayoutCache();
 		m_DescriptorLayoutCache->Init(m_Device);
+
+		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_DeviceProperties);
 
 		return true;
 	}
@@ -1185,7 +1436,7 @@ namespace Czuch
 			m_SwapChainRenderPass = CreateRenderPass(&desc);
 		}
 
-		RenderPass_Vulkan* rpass = Internal_to_RenderPass(m_SwapChainRenderPass);
+		RenderPass_Vulkan* rpass = Internal_to_RenderPass(AccessRenderPass(m_SwapChainRenderPass));
 
 		for (size_t i = 0; i < m_SwapChainData.swapChainImageViews.size(); i++) {
 
@@ -1195,7 +1446,9 @@ namespace Czuch
 
 			FrameBuffer* framebuffer = new FrameBuffer();
 			framebuffer->m_InternalResourceState = std::make_shared<FrameBuffer_Vulkan>();
-			m_SwapChainData.swapChainFrameBuffers[i] = framebuffer;
+			FrameBufferHandle h;
+			h .handle= m_ResContainer.frameBuffers.Add(framebuffer);
+			m_SwapChainData.swapChainFrameBuffers[i] = h;
 
 			VkFramebufferCreateInfo framebufferInfo{};
 			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -1245,6 +1498,114 @@ namespace Czuch
 		}
 
 		return true;
+	}
+
+	void VulkanDevice::ResourcesContainer::ReleaseAll()
+	{
+		shaders.RemoveAll();
+		textures.RemoveAll();
+		buffers.RemoveAll();
+		commandBuffers.RemoveAll();
+		descriptorSetLayouts.RemoveAll();
+		pipelines.RemoveAll();
+		renderPasses.RemoveAll();
+		frameBuffers.RemoveAll();
+	}
+
+	Shader* VulkanDevice::AccessShader(ShaderHandle handle)
+	{
+		if (HANDLE_IS_VALID(handle))
+		{
+			Shader* result = nullptr;
+			m_ResContainer.shaders.Get(handle.handle, &result);
+			return result;
+		}
+		LOG_BE_ERROR("{0} AccessShader with invalid handle.", Tag);
+		return nullptr;
+	}
+
+	CommandBuffer* VulkanDevice::AccessCommandBuffer(CommandBufferHandle handle)
+	{
+		if (HANDLE_IS_VALID(handle))
+		{
+			CommandBuffer* result = nullptr;
+			m_ResContainer.commandBuffers.Get(handle.handle, &result);
+			return result;
+		}
+		LOG_BE_ERROR("{0} AccessCommandBuffer with invalid handle.", Tag);
+		return nullptr;
+	}
+
+	Buffer* VulkanDevice::AccessBuffer(BufferHandle handle)
+	{
+		if (HANDLE_IS_VALID(handle))
+		{
+			Buffer* result = nullptr;
+			m_ResContainer.buffers.Get(handle.handle, &result);
+			return result;
+		}
+		LOG_BE_ERROR("{0} AccessBuffer with invalid handle.", Tag);
+		return nullptr;
+	}
+
+	Texture* VulkanDevice::AccessTexture(TextureHandle handle)
+	{
+		if (HANDLE_IS_VALID(handle))
+		{
+			Texture* result = nullptr;
+			m_ResContainer.textures.Get(handle.handle, &result);
+			return result;
+		}
+		LOG_BE_ERROR("{0} AccessTexture with invalid handle.", Tag);
+		return nullptr;
+	}
+
+	Pipeline* VulkanDevice::AccessPipeline(PipelineHandle handle)
+	{
+		if (HANDLE_IS_VALID(handle))
+		{
+			Pipeline* result = nullptr;
+			m_ResContainer.pipelines.Get(handle.handle, &result);
+			return result;
+		}
+		LOG_BE_ERROR("{0} AccessPipeline with invalid handle.", Tag);
+		return nullptr;
+	}
+
+	RenderPass* VulkanDevice::AccessRenderPass(RenderPassHandle handle)
+	{
+		if (HANDLE_IS_VALID(handle))
+		{
+			RenderPass* result = nullptr;
+			m_ResContainer.renderPasses.Get(handle.handle, &result);
+			return result;
+		}
+		LOG_BE_ERROR("{0} AccessRenderPass with invalid handle.", Tag);
+		return nullptr;
+	}
+
+	FrameBuffer* VulkanDevice::AccessFrameBuffer(FrameBufferHandle handle) 
+	{
+		if (HANDLE_IS_VALID(handle))
+		{
+			FrameBuffer* result = nullptr;
+			m_ResContainer.frameBuffers.Get(handle.handle, &result);
+			return result;
+		}
+		LOG_BE_ERROR("{0} AccesFrameBuffer with invalid handle.", Tag);
+		return nullptr;
+	}
+
+	DescriptorSetLayout* VulkanDevice::AccessDescriptorSetLayout(DescriptorSetLayoutHandle handle)
+	{
+		if (HANDLE_IS_VALID(handle))
+		{
+			DescriptorSetLayout* result = nullptr;
+			m_ResContainer.descriptorSetLayouts.Get(handle.handle, &result);
+			return result;
+		}
+		LOG_BE_ERROR("{0} AccessDescriptorSetLayout with invalid handle.", Tag);
+		return nullptr;
 	}
 
 }

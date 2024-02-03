@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DEBUG;CZUCH_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -108,7 +108,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -136,7 +136,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -159,8 +159,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h" />
-    <ClInclude Include="source\Renderer\Vulkan\DescriptorAllocator.h" />
+    <ClInclude Include="source\Core\AccessContainer.h" />
     <ClInclude Include="source\Core\Common.h" />
     <ClInclude Include="source\Core\EngineCore.h" />
     <ClInclude Include="source\Core\FileHelper.h" />
@@ -182,26 +181,31 @@
     <ClInclude Include="source\Renderer\CommandBuffer.h" />
     <ClInclude Include="source\Renderer\Graphics.h" />
     <ClInclude Include="source\Renderer\GraphicsDevice.h" />
+    <ClInclude Include="source\Renderer\GraphicsResourceAccessContainer.h" />
     <ClInclude Include="source\Renderer\Renderer.h" />
+    <ClInclude Include="source\Renderer\Vulkan\DescriptorAllocator.h" />
+    <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanBase.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanCommandBuffer.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanCore.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanDevice.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanPipelineBuilder.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanRenderer.h" />
+    <ClInclude Include="source\Subsystems\Assets\Asset\Asset.h" />
+    <ClInclude Include="source\Subsystems\Assets\Asset\ShaderAsset.h" />
+    <ClInclude Include="source\Subsystems\Assets\Asset\TextureAsset.h" />
+    <ClInclude Include="source\Subsystems\Assets\AssetManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\TextureAssetManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\AssetsManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\LoadSettingsPerType.h" />
     <ClInclude Include="source\Subsystems\BaseSubsystem.h" />
     <ClInclude Include="source\Subsystems\EventsManager.h" />
     <ClInclude Include="source\Subsystems\Logging.h" />
-    <ClInclude Include="source\Subsystems\Resources\Resource.h" />
-    <ClInclude Include="source\Subsystems\Resources\ResourceManager.h" />
-    <ClInclude Include="source\Subsystems\Resources\ResourcesManager.h" />
-    <ClInclude Include="source\Subsystems\Resources\ShaderResource.h" />
-    <ClInclude Include="source\Subsystems\Resources\ShaderResourceManager.h" />
     <ClInclude Include="source\czpch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp" />
-    <ClCompile Include="source\Renderer\Vulkan\DescriptorAllocator.cpp" />
+    <ClCompile Include="source\Core\AccessContainer.cpp" />
     <ClCompile Include="source\Core\StringID.cpp" />
     <ClCompile Include="source\Core\Time.cpp" />
     <ClCompile Include="source\Core\TimeDiffCounter.cpp" />
@@ -213,18 +217,23 @@
     <ClCompile Include="source\Events\EventsTypes\MouseEvents.cpp" />
     <ClCompile Include="source\Platform\Windows\WinWindow.cpp" />
     <ClCompile Include="source\Renderer\Graphics.cpp" />
+    <ClCompile Include="source\Renderer\GraphicsResourceAccessContainer.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\DescriptorAllocator.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanCommandBuffer.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanCore.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanDevice.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanPipelineBuilder.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanRenderer.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\Asset\Asset.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\Asset\ShaderAsset.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\Asset\TextureAsset.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\AssetManager.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\TextureAssetManager.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\AssetsManager.cpp" />
     <ClCompile Include="source\Subsystems\EventsManager.cpp" />
     <ClCompile Include="source\Subsystems\Logging.cpp" />
-    <ClCompile Include="source\Subsystems\Resources\Resource.cpp" />
-    <ClCompile Include="source\Subsystems\Resources\ResourceManager.cpp" />
-    <ClCompile Include="source\Subsystems\Resources\ResourcesManager.cpp" />
-    <ClCompile Include="source\Subsystems\Resources\ShaderResource.cpp" />
-    <ClCompile Include="source\Subsystems\Resources\ShaderResourceManager.cpp" />
     <ClCompile Include="source\czpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

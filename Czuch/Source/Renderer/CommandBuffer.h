@@ -13,17 +13,17 @@ namespace Czuch
 		virtual void Begin()=0;
 		virtual void End()=0;
 		virtual void EndCurrentRenderPass()=0;
-		virtual void BindPass(RenderPass* renderpass, FrameBuffer* framebuffer)=0;
-		virtual void BindPipeline(Pipeline* pipeline)=0;
-		virtual void BindVertexBuffer(Buffer* buffer, U32 binding, U32 offset)=0;
-		virtual void BindIndexBuffer(Buffer* buffer, U32 offset)=0;
-		virtual void BindDescriptorSet(DescriptorSet* descriptor, U32 num, U32* offsets, U32 num_offsets)=0;
+		virtual void BindPass(RenderPassHandle renderpass, FrameBufferHandle framebuffer)=0;
+		virtual void BindPipeline(PipelineHandle pipeline)=0;
+		virtual void BindVertexBuffer(BufferHandle buffer, U32 binding, U32 offset)=0;
+		virtual void BindIndexBuffer(BufferHandle buffer, U32 offset)=0;
+		virtual void BindDescriptorSet(DescriptorSet* descriptor,U16 setIndex, U32 num, U32* offsets, U32 num_offsets)=0;
 		virtual void SetClearColor(float r, float g, float b, float a) = 0;
 		virtual void SetDepthStencil(float depth, U8 stencil) = 0;
 		virtual void SetViewport(ViewportDesc viewport) = 0;
 		virtual void SetScrissors(ScissorsDesc scissors) = 0;
 		virtual void Draw(U32 vertexCount, U32 firstVertex, U32 instanceCount, U32 firstInstance) = 0;
-		virtual void DrawIndexed(U32 indicesCount, U32 firstIndex, U32 instanceCount, U32 firstnstance, U32 vertexOffset) = 0;
+		virtual void DrawIndexed(U32 indicesCount, U32 firstIndex = 0, U32 instanceCount = 1, U32 firstnstance = 0, U32 vertexOffset = 0) = 0;
 	};
 
 }

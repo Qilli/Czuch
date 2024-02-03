@@ -11,7 +11,7 @@ namespace Czuch
 	struct RenderPass_Vulkan;
 	struct FrameBuffer_Vulkan;
 	struct DescriptorSetLayout_Vulkan;
-	struct Image_Vulkan;
+	struct Texture_Vulkan;
 	struct Buffer_Vulkan;
 #pragma region Converters
 
@@ -40,9 +40,9 @@ namespace Czuch
 		return (DescriptorSetLayout_Vulkan*)dsl->m_InternalResourceState.get();
 	}
 
-	inline Image_Vulkan* Internal_to_Image(const Texture* tex)
+	inline Texture_Vulkan* Internal_to_Texture(const Texture* tex)
 	{
-		return (Image_Vulkan*)tex->m_InternalResourceState.get();
+		return (Texture_Vulkan*)tex->m_InternalResourceState.get();
 	}
 
 	inline Buffer_Vulkan* Internal_to_Buffer(const Buffer* buffer)
@@ -73,6 +73,30 @@ namespace Czuch
 		return flags;
 	}
 
+	constexpr VkImageType ConvertImageType(TextureDesc::Type inTexType)
+	{
+		if (inTexType == TextureDesc::Type::TEXTURE_1D)
+		{
+			return VK_IMAGE_TYPE_1D;
+		}
+
+		if (inTexType == TextureDesc::Type::TEXTURE_2D)
+		{
+			return VK_IMAGE_TYPE_2D;
+		}
+
+		if (inTexType == TextureDesc::Type::TEXTURE_3D)
+		{
+			return VK_IMAGE_TYPE_3D;
+		}
+
+		if (inTexType == TextureDesc::Type::TEXTURE_CUBE)
+		{
+			return VK_IMAGE_TYPE_3D;
+		}
+
+		return VK_IMAGE_TYPE_2D;
+	}
 
 	constexpr VkShaderStageFlagBits ConvertShaderStageBits(ShaderStage stage)
 	{
@@ -123,12 +147,43 @@ namespace Czuch
 		}
 	}
 
+	constexpr VkFilter ConvertFilterType(TextureFilter type)
+	{
+		if (type == TextureFilter::LINEAR)
+		{
+			return VK_FILTER_LINEAR;
+		}
+		else return VK_FILTER_NEAREST;
+	}
+
+	constexpr VkSamplerAddressMode ConvertAddressMode(TextureAddressMode mode)
+	{
+		if (mode == TextureAddressMode::WRAP)
+		{
+			return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		}
+		if (mode == TextureAddressMode::MIRROR)
+		{
+			return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+		}
+		if (mode == TextureAddressMode::CLAMP)
+		{
+			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		}
+		if (mode == TextureAddressMode::BORDER)
+		{
+			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		}
+
+		return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+	}
+
 	constexpr VkDescriptorType ConvertDescriptorType(DescriptorType descType)
 	{
 		switch (descType)
 		{
 		case SAMPLER:
-			return VK_DESCRIPTOR_TYPE_SAMPLER;
+			return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		case UNIFORM_BUFFER:
 			return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		case UNIFORM_BUFFER_DYNAMIC:
@@ -505,16 +560,20 @@ namespace Czuch
 		}
 	};
 
-	struct Image_Vulkan : public VulkanDeviceRef
+	struct Texture_Vulkan : public VulkanDeviceRef
 	{
 		VkImage image;
 		VkImageView imageView;
-		~Image_Vulkan()
+		VkSampler sampler;
+		VmaAllocation allocation;
+		~Texture_Vulkan()
 		{
 			if (image)
 			{
+				vkDestroySampler(device, sampler, nullptr);
 				vkDestroyImageView(device, imageView, nullptr);
-				vkDestroyImage(device, image, nullptr);
+				vmaDestroyImage(allocator, image, allocation);
+				image = VK_NULL_HANDLE;
 			}
 		}
 	};

@@ -1,5 +1,6 @@
 #include "czpch.h"
 #include "VulkanCommandBuffer.h"
+#include"VulkanDevice.h"
 #include"VulkanCore.h"
 
 namespace Czuch
@@ -10,9 +11,9 @@ namespace Czuch
 	{
 		m_ClearValue.color = { 0,0,0,1 };
 		m_ClearValue.depthStencil = { 1.0f,255 };
-		m_CurrentFrameBuffer = nullptr;
-		m_CurrentRenderPass = nullptr;
-		m_CurrentPipeline = nullptr;
+		m_CurrentFrameBuffer = INVALID_HANDLE(FrameBufferHandle);
+		m_CurrentRenderPass = INVALID_HANDLE(RenderPassHandle);
+		m_CurrentPipeline = INVALID_HANDLE(PipelineHandle);
 	}
 
 	void VulkanCommandBuffer::Init(const GraphicsDevice* gpu)
@@ -54,19 +55,19 @@ namespace Czuch
 
 	void VulkanCommandBuffer::EndCurrentRenderPass()
 	{
-		if (m_CurrentRenderPass != nullptr && m_isRecording)
+		if (HANDLE_IS_VALID(m_CurrentRenderPass) && m_isRecording)
 		{
 			vkCmdEndRenderPass(m_Cmd);
-			m_CurrentRenderPass = nullptr;
+			m_CurrentRenderPass = INVALID_HANDLE(RenderPassHandle);
 		}
 	}
 
-	void VulkanCommandBuffer::BindPass(RenderPass* renderpass, FrameBuffer* framebuffer)
+	void VulkanCommandBuffer::BindPass(RenderPassHandle renderpass, FrameBufferHandle framebuffer)
 	{
-		CZUCH_BE_ASSERT(renderpass != nullptr, "render pass passed to command buffer bind pass is null");
-		CZUCH_BE_ASSERT(framebuffer!=nullptr, "framebuffer passed to command buffer bind pass is null");
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(renderpass), "render pass passed to command buffer bind pass is null");
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(framebuffer), "framebuffer passed to command buffer bind pass is null");
 
-		if (renderpass == m_CurrentRenderPass && m_CurrentFrameBuffer == framebuffer)
+		if (renderpass.handle == m_CurrentRenderPass.handle && m_CurrentFrameBuffer.handle == framebuffer.handle)
 		{
 			return;
 		}
@@ -74,14 +75,14 @@ namespace Czuch
 		m_CurrentFrameBuffer = framebuffer;
 		m_CurrentRenderPass = renderpass;
 
-		auto fb = Internal_to_Framebuffer(framebuffer);
+		auto fb = Internal_to_Framebuffer(m_Device->AccessFrameBuffer(framebuffer));
 		VkExtent2D extent{};
 		extent.width = fb->createInfo.width;
 		extent.height = fb->createInfo.height;
 
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = Internal_to_RenderPass(renderpass)->renderPass;
+		renderPassInfo.renderPass = Internal_to_RenderPass(m_Device->AccessRenderPass(renderpass))->renderPass;
 		renderPassInfo.framebuffer = fb->framebuffer;
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = extent;
@@ -91,32 +92,33 @@ namespace Czuch
 		vkCmdBeginRenderPass(m_Cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	}
 
-	void VulkanCommandBuffer::BindPipeline(Pipeline* pipeline)
+	void VulkanCommandBuffer::BindPipeline(PipelineHandle pipeline)
 	{
-		if (pipeline == nullptr)
+		if (!HANDLE_IS_VALID(pipeline))
 		{
 			return;
 		}
-		vkCmdBindPipeline(m_Cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Internal_To_Pipeline(pipeline)->pipeline);
+		vkCmdBindPipeline(m_Cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Internal_To_Pipeline(m_Device->AccessPipeline(pipeline))->pipeline);
 		m_CurrentPipeline = pipeline;
 	}
 
-	void VulkanCommandBuffer::BindVertexBuffer(Buffer* buffer, U32 binding=0, U32 offset=0)
+	void VulkanCommandBuffer::BindVertexBuffer(BufferHandle buffer, U32 binding=0, U32 offset=0)
 	{
-		VkBuffer vertexBuffers[] = { Internal_to_Buffer(buffer)->buffer };
+		VkBuffer vertexBuffers[] = { Internal_to_Buffer(m_Device->AccessBuffer(buffer))->buffer };
 		VkDeviceSize offsets[] = { offset };
 		vkCmdBindVertexBuffers(m_Cmd, binding, 1, vertexBuffers, offsets);
 	}
 
-	void VulkanCommandBuffer::BindIndexBuffer(Buffer* buffer, U32 offset=0)
+	void VulkanCommandBuffer::BindIndexBuffer(BufferHandle buffer, U32 offset=0)
 	{
-		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(buffer)->buffer, offset, VK_INDEX_TYPE_UINT16);
+		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(m_Device->AccessBuffer(buffer))->buffer, offset, VK_INDEX_TYPE_UINT16);
 	}
 
-	void VulkanCommandBuffer::BindDescriptorSet(DescriptorSet* descriptor, U32 num, U32* offsets, U32 num_offsets)
+	void VulkanCommandBuffer::BindDescriptorSet(DescriptorSet* descriptor,U16 setIndex, U32 num, U32* offsets, U32 num_offsets)
 	{
-		auto vulkanPipeline = Internal_To_Pipeline(m_CurrentPipeline);
-		vkCmdBindDescriptorSets(m_Cmd, ConvertBindPoint(m_CurrentPipeline->m_desc.bindPoint), vulkanPipeline->pipelineLayout, 0, num,&descriptor->descriptorSet,num_offsets,offsets);
+		auto pp = m_Device->AccessPipeline(m_CurrentPipeline);
+		auto vulkanPipeline = Internal_To_Pipeline(pp);
+		vkCmdBindDescriptorSets(m_Cmd, ConvertBindPoint(pp->m_desc.bindPoint), vulkanPipeline->pipelineLayout, setIndex, num,&descriptor->descriptorSet,num_offsets,offsets);
 	}
 
 	void VulkanCommandBuffer::SetClearColor(float r, float g, float b, float a)

@@ -4,8 +4,9 @@
 #include "Core/Time.h"
 #include "Events/EventsTypes/ApplicationEvents.h"
 #include "Renderer/Vulkan/VulkanRenderer.h"
-#include "Subsystems/Resources/ResourcesManager.h"
-#include "Subsystems/Resources/ShaderResourceManager.h"
+#include "Subsystems/Assets/AssetsManager.h"
+#include "Subsystems/Assets/AssetManagersTypes/ShaderAssetManager.h"
+#include "Subsystems/Assets/AssetManagersTypes/TextureAssetManager.h"
 namespace Czuch
 {
 	void EngineRoot::Init(const std::string& configFilePath)
@@ -30,9 +31,10 @@ namespace Czuch
 		m_Renderer->Init();
 
 		//create resources managers
-		m_ResourcesMgr = new ResourcesManager();
+		m_ResourcesMgr = new AssetsManager();
 		m_ResourcesMgr->Init();
-		m_ResourcesMgr->RegisterManager(new ShaderResourceManager(m_Renderer->GetDevice()),typeid(ShaderResource));
+		m_ResourcesMgr->RegisterManager(new ShaderAssetManager(m_Renderer->GetDevice()),typeid(ShaderAsset));
+		m_ResourcesMgr->RegisterManager(new TextureAssetManager(m_Renderer->GetDevice()), typeid(TextureAsset));
 
 		//listen to events
 		m_EventsMgr->AddListener(WindowClosedEvent::GetStaticEventType(), this);

@@ -11,8 +11,53 @@ namespace Czuch
 	static const U8 s_max_vertex_attributes = 16;
 	static const U8 k_max_descriptor_set_layouts = 8;
 
-#define mat4 glm::mat4
-#define vec4 glm::vec4
+	#define mat4 glm::mat4
+	#define vec4 glm::vec4
+
+	typedef I32 Handle;
+	#define INVALID_HANDLE(Type) Type{.handle=-1} 
+	#define HANDLE_IS_VALID(h)(h.handle!=-1)
+	#define INVALIDATE_HANDLE(h)h.handle=-1;
+
+	struct PipelineHandle
+	{
+		Handle handle;
+	};
+
+	struct RenderPassHandle
+	{
+		Handle handle;
+	};
+
+	struct ShaderHandle
+	{
+		Handle handle;
+	};
+
+	struct DescriptorSetLayoutHandle
+	{
+		Handle handle;
+	};
+
+	struct FrameBufferHandle
+	{
+		Handle handle;
+	};
+
+	struct CommandBufferHandle
+	{
+		Handle handle;
+	};
+
+	struct BufferHandle
+	{
+		Handle handle;
+	};
+
+	struct TextureHandle
+	{
+		Handle handle;
+	};
 
 	enum QUEUE_TYPE
 	{
@@ -22,6 +67,7 @@ namespace Czuch
 		QUEUE_VIDEO_DECODE,
 		QUEUE_ALL_COUNT,
 	};
+
 
 	enum class ValidationMode
 	{
@@ -340,6 +386,12 @@ namespace Czuch
 		MIRROR_ONCE,
 	};
 
+	enum class TextureFilter
+	{
+		LINEAR,
+		NEAREST
+	};
+
 	enum class ColorWrite
 	{
 		DISABLE = 0,
@@ -460,17 +512,18 @@ namespace Czuch
 	{
 		struct DescriptorInfo
 		{
-			void* resource;
+			I32 resource;
 			DescriptorType type;
 			U16 binding;
 		};
 
 		DescriptorInfo descriptors[s_max_descriptors_per_set];
-		DescriptorSetLayout* layout;
+		DescriptorSetLayoutHandle layout;
 		U16 descriptorsCount;
 
 		DescriptorSetDesc& Reset();
-		DescriptorSetDesc& AddBuffer(Buffer* buffer,U16 binding);
+		DescriptorSetDesc& AddBuffer(BufferHandle buffer,U16 binding);
+		DescriptorSetDesc& AddSampler(TextureHandle texture, U16 binding);
 	};
 
 	union ClearValue
@@ -566,18 +619,18 @@ namespace Czuch
 
 	struct PipelineStateDesc
 	{
-		Shader *vs;
-		Shader *ps;
+		ShaderHandle vs;
+		ShaderHandle ps;
 		BlendState bs;
 		RasterizerState rs;
 		DepthStencilState dss;
 		InputVertexLayout il;
 		PrimitiveTopology pt = PrimitiveTopology::TRIANGLELIST;
-		DescriptorSetLayout* layouts[k_max_descriptor_set_layouts];
+		DescriptorSetLayoutHandle layouts[k_max_descriptor_set_layouts];
 		U16 layoutsCount = 0;
 		BindPoint bindPoint;
 
-		void AddLayout(DescriptorSetLayout* layout)
+		void AddLayout(DescriptorSetLayoutHandle layout)
 		{
 			if (layoutsCount >= k_max_descriptor_set_layouts)
 			{
@@ -587,26 +640,44 @@ namespace Czuch
 		}
 	};
 
+	struct SamplerDesc
+	{
+		TextureAddressMode addressModeU = TextureAddressMode::WRAP;
+		TextureAddressMode addressModeV = TextureAddressMode::WRAP;
+		TextureAddressMode addressModeW = TextureAddressMode::WRAP;
+		TextureFilter magFilter = TextureFilter::LINEAR;
+		TextureFilter minFilter = TextureFilter::LINEAR;
+		bool anisoEnabled=false;
+	};
+
 	struct TextureDesc
 	{
+		SamplerDesc samplerDesc;
 		enum class Type
 		{
 			TEXTURE_1D,
 			TEXTURE_2D,
 			TEXTURE_3D,
+			TEXTURE_CUBE
 		} type = Type::TEXTURE_2D;
-		uint32_t width = 1;
-		uint32_t height = 1;
-		uint32_t depth = 1;
-		uint32_t array_size = 1;
-		uint32_t mip_levels = 1;
+		U32 width = 1;
+		U32 height = 1;
+		U32 depth = 1;
+		U32 array_size = 1;
+		U32 mip_levels = 1;
 		Format format = Format::UNKNOWN;
-		uint32_t sample_count = 1;
+		U32 sample_count = 1;
 		Usage usage = Usage::DEFAULT;
 		BindFlag bind_flags = BindFlag::NONE;
 		ClearValue clear = {};
 		ResourceState layout = ResourceState::SHADER_RESOURCE;
 		Swizzle swizzle;
+		U8* texData;
+
+		inline U32 GetSize() const
+		{
+			return width * height * 4;
+		}
 	};
 
 

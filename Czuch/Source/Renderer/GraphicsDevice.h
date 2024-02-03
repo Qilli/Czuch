@@ -17,21 +17,33 @@ namespace Czuch
 		virtual float GetSwapchainWidth() const = 0;
 		virtual float GetSwapchainHeight() const = 0;
 
-		virtual Pipeline* CreatePipelineState(const PipelineStateDesc* desc, const RenderPass* rpass) const = 0;
-		virtual Shader* CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize) const=0;
-		virtual RenderPass* CreateRenderPass(const RenderPassDesc* desc) const = 0; 
-		virtual DescriptorSetLayout* CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc) const = 0;
-		virtual FrameBuffer* CreateFrameBuffer(const FrameBufferDesc* desc) const = 0;
-		virtual CommandBuffer* CreateCommandBuffer(bool isPrimary) const = 0;
-		virtual Buffer* CreateBuffer(const BufferDesc* desc) const = 0;
+		virtual PipelineHandle CreatePipelineState(const PipelineStateDesc* desc, const RenderPassHandle rpass) = 0;
+		virtual ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize) =0;
+		virtual RenderPassHandle CreateRenderPass(const RenderPassDesc* desc) = 0; 
+		virtual DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc) = 0;
+		virtual FrameBufferHandle CreateFrameBuffer(const FrameBufferDesc* desc)  = 0;
+		virtual CommandBufferHandle CreateCommandBuffer(bool isPrimary)  = 0;
+		virtual BufferHandle CreateBuffer(const BufferDesc* desc) = 0;
+		virtual TextureHandle CreateTexture(const TextureDesc* desc)= 0;
 
-		virtual bool ReleasePipeline(Pipeline* pipeline) const = 0;
-		virtual bool ReleaseShader(Shader* shader) const = 0;
-		virtual bool ReleaseRenderPass(RenderPass* rp) const = 0;
-		virtual bool ReleaseDescriptorSetLayout(DescriptorSetLayout* dsl) const = 0;
-		virtual bool ReleaseFrameBuffer(FrameBuffer* fb) const = 0;
-		virtual bool ReleaseCommandBuffer(CommandBuffer* commandBuffer)const = 0;
-		virtual bool ReleaseBuffer(Buffer* buffer) const = 0;
+		virtual bool Release(PipelineHandle& pipeline) = 0;
+		virtual bool Release(ShaderHandle& shader)= 0;
+		virtual bool Release(RenderPassHandle& rp)= 0;
+		virtual bool Release(DescriptorSetLayoutHandle& dsl) = 0;
+		virtual bool Release(FrameBufferHandle& fb) = 0;
+		virtual bool Release(CommandBufferHandle& commandBuffer)= 0;
+		virtual bool Release(BufferHandle& buffer) = 0;
+		virtual bool Release(TextureHandle& texture)= 0;
+
+		virtual Pipeline* AccessPipeline(PipelineHandle handle)= 0;
+		virtual RenderPass* AccessRenderPass(RenderPassHandle handle) = 0;
+		virtual Shader* AccessShader(ShaderHandle handle)= 0;
+		virtual DescriptorSetLayout* AccessDescriptorSetLayout(DescriptorSetLayoutHandle handle) = 0;
+		virtual FrameBuffer* AccessFrameBuffer(FrameBufferHandle handle)= 0;
+		virtual CommandBuffer* AccessCommandBuffer(CommandBufferHandle handle)= 0;
+		virtual Buffer* AccessBuffer(BufferHandle handle)= 0;
+		virtual Texture* AccessTexture(TextureHandle handle)= 0;
+
 	};
 
 }

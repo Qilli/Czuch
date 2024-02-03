@@ -5,11 +5,12 @@
 namespace Czuch
 {
 	struct Pipeline_Vulkan;
+	class VulkanDevice;
 
 	class VulkanPipelineBuilder
 	{
 	public:
-		VulkanPipelineBuilder(const VkDevice deviceObj, Pipeline_Vulkan* pipelineObj,const PipelineStateDesc* pipelineDesc);
+		VulkanPipelineBuilder(VulkanDevice* deviceObj, Pipeline_Vulkan* pipelineObj,const PipelineStateDesc* pipelineDesc);
 		bool BuildPipeline(const VkRenderPass renderPass);
 	private:
 		void CreateInputAssemblyInfo();
@@ -21,7 +22,7 @@ namespace Czuch
 		VkPipelineColorBlendStateCreateInfo CreateBlendingInfo();
 	private:
 		Pipeline_Vulkan* pipeline;
-		VkDevice device;
+		VulkanDevice* device;
 		const PipelineStateDesc* pipelineDescPtr;
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 		VkVertexInputBindingDescription bindingDescription[s_max_vertex_streams];

@@ -1,6 +1,7 @@
 #include "czpch.h"
 #include "DescriptorAllocator.h"
 #include "VulkanCore.h"
+#include "VulkanDevice.h"
 
 namespace Czuch
 {
@@ -10,7 +11,7 @@ namespace Czuch
 	{
 		for (auto p : m_UsedPools)
 		{
-			vkResetDescriptorPool(m_Device,p,0);
+			vkResetDescriptorPool(m_Device->GetNativeDevice(), p, 0);
 			m_FreePools.push_back(p);
 		}
 
@@ -24,7 +25,7 @@ namespace Czuch
 		m_CurrentPool = VK_NULL_HANDLE;
 	}
 
-	void WriteDescriptor(DescriptorWriter& writer,VkDevice device, DescriptorSet* descriptor)
+	void WriteDescriptor(DescriptorWriter& writer,VulkanDevice* device, DescriptorSet* descriptor)
 	{
 		writer.Clear();
 		for (int i = 0; i < descriptor->desc.descriptorsCount; ++i)
@@ -32,12 +33,13 @@ namespace Czuch
 			auto& current = descriptor->desc.descriptors[i];
 			if (current.type == DescriptorType::UNIFORM_BUFFER || current.type == DescriptorType::UNIFORM_BUFFER_DYNAMIC || current.type == DescriptorType::STORAGE_BUFFER || current.type == DescriptorType::STORAGE_BUFFER_DYNAMIC)
 			{
-				Buffer* buffer = (Buffer*)current.resource;
+				Buffer* buffer = (Buffer*)device->AccessBuffer(BufferHandle{ .handle=current.resource });
 				writer.WriteBuffer(current.binding, buffer, buffer->desc.size, 0, current.type);
 			}
 			else
 			{
-
+				Texture* tex = (Texture*)device->AccessTexture(TextureHandle{ .handle = current.resource });
+				writer.WriteTexture(current.binding, tex, current.type);
 			}
 		}
 
@@ -66,7 +68,7 @@ namespace Czuch
 		descSet->desc = desc;
 		m_Descriptors.push_back(descSet);
 
-		VkResult result = vkAllocateDescriptorSets(m_Device, &allocInfo, &descSet->descriptorSet);
+		VkResult result = vkAllocateDescriptorSets(m_Device->GetNativeDevice(), &allocInfo, &descSet->descriptorSet);
 
 		switch (result)
 		{
@@ -83,7 +85,7 @@ namespace Czuch
 		m_CurrentPool = GrabPool();
 		m_UsedPools.push_back(m_CurrentPool);
 
-		result=vkAllocateDescriptorSets(m_Device, &allocInfo,&descSet->descriptorSet);
+		result=vkAllocateDescriptorSets(m_Device->GetNativeDevice(), &allocInfo, &descSet->descriptorSet);
 
 		if (result != VK_SUCCESS)
 		{
@@ -94,7 +96,7 @@ namespace Czuch
 		return descSet;
 	}
 
-	void DescriptorAllocator::Init(VkDevice device)
+	void DescriptorAllocator::Init(VulkanDevice* device)
 	{
 		m_Device = device;
 	}
@@ -109,12 +111,12 @@ namespace Czuch
 
 		for (auto d : m_FreePools)
 		{
-			vkDestroyDescriptorPool(m_Device, d, nullptr);
+			vkDestroyDescriptorPool(m_Device->GetNativeDevice(), d, nullptr);
 		}
 
 		for (auto d2 : m_UsedPools)
 		{
-			vkDestroyDescriptorPool(m_Device, d2, nullptr);
+			vkDestroyDescriptorPool(m_Device->GetNativeDevice(), d2, nullptr);
 		}
 
 
@@ -132,7 +134,7 @@ namespace Czuch
 		}
 		else
 		{
-			return CreatePool(m_Device, m_DescriptorSizes,1000, 0);
+			return CreatePool(m_Device->GetNativeDevice(), m_DescriptorSizes, 1000, 0);
 		}
 	}
 
@@ -184,6 +186,25 @@ namespace Czuch
 		writes.push_back(write);
 	}
 
+	void DescriptorWriter::WriteTexture(int binding, Texture* texture, DescriptorType type)
+	{
+		auto vulkanTex = Internal_to_Texture(texture);
+		VkDescriptorImageInfo& imageInfo = imageInfos.emplace_back(VkDescriptorImageInfo {
+			.sampler = vulkanTex->sampler,
+			.imageView = vulkanTex->imageView,
+			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		});
+	
+		VkWriteDescriptorSet write = { .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+
+		write.dstSet = VK_NULL_HANDLE;
+		write.descriptorCount = 1;
+		write.dstBinding = binding;
+		write.descriptorType = ConvertDescriptorType(type);
+		write.pImageInfo = &imageInfo;
+		writes.push_back(write);
+	}
+
 	void DescriptorWriter::Clear()
 	{
 		imageInfos.clear();
@@ -191,13 +212,13 @@ namespace Czuch
 		writes.clear();
 	}
 
-	void DescriptorWriter::UpdateSet(VkDevice device, DescriptorSet* descriptorSet)
+	void DescriptorWriter::UpdateSet(VulkanDevice* device, DescriptorSet* descriptorSet)
 	{
 		for (VkWriteDescriptorSet& set : writes)
 		{
 			set.dstSet = descriptorSet->descriptorSet;
 		}
-		vkUpdateDescriptorSets(device, (uint32_t)writes.size(), writes.data(), 0, nullptr);
+		vkUpdateDescriptorSets(device->GetNativeDevice(), (uint32_t)writes.size(), writes.data(), 0, nullptr);
 	}
 
 #pragma endregion

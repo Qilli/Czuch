@@ -12,8 +12,11 @@ class EventHandler : public Czuch::IEventsListener
 	}
 };
 
+
+
 int main()
 {
+
 	Czuch::EngineRoot* root = new Czuch::EngineRoot();
 	root->Init("engineConfig.cfg");
 

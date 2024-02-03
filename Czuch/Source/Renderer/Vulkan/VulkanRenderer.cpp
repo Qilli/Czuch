@@ -5,8 +5,9 @@
 #include"VulkanCore.h"
 #include"Platform/Windows/WinWindow.h"
 
-#include"Subsystems/Resources/ResourcesManager.h"
-#include"Subsystems/Resources/ShaderResource.h"
+#include"Subsystems/Assets/AssetsManager.h"
+#include"Subsystems/Assets/Asset/ShaderAsset.h"
+#include"Subsystems/Assets/Asset/TextureAsset.h"
 #include"DescriptorAllocator.h"
 #include <glm.hpp>
 
@@ -18,40 +19,23 @@ namespace Czuch
 		m_AttachedWindow = window;
 	}
 
-	Pipeline* pipeline = nullptr;
-	Buffer* vertexBufferPos = nullptr;
-	Buffer* vertexBufferColor = nullptr;
-	Shader* vertexShader = nullptr;
-	Buffer* indexBuffer = nullptr;
-	Shader* fragmentShader = nullptr;
+	PipelineHandle pipeline = INVALID_HANDLE(PipelineHandle);
+	BufferHandle vertexBufferPos = INVALID_HANDLE(BufferHandle);
+	BufferHandle vertexBufferColor = INVALID_HANDLE(BufferHandle);
+	BufferHandle vertexBufferUV = INVALID_HANDLE(BufferHandle);
+	ShaderHandle vertexShader = INVALID_HANDLE(ShaderHandle);
+	BufferHandle indexBuffer = INVALID_HANDLE(BufferHandle);
+	ShaderHandle fragmentShader = INVALID_HANDLE(ShaderHandle);
 	bool inited = false;
 
 	VulkanRenderer::~VulkanRenderer()
 	{
 		m_Device->AwaitDevice();
 
-		m_Device->ReleaseShader(fragmentShader);
-		m_Device->ReleaseShader(vertexShader);
-		m_Device->ReleaseBuffer(indexBuffer);
-		m_Device->ReleaseBuffer(vertexBufferColor);
-		m_Device->ReleaseBuffer(vertexBufferPos);
-		m_Device->ReleasePipeline(pipeline);
-		
-
-		m_Device->ReleaseDescriptorSetLayout(m_SceneData.layout);
 
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			m_FramesData[a].frameDeletionQueue.Flush();
-		}
-
-
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
-		{
-			if (m_SceneData.buffer[a] != nullptr)
-			{
-				m_Device->ReleaseBuffer(m_SceneData.buffer[a]);
-			}
 		}
 		
 		ReleaseSyncObjects();
@@ -59,7 +43,6 @@ namespace Czuch
 		{
 			m_FramesData[a].descriptorAllocator->CleanUp();
 			m_Device->ReleaseDescriptorAllocator(m_FramesData[a].descriptorAllocator);
-			m_Device->ReleaseCommandBuffer(m_FramesData[a].commandBuffer);
 		}
 		
 		delete m_Device;
@@ -77,8 +60,9 @@ namespace Czuch
 
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
-			m_FramesData[a].commandBuffer = (VulkanCommandBuffer*)m_Device->CreateCommandBuffer(true);
-			m_FramesData[a].commandBuffer->Init(m_Device);
+			m_FramesData[a].commandBuffer = m_Device->CreateCommandBuffer(true);
+			VulkanCommandBuffer* cmd = (VulkanCommandBuffer*)m_Device->AccessCommandBuffer(m_FramesData[a].commandBuffer);
+			cmd->Init(m_Device);
 
 			m_FramesData[a].descriptorAllocator = m_Device->CreateDescriptorAllocator();
 		}
@@ -93,13 +77,15 @@ namespace Czuch
 		{
 			inited = true;
 			//create objects
-			auto resMgr = ResourcesManager::GetPtr();
+			auto resMgr = AssetsManager::GetPtr();
 
-			auto handle=resMgr->LoadResource<ShaderResource>("F:/Engine/Czuch/Czuch/Data/Shaders/vertShader.vert");
-			auto vsRes = resMgr->GetResource<ShaderResource>(handle);
+			auto handle = resMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("F:/Engine/Czuch/Czuch/Data/Shaders/vertShader.vert", {});
+			auto vsRes = resMgr->GetAsset<ShaderAsset>(handle);
 
-			auto handle2 = resMgr->LoadResource<ShaderResource>("F:/Engine/Czuch/Czuch/Data/Shaders/fragShader.frag");
-			auto fsRes = resMgr->GetResource<ShaderResource>(handle2);
+			auto handle2 = resMgr->LoadAsset<ShaderAsset>("F:/Engine/Czuch/Czuch/Data/Shaders/fragShader.frag");
+			auto fsRes = resMgr->GetAsset<ShaderAsset>(handle2);
+
+			auto texHandle = resMgr->LoadAsset<TextureAsset, TextureLoadSettings>("F:/Engine/Czuch/Czuch/Data/Textures/texture.jpg", {.type = TextureDesc::Type::TEXTURE_2D});
 
 			vertexShader = vsRes->GetShaderAsset();
 			fragmentShader = fsRes->GetShaderAsset();
@@ -115,14 +101,17 @@ namespace Czuch
 			desc.dss.depth_write_mask = DepthWriteMask::ZERO;
 
 			desc.AddLayout(m_SceneData.layout);
+			desc.AddLayout(m_SceneData.texLayout);
 
 			desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 2,.input_rate = InputClassification::PER_VERTEX_DATA });
 			desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
+			desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 2,.input_rate = InputClassification::PER_VERTEX_DATA });
 
 			desc.il.AddAttribute({.location=0,.binding=0,.offset=0,.format=Format::R32G32_FLOAT});
 			desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32_FLOAT });
+			desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32_FLOAT });
 
-			pipeline=m_Device->CreatePipelineState(&desc, nullptr);
+			pipeline=m_Device->CreatePipelineState(&desc, INVALID_HANDLE(RenderPassHandle));
 
 			const std::vector<glm::vec2> positions = {
 				{-0.5f, -0.5f},
@@ -136,6 +125,14 @@ namespace Czuch
 				{1.0f, 0.0f, 0.0f},
 				{1.0f, 0.0f, 0.0f},
 				{1.0f, 0.0f, 0.0f},
+			};
+
+
+			const std::vector<glm::vec2> uvs = {
+				{0.0f, 0.0f},
+				{1.0f, 0.0f},
+				{1.0f, 1.0f},
+				{0.0f, 1.0f},
 			};
 
 			const std::vector<U16> indices = { 0, 1, 2, 2, 3, 0 };
@@ -160,6 +157,18 @@ namespace Czuch
 
 			vertexBufferColor = m_Device->CreateBuffer(&vbDescC);
 
+
+			BufferDesc vbDescUV;
+			vbDescUV.elementsCount = 4;
+			vbDescUV.size = 4 * sizeof(float) * 2;
+			vbDescUV.stride = 2 * sizeof(float);
+			vbDescUV.usage = Usage::DEFAULT;
+			vbDescUV.bind_flags = BindFlag::VERTEX_BUFFER;
+			vbDescUV.initData = (void*)uvs.data();
+
+			vertexBufferUV = m_Device->CreateBuffer(&vbDescUV);
+
+
 			BufferDesc ib;
 			ib.elementsCount = 6;
 			ib.size = 6 * sizeof(U16);
@@ -169,6 +178,9 @@ namespace Czuch
 			ib.initData = (void*)indices.data();
 
 			indexBuffer = m_Device->CreateBuffer(&ib);
+
+			auto texRes = resMgr->GetAsset<TextureAsset>(texHandle);
+			m_SceneData.tex = texRes->GetTextureAsset();
 		}
 
 
@@ -228,7 +240,7 @@ namespace Czuch
 
 	void VulkanRenderer::RecordCommandBuffer(uint32_t imageIndex)
 	{
-		auto cmdBuffer = GetCurrentFrame().commandBuffer;
+		auto cmdBuffer = m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer);
 		cmdBuffer->Begin();
 
 		cmdBuffer->SetClearColor(0.0f, 1.0f, 0.0f, 1.0f);
@@ -253,9 +265,11 @@ namespace Czuch
 		cmdBuffer->BindPipeline(pipeline);
 		cmdBuffer->BindVertexBuffer(vertexBufferPos,0,0);
 		cmdBuffer->BindVertexBuffer(vertexBufferColor, 1, 0);
+		cmdBuffer->BindVertexBuffer(vertexBufferUV, 2, 0);
 		cmdBuffer->BindIndexBuffer(indexBuffer,0);
-		cmdBuffer->BindDescriptorSet(m_SceneData.descriptor,1,nullptr,0);
-		cmdBuffer->DrawIndexed(indexBuffer->desc.elementsCount);
+		cmdBuffer->BindDescriptorSet(m_SceneData.descriptor,0,1,nullptr,0);
+		cmdBuffer->BindDescriptorSet(m_SceneData.descriptorTex,1, 1, nullptr, 0);
+		cmdBuffer->DrawIndexed(m_Device->AccessBuffer(indexBuffer)->desc.elementsCount);
 
 		cmdBuffer->EndCurrentRenderPass();
 		cmdBuffer->End();
@@ -266,7 +280,7 @@ namespace Czuch
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-		VkCommandBuffer cmdBuffer = GetCurrentFrame().commandBuffer->GetNativeBuffer();
+		VkCommandBuffer cmdBuffer = ((VulkanCommandBuffer*)m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer))->GetNativeBuffer();
 
 		VkSemaphore waitSemaphores[] = { GetCurrentFrame().imageAvailableSemaphore };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -290,6 +304,11 @@ namespace Czuch
 		desc.AddBinding(DescriptorType::UNIFORM_BUFFER, 0, 1);
 		m_SceneData.layout = m_Device->CreateDescriptorSetLayout(&desc);
 
+		DescriptorSetLayoutDesc desc_tex{};
+		desc_tex.shaderStage = (U32)ShaderStage::PS;
+		desc_tex.AddBinding(DescriptorType::SAMPLER, 0, 1);
+		m_SceneData.texLayout = m_Device->CreateDescriptorSetLayout(&desc_tex);
+
 		m_SceneData.bufferDesc.createMapped = true;
 		m_SceneData.bufferDesc.elementsCount = 1;
 		m_SceneData.bufferDesc.bind_flags = BindFlag::UNIFORM_BUFFER;
@@ -300,7 +319,7 @@ namespace Czuch
 
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
-			m_SceneData.buffer[a] = nullptr;
+			INVALIDATE_HANDLE(m_SceneData.buffer[a]);
 		}
 
 	}
@@ -309,23 +328,34 @@ namespace Czuch
 	{
 		m_SceneData.buffer[m_CurrentFrame] = m_Device->CreateBuffer(&m_SceneData.bufferDesc);
 		GetCurrentFrame().frameDeletionQueue.PushFunction([=, this]() {
-			if (m_SceneData.buffer[m_CurrentFrame] != nullptr) { m_Device->ReleaseBuffer(m_SceneData.buffer[m_CurrentFrame]); m_SceneData.buffer[m_CurrentFrame] = nullptr; } });
-		auto bufferVulkan =Internal_to_Buffer(m_SceneData.buffer[m_CurrentFrame]);
+			if (HANDLE_IS_VALID(m_SceneData.buffer[m_CurrentFrame])) 
+			{ 
+				m_Device->Release(m_SceneData.buffer[m_CurrentFrame]); } 
+			});
+		auto bufferVulkan =Internal_to_Buffer(m_Device->AccessBuffer(m_SceneData.buffer[m_CurrentFrame]));
 
 		m_SceneData.data.ambientColor = vec4(1, 1, 0, 1);
 
 		SceneData* data=(SceneData*)bufferVulkan->GetMappedData();
 		*data = m_SceneData.data;
 
-		//fill descriptor
+		//fill descriptors
 		m_SceneData.descriptorSet.Reset();
 		m_SceneData.descriptorSet.AddBuffer(m_SceneData.buffer[m_CurrentFrame],0);
 
-		m_SceneData.descriptor =GetCurrentFrame().descriptorAllocator->Allocate(m_SceneData.descriptorSet, m_SceneData.layout);
+		m_SceneData.descriptorSetTex.Reset();
+		m_SceneData.descriptorSetTex.AddSampler(m_SceneData.tex, 0);
+
+		m_SceneData.descriptor =GetCurrentFrame().descriptorAllocator->Allocate(m_SceneData.descriptorSet, m_Device->AccessDescriptorSetLayout(m_SceneData.layout));
+		m_SceneData.descriptorTex = GetCurrentFrame().descriptorAllocator->Allocate(m_SceneData.descriptorSetTex, m_Device->AccessDescriptorSetLayout(m_SceneData.texLayout));
 
 		DescriptorWriter writer;
-		writer.WriteBuffer(0, m_SceneData.buffer[m_CurrentFrame], sizeof(SceneData), 0, DescriptorType::UNIFORM_BUFFER);
-		writer.UpdateSet(m_Device->GetNativeDevice(), m_SceneData.descriptor);
+		writer.WriteBuffer(0, m_Device->AccessBuffer(m_SceneData.buffer[m_CurrentFrame]), sizeof(SceneData), 0, DescriptorType::UNIFORM_BUFFER);
+		writer.UpdateSet(m_Device, m_SceneData.descriptor);
+
+		writer.Clear();
+		writer.WriteTexture(0, m_Device->AccessTexture(m_SceneData.tex), DescriptorType::SAMPLER);
+		writer.UpdateSet(m_Device, m_SceneData.descriptorTex);
 	}
 
 	void VulkanRenderer::FrameData::Reset()

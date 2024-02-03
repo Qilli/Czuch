@@ -2,6 +2,7 @@
 #include"Renderer/GraphicsDevice.h"
 #include"VulkanBase.h"
 #include"Events/IEventsListener.h"
+#include"Renderer/GraphicsResourceAccessContainer.h"
 #include<optional>
 
 namespace Czuch
@@ -10,6 +11,8 @@ namespace Czuch
 	class DescriptorLayoutCache;
 	class DescriptorAllocator;
 	struct BufferInternalSettings;
+
+	static const U32 k_max_resources = 500;
 
 	class VulkanDevice final : public GraphicsDevice, public Czuch::IEventsListener
 	{
@@ -21,25 +24,40 @@ namespace Czuch
 		float GetSwapchainWidth() const override { return m_SwapChainData.swapChainExtent.width; }
 		float GetSwapchainHeight() const override { return m_SwapChainData.swapChainExtent.height; }
 
-		Pipeline* CreatePipelineState(const PipelineStateDesc* desc, const RenderPass* rpass) const override;
-		Shader* CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize) const override;
-		RenderPass* CreateRenderPass(const RenderPassDesc* desc) const override;
-		DescriptorSetLayout* CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc) const override;
-		FrameBuffer* CreateFrameBuffer(const FrameBufferDesc* desc) const override;
-		CommandBuffer* CreateCommandBuffer(bool isPrimary) const override;
-		Buffer* CreateBuffer(const BufferDesc* desc) const override;
-		DescriptorAllocator* CreateDescriptorAllocator() const;
+		PipelineHandle CreatePipelineState(const PipelineStateDesc* desc, const RenderPassHandle rpass) override;
+		ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize)override;
+		RenderPassHandle CreateRenderPass(const RenderPassDesc* desc) override;
+		DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc)  override;
+		FrameBufferHandle CreateFrameBuffer(const FrameBufferDesc* desc) override;
+		CommandBufferHandle CreateCommandBuffer(bool isPrimary) override;
+		BufferHandle CreateBuffer(const BufferDesc* desc) override;
+		TextureHandle CreateTexture(const TextureDesc* desc) override;
 
+
+		DescriptorAllocator* CreateDescriptorAllocator();
+		
 		void AwaitDevice() const;
 
 		void ReleaseDescriptorAllocator(DescriptorAllocator* allocator);
-		bool ReleasePipeline(Pipeline* pipeline) const override;
-		bool ReleaseShader(Shader* shader) const override;
-		bool ReleaseRenderPass(RenderPass* rp) const override;
-		bool ReleaseDescriptorSetLayout(DescriptorSetLayout* dsl) const override;
-		bool ReleaseFrameBuffer(FrameBuffer* fb) const override;
-		bool ReleaseCommandBuffer(CommandBuffer* cb)const override;
-		bool ReleaseBuffer(Buffer* buffer) const override;
+		bool Release(PipelineHandle& pipeline)  override;
+		bool Release(ShaderHandle& shader) override;
+		bool Release(RenderPassHandle& rp) override;
+		bool Release(DescriptorSetLayoutHandle& dsl)  override;
+		bool Release(FrameBufferHandle& fb)  override;
+		bool Release(CommandBufferHandle& cb) override;
+		bool Release(BufferHandle& buffer)  override;
+		bool Release(TextureHandle& texture) override;
+
+
+		Pipeline* AccessPipeline(PipelineHandle handle) override;
+		RenderPass* AccessRenderPass(RenderPassHandle handle) override;
+		Shader* AccessShader(ShaderHandle handle)  override;
+		DescriptorSetLayout* AccessDescriptorSetLayout(DescriptorSetLayoutHandle handle) override;
+		FrameBuffer* AccessFrameBuffer(FrameBufferHandle handle) override;
+		CommandBuffer* AccessCommandBuffer(CommandBufferHandle handle)  override;
+		Buffer* AccessBuffer(BufferHandle handle)  override;
+		Texture* AccessTexture(TextureHandle handle) override;
+
 	public:
 		VkDevice GetNativeDevice() const { return m_Device; }
 		VkSemaphore CreateNewSemaphore();
@@ -56,17 +74,13 @@ namespace Czuch
 		{
 			std::vector<VkImage> swapChainImages;
 			std::vector<VkImageView> swapChainImageViews;
-			std::vector<FrameBuffer*> swapChainFrameBuffers;
+			std::vector<FrameBufferHandle> swapChainFrameBuffers;
 			VkExtent2D swapChainExtent;
 			VkFormat swapChainImageFormat;
 			VkSwapchainKHR swapChain;
 
 			void Release(VkDevice device)
 			{
-				for (uint32_t i = 0; i < swapChainImageViews.size(); ++i)
-				{
-					delete swapChainFrameBuffers[i];
-				}
 
 				for (uint32_t i = 0; i < swapChainImageViews.size(); ++i)
 				{
@@ -98,6 +112,23 @@ namespace Czuch
 			std::vector<VkPresentModeKHR> presentModes;
 		};
 
+		struct ResourcesContainer
+		{
+			GraphicsResourceAccessContainer<Texture,TextureHandle> textures= GraphicsResourceAccessContainer<Texture, TextureHandle>(k_max_resources);
+			GraphicsResourceAccessContainer<Buffer, BufferHandle> buffers = GraphicsResourceAccessContainer<Buffer, BufferHandle>(k_max_resources);
+			GraphicsResourceAccessContainer<CommandBuffer, CommandBufferHandle> commandBuffers = GraphicsResourceAccessContainer<CommandBuffer, CommandBufferHandle>(k_max_resources);
+			GraphicsResourceAccessContainer<Pipeline, PipelineHandle> pipelines = GraphicsResourceAccessContainer<Pipeline, PipelineHandle>(k_max_resources);
+			GraphicsResourceAccessContainer<RenderPass, RenderPassHandle> renderPasses = GraphicsResourceAccessContainer<RenderPass, RenderPassHandle>(k_max_resources);
+			GraphicsResourceAccessContainer<Shader, ShaderHandle> shaders = GraphicsResourceAccessContainer<Shader, ShaderHandle>(k_max_resources);
+			GraphicsResourceAccessContainer<FrameBuffer, FrameBufferHandle> frameBuffers = GraphicsResourceAccessContainer<FrameBuffer, FrameBufferHandle>(k_max_resources);
+			GraphicsResourceAccessContainer<DescriptorSetLayout, DescriptorSetLayoutHandle> descriptorSetLayouts = GraphicsResourceAccessContainer<DescriptorSetLayout, DescriptorSetLayoutHandle>(k_max_resources);
+
+			void ReleaseAll();
+		};
+
+	private:
+		ResourcesContainer m_ResContainer;
+
 	private:
 		Window* m_AttachedWindow;
 
@@ -111,7 +142,7 @@ namespace Czuch
 		SwapChainData m_SwapChainData;
 		VkCommandPool m_CommandPool;
 		VkCommandPool m_CopyCommandPool;
-		RenderPass* m_SwapChainRenderPass;
+		RenderPassHandle m_SwapChainRenderPass;
 
 		VkPhysicalDeviceMemoryProperties m_MemProperties;
 
@@ -120,6 +151,7 @@ namespace Czuch
 		VmaAllocator m_VmaAllocator;
 		DescriptorLayoutCache* m_DescriptorLayoutCache;
 		DescriptorAllocator* m_PersistentDescriptorAllocator;
+		VkPhysicalDeviceProperties m_DeviceProperties;
 
 	private:
 		bool CreateVulkanInstance();
@@ -139,8 +171,13 @@ namespace Czuch
 		VkDeviceMemory AllocateBufferMemory(VkBuffer buffer,VkMemoryPropertyFlags memoryProperty) const;
 		bool CreateBuffer_Internal(BufferInternalSettings& settings) const;
 		bool CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
+		void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, U32 w, U32 h) const;
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout) const;
+		VkCommandBuffer BeginSingleTimeCommands() const;
+		void EndSingleTimeCommands(VkCommandBuffer cmd) const;
 	private:
-		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
+		VkSampler CreateImageSampler(const SamplerDesc& desc) const;
 	private:
 		virtual void OnEvent(const Czuch::Event& e) override;
 		
