@@ -186,9 +186,9 @@ namespace Czuch
 		writes.push_back(write);
 	}
 
-	void DescriptorWriter::WriteTexture(int binding, Texture* texture, DescriptorType type)
+	void DescriptorWriter::WriteTexture(int binding, Texture* color_texture, DescriptorType type)
 	{
-		auto vulkanTex = Internal_to_Texture(texture);
+		auto vulkanTex = Internal_to_Texture(color_texture);
 		VkDescriptorImageInfo& imageInfo = imageInfos.emplace_back(VkDescriptorImageInfo {
 			.sampler = vulkanTex->sampler,
 			.imageView = vulkanTex->imageView,

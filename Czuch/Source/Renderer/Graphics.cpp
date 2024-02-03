@@ -71,7 +71,7 @@ namespace Czuch
 	}
 
 
-	DescriptorSetDesc& DescriptorSetDesc::AddSampler(TextureHandle texture, U16 binding)
+	DescriptorSetDesc& DescriptorSetDesc::AddSampler(TextureHandle color_texture, U16 binding)
 	{
 		if (descriptorsCount >= s_max_descriptors_per_set)
 		{
@@ -79,7 +79,7 @@ namespace Czuch
 		}
 
 		descriptors[descriptorsCount].binding = binding;
-		descriptors[descriptorsCount].resource = texture.handle;
+		descriptors[descriptorsCount].resource = color_texture.handle;
 		descriptors[descriptorsCount++].type = DescriptorType::SAMPLER;
 
 		return *this;

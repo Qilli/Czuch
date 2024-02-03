@@ -162,6 +162,7 @@
       <Filter>Subsystems</Filter>
     </ClInclude>
     <ClInclude Include="source\czpch.h" />
+    <ClInclude Include="source\Core\Math.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">

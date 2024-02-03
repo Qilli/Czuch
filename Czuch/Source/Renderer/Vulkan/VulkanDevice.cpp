@@ -27,6 +27,12 @@ namespace Czuch
 
 #pragma region Create methods
 
+	VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice);
+	bool CreateImage(VmaAllocator allocator, TextureDesc::Type type, U32 width, U32 height, U32 depth, U32 mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memUsage,
+		VkImage& image, VmaAllocation& alloc);
+	bool HasStencilComponent(VkFormat format);
+	VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+
 	PipelineHandle VulkanDevice::CreatePipelineState(const PipelineStateDesc* desc, const RenderPassHandle rpass)
 	{
 		CZUCH_BE_ASSERT(desc, "CreatePipelineState NULL desc input");
@@ -108,27 +114,44 @@ namespace Czuch
 		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+		VkAttachmentDescription depthAttachment{};
+		depthAttachment.format = FindDepthFormat(m_PhysicalDevice);
+		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
 		VkAttachmentReference colorAttachmentRef{};
 		colorAttachmentRef.attachment = 0;
 		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkAttachmentReference depthAttachmentRef{};
+		depthAttachmentRef.attachment = 1;
+		depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		VkSubpassDescription subpass{};
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &colorAttachmentRef;
+		subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
 		VkSubpassDependency dependency{};
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependency.dstSubpass = 0;
-		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 		dependency.srcAccessMask = 0;
-		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;;
+		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+		std::array<VkAttachmentDescription,2> attachments = { colorAttachment,depthAttachment };
 
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = 1;
-		renderPassInfo.pAttachments = &colorAttachment;
+		renderPassInfo.attachmentCount = 2;
+		renderPassInfo.pAttachments = attachments.data();
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
 		renderPassInfo.dependencyCount = 1;
@@ -204,21 +227,24 @@ namespace Czuch
 		fb->m_InternalResourceState = std::make_shared<FrameBuffer_Vulkan>();
 		fb->desc = *desc;
 
-		CZUCH_BE_ASSERT(desc->texture != nullptr, "Invalid frame buffer desc's texture.");
+		Texture* rpTex = AccessTexture(desc->color_texture);
+		RenderPass* rp = AccessRenderPass(desc->renderPass);
 
-		auto vulkanTexture = Internal_to_Texture(desc->texture);
+		CZUCH_BE_ASSERT(rpTex!=nullptr, "Invalid frame buffer desc's texture.");
+
+		auto vulkanTexture = Internal_to_Texture(rpTex);
 
 		VkImageView attachments[] = {
 			vulkanTexture->imageView
 		};
 
-		CZUCH_BE_ASSERT(desc->renderPass != nullptr, "Invalid frame buffer desc's render pass.");
-		U32 width = desc->texture->desc.width;
-		U32 height = desc->texture->desc.height;
+		CZUCH_BE_ASSERT(rp!=nullptr, "Invalid frame buffer desc's render pass.");
+		U32 width = rpTex->desc.width;
+		U32 height = rpTex->desc.height;
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = Internal_to_RenderPass(desc->renderPass)->renderPass;
+		framebufferInfo.renderPass = Internal_to_RenderPass(rp)->renderPass;
 		framebufferInfo.attachmentCount = 1;
 		framebufferInfo.pAttachments = attachments;
 		framebufferInfo.width = width;
@@ -268,11 +294,11 @@ namespace Czuch
 	{
 		CZUCH_BE_ASSERT(desc != nullptr, "Invalid texture desc.");
 
-		Texture* texture = new Texture();
-		texture->desc = *desc;
-		texture->m_InternalResourceState = std::make_shared<Texture_Vulkan>();
+		Texture* color_texture = new Texture();
+		color_texture->desc = *desc;
+		color_texture->m_InternalResourceState = std::make_shared<Texture_Vulkan>();
 
-		auto vulkanTexture = Internal_to_Texture(texture);
+		auto vulkanTexture = Internal_to_Texture(color_texture);
 		vulkanTexture->allocator = m_VmaAllocator;
 		vulkanTexture->device = m_Device;
 
@@ -293,50 +319,35 @@ namespace Czuch
 		vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
 		memcpy(data, desc->texData, settingsStageBuffer.inSize);
 		vmaUnmapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc);
+		VkFormat targetFormat = ConvertFormat(desc->format);
 
-		VkImageCreateInfo imageInfo{};
-		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageInfo.imageType = ConvertImageType(desc->type);
-		imageInfo.extent.width = static_cast<uint32_t>(desc->width);
-		imageInfo.extent.height = static_cast<uint32_t>(desc->height);
-		imageInfo.extent.depth = desc->depth;
-		imageInfo.mipLevels = desc->mip_levels;
-		imageInfo.arrayLayers = 1;
-		imageInfo.format = ConvertFormat(desc->format);
-		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		imageInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT|VK_IMAGE_USAGE_SAMPLED_BIT;
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-		imageInfo.flags = 0;
-
-		VmaAllocationCreateInfo memory_info{};
-		memory_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;//ConvertMemoryUsage(desc->usage);
-
-		if (vmaCreateImage(m_VmaAllocator, &imageInfo, &memory_info, &vulkanTexture->image, &vulkanTexture->allocation, nullptr)!=VK_SUCCESS)
+		if (!CreateImage(m_VmaAllocator, desc->type, desc->width, desc->height, desc->depth, desc->mip_levels,targetFormat, VK_IMAGE_TILING_OPTIMAL, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VMA_MEMORY_USAGE_GPU_ONLY, vulkanTexture->image, vulkanTexture->allocation))
 		{
-			LOG_BE_ERROR("{0} Failed to create new vulkan image", Tag);
+
+			LOG_BE_ERROR("{0} Failed to create new vulkan Texture", Tag);
 			return INVALID_HANDLE(TextureHandle);
 		}
 
 		//transition
-		TransitionImageLayout(vulkanTexture->image, imageInfo.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		TransitionImageLayout(vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 		//copy staging buffe to target image
 		CopyBufferToImage(settingsStageBuffer.outBuffer, vulkanTexture->image, desc->width, desc->height);
 
 		//transition for read in ps
-		TransitionImageLayout(vulkanTexture->image, imageInfo.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		TransitionImageLayout(vulkanTexture->image,targetFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		vmaDestroyBuffer(m_VmaAllocator,settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
 
-		vulkanTexture->imageView = CreateImageView(vulkanTexture->image, ConvertFormat(desc->format), VK_IMAGE_ASPECT_COLOR_BIT);
+		vulkanTexture->imageView = CreateImageView(vulkanTexture->image, targetFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 		vulkanTexture->sampler = CreateImageSampler(desc->samplerDesc);
-
+		
 		TextureHandle h;
-		h.handle = m_ResContainer.textures.Add(texture);
+		h.handle = m_ResContainer.textures.Add(color_texture);
 		return h;
 	}
+
 
 	BufferHandle VulkanDevice::CreateBuffer(const BufferDesc* desc)
 	{
@@ -475,8 +486,18 @@ namespace Czuch
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
+		if (targetLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+			if (HasStencilComponent(format)) {
+				barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+			}
+		}
+		else {
+			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		}
+
 		barrier.image = image;
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		barrier.subresourceRange.baseMipLevel = 0;
 		barrier.subresourceRange.levelCount = 1;
 		barrier.subresourceRange.baseArrayLayer = 0;
@@ -498,6 +519,13 @@ namespace Czuch
 
 			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		}
+		else if (currentLayout == VK_IMAGE_LAYOUT_UNDEFINED && targetLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+			barrier.srcAccessMask = 0;
+			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 		}
 		else {
 			LOG_BE_ERROR("{0} Failed to find proper source and destinations settings for image transition layer.", Tag);
@@ -634,14 +662,14 @@ namespace Czuch
 		return true;
 	}
 
-	bool VulkanDevice::Release(TextureHandle& texture) 
+	bool VulkanDevice::Release(TextureHandle& color_texture) 
 	{
-		CZUCH_BE_ASSERT(HANDLE_IS_VALID(texture), "Invalid texture to release");
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(color_texture), "Invalid texture to release");
 		Texture* t = nullptr;
-		m_ResContainer.textures.Get(texture.handle, &t);
-		m_ResContainer.textures.Remove(texture.handle);
+		m_ResContainer.textures.Get(color_texture.handle, &t);
+		m_ResContainer.textures.Remove(color_texture.handle);
 		delete t;
-		INVALIDATE_HANDLE(texture)
+		INVALIDATE_HANDLE(color_texture)
 		return true;
 	}
 
@@ -879,6 +907,67 @@ namespace Czuch
 
 		return families;
 	}
+#pragma region helpers
+
+	bool CreateImage(VmaAllocator allocator, TextureDesc::Type type, U32 width, U32 height, U32 depth, U32 mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memUsage,
+		VkImage& image, VmaAllocation& alloc)
+	{
+		VkImageCreateInfo imageInfo{};
+		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageInfo.imageType = ConvertImageType(type);
+		imageInfo.extent.width = static_cast<uint32_t>(width);
+		imageInfo.extent.height = static_cast<uint32_t>(height);
+		imageInfo.extent.depth = depth;
+		imageInfo.mipLevels = mipLevels;
+		imageInfo.arrayLayers = 1;
+		imageInfo.format = format;
+		imageInfo.tiling = tiling;
+		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageInfo.usage = usage;
+		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		imageInfo.flags = 0;
+
+		VmaAllocationCreateInfo memory_info{};
+		memory_info.usage = memUsage;
+
+		if (vmaCreateImage(allocator, &imageInfo, &memory_info, &image, &alloc, nullptr) != VK_SUCCESS)
+		{
+			LOG_BE_ERROR("{0} Failed to create new vulkan image", Tag);
+			return false;
+		}
+
+		return true;
+	}
+
+	bool HasStencilComponent(VkFormat format) {
+		return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+	}
+
+	VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice)
+	{
+		return FindSupportedFormat(physicalDevice,
+			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+		);
+	}
+
+	VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice,const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+	{
+		for (VkFormat format : candidates) {
+			VkFormatProperties props;
+			vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+				return format;
+			}
+			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+				return format;
+			}
+			return VkFormat::VK_FORMAT_UNDEFINED;
+		}
+	}
 
 
 	VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> availableFormats)
@@ -922,6 +1011,8 @@ namespace Czuch
 			return actualExtent;
 		}
 	}
+
+#pragma endregion
 
 	VulkanDevice::SwapChainSupportDetails VulkanDevice::QuerySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 	{
@@ -1142,6 +1233,7 @@ namespace Czuch
 
 		vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
 		vkDestroyCommandPool(m_Device, m_CopyCommandPool, nullptr);
+		m_DepthImage.Release(m_Device,m_VmaAllocator);
 		m_SwapChainData.Release(m_Device);
 		vmaDestroyAllocator(m_VmaAllocator);
 		vkDestroyDevice(m_Device, nullptr);
@@ -1186,15 +1278,21 @@ namespace Czuch
 			return false;
 		}
 
+		if (CreateCommandsPool() == false)
+		{
+			return false;
+		}
+
+		if (CreateDepthImage() == false)
+		{
+			return false;
+		}
+
 		if (CreateSwapChainFrameBuffers() == false)
 		{
 			return false;
 		}
 
-		if (CreateCommandsPool() == false)
-		{
-			return false;
-		}
 
 		EventsManager::Get().AddListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
 
@@ -1322,6 +1420,29 @@ namespace Czuch
 		return true;
 	}
 
+	bool VulkanDevice::CreateDepthImage()
+	{
+		VkFormat depthStencilFormat = FindDepthFormat(m_PhysicalDevice);
+
+		if (depthStencilFormat == VK_FORMAT_UNDEFINED)
+		{
+			LOG_BE_ERROR("{0} Failed to find fitting depth buffer format", Tag);
+			return false;
+		}
+
+		if (!CreateImage(m_VmaAllocator, TextureDesc::Type::TEXTURE_2D, m_SwapChainData.swapChainExtent.width, m_SwapChainData.swapChainExtent.height, 1, 1, depthStencilFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			VMA_MEMORY_USAGE_GPU_ONLY, m_DepthImage.depthImage, m_DepthImage.allocation))
+		{
+			LOG_BE_ERROR("{0} Failed to create depth buffer", Tag);
+			return false;
+		}
+
+		m_DepthImage.depthImageView=CreateImageView(m_DepthImage.depthImage, depthStencilFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+		TransitionImageLayout(m_DepthImage.depthImage, depthStencilFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		return true;
+	}
+
 	bool VulkanDevice::CreateSwapChain()
 	{
 		m_SwapChainData = {};
@@ -1441,7 +1562,8 @@ namespace Czuch
 		for (size_t i = 0; i < m_SwapChainData.swapChainImageViews.size(); i++) {
 
 			VkImageView attachments[] = {
-				m_SwapChainData.swapChainImageViews[i]
+				m_SwapChainData.swapChainImageViews[i],
+				m_DepthImage.depthImageView,
 			};
 
 			FrameBuffer* framebuffer = new FrameBuffer();
@@ -1453,7 +1575,7 @@ namespace Czuch
 			VkFramebufferCreateInfo framebufferInfo{};
 			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			framebufferInfo.renderPass = rpass->renderPass;
-			framebufferInfo.attachmentCount = 1;
+			framebufferInfo.attachmentCount = 2;
 			framebufferInfo.pAttachments = attachments;
 			framebufferInfo.width = m_SwapChainData.swapChainExtent.width;
 			framebufferInfo.height = m_SwapChainData.swapChainExtent.height;
@@ -1606,6 +1728,13 @@ namespace Czuch
 		}
 		LOG_BE_ERROR("{0} AccessDescriptorSetLayout with invalid handle.", Tag);
 		return nullptr;
+	}
+
+
+	void VulkanDevice::DepthImage::Release(VkDevice device, VmaAllocator allocator)
+	{
+		vkDestroyImageView(device, depthImageView, nullptr);
+		vmaDestroyImage(allocator, depthImage, allocation);
 	}
 
 }

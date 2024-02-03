@@ -16,7 +16,7 @@ namespace Czuch
 	struct DescriptorWriter
 	{
 		void WriteBuffer(int binding, Buffer* buffer, size_t size, size_t offset, DescriptorType type);
-		void WriteTexture(int binding, Texture* texture, DescriptorType type);
+		void WriteTexture(int binding, Texture* color_texture, DescriptorType type);
 		void Clear();
 		void UpdateSet(VulkanDevice* device,DescriptorSet* descriptorSet);
 

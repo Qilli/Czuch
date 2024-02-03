@@ -48,6 +48,8 @@ namespace Czuch
         viewportState.scissorCount = 1;
         viewportState.pNext = nullptr;
 
+        auto depthStencilInfo = CreateDepthStencilInfo();
+
         CreatePipelineLayout();
 
         VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -68,6 +70,7 @@ namespace Czuch
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
+        pipelineInfo.pDepthStencilState = &depthStencilInfo;
 
         if (vkCreateGraphicsPipelines(
             device->GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline) != VK_SUCCESS) {
@@ -214,6 +217,24 @@ namespace Czuch
         colorBlending.blendConstants[2] = 0.0f; // Optional
         colorBlending.blendConstants[3] = 0.0f; // Optional
         return colorBlending;
+    }
+
+    VkPipelineDepthStencilStateCreateInfo VulkanPipelineBuilder::CreateDepthStencilInfo()
+    {
+        const DepthStencilState& dss =pipelineDescPtr->dss;
+        VkPipelineDepthStencilStateCreateInfo depthStencil{};
+        depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depthStencil.depthTestEnable = dss.depth_enable;
+        depthStencil.depthWriteEnable = dss.depth_write_enable;
+        depthStencil.depthCompareOp = ConvertComparisionFunc(dss.depth_func);
+        depthStencil.depthBoundsTestEnable = VK_FALSE;
+        depthStencil.minDepthBounds = 0.0f;
+        depthStencil.maxDepthBounds = 1.0f;
+
+        depthStencil.stencilTestEnable = dss.stencil_enable;
+        depthStencil.front = {};
+        depthStencil.back = {};
+        return depthStencil;
     }
     
 }

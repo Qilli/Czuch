@@ -9,7 +9,7 @@
 #include"Subsystems/Assets/Asset/ShaderAsset.h"
 #include"Subsystems/Assets/Asset/TextureAsset.h"
 #include"DescriptorAllocator.h"
-#include <glm.hpp>
+#include"Core/Math.h"
 
 namespace Czuch
 {
@@ -97,27 +97,28 @@ namespace Czuch
 			desc.rs.cull_mode = CullMode::NONE;
 			desc.rs.fill_mode = PolygonMode::SOLID;
 			desc.dss.depth_enable = true;
-			desc.dss.depth_func = CompFunc::ALWAYS;
+			desc.dss.depth_func = CompFunc::LESS_EQUAL;
 			desc.dss.depth_write_mask = DepthWriteMask::ZERO;
+			desc.dss.stencil_enable = false;
 
 			desc.AddLayout(m_SceneData.layout);
 			desc.AddLayout(m_SceneData.texLayout);
 
-			desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 2,.input_rate = InputClassification::PER_VERTEX_DATA });
+			desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 			desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 			desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 2,.input_rate = InputClassification::PER_VERTEX_DATA });
 
-			desc.il.AddAttribute({.location=0,.binding=0,.offset=0,.format=Format::R32G32_FLOAT});
+			desc.il.AddAttribute({.location=0,.binding=0,.offset=0,.format=Format::R32G32B32_FLOAT});
 			desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32_FLOAT });
 			desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32_FLOAT });
 
 			pipeline=m_Device->CreatePipelineState(&desc, INVALID_HANDLE(RenderPassHandle));
 
-			const std::vector<glm::vec2> positions = {
-				{-0.5f, -0.5f},
-				{0.5f, -0.5f}, 
-				{0.5f, 0.5f},
-				{-0.5f, 0.5f},
+			const std::vector<glm::vec3> positions = {
+				{-0.5f, -0.5f,0.0f},
+				{0.5f, -0.5f,0.0f}, 
+				{0.5f, 0.5f,0.0f},
+				{-0.5f, 0.5f,0.0f},
 			};
 
 			const std::vector<glm::vec3> colors = {
@@ -139,8 +140,8 @@ namespace Czuch
 
 			BufferDesc vbDesc;
 			vbDesc.elementsCount = 4;
-			vbDesc.size = 4 * sizeof(float) * 2;
-			vbDesc.stride = 2 * sizeof(float);
+			vbDesc.size = 4 * sizeof(float) * 3;
+			vbDesc.stride = 3 * sizeof(float);
 			vbDesc.usage = Usage::DEFAULT;
 			vbDesc.bind_flags = BindFlag::VERTEX_BUFFER;
 			vbDesc.initData = (void*)positions.data();
@@ -244,6 +245,7 @@ namespace Czuch
 		cmdBuffer->Begin();
 
 		cmdBuffer->SetClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+		cmdBuffer->SetDepthStencil(1.0f, 0);
 		m_Device->BindSwapChainRenderPass(cmdBuffer, imageIndex);
 
 		ViewportDesc vpdesc{};

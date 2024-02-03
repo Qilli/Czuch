@@ -164,6 +164,7 @@
     <ClInclude Include="source\Core\EngineCore.h" />
     <ClInclude Include="source\Core\FileHelper.h" />
     <ClInclude Include="source\Core\KeyCodes.h" />
+    <ClInclude Include="source\Core\Math.h" />
     <ClInclude Include="source\Core\MouseCodes.h" />
     <ClInclude Include="source\Core\Singleton.h" />
     <ClInclude Include="source\Core\StringID.h" />

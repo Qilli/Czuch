@@ -46,7 +46,7 @@ namespace Czuch
 		bool Release(FrameBufferHandle& fb)  override;
 		bool Release(CommandBufferHandle& cb) override;
 		bool Release(BufferHandle& buffer)  override;
-		bool Release(TextureHandle& texture) override;
+		bool Release(TextureHandle& color_texture) override;
 
 
 		Pipeline* AccessPipeline(PipelineHandle handle) override;
@@ -69,6 +69,15 @@ namespace Czuch
 		void Present(uint32_t imageIndex, VkSemaphore semaphore);
 		void BindSwapChainRenderPass(CommandBuffer* cmdBuffer, uint32_t imageIndex);
 	private:
+
+		struct DepthImage
+		{
+			VkImage depthImage;
+			VmaAllocation allocation;
+			VkImageView depthImageView;
+
+			void Release(VkDevice device,VmaAllocator allocator);
+		};
 
 		struct SwapChainData
 		{
@@ -153,6 +162,8 @@ namespace Czuch
 		DescriptorAllocator* m_PersistentDescriptorAllocator;
 		VkPhysicalDeviceProperties m_DeviceProperties;
 
+		DepthImage m_DepthImage;
+
 	private:
 		bool CreateVulkanInstance();
 		bool CreateSurface();
@@ -162,9 +173,9 @@ namespace Czuch
 		bool CreateCommandsPool();
 
 	private:
+		bool CreateDepthImage();
 		bool CreateSwapChain();
 		bool CreateSwapChainFrameBuffers(bool createRenderPass=true);
-		bool ReleaseSwapChainRenderPass();
 		bool RecreateSwapChain();
 	private:
 		U32 FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags properties) const;

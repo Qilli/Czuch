@@ -20,6 +20,7 @@ namespace Czuch
 		VkPipelineMultisampleStateCreateInfo CreateMultisamplingInfo();
 		VkPipelineColorBlendAttachmentState CreateBlendingAttachmentInfo();
 		VkPipelineColorBlendStateCreateInfo CreateBlendingInfo();
+		VkPipelineDepthStencilStateCreateInfo CreateDepthStencilInfo();
 	private:
 		Pipeline_Vulkan* pipeline;
 		VulkanDevice* device;

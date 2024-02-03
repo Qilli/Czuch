@@ -471,8 +471,9 @@ namespace Czuch
 
 	struct FrameBufferDesc
 	{
-		Texture* texture;
-		RenderPass* renderPass;
+		TextureHandle color_texture;
+		TextureHandle depth_texture;
+		RenderPassHandle renderPass;
 	};
 
 	struct BufferDesc
@@ -523,7 +524,7 @@ namespace Czuch
 
 		DescriptorSetDesc& Reset();
 		DescriptorSetDesc& AddBuffer(BufferHandle buffer,U16 binding);
-		DescriptorSetDesc& AddSampler(TextureHandle texture, U16 binding);
+		DescriptorSetDesc& AddSampler(TextureHandle color_texture, U16 binding);
 	};
 
 	union ClearValue
@@ -572,7 +573,8 @@ namespace Czuch
 
 	struct DepthStencilState
 	{
-		bool depth_enable = false;
+		bool depth_enable = true;
+		bool depth_write_enable = true;
 		DepthWriteMask depth_write_mask = DepthWriteMask::ZERO;
 		CompFunc depth_func = CompFunc::NEVER;
 		bool stencil_enable = false;

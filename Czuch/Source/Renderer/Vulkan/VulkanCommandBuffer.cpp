@@ -9,8 +9,8 @@ namespace Czuch
 
 	VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer cmdBuffer):m_Device(nullptr),m_Cmd(cmdBuffer),m_isRecording(false)
 	{
-		m_ClearValue.color = { 0,0,0,1 };
-		m_ClearValue.depthStencil = { 1.0f,255 };
+		m_ClearValueColor.color = { 0,0,0,1 };
+		m_ClearValueColor.depthStencil = { 1.0f,255 };
 		m_CurrentFrameBuffer = INVALID_HANDLE(FrameBufferHandle);
 		m_CurrentRenderPass = INVALID_HANDLE(RenderPassHandle);
 		m_CurrentPipeline = INVALID_HANDLE(PipelineHandle);
@@ -80,14 +80,16 @@ namespace Czuch
 		extent.width = fb->createInfo.width;
 		extent.height = fb->createInfo.height;
 
+		VkClearValue clearValues[] = { m_ClearValueColor,m_ClearValueDepth };
+
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = Internal_to_RenderPass(m_Device->AccessRenderPass(renderpass))->renderPass;
 		renderPassInfo.framebuffer = fb->framebuffer;
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = extent;
-		renderPassInfo.clearValueCount = 1;
-		renderPassInfo.pClearValues = &m_ClearValue;
+		renderPassInfo.clearValueCount = 2;
+		renderPassInfo.pClearValues = clearValues;
 
 		vkCmdBeginRenderPass(m_Cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	}
@@ -123,12 +125,12 @@ namespace Czuch
 
 	void VulkanCommandBuffer::SetClearColor(float r, float g, float b, float a)
 	{
-		m_ClearValue.color = VkClearColorValue{r,g,b,a};
+		m_ClearValueColor.color = VkClearColorValue{r,g,b,a};
 	}
 
 	void VulkanCommandBuffer::SetDepthStencil(float depth, U8 stencil)
 	{
-		m_ClearValue.depthStencil = { depth,stencil };
+		m_ClearValueDepth.depthStencil = { depth,stencil };
 	}
 
 	void VulkanCommandBuffer::SetViewport(ViewportDesc viewport)

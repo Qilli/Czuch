@@ -30,7 +30,8 @@ namespace Czuch
 	private:
 		VkCommandBuffer m_Cmd;
 		VulkanDevice* m_Device;
-		VkClearValue m_ClearValue;
+		VkClearValue m_ClearValueColor;
+		VkClearValue m_ClearValueDepth;
 		bool m_isRecording;
 		RenderPassHandle m_CurrentRenderPass;
 		FrameBufferHandle m_CurrentFrameBuffer;

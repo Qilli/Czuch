@@ -33,7 +33,7 @@ namespace Czuch
 		virtual bool Release(FrameBufferHandle& fb) = 0;
 		virtual bool Release(CommandBufferHandle& commandBuffer)= 0;
 		virtual bool Release(BufferHandle& buffer) = 0;
-		virtual bool Release(TextureHandle& texture)= 0;
+		virtual bool Release(TextureHandle& color_texture)= 0;
 
 		virtual Pipeline* AccessPipeline(PipelineHandle handle)= 0;
 		virtual RenderPass* AccessRenderPass(RenderPassHandle handle) = 0;
