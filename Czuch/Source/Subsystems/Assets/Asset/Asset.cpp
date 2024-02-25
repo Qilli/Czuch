@@ -4,12 +4,19 @@
 namespace Czuch
 {
 
-	Asset::Asset(const CzuchStr& assetPath, const CzuchStr& assetName)
+	Asset::Asset(const CzuchStr& assetPath, const CzuchStr& assetName, AssetsManager* assetsManager)
 	{
+		m_AssetsMgr = assetsManager;
 		m_GUID = StringID::MakeStringID(assetPath);
 		m_AssetName = assetName;
 		m_AssetPath = assetPath;
 		m_State = AssetInnerState::CREATED;
+		m_ForceUnload = false;
+	}
+
+	Asset::Asset(const CzuchStr& resourceName, AssetsManager* assetsManager):Asset(resourceName,resourceName,assetsManager)
+	{
+		m_ForceUnload = false;
 	}
 
 	CzuchStr Asset::GetNameFromPath(const CzuchStr& inStr)

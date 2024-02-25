@@ -1,5 +1,5 @@
 #pragma once
-#include "../AssetManager.h"
+#include"../AssetsManager.h"
 #include "../Asset/ShaderAsset.h"
 
 namespace Czuch
@@ -9,7 +9,8 @@ namespace Czuch
 	public:
 		ShaderAssetManager(GraphicsDevice* device);
 	protected:
-		Asset* CreateAsset(const CzuchStr& path,void* settings) override;
+		Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) override;
+		Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settings) override;
 	private:
 		GraphicsDevice* m_Device;
 	};
@@ -18,9 +19,17 @@ namespace Czuch
 	{
 	}
 
-	inline Asset* ShaderAssetManager::CreateAsset(const CzuchStr& path,void* settings)
+	inline Asset* ShaderAssetManager::CreateAsset(const CzuchStr& path, BaseCreateSettings& settings)
 	{
-		ShaderAsset* shaderRes = new ShaderAsset(path,m_Device);
+		ShaderAsset* shaderRes = new ShaderAsset(path,m_Device,(ShaderCreateSettings&)settings,AssetsManager::GetPtr());
+		StringID strId = StringID::MakeStringID(path);
+		RegisterAsset(strId, shaderRes);
+		return shaderRes;
+	}
+
+	inline Asset* ShaderAssetManager::CreateAsset(const CzuchStr& path, BaseLoadSettings& settings)
+	{
+		ShaderAsset* shaderRes = new ShaderAsset(path, m_Device,(ShaderLoadSettings&)settings,AssetsManager::GetPtr());
 		return shaderRes;
 	}
 

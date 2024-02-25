@@ -149,7 +149,7 @@
     <ClInclude Include="source\Subsystems\Assets\AssetsManager.h">
       <Filter>Subsystems\Assets</Filter>
     </ClInclude>
-    <ClInclude Include="source\Subsystems\Assets\LoadSettingsPerType.h">
+    <ClInclude Include="source\Subsystems\Assets\SettingsPerType.h">
       <Filter>Subsystems\Assets</Filter>
     </ClInclude>
     <ClInclude Include="source\Subsystems\BaseSubsystem.h">
@@ -163,6 +163,8 @@
     </ClInclude>
     <ClInclude Include="source\czpch.h" />
     <ClInclude Include="source\Core\Math.h" />
+    <ClInclude Include="source\Renderer\RenderContext.h" />
+    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">
@@ -251,5 +253,7 @@
       <Filter>Subsystems</Filter>
     </ClCompile>
     <ClCompile Include="source\czpch.cpp" />
+    <ClCompile Include="source\Renderer\RenderContext.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialAsset.cpp" />
   </ItemGroup>
 </Project>

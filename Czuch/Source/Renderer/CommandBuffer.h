@@ -14,6 +14,7 @@ namespace Czuch
 		virtual void End()=0;
 		virtual void EndCurrentRenderPass()=0;
 		virtual void BindPass(RenderPassHandle renderpass, FrameBufferHandle framebuffer)=0;
+		virtual void DrawMesh(MeshHandle mesh,DescriptorAllocator* allocator)=0;
 		virtual void BindPipeline(PipelineHandle pipeline)=0;
 		virtual void BindVertexBuffer(BufferHandle buffer, U32 binding, U32 offset)=0;
 		virtual void BindIndexBuffer(BufferHandle buffer, U32 offset)=0;

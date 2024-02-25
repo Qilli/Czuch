@@ -24,7 +24,7 @@ namespace Czuch
 		float GetSwapchainWidth() const override { return m_SwapChainData.swapChainExtent.width; }
 		float GetSwapchainHeight() const override { return m_SwapChainData.swapChainExtent.height; }
 
-		PipelineHandle CreatePipelineState(const PipelineStateDesc* desc, const RenderPassHandle rpass) override;
+		PipelineHandle CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass) override;
 		ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize)override;
 		RenderPassHandle CreateRenderPass(const RenderPassDesc* desc) override;
 		DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc)  override;
@@ -32,6 +32,8 @@ namespace Czuch
 		CommandBufferHandle CreateCommandBuffer(bool isPrimary) override;
 		BufferHandle CreateBuffer(const BufferDesc* desc) override;
 		TextureHandle CreateTexture(const TextureDesc* desc) override;
+		MeshHandle CreateMesh(MeshData& meshData) override;
+		MaterialHandle CreateMaterial(MaterialDesc& materialData);
 
 
 		DescriptorAllocator* CreateDescriptorAllocator();
@@ -47,6 +49,8 @@ namespace Czuch
 		bool Release(CommandBufferHandle& cb) override;
 		bool Release(BufferHandle& buffer)  override;
 		bool Release(TextureHandle& color_texture) override;
+		bool Release(MeshHandle& mesh) override;
+		bool Release(MaterialHandle& material) override;
 
 
 		Pipeline* AccessPipeline(PipelineHandle handle) override;
@@ -57,6 +61,8 @@ namespace Czuch
 		CommandBuffer* AccessCommandBuffer(CommandBufferHandle handle)  override;
 		Buffer* AccessBuffer(BufferHandle handle)  override;
 		Texture* AccessTexture(TextureHandle handle) override;
+		Mesh* AccessMesh(MeshHandle handle) override;
+		Material* AccessMaterial(MaterialHandle handle) override;
 
 	public:
 		VkDevice GetNativeDevice() const { return m_Device; }
@@ -131,7 +137,8 @@ namespace Czuch
 			GraphicsResourceAccessContainer<Shader, ShaderHandle> shaders = GraphicsResourceAccessContainer<Shader, ShaderHandle>(k_max_resources);
 			GraphicsResourceAccessContainer<FrameBuffer, FrameBufferHandle> frameBuffers = GraphicsResourceAccessContainer<FrameBuffer, FrameBufferHandle>(k_max_resources);
 			GraphicsResourceAccessContainer<DescriptorSetLayout, DescriptorSetLayoutHandle> descriptorSetLayouts = GraphicsResourceAccessContainer<DescriptorSetLayout, DescriptorSetLayoutHandle>(k_max_resources);
-
+			GraphicsResourceAccessContainer<Mesh, MeshHandle> meshes = GraphicsResourceAccessContainer<Mesh, MeshHandle>(k_max_resources);
+			GraphicsResourceAccessContainer<Material, MaterialHandle> materials = GraphicsResourceAccessContainer<Material, MaterialHandle>(k_max_resources);
 			void ReleaseAll();
 		};
 

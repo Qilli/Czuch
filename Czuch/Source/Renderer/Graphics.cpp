@@ -1,5 +1,6 @@
 #include"czpch.h"
 #include "Graphics.h"
+#include "GraphicsDevice.h"
 
 namespace Czuch
 {
@@ -9,9 +10,9 @@ namespace Czuch
 		setIndex = 0;
 		return *this;
 	}
-	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(DescriptorType type, U32 bindingIndex, U32 count)
+	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(CzuchStr name,DescriptorType type, U32 bindingIndex, U32 count, U32 size)
 	{
-		bindings[bindingsCount++] = { type, (U16)bindingIndex, (U16)count };
+		bindings[bindingsCount++] = { name,type,size,(U16)bindingIndex, (U16)count};
 		return *this;
 	}
 
@@ -83,5 +84,34 @@ namespace Czuch
 		descriptors[descriptorsCount++].type = DescriptorType::SAMPLER;
 
 		return *this;
+	}
+
+
+	Mesh::~Mesh()
+	{
+		if (HANDLE_IS_VALID(positionsHandle))
+		{
+			device->Release(positionsHandle);
+		}
+
+		if (HANDLE_IS_VALID(normalsHandle))
+		{
+			device->Release(normalsHandle);
+		}
+
+		if (HANDLE_IS_VALID(colorsHandle))
+		{
+			device->Release(colorsHandle);
+		}
+
+		if (HANDLE_IS_VALID(uvs0Handle))
+		{
+			device->Release(uvs0Handle);
+		}
+
+		if (HANDLE_IS_VALID(indicesHandle))
+		{
+			device->Release(indicesHandle);
+		}
 	}
 }

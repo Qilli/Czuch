@@ -2,6 +2,7 @@
 #include"./Core/EngineCore.h"
 #include<memory>
 #include"glm.hpp"
+#include"Subsystems/Assets/Asset/Asset.h"
 
 namespace Czuch
 {
@@ -11,52 +12,79 @@ namespace Czuch
 	static const U8 s_max_vertex_attributes = 16;
 	static const U8 k_max_descriptor_set_layouts = 8;
 
-	#define mat4 glm::mat4
-	#define vec4 glm::vec4
+	#define Mat4 glm::Mat4
+	#define Vec4 glm::Vec4
+	#define Vec3 glm::vec3
+	#define Vec2 glm::vec2
+	#define Color glm::vec4
 
 	typedef I32 Handle;
-	#define INVALID_HANDLE(Type) Type{.handle=-1} 
+	#define INVALID_HANDLE(Type) Type(-1) 
 	#define HANDLE_IS_VALID(h)(h.handle!=-1)
 	#define INVALIDATE_HANDLE(h)h.handle=-1;
+	class GraphicsDevice;
 
-	struct PipelineHandle
+	struct ResourceHandle
 	{
+	public:
 		Handle handle;
+
+		ResourceHandle(int val) :handle(val) {}
+		ResourceHandle() { handle = -1; }
 	};
 
-	struct RenderPassHandle
+	struct PipelineHandle: public ResourceHandle
 	{
-		Handle handle;
 	};
 
-	struct ShaderHandle
+	struct RenderPassHandle : public ResourceHandle
 	{
-		Handle handle;
+
 	};
 
-	struct DescriptorSetLayoutHandle
+	struct ShaderHandle : public ResourceHandle
 	{
-		Handle handle;
+
 	};
 
-	struct FrameBufferHandle
+	struct DescriptorSetLayoutHandle : public ResourceHandle
 	{
-		Handle handle;
+
 	};
 
-	struct CommandBufferHandle
+	struct FrameBufferHandle : public ResourceHandle
 	{
-		Handle handle;
 	};
 
-	struct BufferHandle
+	struct CommandBufferHandle : public ResourceHandle
 	{
-		Handle handle;
+
 	};
 
-	struct TextureHandle
+	struct BufferHandle : public ResourceHandle
 	{
-		Handle handle;
+
+	};
+
+	struct TextureHandle : public ResourceHandle
+	{
+
+	};
+
+	struct MaterialHandle : public ResourceHandle
+	{
+
+	};
+
+
+	struct ModelHandle : public ResourceHandle
+	{
+
+	};
+
+	struct MeshHandle : public ResourceHandle
+	{
+
 	};
 
 	enum QUEUE_TYPE
@@ -274,6 +302,7 @@ namespace Czuch
 	enum class ShaderFormat
 	{
 		NONE,		// Not used
+		GLSL,
 		SPIRV,		// SPIR-V
 	};
 
@@ -423,6 +452,7 @@ namespace Czuch
 	struct GraphicsDeviceResource
 	{
 		std::shared_ptr<void> m_InternalResourceState;
+		GraphicsDevice* device;
 
 		inline bool IsValid() const { return m_InternalResourceState != nullptr; }
 		GraphicsDeviceResource() = default;
@@ -493,7 +523,9 @@ namespace Czuch
 	{
 		struct Binding
 		{
+			CzuchStr bindingName;
 			DescriptorType type = DescriptorType::UNIFORM_BUFFER;
+			U32 size = 0;
 			U16 index = 0;
 			U16 count = 0;
 		};
@@ -504,7 +536,7 @@ namespace Czuch
 		U32 shaderStage;
 
 		DescriptorSetLayoutDesc& Reset();
-		DescriptorSetLayoutDesc& AddBinding(DescriptorType type, U32 bindingIndex, U32 count);
+		DescriptorSetLayoutDesc& AddBinding(CzuchStr name,DescriptorType type, U32 bindingIndex, U32 count);
 	};
 
 	struct Buffer;
@@ -519,7 +551,6 @@ namespace Czuch
 		};
 
 		DescriptorInfo descriptors[s_max_descriptors_per_set];
-		DescriptorSetLayoutHandle layout;
 		U16 descriptorsCount;
 
 		DescriptorSetDesc& Reset();
@@ -559,16 +590,45 @@ namespace Czuch
 
 		struct RenderTargetBlendState
 		{
-			bool blend_enable = false;
-			Blend src_blend = Blend::SRC_ALPHA;
-			Blend dest_blend = Blend::ONE_MINUS_SRC_ALPHA;
-			BlendOp blend_op = BlendOp::ADD;
-			Blend src_blend_alpha = Blend::ONE;
-			Blend dest_blend_alpha = Blend::ONE;
-			BlendOp blend_op_alpha = BlendOp::ADD;
-			ColorWrite render_target_write_mask = ColorWrite::ENABLE_ALL;
+			bool blendEnable = false;
+			Blend srcColorBlendFactor = Blend::SRC_ALPHA;
+			Blend dstColorBlendFactor = Blend::ONE_MINUS_SRC_ALPHA;
+			BlendOp colorBlendOp = BlendOp::ADD;
+			Blend srcAlphaBlendFactor = Blend::ONE;
+			Blend dstAlphaBlendFactor = Blend::ONE;
+			BlendOp alphaBlendOp = BlendOp::ADD;
+			ColorWrite colorWriteMask = ColorWrite::ENABLE_ALL;
 		};
 		RenderTargetBlendState blendSettings;
+
+		void SetAdditiveBlending()
+		{
+			blendSettings.colorWriteMask = ColorWrite::ENABLE_ALL;
+			blendSettings.blendEnable = true;
+			blendSettings.srcColorBlendFactor = Blend::ONE;
+			blendSettings.dstColorBlendFactor = Blend::DST_ALPHA;
+			blendSettings.colorBlendOp = BlendOp::ADD;
+			blendSettings.srcAlphaBlendFactor = Blend::ONE;
+			blendSettings.dstAlphaBlendFactor = Blend::ZERO;
+			blendSettings.alphaBlendOp = BlendOp::ADD;
+		}
+
+		void SetAlphaBlend()
+		{
+			blendSettings.colorWriteMask = ColorWrite::ENABLE_ALL;
+			blendSettings.blendEnable = true;
+			blendSettings.srcColorBlendFactor = Blend::ONE_MINUS_DST_ALPHA;
+			blendSettings.dstColorBlendFactor = Blend::DST_ALPHA;
+			blendSettings.colorBlendOp = BlendOp::ADD;
+			blendSettings.srcAlphaBlendFactor = Blend::ONE;
+			blendSettings.dstAlphaBlendFactor = Blend::ZERO;
+			blendSettings.alphaBlendOp = BlendOp::ADD;
+		}
+
+		void DisableBlending()
+		{
+			blendSettings.blendEnable = false;
+		}
 	};
 
 	struct DepthStencilState
@@ -621,24 +681,85 @@ namespace Czuch
 
 	struct PipelineStateDesc
 	{
-		ShaderHandle vs;
-		ShaderHandle ps;
+		AssetHandle vs;
+		AssetHandle ps;
 		BlendState bs;
 		RasterizerState rs;
 		DepthStencilState dss;
 		InputVertexLayout il;
 		PrimitiveTopology pt = PrimitiveTopology::TRIANGLELIST;
-		DescriptorSetLayoutHandle layouts[k_max_descriptor_set_layouts];
+		DescriptorSetLayoutDesc layouts[k_max_descriptor_set_layouts];
 		U16 layoutsCount = 0;
 		BindPoint bindPoint;
 
-		void AddLayout(DescriptorSetLayoutHandle layout)
+		void AddLayout(DescriptorSetLayoutDesc layout)
 		{
 			if (layoutsCount >= k_max_descriptor_set_layouts)
 			{
 				return;
 			}
 			layouts[layoutsCount++] = layout;
+		}
+
+
+		PipelineStateDesc() = default;
+
+		PipelineStateDesc(PipelineStateDesc& other) noexcept
+		{
+			*this = std::move(other);
+		}
+
+		PipelineStateDesc& operator=(PipelineStateDesc&& other) noexcept
+		{
+			if (&other != this)
+			{
+				this->vs=std::move(other.vs);
+				this->ps = std::move(other.ps);
+				this->bs = std::move(other.bs);
+				this->rs = std::move(other.rs);
+				this->dss = std::move(other.dss);
+				this->il = std::move(other.il);
+				this->pt = std::move(other.pt);
+				this->layoutsCount = std::move(other.layoutsCount);
+
+				for (int a = 0; a < this->layoutsCount; ++a)
+				{
+					this->layouts[a] = std::move(other.layouts[a]);
+				}
+
+				this->bindPoint = std::move(other.bindPoint);
+			}
+			return *this;
+		}
+	};
+
+	struct MaterialDesc
+	{
+		PipelineStateDesc pipelineDesc;
+		DescriptorSetDesc descriptorsDesc[k_max_descriptor_set_layouts];
+		CzuchStr materialName;
+
+		MaterialDesc() = default;
+
+		MaterialDesc(MaterialDesc& other) noexcept
+		{
+			*this = std::move(other);
+		}
+
+		MaterialDesc& operator=(MaterialDesc&& other) noexcept
+		{
+			if (&other != this)
+			{
+				this->materialName = std::move(other.materialName);
+				this->pipelineDesc = std::move(other.pipelineDesc);
+			}
+			return *this;
+		}
+
+		void AddLayoutWithDescriptor(DescriptorSetLayoutDesc layout,DescriptorSetDesc desc)
+		{
+			pipelineDesc.AddLayout(layout);
+			descriptorsDesc[pipelineDesc.layoutsCount - 1] = desc;
 		}
 	};
 
@@ -682,11 +803,97 @@ namespace Czuch
 		}
 	};
 
+	struct MeshData
+	{
+		std::vector<Vec3> positions;
+		std::vector<Vec3> normals;
+		std::vector<Vec4> colors;
+		std::vector<Vec4> uvs0;
+		std::vector<int> indices;
+		AssetHandle material;
+		CzuchStr meshName;
+
+	public:
+		MeshData() = default;
+
+		MeshData(MeshData& other) noexcept
+		{
+			*this = std::move(other);
+		}
+
+		MeshData& operator=(MeshData&& other) noexcept
+		{
+			if (&other != this)
+			{
+				this->positions = std::move(other.positions);
+				this->normals = std::move(other.normals);
+				this->colors = std::move(other.colors);
+				this->uvs0 = std::move(other.uvs0);
+				this->material = other.material;
+				this->meshName = std::move(other.meshName);
+				this->indices = std::move(other.indices);
+
+				INVALIDATE_HANDLE(other.material);
+			}
+			return *this;
+		}
+	};
+
+	struct Mesh: GraphicsDeviceResource
+	{
+		MeshData data;
+
+		inline bool HasNormals() const { return data.normals.size() > 0; }
+		inline bool HasColors() const { return data.colors.size() > 0; }
+		inline bool HasUV0() const { return data.uvs0.size() > 0; }
+		
+		constexpr const MeshData& GetMeshData() const { return data; }
+
+		BufferHandle positionsHandle;
+		BufferHandle normalsHandle;
+		BufferHandle colorsHandle;
+		BufferHandle uvs0Handle;
+		BufferHandle indicesHandle;
+		MaterialHandle materialHandle;
+
+		Mesh()
+		{
+			positionsHandle = INVALID_HANDLE(BufferHandle);
+			normalsHandle = INVALID_HANDLE(BufferHandle);
+			colorsHandle = INVALID_HANDLE(BufferHandle);
+			uvs0Handle = INVALID_HANDLE(BufferHandle);
+			indicesHandle = INVALID_HANDLE(BufferHandle);
+			materialHandle = INVALID_HANDLE(MaterialHandle);
+		}
+
+		~Mesh();
+	};
+
+	struct Material : public GraphicsDeviceResource
+	{
+		MaterialDesc desc{};
+		constexpr const MaterialDesc& GetDesc() const { return desc; }
+
+		PipelineHandle pipeline;
+	};
 
 	struct Pipeline : public GraphicsDeviceResource
 	{
 		PipelineStateDesc m_desc{};
 		constexpr const PipelineStateDesc& GetDesc() const { return m_desc; }
+
+		ShaderHandle vs;
+		ShaderHandle ps;
+		DescriptorSetLayoutHandle layouts[k_max_descriptor_set_layouts];
+		U16 layoutsCount;
+		void AddLayout(DescriptorSetLayoutHandle layout)
+		{
+			if (layoutsCount >= k_max_descriptor_set_layouts)
+			{
+				return;
+			}
+			layouts[layoutsCount++] = layout;
+		}
 	};
 
 	struct SwapChain : public GraphicsDeviceResource

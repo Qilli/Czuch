@@ -33,12 +33,12 @@ namespace Czuch
 			auto& current = descriptor->desc.descriptors[i];
 			if (current.type == DescriptorType::UNIFORM_BUFFER || current.type == DescriptorType::UNIFORM_BUFFER_DYNAMIC || current.type == DescriptorType::STORAGE_BUFFER || current.type == DescriptorType::STORAGE_BUFFER_DYNAMIC)
 			{
-				Buffer* buffer = (Buffer*)device->AccessBuffer(BufferHandle{ .handle=current.resource });
+				Buffer* buffer = (Buffer*)device->AccessBuffer(BufferHandle(current.resource));
 				writer.WriteBuffer(current.binding, buffer, buffer->desc.size, 0, current.type);
 			}
 			else
 			{
-				Texture* tex = (Texture*)device->AccessTexture(TextureHandle{ .handle = current.resource });
+				Texture* tex = (Texture*)device->AccessTexture(TextureHandle(current.resource));
 				writer.WriteTexture(current.binding, tex, current.type);
 			}
 		}

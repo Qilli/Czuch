@@ -6,13 +6,23 @@
 
 namespace Czuch
 {
-	TextureAsset::TextureAsset(const CzuchStr& path, TextureLoadSettings* loadSettings, GraphicsDevice* device):Asset(path, GetNameFromPath(path)),m_Device(device),m_Settings(loadSettings)
+	TextureAsset::TextureAsset(const CzuchStr& path, TextureLoadSettings& loadSettings, GraphicsDevice* device, AssetsManager* assetsManager):Asset(path, GetNameFromPath(path),assetsManager),m_Device(device)
 	{
+		m_AssetType = AssetType::LOADED_TYPE;
+		m_CurrentLoadSettings = std::move(loadSettings);
 		LoadAsset();
+	}
+
+	TextureAsset::TextureAsset(const CzuchStr& path, TextureCreateSettings& settings, GraphicsDevice* device, AssetsManager* assetsManager) :Asset(path,path,assetsManager), m_Device(device)
+	{
+		m_AssetType = AssetType::CREATED_TYPE;
+		m_CreateSettings = std::move(settings);
+		CreateFromData();
 	}
 
 	TextureAsset::~TextureAsset()
 	{
+		m_ForceUnload = true;
 		UnloadAsset();
 	}
 
@@ -20,7 +30,13 @@ namespace Czuch
 	{
 		if (m_State == AssetInnerState::LOADED)
 		{
+			m_RefCounter.Up();
 			return true;
+		}
+
+		if (m_AssetType == AssetType::CREATED_TYPE)
+		{
+			return false;
 		}
 
 		int texWidth, texHeight, texChannels;
@@ -32,13 +48,12 @@ namespace Czuch
 			LOG_BE_ERROR("{0} Failed to load texture resource at path {1}", "[TextureResource]", AssetPath());
 			return false;
 		}
-
 		TextureDesc desc;
 		desc.width = texWidth;
 		desc.height = texHeight;
 		desc.texData = pixels;
 
-		if (m_Settings==nullptr||m_Settings->type == TextureDesc::Type::TEXTURE_2D)
+		if (m_CurrentLoadSettings.type == TextureDesc::Type::TEXTURE_2D)
 		{
 			desc.format = Format::R8G8B8A8_UNORM_SRGB;
 		}
@@ -52,17 +67,64 @@ namespace Czuch
 		}
 
 		m_State = AssetInnerState::LOADED;
+		m_RefCounter.Up();
 		
 		return true;
 	}
 
-	void TextureAsset::UnloadAsset()
+	bool TextureAsset::UnloadAsset()
 	{
-		if (m_State == AssetInnerState::LOADED && HANDLE_IS_VALID(m_TextureAsset))
+		if (m_State == AssetInnerState::LOADED && HANDLE_IS_VALID(m_TextureAsset) && (!m_RefCounter.Down()||m_ForceUnload))
 		{
 			m_Device->Release(m_TextureAsset);
 			INVALIDATE_HANDLE(m_TextureAsset)
 			m_State = AssetInnerState::UNLOADED;
+			return true;
 		}
+		return false;
+	}
+
+	bool TextureAsset::CreateFromData()
+	{
+		if (m_State == AssetInnerState::LOADED)
+		{
+			return true;
+		}
+
+		if (m_AssetType == AssetType::LOADED_TYPE)
+		{
+			return false;
+		}
+
+		U32 texWidth=m_CreateSettings.width, texHeight= m_CreateSettings.height, texChannels = m_CreateSettings.channels;
+		stbi_uc* pixels = m_CreateSettings.colors.data();
+		U32 imageSize = texWidth * texHeight * 4;
+
+		if (!pixels)
+		{
+			LOG_BE_ERROR("{0} Failed to create texture resource from data", "[TextureResource]");
+			return false;
+		}
+
+		TextureDesc desc;
+		desc.width = texWidth;
+		desc.height = texHeight;
+		desc.texData = pixels;
+
+		if (m_CurrentLoadSettings.type == TextureDesc::Type::TEXTURE_2D)
+		{
+			desc.format = Format::R8G8B8A8_UNORM_SRGB;
+		}
+
+		m_TextureAsset = m_Device->CreateTexture(&desc);
+
+		if (!HANDLE_IS_VALID(m_TextureAsset))
+		{
+			return false;
+		}
+
+		m_State = AssetInnerState::LOADED;
+
+		return true;
 	}
 }

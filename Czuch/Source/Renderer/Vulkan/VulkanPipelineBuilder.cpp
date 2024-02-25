@@ -6,7 +6,8 @@
 
 namespace Czuch
 {
-    VulkanPipelineBuilder::VulkanPipelineBuilder(VulkanDevice* deviceObj, Pipeline_Vulkan* pipelineObj,const PipelineStateDesc* pipelineDesc):pipeline(pipelineObj),device(deviceObj),pipelineDescPtr(pipelineDesc)
+    VulkanPipelineBuilder::VulkanPipelineBuilder(VulkanDevice* deviceObj, Pipeline_Vulkan* pipelineObj,Pipeline* pipelineHolder_):pipeline(pipelineObj),device(deviceObj),pipelineDescPtr(&pipelineHolder_->GetDesc())
+        ,pipelineHolder(pipelineHolder_)
     {
     }
 
@@ -16,13 +17,13 @@ namespace Czuch
 
         if (HANDLE_IS_VALID(pipelineDescPtr->vs))
         {
-            Shader_Vulkan* vulkan_shader_vs = Internal_To_Shader(device->AccessShader(pipelineDescPtr->vs));
+            Shader_Vulkan* vulkan_shader_vs = Internal_To_Shader(device->AccessShader(pipelineHolder->vs));
             shaderStages.push_back(vulkan_shader_vs->shaderStageInfo);
         }
 
         if (HANDLE_IS_VALID(pipelineDescPtr->ps))
         {
-            Shader_Vulkan* vulkan_shader_ps = Internal_To_Shader(device->AccessShader(pipelineDescPtr->ps));
+            Shader_Vulkan* vulkan_shader_ps = Internal_To_Shader(device->AccessShader(pipelineHolder->ps));
             shaderStages.push_back(vulkan_shader_ps->shaderStageInfo);
         }
 
@@ -144,7 +145,7 @@ namespace Czuch
 
         for (int a = 0; a < pipelineDescPtr->layoutsCount; ++a)
         {
-            layouts[a] = Internal_to_DescriptorSetLayout(device->AccessDescriptorSetLayout(pipelineDescPtr->layouts[a]))->layout;
+            layouts[a] = Internal_to_DescriptorSetLayout(device->AccessDescriptorSetLayout(pipelineHolder->layouts[a]))->layout;
         }
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -180,7 +181,7 @@ namespace Czuch
     {
         VkPipelineColorBlendAttachmentState colorBlendAttachment{};
         colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        if (pipelineDescPtr->bs.blendSettings.blend_enable == false)
+        if (pipelineDescPtr->bs.blendSettings.blendEnable == false)
         {
             colorBlendAttachment.blendEnable = VK_FALSE;
             colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
@@ -193,12 +194,12 @@ namespace Czuch
         else
         {
             colorBlendAttachment.blendEnable = VK_TRUE;
-            colorBlendAttachment.colorBlendOp = ConvertBlendOp(pipelineDescPtr->bs.blendSettings.blend_op); 
-            colorBlendAttachment.dstColorBlendFactor = ConvertBlendingFactor(pipelineDescPtr->bs.blendSettings.dest_blend);    
-            colorBlendAttachment.srcColorBlendFactor = ConvertBlendingFactor(pipelineDescPtr->bs.blendSettings.src_blend);     
-            colorBlendAttachment.srcAlphaBlendFactor = ConvertBlendingFactor(pipelineDescPtr->bs.blendSettings.src_blend_alpha);     
-            colorBlendAttachment.dstAlphaBlendFactor = ConvertBlendingFactor(pipelineDescPtr->bs.blendSettings.dest_blend_alpha);    
-            colorBlendAttachment.alphaBlendOp = ConvertBlendOp(pipelineDescPtr->bs.blendSettings.blend_op_alpha);
+            colorBlendAttachment.colorBlendOp = ConvertBlendOp(pipelineDescPtr->bs.blendSettings.colorBlendOp); 
+            colorBlendAttachment.dstColorBlendFactor = ConvertBlendingFactor(pipelineDescPtr->bs.blendSettings.dstColorBlendFactor);    
+            colorBlendAttachment.srcColorBlendFactor = ConvertBlendingFactor(pipelineDescPtr->bs.blendSettings.srcColorBlendFactor);     
+            colorBlendAttachment.srcAlphaBlendFactor = ConvertBlendingFactor(pipelineDescPtr->bs.blendSettings.srcAlphaBlendFactor);     
+            colorBlendAttachment.dstAlphaBlendFactor = ConvertBlendingFactor(pipelineDescPtr->bs.blendSettings.dstAlphaBlendFactor);    
+            colorBlendAttachment.alphaBlendOp = ConvertBlendOp(pipelineDescPtr->bs.blendSettings.alphaBlendOp);
         }
         return colorBlendAttachment;
     }

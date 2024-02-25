@@ -32,7 +32,7 @@ typedef unsigned short U16;
 typedef short I16;
 typedef unsigned char U8;
 typedef char I8;
-typedef unsigned int Guid;
+typedef int Guid;
 typedef std::string CzuchStr;
 
 const CzuchStr EMPTY_STRING = "";

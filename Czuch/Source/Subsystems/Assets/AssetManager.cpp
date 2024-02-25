@@ -19,19 +19,19 @@ namespace Czuch
 		m_Assets.clear();
 	}
 
-	Asset* AssetManager::LoadAsset(const CzuchStr& path)
+	Asset* AssetManager::LoadAsset(const CzuchStr& path,BaseLoadSettings& settings)
 	{
 		StringID strId = StringID::MakeStringID(path);
 
-		Asset* existingRes = LoadAsset({ .id = strId.GetGuid() });
+		Asset* existingRes = LoadAsset({ .handle = strId.GetGuid() });
 
 		if (existingRes != nullptr)
 		{
 			return existingRes;
 		}
 
-		Asset* createdRes = CreateAsset(path,m_Settings);
-		m_Assets.insert({ strId.GetGuid(), createdRes });
+		Asset* createdRes = CreateAsset(path,settings);
+		RegisterAsset(strId, createdRes);
 
 		auto result = createdRes->LoadAsset();
 
@@ -44,7 +44,7 @@ namespace Czuch
 
 	Asset* AssetManager::LoadAsset(AssetHandle handle)
 	{
-		Asset* res = GetAsset({ .id = handle.id });
+		Asset* res = GetAsset({ .handle = handle.handle });
 
 		if (res != nullptr)
 		{
@@ -58,24 +58,20 @@ namespace Czuch
 		return nullptr;
 	}
 
-	void AssetManager::SetSettings(void* settings)
-	{
-		m_Settings = settings;
-	}
-
 	void AssetManager::UnloadAsset(AssetHandle handle)
 	{
 		Asset* res = GetAsset(handle);
 		if (res != nullptr)
 		{
 			res->UnloadAsset();
+			//UnRegisterAsset(handle);
 		}
 	}
 
 	void AssetManager::UnloadAsset(const CzuchStr& path)
 	{
 		StringID strId = StringID::MakeStringID(path);
-		UnloadAsset({ .id = strId.GetGuid() });
+		UnloadAsset({ .handle = strId.GetGuid() });
 	}
 
 	void AssetManager::UnloadAll()
@@ -87,27 +83,38 @@ namespace Czuch
 				value->UnloadAsset();
 			}
 		}
+		m_Assets.clear();
 	}
 
 	AssetHandle AssetManager::GetHandleForResource(const CzuchStr& path)
 	{
 		StringID strId = StringID::MakeStringID(path);
-		Asset* res = GetAsset({ .id = strId.GetGuid() });
+		Asset* res = GetAsset({ .handle = strId.GetGuid() });
 		if (res != nullptr)
 		{
-			return { .id = res->GetGuid() };
+			return { .handle = res->GetGuid() };
 		}
-		return { .id = InvalidID };
+		return { .handle = InvalidID };
 	}
 
 	Asset* AssetManager::GetAsset(AssetHandle handle)
 	{
-		auto result = m_Assets.find(handle.id);
+		auto result = m_Assets.find(handle.handle);
 		if (result != m_Assets.end())
 		{
 			return result->second;
 		}
 		return nullptr;
+	}
+
+	void AssetManager::RegisterAsset(StringID& strId, Asset* createdRes)
+	{
+		m_Assets.insert({ strId.GetGuid(), createdRes });
+	}
+
+	void AssetManager::UnRegisterAsset(AssetHandle handle)
+	{
+		m_Assets.erase(handle.handle);
 	}
 
 }

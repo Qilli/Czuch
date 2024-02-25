@@ -1,5 +1,5 @@
 #pragma once
-#include "../AssetManager.h"
+#include"../AssetsManager.h"
 #include "../Asset/TextureAsset.h"
 
 namespace Czuch
@@ -9,7 +9,8 @@ namespace Czuch
 	public:
 		TextureAssetManager(GraphicsDevice* device);
 	protected:
-		Asset* CreateAsset(const CzuchStr& path, void* settings) override;
+		Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) override;
+		Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settings) override;
 	private:
 		GraphicsDevice* m_Device;
 	};
@@ -18,11 +19,18 @@ namespace Czuch
 	{
 	}
 
-	inline Asset* TextureAssetManager::CreateAsset(const CzuchStr& path, void* settings)
+	inline Asset* TextureAssetManager::CreateAsset(const CzuchStr& path, BaseCreateSettings& settings)
 	{
-		TextureLoadSettings* set = (TextureLoadSettings*)settings;
-		TextureAsset* shaderRes = new TextureAsset(path,set, m_Device);
-		return shaderRes;
+		TextureAsset* texRes = new TextureAsset(path,(TextureCreateSettings&)settings, m_Device,AssetsManager::GetPtr());
+		StringID strId = StringID::MakeStringID(path);
+		RegisterAsset(strId, texRes);
+		return texRes;
+	}
+
+	inline Asset* TextureAssetManager::CreateAsset(const CzuchStr& path, BaseLoadSettings& settings)
+	{
+		TextureAsset* texRes = new TextureAsset(path, (TextureLoadSettings&)settings, m_Device,AssetsManager::GetPtr());
+		return texRes;
 	}
 
 }

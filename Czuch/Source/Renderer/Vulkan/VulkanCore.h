@@ -590,6 +590,7 @@ namespace Czuch
 		}
 	};
 
+
 	struct Buffer_Vulkan : public VulkanDeviceRef
 	{
 		VkBuffer buffer= VK_NULL_HANDLE;

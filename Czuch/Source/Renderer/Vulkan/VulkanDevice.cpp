@@ -10,6 +10,8 @@
 #include"Core/Common.h"
 #include"DescriptorLayoutCache.h"
 #include"DescriptorAllocator.h"
+#include"./Subsystems/Assets/AssetsManager.h"
+#include"./Subsystems/Assets/Asset/ShaderAsset.h"
 #include<set>
 
 
@@ -33,7 +35,7 @@ namespace Czuch
 	bool HasStencilComponent(VkFormat format);
 	VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
-	PipelineHandle VulkanDevice::CreatePipelineState(const PipelineStateDesc* desc, const RenderPassHandle rpass)
+	PipelineHandle VulkanDevice::CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass)
 	{
 		CZUCH_BE_ASSERT(desc, "CreatePipelineState NULL desc input");
 		
@@ -49,9 +51,21 @@ namespace Czuch
 
 		Pipeline* ps = new Pipeline();
 		ps->m_InternalResourceState = std::make_shared<Pipeline_Vulkan>();
-		ps->m_desc = *desc;
+		ps->m_desc = std::move(*desc);
+		ps->device = this;
 
-		VulkanPipelineBuilder builder(this,Internal_To_Pipeline(ps),desc);
+		auto vsAsset = AssetsManager::GetPtr()->GetAsset<ShaderAsset>(desc->vs);
+		auto psAsset = AssetsManager::GetPtr()->GetAsset<ShaderAsset>(desc->ps);
+
+		ps->vs = vsAsset->GetShaderAssetHandle();
+		ps->ps = psAsset->GetShaderAssetHandle();
+
+		for (auto layout : desc->layouts)
+		{
+			ps->AddLayout(CreateDescriptorSetLayout(&layout));
+		}
+
+		VulkanPipelineBuilder builder(this,Internal_To_Pipeline(ps),ps);
 		if (!builder.BuildPipeline(Internal_to_RenderPass(rp)->renderPass))
 		{
 			LOG_BE_ERROR("[{0}] Failed to Build new pipeline",Tag);
@@ -348,6 +362,86 @@ namespace Czuch
 		return h;
 	}
 
+
+	MeshHandle VulkanDevice::CreateMesh(MeshData& meshData)
+	{
+		Mesh* mesh = new Mesh();
+		mesh->data = std::move(meshData);
+
+		BufferDesc vbDesc;
+		vbDesc.elementsCount = mesh->data.positions.size();
+		vbDesc.size = vbDesc.elementsCount * sizeof(float) * 3;
+		vbDesc.stride = 3 * sizeof(float);
+		vbDesc.usage = Usage::DEFAULT;
+		vbDesc.bind_flags = BindFlag::VERTEX_BUFFER;
+		vbDesc.initData = (void*)mesh->data.positions.data();
+
+		mesh->positionsHandle = CreateBuffer(&vbDesc);
+
+		if (mesh->HasNormals())
+		{
+			BufferDesc nDesc;
+			nDesc.elementsCount = mesh->data.normals.size();
+			nDesc.size = nDesc.elementsCount * sizeof(float) * 3;
+			nDesc.stride = 3 * sizeof(float);
+			nDesc.usage = Usage::DEFAULT;
+			nDesc.bind_flags = BindFlag::VERTEX_BUFFER;
+			nDesc.initData = (void*)mesh->data.normals.data();
+
+			mesh->normalsHandle = CreateBuffer(&nDesc);
+		}
+
+		if (mesh->HasColors())
+		{
+			BufferDesc cDesc;
+			cDesc.elementsCount = mesh->data.colors.size();
+			cDesc.size = cDesc.elementsCount * sizeof(float) * 4;
+			cDesc.stride = 4 * sizeof(float);
+			cDesc.usage = Usage::DEFAULT;
+			cDesc.bind_flags = BindFlag::VERTEX_BUFFER;
+			cDesc.initData = (void*)mesh->data.normals.data();
+
+			mesh->colorsHandle = CreateBuffer(&cDesc);
+		}
+
+		if (mesh->HasUV0())
+		{
+			BufferDesc uvDesc;
+			uvDesc.elementsCount = mesh->data.uvs0.size();
+			uvDesc.size = uvDesc.elementsCount * sizeof(float) * 2;
+			uvDesc.stride = 2 * sizeof(float);
+			uvDesc.usage = Usage::DEFAULT;
+			uvDesc.bind_flags = BindFlag::VERTEX_BUFFER;
+			uvDesc.initData = (void*)mesh->data.uvs0.data();
+
+			mesh->uvs0Handle = CreateBuffer(&uvDesc);
+		}
+
+		BufferDesc indicesDesc;
+		indicesDesc.elementsCount = mesh->data.indices.size();
+		indicesDesc.size = indicesDesc.elementsCount * sizeof(I16);
+		indicesDesc.stride = sizeof(I16);
+		indicesDesc.usage = Usage::DEFAULT;
+		indicesDesc.bind_flags = BindFlag::INDEX_BUFFER;
+		indicesDesc.initData = (void*)mesh->data.indices.data();
+
+		mesh->indicesHandle = CreateBuffer(&indicesDesc);
+
+		MeshHandle h;
+		h.handle = m_ResContainer.meshes.Add(mesh);
+		return h;
+	}
+
+	MaterialHandle VulkanDevice::CreateMaterial(MaterialDesc& materialData)
+	{
+		Material* material = new Material();
+		material->desc = std::move(materialData);
+		material->pipeline = CreatePipelineState(&material->desc.pipelineDesc, INVALID_HANDLE(RenderPassHandle));
+
+		MaterialHandle h;
+		h.handle = m_ResContainer.materials.Add(material);
+		return h;
+	}
 
 	BufferHandle VulkanDevice::CreateBuffer(const BufferDesc* desc)
 	{
@@ -670,6 +764,28 @@ namespace Czuch
 		m_ResContainer.textures.Remove(color_texture.handle);
 		delete t;
 		INVALIDATE_HANDLE(color_texture)
+		return true;
+	}
+
+	bool VulkanDevice::Release(MeshHandle& mesh)
+	{
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(mesh), "Invalid mesh to release");
+		Mesh* m = nullptr;
+		m_ResContainer.meshes.Get(mesh.handle, &m);
+		m_ResContainer.meshes.Remove(mesh.handle);
+		delete m;
+		INVALIDATE_HANDLE(mesh)
+		return true;
+	}
+
+	bool VulkanDevice::Release(MaterialHandle& material)
+	{
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(material), "Invalid material to release");
+		Material* m = nullptr;
+		m_ResContainer.materials.Get(material.handle, &m);
+		m_ResContainer.materials.Remove(material.handle);
+		delete m;
+		INVALIDATE_HANDLE(material)
 		return true;
 	}
 
@@ -1622,6 +1738,7 @@ namespace Czuch
 		return true;
 	}
 
+
 	void VulkanDevice::ResourcesContainer::ReleaseAll()
 	{
 		shaders.RemoveAll();
@@ -1632,7 +1749,10 @@ namespace Czuch
 		pipelines.RemoveAll();
 		renderPasses.RemoveAll();
 		frameBuffers.RemoveAll();
+		materials.RemoveAll();
+		meshes.RemoveAll();
 	}
+
 
 	Shader* VulkanDevice::AccessShader(ShaderHandle handle)
 	{
@@ -1679,6 +1799,30 @@ namespace Czuch
 			return result;
 		}
 		LOG_BE_ERROR("{0} AccessTexture with invalid handle.", Tag);
+		return nullptr;
+	}
+
+	Mesh* VulkanDevice::AccessMesh(MeshHandle handle)
+	{
+		if (HANDLE_IS_VALID(handle))
+		{
+			Mesh* result = nullptr;
+			m_ResContainer.meshes.Get(handle.handle, &result);
+			return result;
+		}
+		LOG_BE_ERROR("{0} AccessMesh with invalid handle.", Tag);
+		return nullptr;
+	}
+
+	Material* VulkanDevice::AccessMaterial(MaterialHandle handle)
+	{
+		if (HANDLE_IS_VALID(handle))
+		{
+			Material* result = nullptr;
+			m_ResContainer.materials.Get(handle.handle, &result);
+			return result;
+		}
+		LOG_BE_ERROR("{0} AccessMaterial with invalid handle.", Tag);
 		return nullptr;
 	}
 

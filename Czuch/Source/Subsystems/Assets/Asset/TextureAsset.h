@@ -1,6 +1,6 @@
 #pragma once
 #include "Asset.h"
-#include "./Subsystems/Assets/LoadSettingsPerType.h"
+#include "./Subsystems/Assets/SettingsPerType.h"
 
 namespace Czuch
 {
@@ -10,14 +10,17 @@ namespace Czuch
         public Asset
     {
     public:
-        TextureAsset(const CzuchStr& path,TextureLoadSettings* settings, GraphicsDevice* device);
+        TextureAsset(const CzuchStr& path,TextureLoadSettings& settings, GraphicsDevice* device, AssetsManager* assetsManager);
+        TextureAsset(const CzuchStr& path, TextureCreateSettings& settings, GraphicsDevice* device, AssetsManager* assetsManager);
         ~TextureAsset();
         bool LoadAsset() override;
-        void UnloadAsset() override;
-        inline TextureHandle GetTextureAsset() const { return m_TextureAsset; }
+        bool UnloadAsset() override;
+        bool CreateFromData() override;
+        inline TextureHandle GetTextureAssetHandle() const { return m_TextureAsset; }
     private:
         GraphicsDevice* m_Device;
-        TextureLoadSettings* m_Settings;
+        TextureLoadSettings m_CurrentLoadSettings;
+        TextureCreateSettings m_CreateSettings;
         TextureHandle m_TextureAsset;
     };
 

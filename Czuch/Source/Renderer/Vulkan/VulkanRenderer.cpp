@@ -8,6 +8,7 @@
 #include"Subsystems/Assets/AssetsManager.h"
 #include"Subsystems/Assets/Asset/ShaderAsset.h"
 #include"Subsystems/Assets/Asset/TextureAsset.h"
+#include"Subsystems/Assets/Asset/MaterialAsset.h"
 #include"DescriptorAllocator.h"
 #include"Core/Math.h"
 
@@ -19,7 +20,7 @@ namespace Czuch
 		m_AttachedWindow = window;
 	}
 
-	PipelineHandle pipeline = INVALID_HANDLE(PipelineHandle);
+
 	BufferHandle vertexBufferPos = INVALID_HANDLE(BufferHandle);
 	BufferHandle vertexBufferColor = INVALID_HANDLE(BufferHandle);
 	BufferHandle vertexBufferUV = INVALID_HANDLE(BufferHandle);
@@ -87,12 +88,32 @@ namespace Czuch
 
 			auto texHandle = resMgr->LoadAsset<TextureAsset, TextureLoadSettings>("F:/Engine/Czuch/Czuch/Data/Textures/texture.jpg", {.type = TextureDesc::Type::TEXTURE_2D});
 
-			vertexShader = vsRes->GetShaderAsset();
-			fragmentShader = fsRes->GetShaderAsset();
+			std::vector<U8> colors1;
+			colors1.reserve(128 * 128 * 4);
+
+			for (size_t i = 0; i < 128; i++)
+			{
+				for (size_t j = 0; j < 128; j++)
+				{
+					colors1.push_back(255);
+					colors1.push_back(255);
+					colors1.push_back(255);
+					colors1.push_back(255);
+				}
+			}
+
+			TextureCreateSettings createTexSet;
+			createTexSet.channels = 4;
+			createTexSet.height = 128;
+			createTexSet.width = 128;
+			createTexSet.colors = colors1;
+
+			auto texHandle2 = resMgr->CreateAsset<TextureAsset, TextureCreateSettings>("White",createTexSet);
+
 
 			PipelineStateDesc desc;
-			desc.vs = vertexShader;
-			desc.ps = fragmentShader;
+			desc.vs = handle;
+			desc.ps = handle2;
 			desc.pt = PrimitiveTopology::TRIANGLELIST;
 			desc.rs.cull_mode = CullMode::NONE;
 			desc.rs.fill_mode = PolygonMode::SOLID;
@@ -100,9 +121,6 @@ namespace Czuch
 			desc.dss.depth_func = CompFunc::LESS_EQUAL;
 			desc.dss.depth_write_mask = DepthWriteMask::ZERO;
 			desc.dss.stencil_enable = false;
-
-			desc.AddLayout(m_SceneData.layout);
-			desc.AddLayout(m_SceneData.texLayout);
 
 			desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 			desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
@@ -112,7 +130,34 @@ namespace Czuch
 			desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32_FLOAT });
 			desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32_FLOAT });
 
-			pipeline=m_Device->CreatePipelineState(&desc, INVALID_HANDLE(RenderPassHandle));
+
+			MaterialDesc matDesc;
+			matDesc.pipelineDesc = std::move(desc);
+			matDesc.materialName = "DefaultMaterial";
+
+
+			DescriptorSetLayoutDesc desc_1{};
+			desc_1.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
+			desc_1.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1,sizeof(SceneData));
+
+			DescriptorSetLayoutDesc desc_tex{};
+			desc_tex.shaderStage = (U32)ShaderStage::PS;
+			desc_tex.AddBinding("MainTexture", DescriptorType::SAMPLER, 0, 1,0);
+
+			DescriptorSetDesc setDesc_1;
+			DescriptorSetDesc setDesc_Tex;
+
+			setDesc_1.AddBuffer(m_SceneData.buffer[0], 0);
+			setDesc_Tex.AddSampler(m_SceneData.tex, 0);
+
+			matDesc.AddLayoutWithDescriptor(desc_1, setDesc_1);
+			matDesc.AddLayoutWithDescriptor(desc_tex, setDesc_Tex);
+
+			MaterialCreateSettings createSettings;
+			createSettings.desc = std::move(matDesc);
+
+			m_SceneData.materialHandle = resMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createSettings.desc.materialName, createSettings);
+
 
 			const std::vector<glm::vec3> positions = {
 				{-0.5f, -0.5f,0.0f},
@@ -180,8 +225,8 @@ namespace Czuch
 
 			indexBuffer = m_Device->CreateBuffer(&ib);
 
-			auto texRes = resMgr->GetAsset<TextureAsset>(texHandle);
-			m_SceneData.tex = texRes->GetTextureAsset();
+			auto texRes = resMgr->GetAsset<TextureAsset>(texHandle2);
+			m_SceneData.tex = texRes->GetTextureAssetHandle();
 		}
 
 
@@ -264,7 +309,7 @@ namespace Czuch
 		scissors.height = m_Device->GetSwapchainHeight();
 		cmdBuffer->SetScrissors(scissors);
 
-		cmdBuffer->BindPipeline(pipeline);
+		cmdBuffer->BindPipeline(m_SceneData.pipeline);
 		cmdBuffer->BindVertexBuffer(vertexBufferPos,0,0);
 		cmdBuffer->BindVertexBuffer(vertexBufferColor, 1, 0);
 		cmdBuffer->BindVertexBuffer(vertexBufferUV, 2, 0);
@@ -301,15 +346,6 @@ namespace Czuch
 
 	void VulkanRenderer::InitSceneData()
 	{
-		DescriptorSetLayoutDesc desc{};
-		desc.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
-		desc.AddBinding(DescriptorType::UNIFORM_BUFFER, 0, 1);
-		m_SceneData.layout = m_Device->CreateDescriptorSetLayout(&desc);
-
-		DescriptorSetLayoutDesc desc_tex{};
-		desc_tex.shaderStage = (U32)ShaderStage::PS;
-		desc_tex.AddBinding(DescriptorType::SAMPLER, 0, 1);
-		m_SceneData.texLayout = m_Device->CreateDescriptorSetLayout(&desc_tex);
 
 		m_SceneData.bufferDesc.createMapped = true;
 		m_SceneData.bufferDesc.elementsCount = 1;
@@ -317,7 +353,7 @@ namespace Czuch
 		m_SceneData.bufferDesc.size = sizeof(SceneData);
 		m_SceneData.bufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
 
-		m_SceneData.data.ambientColor = vec4(1, 0, 0, 1);
+		m_SceneData.data.ambientColor = Vec4(1, 0, 0, 1);
 
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
@@ -336,20 +372,27 @@ namespace Czuch
 			});
 		auto bufferVulkan =Internal_to_Buffer(m_Device->AccessBuffer(m_SceneData.buffer[m_CurrentFrame]));
 
-		m_SceneData.data.ambientColor = vec4(1, 1, 0, 1);
+		m_SceneData.data.ambientColor = Vec4(1, 1, 0, 1);
 
 		SceneData* data=(SceneData*)bufferVulkan->GetMappedData();
 		*data = m_SceneData.data;
 
-		//fill descriptors
-		m_SceneData.descriptorSet.Reset();
-		m_SceneData.descriptorSet.AddBuffer(m_SceneData.buffer[m_CurrentFrame],0);
 
-		m_SceneData.descriptorSetTex.Reset();
-		m_SceneData.descriptorSetTex.AddSampler(m_SceneData.tex, 0);
+		auto materialAsset= AssetsManager::GetPtr()->GetAsset<MaterialAsset>(m_SceneData.materialHandle);
+		Material* m = m_Device->AccessMaterial(materialAsset->GetMaterialAssetHandle());
 
-		m_SceneData.descriptor =GetCurrentFrame().descriptorAllocator->Allocate(m_SceneData.descriptorSet, m_Device->AccessDescriptorSetLayout(m_SceneData.layout));
-		m_SceneData.descriptorTex = GetCurrentFrame().descriptorAllocator->Allocate(m_SceneData.descriptorSetTex, m_Device->AccessDescriptorSetLayout(m_SceneData.texLayout));
+
+		m->desc.descriptorsDesc[0].Reset();
+		m->desc.descriptorsDesc[0].AddBuffer(m_SceneData.buffer[m_CurrentFrame], 0);
+
+
+		auto pipelineObj = m_Device->AccessPipeline(m_SceneData.pipeline);
+
+		auto layout_0=pipelineObj->layouts[0];
+		auto layout_1 = pipelineObj->layouts[1];
+
+		m_SceneData.descriptor =GetCurrentFrame().descriptorAllocator->Allocate(m_SceneData.descriptorSet, m_Device->AccessDescriptorSetLayout(layout_0));
+		m_SceneData.descriptorTex = GetCurrentFrame().descriptorAllocator->Allocate(m_SceneData.descriptorSetTex, m_Device->AccessDescriptorSetLayout(layout_1));
 
 		DescriptorWriter writer;
 		writer.WriteBuffer(0, m_Device->AccessBuffer(m_SceneData.buffer[m_CurrentFrame]), sizeof(SceneData), 0, DescriptorType::UNIFORM_BUFFER);

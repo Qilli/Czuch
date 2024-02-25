@@ -50,14 +50,11 @@ namespace Czuch
 		{
 			SceneData data;
 			BufferDesc bufferDesc;
-			DescriptorSetLayoutHandle layout;
-			DescriptorSetLayoutHandle texLayout;
 			DescriptorSet* descriptor;
 			DescriptorSet* descriptorTex;
-			DescriptorSetDesc descriptorSet;
-			DescriptorSetDesc descriptorSetTex;
 			TextureHandle tex;
 			BufferHandle buffer[MAX_FRAMES_IN_FLIGHT];
+			AssetHandle materialHandle;
 		};
 
 	private:

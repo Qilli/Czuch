@@ -2,6 +2,7 @@
 #include "VulkanCommandBuffer.h"
 #include"VulkanDevice.h"
 #include"VulkanCore.h"
+#include"DescriptorAllocator.h"
 
 namespace Czuch
 {
@@ -59,6 +60,65 @@ namespace Czuch
 		{
 			vkCmdEndRenderPass(m_Cmd);
 			m_CurrentRenderPass = INVALID_HANDLE(RenderPassHandle);
+		}
+	}
+
+	void VulkanCommandBuffer::DrawMesh(MeshHandle mesh, DescriptorAllocator* allocator)
+	{
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(mesh), "Mesh passed to command buffer is invalid");
+
+		Mesh* meshInstance = m_Device->AccessMesh(mesh);
+		if (meshInstance != nullptr)
+		{
+			Material* material = m_Device->AccessMaterial(meshInstance->materialHandle);
+			BindPipeline(material->pipeline);
+
+			auto pipelinePtr = m_Device->AccessPipeline(material->pipeline);
+			DescriptorWriter writer;
+
+			for (int a = 0; a < material->desc.pipelineDesc.layoutsCount; a++)
+			{
+				writer.Clear();
+				auto descriptorLayout = pipelinePtr->layouts[a];
+				auto layout = m_Device->AccessDescriptorSetLayout(descriptorLayout);
+				auto descriptor = allocator->Allocate(material->desc.descriptorsDesc[a],layout);
+
+				for (int b = 0; b < layout->desc.bindingsCount; b++)
+				{
+					auto binding = layout->desc.bindings[b];
+					if (binding.type == DescriptorType::UNIFORM_BUFFER)
+					{
+						writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(material->desc.descriptorsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
+					}
+					else if (binding.type == DescriptorType::SAMPLER)
+					{
+						writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(material->desc.descriptorsDesc[a].descriptors[b].resource)), DescriptorType::SAMPLER);
+					}
+					writer.UpdateSet(m_Device, descriptor);
+				}
+
+				BindDescriptorSet(descriptor, a, 1, nullptr, 0);
+			}
+
+
+			BindVertexBuffer(meshInstance->positionsHandle, 0, 0);
+			if (meshInstance->HasColors())
+			{
+				BindVertexBuffer(meshInstance->colorsHandle, 1, 0);
+			}
+
+			if (meshInstance->HasUV0())
+			{
+				BindVertexBuffer(meshInstance->uvs0Handle, 2, 0);
+			}
+
+			if (meshInstance->HasNormals())
+			{
+				BindVertexBuffer(meshInstance->normalsHandle, 3, 0);
+			}
+
+			BindIndexBuffer(meshInstance->indicesHandle, 0);
+			DrawIndexed(m_Device->AccessBuffer(meshInstance->indicesHandle)->desc.elementsCount);
 		}
 	}
 

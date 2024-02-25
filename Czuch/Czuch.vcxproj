@@ -159,6 +159,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialAsset.h" />
+    <ClInclude Include="source\Renderer\RenderContext.h" />
     <ClInclude Include="source\Core\AccessContainer.h" />
     <ClInclude Include="source\Core\Common.h" />
     <ClInclude Include="source\Core\EngineCore.h" />
@@ -194,18 +196,21 @@
     <ClInclude Include="source\Renderer\Vulkan\VulkanRenderer.h" />
     <ClInclude Include="source\Subsystems\Assets\Asset\Asset.h" />
     <ClInclude Include="source\Subsystems\Assets\Asset\ShaderAsset.h" />
+    <ClInclude Include="source\Subsystems\Assets\Asset\ModelAsset.h" />
     <ClInclude Include="source\Subsystems\Assets\Asset\TextureAsset.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetManager.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\TextureAssetManager.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetsManager.h" />
-    <ClInclude Include="source\Subsystems\Assets\LoadSettingsPerType.h" />
+    <ClInclude Include="source\Subsystems\Assets\SettingsPerType.h" />
     <ClInclude Include="source\Subsystems\BaseSubsystem.h" />
     <ClInclude Include="source\Subsystems\EventsManager.h" />
     <ClInclude Include="source\Subsystems\Logging.h" />
     <ClInclude Include="source\czpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialAsset.cpp" />
+    <ClCompile Include="source\Renderer\RenderContext.cpp" />
     <ClCompile Include="source\Core\AccessContainer.cpp" />
     <ClCompile Include="source\Core\StringID.cpp" />
     <ClCompile Include="source\Core\Time.cpp" />
@@ -228,6 +233,7 @@
     <ClCompile Include="source\Renderer\Vulkan\VulkanRenderer.cpp" />
     <ClCompile Include="source\Subsystems\Assets\Asset\Asset.cpp" />
     <ClCompile Include="source\Subsystems\Assets\Asset\ShaderAsset.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\Asset\ModelAsset.cpp" />
     <ClCompile Include="source\Subsystems\Assets\Asset\TextureAsset.cpp" />
     <ClCompile Include="source\Subsystems\Assets\AssetManager.cpp" />
     <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.cpp" />

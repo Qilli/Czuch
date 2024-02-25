@@ -12,10 +12,10 @@ namespace Czuch
 
 	struct SceneData
 	{
-		mat4 view;
-		mat4 proj;
-		mat4 viewproj;
-		vec4 ambientColor;
+		Mat4 view;
+		Mat4 proj;
+		Mat4 viewproj;
+		Vec4 ambientColor;
 	};
 
 	class GraphicsDevice;

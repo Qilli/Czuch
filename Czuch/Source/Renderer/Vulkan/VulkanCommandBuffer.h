@@ -16,6 +16,7 @@ namespace Czuch
 		void Begin() override;
 		void End() override;
 		void EndCurrentRenderPass() override;
+		void DrawMesh(MeshHandle mesh, DescriptorAllocator* allocator) override;
 		void BindPass(RenderPassHandle renderpass, FrameBufferHandle framebuffer) override;
 		void BindPipeline(PipelineHandle pipeline) override;
 		void BindVertexBuffer(BufferHandle buffer, U32 binding, U32 offset) override;
