@@ -165,6 +165,9 @@
     <ClInclude Include="source\Core\Math.h" />
     <ClInclude Include="source\Renderer\RenderContext.h" />
     <ClInclude Include="source\Subsystems\Assets\Asset\MaterialAsset.h" />
+    <ClInclude Include="source\Subsystems\Assets\Asset\ModelAsset.h" />
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">
@@ -255,5 +258,8 @@
     <ClCompile Include="source\czpch.cpp" />
     <ClCompile Include="source\Renderer\RenderContext.cpp" />
     <ClCompile Include="source\Subsystems\Assets\Asset\MaterialAsset.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\Asset\ModelAsset.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.cpp" />
   </ItemGroup>
 </Project>

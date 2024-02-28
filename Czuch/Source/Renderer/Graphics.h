@@ -1,7 +1,7 @@
 #pragma once
 #include"./Core/EngineCore.h"
+#include "Core/Math.h"
 #include<memory>
-#include"glm.hpp"
 #include"Subsystems/Assets/Asset/Asset.h"
 
 namespace Czuch
@@ -441,7 +441,27 @@ namespace Czuch
 	{
 		BIND_POINT_GRAPHICS = 0,
 		BIND_POINT_COMPUTE = 1,
-		_BIND_POINT_RAY_TRACING=2,
+		BIND_POINT_RAY_TRACING=2,
+	};
+
+	enum class RenderLayer
+	{
+		LAYER_0,
+		LAYER_1,
+		LAYER_2,
+		LAYER_3,
+		LAYER_4,
+		LAYER_5,
+		LAYER_6,
+		LAYER_7,
+	};
+
+	enum class RenderType
+	{
+		General,
+		Debug,
+		Editor,
+		Overlay,
 	};
 
 #pragma region Info definitions
@@ -536,7 +556,7 @@ namespace Czuch
 		U32 shaderStage;
 
 		DescriptorSetLayoutDesc& Reset();
-		DescriptorSetLayoutDesc& AddBinding(CzuchStr name,DescriptorType type, U32 bindingIndex, U32 count);
+		DescriptorSetLayoutDesc& AddBinding(CzuchStr name,DescriptorType type, U32 bindingIndex, U32 count,U32 size);
 	};
 
 	struct Buffer;
@@ -738,6 +758,7 @@ namespace Czuch
 		PipelineStateDesc pipelineDesc;
 		DescriptorSetDesc descriptorsDesc[k_max_descriptor_set_layouts];
 		CzuchStr materialName;
+		int materialFlags;
 
 		MaterialDesc() = default;
 
@@ -867,6 +888,12 @@ namespace Czuch
 		}
 
 		~Mesh();
+	};
+
+	enum class MaterialFlag
+	{
+		NONE =0,
+		USE_SCENE_DATA = 1<<0 
 	};
 
 	struct Material : public GraphicsDeviceResource

@@ -159,6 +159,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.h" />
     <ClInclude Include="source\Subsystems\Assets\Asset\MaterialAsset.h" />
     <ClInclude Include="source\Renderer\RenderContext.h" />
     <ClInclude Include="source\Core\AccessContainer.h" />
@@ -209,6 +211,8 @@
     <ClInclude Include="source\czpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.cpp" />
     <ClCompile Include="source\Subsystems\Assets\Asset\MaterialAsset.cpp" />
     <ClCompile Include="source\Renderer\RenderContext.cpp" />
     <ClCompile Include="source\Core\AccessContainer.cpp" />

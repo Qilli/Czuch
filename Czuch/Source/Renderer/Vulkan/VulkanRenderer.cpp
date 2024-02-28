@@ -9,6 +9,7 @@
 #include"Subsystems/Assets/Asset/ShaderAsset.h"
 #include"Subsystems/Assets/Asset/TextureAsset.h"
 #include"Subsystems/Assets/Asset/MaterialAsset.h"
+#include"Renderer/RenderContext.h"
 #include"DescriptorAllocator.h"
 #include"Core/Math.h"
 
@@ -78,7 +79,7 @@ namespace Czuch
 		{
 			inited = true;
 			//create objects
-			auto resMgr = AssetsManager::GetPtr();
+		/*	auto resMgr = AssetsManager::GetPtr();
 
 			auto handle = resMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("F:/Engine/Czuch/Czuch/Data/Shaders/vertShader.vert", {});
 			auto vsRes = resMgr->GetAsset<ShaderAsset>(handle);
@@ -226,7 +227,7 @@ namespace Czuch
 			indexBuffer = m_Device->CreateBuffer(&ib);
 
 			auto texRes = resMgr->GetAsset<TextureAsset>(texHandle2);
-			m_SceneData.tex = texRes->GetTextureAssetHandle();
+			m_SceneData.tex = texRes->GetTextureAssetHandle();*/
 		}
 
 
@@ -243,6 +244,7 @@ namespace Czuch
 		}
 
 		SetSceneData();
+		OnPreRenderUpdateContexts();
 		vkResetFences(device, 1, &GetCurrentFrame().inFlightFence);
 		
 		RecordCommandBuffer(imageIndex);
@@ -250,6 +252,7 @@ namespace Czuch
 		SubmitCommandBuffer();
 		m_Device->Present(imageIndex, GetCurrentFrame().renderFinishedSemaphote);
 
+		OnPostRenderUpdateContexts();
 		m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
@@ -261,6 +264,17 @@ namespace Czuch
 	GraphicsDevice* VulkanRenderer::GetDevice()
 	{
 		 return static_cast<GraphicsDevice*>(m_Device); 
+	}
+
+	bool VulkanRenderer::RegisterRenderContext(RenderContext* context)
+	{
+		m_MainRenderContexts.Add(context);
+		return true;
+	}
+
+	void VulkanRenderer::UnRegisterRenderContext(RenderContext* context)
+	{
+		m_MainRenderContexts.Remove(context);
 	}
 
 	void VulkanRenderer::CreateSyncObjects()
@@ -309,14 +323,13 @@ namespace Czuch
 		scissors.height = m_Device->GetSwapchainHeight();
 		cmdBuffer->SetScrissors(scissors);
 
-		cmdBuffer->BindPipeline(m_SceneData.pipeline);
-		cmdBuffer->BindVertexBuffer(vertexBufferPos,0,0);
-		cmdBuffer->BindVertexBuffer(vertexBufferColor, 1, 0);
-		cmdBuffer->BindVertexBuffer(vertexBufferUV, 2, 0);
-		cmdBuffer->BindIndexBuffer(indexBuffer,0);
-		cmdBuffer->BindDescriptorSet(m_SceneData.descriptor,0,1,nullptr,0);
-		cmdBuffer->BindDescriptorSet(m_SceneData.descriptorTex,1, 1, nullptr, 0);
-		cmdBuffer->DrawIndexed(m_Device->AccessBuffer(indexBuffer)->desc.elementsCount);
+		for (auto context : m_MainRenderContexts.m_RenderContexts)
+		{
+			for (auto renderItem : context->GetRenderObjectsList())
+			{
+				cmdBuffer->DrawMesh(renderItem, GetCurrentFrame().descriptorAllocator);
+			}
+		}
 
 		cmdBuffer->EndCurrentRenderPass();
 		cmdBuffer->End();
@@ -377,30 +390,29 @@ namespace Czuch
 		SceneData* data=(SceneData*)bufferVulkan->GetMappedData();
 		*data = m_SceneData.data;
 
+	}
 
-		auto materialAsset= AssetsManager::GetPtr()->GetAsset<MaterialAsset>(m_SceneData.materialHandle);
-		Material* m = m_Device->AccessMaterial(materialAsset->GetMaterialAssetHandle());
+	void VulkanRenderer::OnPreRenderUpdateContexts()
+	{
+		for (auto context: m_MainRenderContexts.m_RenderContexts)
+		{
+			auto renderList=context->GetRenderObjectsList();
+			for (auto renderElement : renderList)
+			{
+				renderElement.UpdateSceneDataIfRequired(m_Device,m_SceneData.buffer[m_CurrentFrame]);
+			}
+		}
+	}
 
-
-		m->desc.descriptorsDesc[0].Reset();
-		m->desc.descriptorsDesc[0].AddBuffer(m_SceneData.buffer[m_CurrentFrame], 0);
-
-
-		auto pipelineObj = m_Device->AccessPipeline(m_SceneData.pipeline);
-
-		auto layout_0=pipelineObj->layouts[0];
-		auto layout_1 = pipelineObj->layouts[1];
-
-		m_SceneData.descriptor =GetCurrentFrame().descriptorAllocator->Allocate(m_SceneData.descriptorSet, m_Device->AccessDescriptorSetLayout(layout_0));
-		m_SceneData.descriptorTex = GetCurrentFrame().descriptorAllocator->Allocate(m_SceneData.descriptorSetTex, m_Device->AccessDescriptorSetLayout(layout_1));
-
-		DescriptorWriter writer;
-		writer.WriteBuffer(0, m_Device->AccessBuffer(m_SceneData.buffer[m_CurrentFrame]), sizeof(SceneData), 0, DescriptorType::UNIFORM_BUFFER);
-		writer.UpdateSet(m_Device, m_SceneData.descriptor);
-
-		writer.Clear();
-		writer.WriteTexture(0, m_Device->AccessTexture(m_SceneData.tex), DescriptorType::SAMPLER);
-		writer.UpdateSet(m_Device, m_SceneData.descriptorTex);
+	void VulkanRenderer::OnPostRenderUpdateContexts()
+	{
+		for (auto context : m_MainRenderContexts.m_RenderContexts)
+		{
+			if (context->IsAutoCleanEnabled())
+			{
+				context->ClearRenderList();
+			}
+		}
 	}
 
 	void VulkanRenderer::FrameData::Reset()

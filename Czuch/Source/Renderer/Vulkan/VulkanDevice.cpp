@@ -682,9 +682,8 @@ namespace Czuch
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(buffer), "Invalid buffer passed to release.");
 		Buffer* b = nullptr;
-		m_ResContainer.buffers.Get(buffer.handle, &b);
+		bool result=m_ResContainer.buffers.Get(buffer.handle, &b);
 		m_ResContainer.buffers.Remove(buffer.handle);
-		delete b;
 		INVALIDATE_HANDLE(buffer)
 		return true;
 	}
@@ -695,7 +694,6 @@ namespace Czuch
 		Pipeline* p = nullptr;
 		m_ResContainer.pipelines.Get(pipeline.handle, &p);
 		m_ResContainer.pipelines.Remove(pipeline.handle);
-		delete p;
 		INVALIDATE_HANDLE(pipeline)
 		return true;
 	}
@@ -706,7 +704,6 @@ namespace Czuch
 		Shader* s = nullptr;
 		m_ResContainer.shaders.Get(shader.handle, &s);
 		m_ResContainer.shaders.Remove(shader.handle);
-		delete s;
 		INVALIDATE_HANDLE(shader)
 		return true;
 	}
@@ -717,7 +714,6 @@ namespace Czuch
 		RenderPass* r = nullptr;
 		m_ResContainer.renderPasses.Get(rp.handle, &r);
 		m_ResContainer.renderPasses.Remove(rp.handle);
-		delete r;
 		INVALIDATE_HANDLE(rp)
 		return true;
 	}
@@ -728,7 +724,6 @@ namespace Czuch
 		DescriptorSetLayout* d = nullptr;
 		m_ResContainer.descriptorSetLayouts.Get(dsl.handle, &d);
 		m_ResContainer.descriptorSetLayouts.Remove(dsl.handle);
-		delete d;
 		INVALIDATE_HANDLE(dsl)
 		return true;
 	}
@@ -739,7 +734,6 @@ namespace Czuch
 		FrameBuffer* f = nullptr;
 		m_ResContainer.frameBuffers.Get(fb.handle, &f);
 		m_ResContainer.frameBuffers.Remove(fb.handle);
-		delete f;
 		INVALIDATE_HANDLE(fb)
 		return true;
 	}
@@ -749,9 +743,8 @@ namespace Czuch
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(cb), "Invalid frame buffer to release");
 		CommandBuffer* c = nullptr;
 		m_ResContainer.commandBuffers.Get(cb.handle, &c);
-		m_ResContainer.commandBuffers.Remove(cb.handle);
 		c->Release();
-		delete c;
+		m_ResContainer.commandBuffers.Remove(cb.handle);
 		INVALIDATE_HANDLE(cb)
 		return true;
 	}
@@ -762,7 +755,6 @@ namespace Czuch
 		Texture* t = nullptr;
 		m_ResContainer.textures.Get(color_texture.handle, &t);
 		m_ResContainer.textures.Remove(color_texture.handle);
-		delete t;
 		INVALIDATE_HANDLE(color_texture)
 		return true;
 	}
@@ -773,7 +765,6 @@ namespace Czuch
 		Mesh* m = nullptr;
 		m_ResContainer.meshes.Get(mesh.handle, &m);
 		m_ResContainer.meshes.Remove(mesh.handle);
-		delete m;
 		INVALIDATE_HANDLE(mesh)
 		return true;
 	}
@@ -784,7 +775,6 @@ namespace Czuch
 		Material* m = nullptr;
 		m_ResContainer.materials.Get(material.handle, &m);
 		m_ResContainer.materials.Remove(material.handle);
-		delete m;
 		INVALIDATE_HANDLE(material)
 		return true;
 	}

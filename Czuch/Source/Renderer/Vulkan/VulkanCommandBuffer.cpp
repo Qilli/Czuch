@@ -63,14 +63,14 @@ namespace Czuch
 		}
 	}
 
-	void VulkanCommandBuffer::DrawMesh(MeshHandle mesh, DescriptorAllocator* allocator)
+	void VulkanCommandBuffer::DrawMesh(RenderObjectInstance renderElement, DescriptorAllocator* allocator)
 	{
-		CZUCH_BE_ASSERT(HANDLE_IS_VALID(mesh), "Mesh passed to command buffer is invalid");
+		CZUCH_BE_ASSERT(renderElement.IsValid(), "Render object instance passed to command buffer is invalid");
 
-		Mesh* meshInstance = m_Device->AccessMesh(mesh);
+		Mesh* meshInstance = m_Device->AccessMesh(renderElement.mesh);
 		if (meshInstance != nullptr)
 		{
-			Material* material = m_Device->AccessMaterial(meshInstance->materialHandle);
+			Material* material = m_Device->AccessMaterial(HANDLE_IS_VALID(renderElement.overrideMaterial)? renderElement.overrideMaterial:meshInstance->materialHandle);
 			BindPipeline(material->pipeline);
 
 			auto pipelinePtr = m_Device->AccessPipeline(material->pipeline);
@@ -116,6 +116,9 @@ namespace Czuch
 			{
 				BindVertexBuffer(meshInstance->normalsHandle, 3, 0);
 			}
+
+			auto vulkanPipeline= Internal_To_Pipeline(pipelinePtr);
+			vkCmdPushConstants(m_Cmd, vulkanPipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(glm::mat4x4), (void*) & renderElement.localToClipSpaceTransformation);
 
 			BindIndexBuffer(meshInstance->indicesHandle, 0);
 			DrawIndexed(m_Device->AccessBuffer(meshInstance->indicesHandle)->desc.elementsCount);

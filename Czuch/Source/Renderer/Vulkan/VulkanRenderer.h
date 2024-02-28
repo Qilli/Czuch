@@ -1,6 +1,7 @@
 #pragma once
 #include"Renderer/Renderer.h"
 #include"VulkanBase.h"
+#include"Renderer/RenderContext.h"
 
 namespace Czuch
 {
@@ -23,6 +24,9 @@ namespace Czuch
 		void DrawFrame() override;
 		void AwaitDeviceIdle() override;
 		GraphicsDevice* GetDevice() override;
+	public:
+		bool RegisterRenderContext(RenderContext* context) override;
+		void UnRegisterRenderContext(RenderContext* context) override;
 	private:
 		void CreateSyncObjects();
 		void ReleaseSyncObjects();
@@ -50,11 +54,7 @@ namespace Czuch
 		{
 			SceneData data;
 			BufferDesc bufferDesc;
-			DescriptorSet* descriptor;
-			DescriptorSet* descriptorTex;
-			TextureHandle tex;
 			BufferHandle buffer[MAX_FRAMES_IN_FLIGHT];
-			AssetHandle materialHandle;
 		};
 
 	private:
@@ -62,8 +62,12 @@ namespace Czuch
 			return m_FramesData[m_CurrentFrame];
 		}
 
-	private:
+	private: 
+		void OnPreRenderUpdateContexts();
+		void OnPostRenderUpdateContexts();
 
+	private:
+		RenderContextContainer m_MainRenderContexts;
 		FrameData m_FramesData[MAX_FRAMES_IN_FLIGHT];
 		ValidationMode m_RendererValidationMode;
 		Window* m_AttachedWindow;

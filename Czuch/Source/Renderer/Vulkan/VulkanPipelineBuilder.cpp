@@ -73,6 +73,7 @@ namespace Czuch
         pipelineInfo.basePipelineIndex = -1;
         pipelineInfo.pDepthStencilState = &depthStencilInfo;
 
+
         if (vkCreateGraphicsPipelines(
             device->GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline) != VK_SUCCESS) {
             LOG_BE_ERROR("{0} Failed to create new graphics pipeline.", "[VulkanPipelineBuilder]");
@@ -152,8 +153,14 @@ namespace Czuch
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = pipelineDescPtr->layoutsCount; // Optional
         pipelineLayoutInfo.pSetLayouts = layouts; // Optional
-        pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-        pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+        VkPushConstantRange pushConstant{};
+        pushConstant.offset = 0;
+        pushConstant.size = sizeof(glm::mat4x4);
+        pushConstant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT|VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
 
         if (vkCreatePipelineLayout(device->GetNativeDevice(), &pipelineLayoutInfo, nullptr, &this->pipeline->pipelineLayout) != VK_SUCCESS) {
             LOG_BE_ERROR("{0} Failed to create pipeline layout.", "[VulkanPipelineBuilder]");

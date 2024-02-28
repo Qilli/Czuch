@@ -12,13 +12,15 @@ namespace Czuch
 
 	struct SceneData
 	{
-		Mat4 view;
-		Mat4 proj;
-		Mat4 viewproj;
+		Mat4x4 view;
+		Mat4x4 proj;
+		Mat4x4 viewproj;
 		Vec4 ambientColor;
 	};
 
 	class GraphicsDevice;
+	struct RenderContextCreateInfo;
+	class RenderContext;
 
 	class CZUCH_API Renderer
 	{
@@ -29,6 +31,8 @@ namespace Czuch
 		virtual void DrawFrame() = 0;
 		virtual void Init() = 0;
 		virtual void AwaitDeviceIdle() = 0;
+		virtual bool RegisterRenderContext(RenderContext* context) = 0;
+		virtual void UnRegisterRenderContext(RenderContext* context) = 0;
 		virtual GraphicsDevice* GetDevice() = 0;
 	};
 }

@@ -74,4 +74,5 @@ namespace Czuch
 		m_State = AssetInnerState::LOADED;
 		return true;
 	}
+
 }
