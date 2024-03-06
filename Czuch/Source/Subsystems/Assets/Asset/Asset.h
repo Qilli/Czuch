@@ -54,6 +54,8 @@ namespace Czuch
 		Asset(const CzuchStr& resourceName, AssetsManager* assetsManager);
 		virtual ~Asset() {}
 
+		void SetPersistentStatus(bool isPersistent);
+
 		const CzuchStr& AssetPath() const { return m_AssetPath; }
 		const CzuchStr& AssetName() const { return m_AssetName; }
 		const Guid GetGuid() const { return m_GUID.GetGuid(); }
@@ -68,10 +70,13 @@ namespace Czuch
 		virtual bool UnloadAsset() = 0;
 		virtual bool CreateFromData() = 0;
 	protected:
+		bool ShouldUnload();
+	protected:
 		AssetInnerState m_State;
 		AssetType m_AssetType;
 		AssetRefCounter m_RefCounter;
 		bool m_ForceUnload;
+		bool m_Persistent;
 		AssetsManager* m_AssetsMgr;
 	private:
 		CzuchStr m_AssetPath;

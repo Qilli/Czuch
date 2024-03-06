@@ -8,6 +8,8 @@
 
 namespace Czuch
 {
+	static const CzuchStr ASSETS_PATH = "F:/Engine/Czuch/Czuch/Data";
+
 	class AssetsManager: public BaseSubsystem<AssetsManager>
 	{
 	public:
@@ -37,6 +39,9 @@ namespace Czuch
 
 		template <typename T>
 		T* GetAsset(AssetHandle handle);
+
+		template<typename T,typename TM>
+		T LoadAndGetResouceHandle(const CzuchStr& path, TM&& settings);
 		
 	private:
 		std::unordered_map<std::type_index,AssetManager*> m_AssetsMgrs;
@@ -49,7 +54,7 @@ namespace Czuch
 		if (result != m_AssetsMgrs.end())
 		{
 			auto mgr = result->second;
-			Asset* res = mgr->LoadAsset(path,settings);
+			Asset* res = mgr->LoadAsset(ASSETS_PATH+path,settings);
 
 			if (res == nullptr)
 			{
@@ -69,7 +74,7 @@ namespace Czuch
 		if (result != m_AssetsMgrs.end())
 		{
 			auto mgr = result->second;
-			Asset* res = mgr->LoadAsset(path, settings);
+			Asset* res = mgr->LoadAsset(ASSETS_PATH+path, settings);
 
 			if (res == nullptr)
 			{
@@ -119,6 +124,7 @@ namespace Czuch
 
 			return res->GetHandle();
 		}
+		LOG_BE_ERROR("Failed to find manager for asset with name {0}",name);
 		return { InvalidID };
 	}
 
@@ -131,7 +137,7 @@ namespace Czuch
 		{
 			auto mgr = result->second;
 			BaseLoadSettings defaultSettings;
-			Asset* res = mgr->LoadAsset(path,defaultSettings);
+			Asset* res = mgr->LoadAsset(ASSETS_PATH+path,defaultSettings);
 
 			if (res == nullptr)
 			{
@@ -179,6 +185,13 @@ namespace Czuch
 		}
 		LOG_BE_ERROR("Failed to find asset with handle id: {0}", handle.handle);
 		return nullptr;
+	}
+	template<typename T, typename TM>
+	T AssetsManager::LoadAndGetResouceHandle(const CzuchStr& path, TM&& settings)
+	{
+		AssetHandle asset = LoadAsset<T>(path, settings);
+		auto assetObj = GetAsset<T>(asset);
+		return assetObj;
 	}
 }
 

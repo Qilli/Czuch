@@ -42,10 +42,16 @@ namespace Czuch
 
 		//listen to events
 		m_EventsMgr->AddListener(WindowClosedEvent::GetStaticEventType(), this);
+
+		//create default assetse
+		m_DefaultAssets = new BuildInAssets(m_Renderer->GetDevice(), m_ResourcesMgr);
+		m_DefaultAssets->BuildAndLoad();
 	}
 
 	void EngineRoot::Shutdown()
 	{
+		delete m_DefaultAssets;
+
 		//Shutdown
 		m_ResourcesMgr->Shutdown();
 		m_EventsMgr->Shutdown();
@@ -55,8 +61,7 @@ namespace Czuch
 		delete m_ResourcesMgr;
 		delete m_Renderer;
 		delete m_EventsMgr;
-		delete m_Logging;
-		
+		delete m_Logging;	
 	}
 
 	void EngineRoot::Run()

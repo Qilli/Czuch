@@ -46,7 +46,7 @@ namespace Czuch
 
 	bool ModelAsset::UnloadAsset()
 	{
-		if (m_State == AssetInnerState::LOADED && (!m_RefCounter.Down()||m_ForceUnload))
+		if (ShouldUnload())
 		{
 			for (auto m : m_Meshes)
 			{
@@ -78,13 +78,13 @@ namespace Czuch
 			return false;
 		}
 
-		for (auto meshData : m_CreateSettings.meshesData)
+		for (auto &meshData : m_CreateSettings.meshesData)
 		{
 			auto meshHandle= m_Device->CreateMesh(meshData);
 			Mesh* mesh = m_Device->AccessMesh(meshHandle);
 			auto materialAsset = m_AssetsMgr->GetAsset<MaterialAsset>(meshData.material);
 			mesh->materialHandle = materialAsset->GetMaterialAssetHandle();
-			m_Meshes.push_back(m_Device->CreateMesh(meshData));
+			m_Meshes.push_back(meshHandle);
 			m_Materials.push_back(meshData.material);
 		}
 

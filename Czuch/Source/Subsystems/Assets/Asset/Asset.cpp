@@ -19,6 +19,11 @@ namespace Czuch
 		m_ForceUnload = false;
 	}
 
+	void Asset::SetPersistentStatus(bool isPersistent)
+	{
+		m_Persistent = isPersistent;
+	}
+
 	CzuchStr Asset::GetNameFromPath(const CzuchStr& inStr)
 	{
 		size_t result=inStr.find_last_of("/\\");
@@ -31,6 +36,11 @@ namespace Czuch
 		size_t result = inStr.find_last_of(".");
 		CzuchStr str = inStr.substr(result + 1);
 		return str;
+	}
+
+	bool Asset::ShouldUnload()
+	{
+		return (m_State == AssetInnerState::LOADED && ((!m_RefCounter.Down() && m_Persistent) || m_ForceUnload));
 	}
 
 }

@@ -366,27 +366,28 @@ namespace Czuch
 	MeshHandle VulkanDevice::CreateMesh(MeshData& meshData)
 	{
 		Mesh* mesh = new Mesh();
-		mesh->data = std::move(meshData);
+		mesh->data= &meshData;
+		mesh->device = this;
 
 		BufferDesc vbDesc;
-		vbDesc.elementsCount = mesh->data.positions.size();
+		vbDesc.elementsCount = mesh->data->positions.size();
 		vbDesc.size = vbDesc.elementsCount * sizeof(float) * 3;
 		vbDesc.stride = 3 * sizeof(float);
 		vbDesc.usage = Usage::DEFAULT;
 		vbDesc.bind_flags = BindFlag::VERTEX_BUFFER;
-		vbDesc.initData = (void*)mesh->data.positions.data();
+		vbDesc.initData = (void*)mesh->data->positions.data();
 
 		mesh->positionsHandle = CreateBuffer(&vbDesc);
 
 		if (mesh->HasNormals())
 		{
 			BufferDesc nDesc;
-			nDesc.elementsCount = mesh->data.normals.size();
+			nDesc.elementsCount = mesh->data->normals.size();
 			nDesc.size = nDesc.elementsCount * sizeof(float) * 3;
 			nDesc.stride = 3 * sizeof(float);
 			nDesc.usage = Usage::DEFAULT;
 			nDesc.bind_flags = BindFlag::VERTEX_BUFFER;
-			nDesc.initData = (void*)mesh->data.normals.data();
+			nDesc.initData = (void*)mesh->data->normals.data();
 
 			mesh->normalsHandle = CreateBuffer(&nDesc);
 		}
@@ -394,12 +395,12 @@ namespace Czuch
 		if (mesh->HasColors())
 		{
 			BufferDesc cDesc;
-			cDesc.elementsCount = mesh->data.colors.size();
+			cDesc.elementsCount = mesh->data->colors.size();
 			cDesc.size = cDesc.elementsCount * sizeof(float) * 4;
 			cDesc.stride = 4 * sizeof(float);
 			cDesc.usage = Usage::DEFAULT;
 			cDesc.bind_flags = BindFlag::VERTEX_BUFFER;
-			cDesc.initData = (void*)mesh->data.normals.data();
+			cDesc.initData = (void*)mesh->data->normals.data();
 
 			mesh->colorsHandle = CreateBuffer(&cDesc);
 		}
@@ -407,23 +408,23 @@ namespace Czuch
 		if (mesh->HasUV0())
 		{
 			BufferDesc uvDesc;
-			uvDesc.elementsCount = mesh->data.uvs0.size();
+			uvDesc.elementsCount = mesh->data->uvs0.size();
 			uvDesc.size = uvDesc.elementsCount * sizeof(float) * 2;
 			uvDesc.stride = 2 * sizeof(float);
 			uvDesc.usage = Usage::DEFAULT;
 			uvDesc.bind_flags = BindFlag::VERTEX_BUFFER;
-			uvDesc.initData = (void*)mesh->data.uvs0.data();
+			uvDesc.initData = (void*)mesh->data->uvs0.data();
 
 			mesh->uvs0Handle = CreateBuffer(&uvDesc);
 		}
 
 		BufferDesc indicesDesc;
-		indicesDesc.elementsCount = mesh->data.indices.size();
+		indicesDesc.elementsCount = mesh->data->indices.size();
 		indicesDesc.size = indicesDesc.elementsCount * sizeof(I16);
 		indicesDesc.stride = sizeof(I16);
 		indicesDesc.usage = Usage::DEFAULT;
 		indicesDesc.bind_flags = BindFlag::INDEX_BUFFER;
-		indicesDesc.initData = (void*)mesh->data.indices.data();
+		indicesDesc.initData = (void*)mesh->data->indices.data();
 
 		mesh->indicesHandle = CreateBuffer(&indicesDesc);
 

@@ -74,7 +74,7 @@ namespace Czuch
 
 	bool TextureAsset::UnloadAsset()
 	{
-		if (m_State == AssetInnerState::LOADED && HANDLE_IS_VALID(m_TextureAsset) && (!m_RefCounter.Down()||m_ForceUnload))
+		if (ShouldUnload() && HANDLE_IS_VALID(m_TextureAsset))
 		{
 			m_Device->Release(m_TextureAsset);
 			INVALIDATE_HANDLE(m_TextureAsset)

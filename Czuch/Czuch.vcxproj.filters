@@ -168,6 +168,7 @@
     <ClInclude Include="source\Subsystems\Assets\Asset\ModelAsset.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\BuildInAssets.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">
@@ -261,5 +262,6 @@
     <ClCompile Include="source\Subsystems\Assets\Asset\ModelAsset.cpp" />
     <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.cpp" />
     <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\BuildInAssets.cpp" />
   </ItemGroup>
 </Project>

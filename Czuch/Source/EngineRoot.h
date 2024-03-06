@@ -5,6 +5,7 @@
 #include"Core/TimeDiffCounter.h"
 #include"Subsystems/EventsManager.h"
 #include"Core/Window.h"
+#include"Subsystems/Assets/BuildInAssets.h"
 
 namespace Czuch
 {
@@ -28,6 +29,8 @@ namespace Czuch
 		Renderer* m_Renderer;
 		Scope<Window> m_Window;
 		AssetsManager* m_ResourcesMgr;
+	private:
+		BuildInAssets* m_DefaultAssets;
 	private:
 		bool m_ShouldStopLoop;
 	};

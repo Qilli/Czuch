@@ -10,14 +10,6 @@ namespace Czuch
 		Vulkan
 	};
 
-	struct SceneData
-	{
-		Mat4x4 view;
-		Mat4x4 proj;
-		Mat4x4 viewproj;
-		Vec4 ambientColor;
-	};
-
 	class GraphicsDevice;
 	struct RenderContextCreateInfo;
 	class RenderContext;

@@ -21,8 +21,8 @@ namespace Czuch
 
 	inline Asset* ModelAssetManager::CreateAsset(const CzuchStr& path, BaseCreateSettings& settings)
 	{
-		ModelAsset* modelRes = new ModelAsset(path,(ModelCreateSettings&)settings, m_Device,AssetsManager::GetPtr());
 		StringID strId = StringID::MakeStringID(path);
+		ModelAsset* modelRes = new ModelAsset(path,(ModelCreateSettings&)settings, m_Device,AssetsManager::GetPtr());
 		RegisterAsset(strId, modelRes);
 		return modelRes;
 	}

@@ -3,12 +3,22 @@
 
 namespace Czuch
 {
-	struct BaseLoadSettings
+	struct BaseSettings
+	{
+		bool permamentAsset;
+
+		BaseSettings()
+		{
+			permamentAsset = false;
+		}
+	};
+
+	struct BaseLoadSettings: public BaseSettings
 	{
 
 	};
 
-	struct BaseCreateSettings
+	struct BaseCreateSettings: public BaseSettings
 	{
 
 	};

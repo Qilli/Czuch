@@ -54,7 +54,7 @@ namespace Czuch
 
 	bool MaterialAsset::UnloadAsset()
 	{
-		if (m_State == AssetInnerState::LOADED && !HANDLE_IS_VALID(m_MaterialAsset) && (!m_RefCounter.Down() || m_ForceUnload))
+		if (ShouldUnload() && HANDLE_IS_VALID(m_MaterialAsset))
 		{
 			m_Device->Release(m_MaterialAsset);
 			m_State = AssetInnerState::UNLOADED;

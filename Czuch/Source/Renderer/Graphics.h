@@ -19,16 +19,23 @@ namespace Czuch
 	#define Color glm::vec4
 
 	typedef I32 Handle;
-	#define INVALID_HANDLE(Type) Type(-1) 
+	#define INVALID_HANDLE(Type) Type() 
 	#define HANDLE_IS_VALID(h)(h.handle!=-1)
 	#define INVALIDATE_HANDLE(h)h.handle=-1;
 	class GraphicsDevice;
+
+	struct SceneData
+	{
+		Mat4x4 view;
+		Mat4x4 proj;
+		Mat4x4 viewproj;
+		Vec4 ambientColor;
+	};
 
 	struct ResourceHandle
 	{
 	public:
 		Handle handle;
-
 		ResourceHandle(int val) :handle(val) {}
 		ResourceHandle() { handle = -1; }
 	};
@@ -72,12 +79,6 @@ namespace Czuch
 	};
 
 	struct MaterialHandle : public ResourceHandle
-	{
-
-	};
-
-
-	struct ModelHandle : public ResourceHandle
 	{
 
 	};
@@ -830,14 +831,22 @@ namespace Czuch
 		std::vector<Vec3> normals;
 		std::vector<Vec4> colors;
 		std::vector<Vec4> uvs0;
-		std::vector<int> indices;
+		std::vector<U32> indices;
 		AssetHandle material;
 		CzuchStr meshName;
 
 	public:
-		MeshData() = default;
+		MeshData()
+		{
+			material = INVALID_HANDLE(AssetHandle);
+		}
 
 		MeshData(MeshData& other) noexcept
+		{
+			*this = std::move(other);
+		}
+
+		MeshData(MeshData&& other) noexcept
 		{
 			*this = std::move(other);
 		}
@@ -862,13 +871,13 @@ namespace Czuch
 
 	struct Mesh: GraphicsDeviceResource
 	{
-		MeshData data;
+		MeshData* data;
 
-		inline bool HasNormals() const { return data.normals.size() > 0; }
-		inline bool HasColors() const { return data.colors.size() > 0; }
-		inline bool HasUV0() const { return data.uvs0.size() > 0; }
+		inline bool HasNormals() const { return data->normals.size() > 0; }
+		inline bool HasColors() const { return data->colors.size() > 0; }
+		inline bool HasUV0() const { return data->uvs0.size() > 0; }
 		
-		constexpr const MeshData& GetMeshData() const { return data; }
+		constexpr const MeshData& GetMeshData() const { return *data; }
 
 		BufferHandle positionsHandle;
 		BufferHandle normalsHandle;

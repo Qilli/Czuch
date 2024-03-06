@@ -21,8 +21,8 @@ namespace Czuch
 
 	inline Asset* MaterialAssetManager::CreateAsset(const CzuchStr& path, BaseCreateSettings& settings)
 	{
-		MaterialAsset* matRes = new MaterialAsset(path,m_Device,(MaterialCreateSettings&)settings,AssetsManager::GetPtr());
 		StringID strId = StringID::MakeStringID(path);
+		MaterialAsset* matRes = new MaterialAsset(path,m_Device,(MaterialCreateSettings&)settings,AssetsManager::GetPtr());
 		RegisterAsset(strId, matRes);
 		return matRes;
 	}
