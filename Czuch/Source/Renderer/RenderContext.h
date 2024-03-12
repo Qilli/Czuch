@@ -6,10 +6,10 @@ namespace Czuch
 {
 	class GraphicsDevice;
 
-	struct RenderObjectInstance
+	struct CZUCH_API RenderObjectInstance
 	{
 		MeshHandle mesh;
-		MaterialHandle overrideMaterial;
+		MaterialInstanceHandle overrideMaterial;
 		Mat4x4 localToWorldTransformation;
 		Mat4x4 localToClipSpaceTransformation;
 
@@ -21,7 +21,7 @@ namespace Czuch
 		void UpdateSceneDataIfRequired(GraphicsDevice* device,BufferHandle buffer);
 	};
 
-	struct RenderContextCreateInfo
+	struct CZUCH_API RenderContextCreateInfo
 	{
 		RenderLayer renderLayer;
 		RenderType renderType;
@@ -29,7 +29,7 @@ namespace Czuch
 	};
 
 
-	class RenderContext
+	class CZUCH_API RenderContext
 	{
 	public:
 		RenderContext(RenderContextCreateInfo& createInfo) :m_Settings(createInfo) {}

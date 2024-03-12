@@ -7,7 +7,7 @@ namespace Czuch
 {
 	class VulkanDevice;
 	struct DescriptorSet;
-	struct DescriptorSetDesc;
+	struct ShaderParamsSet;
 	struct DescriptorSetLayout;
 	enum DescriptorType;
 	struct Buffer;
@@ -48,7 +48,7 @@ namespace Czuch
 
 
 		void ResetPools();
-		DescriptorSet* Allocate(DescriptorSetDesc& desc,DescriptorSetLayout* layout);
+		DescriptorSet* Allocate(ShaderParamsSet& desc,DescriptorSetLayout* layout);
 		void Init(VulkanDevice* device);
 		void CleanUp();
 	private:

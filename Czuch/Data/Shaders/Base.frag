@@ -1,6 +1,6 @@
 #version 450
 
-layout(location=0)in vec3 inColor;
+layout(location=0)in vec4 inColor;
 layout(location=1)in vec2 inUV;
 layout(location=0)out vec4 outColor;
 
@@ -17,5 +17,6 @@ layout(set = 1, binding = 0) uniform sampler2D texSampler;
 
 void main()
 {
- outColor=texture(texSampler,inUV);
+ vec4 temp=texture(texSampler,inUV);
+ outColor=vec4(temp.xyz,1);
 }

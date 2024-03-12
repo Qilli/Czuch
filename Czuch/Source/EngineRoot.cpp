@@ -8,6 +8,7 @@
 #include "Subsystems/Assets/AssetManagersTypes/ShaderAssetManager.h"
 #include "Subsystems/Assets/AssetManagersTypes/TextureAssetManager.h"
 #include "Subsystems/Assets/AssetManagersTypes/MaterialAssetManager.h"
+#include "Subsystems/Assets/AssetManagersTypes/MaterialInstanceAssetManager.h"
 #include "Subsystems/Assets/AssetManagersTypes/ModelAssetManager.h"
 namespace Czuch
 {
@@ -38,7 +39,10 @@ namespace Czuch
 		m_ResourcesMgr->RegisterManager(new ShaderAssetManager(m_Renderer->GetDevice()),typeid(ShaderAsset));
 		m_ResourcesMgr->RegisterManager(new TextureAssetManager(m_Renderer->GetDevice()), typeid(TextureAsset));
 		m_ResourcesMgr->RegisterManager(new MaterialAssetManager(m_Renderer->GetDevice()), typeid(MaterialAsset));
+		m_ResourcesMgr->RegisterManager(new MaterialInstanceAssetManager(m_Renderer->GetDevice()), typeid(MaterialInstanceAsset));
 		m_ResourcesMgr->RegisterManager(new ModelAssetManager(m_Renderer->GetDevice()), typeid(ModelAsset));
+		
+
 
 		//listen to events
 		m_EventsMgr->AddListener(WindowClosedEvent::GetStaticEventType(), this);

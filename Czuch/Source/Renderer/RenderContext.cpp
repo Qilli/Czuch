@@ -8,20 +8,19 @@ namespace Czuch
     {
         if (IsValid())
         {
-            Material* m = nullptr;
+            MaterialInstance* m = nullptr;
             if (HANDLE_IS_VALID(overrideMaterial))
             {
-                m = device->AccessMaterial(overrideMaterial);
+                m = device->AccessMaterialInstance(overrideMaterial);
             }
             else
             {
-                m = device->AccessMaterial(device->AccessMesh(mesh)->materialHandle);
+                m = device->AccessMaterialInstance(device->AccessMesh(mesh)->materialHandle);
             }
 
             if (m != nullptr)
             {
-                m->desc.descriptorsDesc[0].Reset();
-                m->desc.descriptorsDesc[0].AddBuffer(buffer, 0);
+                m->params.shaderParamsDesc[0].descriptors[0].resource = buffer.handle;
             }
           
         }

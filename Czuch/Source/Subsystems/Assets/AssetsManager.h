@@ -10,7 +10,7 @@ namespace Czuch
 {
 	static const CzuchStr ASSETS_PATH = "F:/Engine/Czuch/Czuch/Data";
 
-	class AssetsManager: public BaseSubsystem<AssetsManager>
+	class CZUCH_API AssetsManager: public BaseSubsystem<AssetsManager>
 	{
 	public:
 		void Init() override;

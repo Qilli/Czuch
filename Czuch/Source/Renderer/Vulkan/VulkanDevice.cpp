@@ -12,6 +12,7 @@
 #include"DescriptorAllocator.h"
 #include"./Subsystems/Assets/AssetsManager.h"
 #include"./Subsystems/Assets/Asset/ShaderAsset.h"
+#include"./Subsystems/Assets/Asset/MaterialAsset.h"
 #include<set>
 
 
@@ -368,6 +369,7 @@ namespace Czuch
 		Mesh* mesh = new Mesh();
 		mesh->data= &meshData;
 		mesh->device = this;
+		mesh->materialHandle = meshData.material;
 
 		BufferDesc vbDesc;
 		vbDesc.elementsCount = mesh->data->positions.size();
@@ -400,7 +402,7 @@ namespace Czuch
 			cDesc.stride = 4 * sizeof(float);
 			cDesc.usage = Usage::DEFAULT;
 			cDesc.bind_flags = BindFlag::VERTEX_BUFFER;
-			cDesc.initData = (void*)mesh->data->normals.data();
+			cDesc.initData = (void*)mesh->data->colors.data();
 
 			mesh->colorsHandle = CreateBuffer(&cDesc);
 		}
@@ -409,8 +411,8 @@ namespace Czuch
 		{
 			BufferDesc uvDesc;
 			uvDesc.elementsCount = mesh->data->uvs0.size();
-			uvDesc.size = uvDesc.elementsCount * sizeof(float) * 2;
-			uvDesc.stride = 2 * sizeof(float);
+			uvDesc.size = uvDesc.elementsCount * sizeof(float) * 4;
+			uvDesc.stride = 4 * sizeof(float);
 			uvDesc.usage = Usage::DEFAULT;
 			uvDesc.bind_flags = BindFlag::VERTEX_BUFFER;
 			uvDesc.initData = (void*)mesh->data->uvs0.data();
@@ -420,8 +422,8 @@ namespace Czuch
 
 		BufferDesc indicesDesc;
 		indicesDesc.elementsCount = mesh->data->indices.size();
-		indicesDesc.size = indicesDesc.elementsCount * sizeof(I16);
-		indicesDesc.stride = sizeof(I16);
+		indicesDesc.size = indicesDesc.elementsCount * sizeof(U32);
+		indicesDesc.stride = sizeof(U32);
 		indicesDesc.usage = Usage::DEFAULT;
 		indicesDesc.bind_flags = BindFlag::INDEX_BUFFER;
 		indicesDesc.initData = (void*)mesh->data->indices.data();
@@ -441,6 +443,23 @@ namespace Czuch
 
 		MaterialHandle h;
 		h.handle = m_ResContainer.materials.Add(material);
+		return h;
+	}
+
+	MaterialInstanceHandle VulkanDevice::CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc)
+	{
+		MaterialInstance* matInstance = new MaterialInstance();
+		matInstance->desc = std::move(materialInstanceDesc);
+		auto asset= AssetsManager::GetPtr()->GetAsset<MaterialAsset>(matInstance->desc.materialAsset);
+		matInstance->handle = asset->GetMaterialResourceHandle();
+
+		auto material = AccessMaterial(matInstance->handle);
+		auto& matDesc=material->desc;
+
+		matDesc.pipelineDesc.SetParams(matInstance->desc, matInstance->params);
+
+		MaterialInstanceHandle h;
+		h.handle = m_ResContainer.materialInstances.Add(matInstance);
 		return h;
 	}
 
@@ -777,6 +796,16 @@ namespace Czuch
 		m_ResContainer.materials.Get(material.handle, &m);
 		m_ResContainer.materials.Remove(material.handle);
 		INVALIDATE_HANDLE(material)
+		return true;
+	}
+
+	bool VulkanDevice::Release(MaterialInstanceHandle& materialInstance)
+	{
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(materialInstance), "Invalid material instance to release");
+		MaterialInstance* m = nullptr;
+		m_ResContainer.materialInstances.Get(materialInstance.handle, &m);
+		m_ResContainer.materialInstances.Remove(materialInstance.handle);
+		INVALIDATE_HANDLE(materialInstance)
 		return true;
 	}
 
@@ -1740,6 +1769,7 @@ namespace Czuch
 		pipelines.RemoveAll();
 		renderPasses.RemoveAll();
 		frameBuffers.RemoveAll();
+		materialInstances.RemoveAll();
 		materials.RemoveAll();
 		meshes.RemoveAll();
 	}
@@ -1814,6 +1844,18 @@ namespace Czuch
 			return result;
 		}
 		LOG_BE_ERROR("{0} AccessMaterial with invalid handle.", Tag);
+		return nullptr;
+	}
+
+	MaterialInstance* VulkanDevice::AccessMaterialInstance(MaterialInstanceHandle handle)
+	{
+		if (HANDLE_IS_VALID(handle))
+		{
+			MaterialInstance* result = nullptr;
+			m_ResContainer.materialInstances.Get(handle.handle, &result);
+			return result;
+		}
+		LOG_BE_ERROR("{0} AccessMaterialInstance with invalid handle.", Tag);
 		return nullptr;
 	}
 

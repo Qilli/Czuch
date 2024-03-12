@@ -83,6 +83,11 @@ namespace Czuch
 
 	};
 
+	struct MaterialInstanceHandle : public ResourceHandle
+	{
+
+	};
+
 	struct MeshHandle : public ResourceHandle
 	{
 
@@ -235,7 +240,7 @@ namespace Czuch
 		UNIFORM_BUFFER= 1<<8,
 	};
 
-	enum DescriptorType
+	enum CZUCH_API DescriptorType
 	{
 		SAMPLER = 0,
 		UNIFORM_BUFFER = 1,
@@ -445,7 +450,7 @@ namespace Czuch
 		BIND_POINT_RAY_TRACING=2,
 	};
 
-	enum class RenderLayer
+	CZUCH_API enum class RenderLayer
 	{
 		LAYER_0,
 		LAYER_1,
@@ -457,7 +462,7 @@ namespace Czuch
 		LAYER_7,
 	};
 
-	enum class RenderType
+	CZUCH_API enum class RenderType
 	{
 		General,
 		Debug,
@@ -474,6 +479,7 @@ namespace Czuch
 	{
 		std::shared_ptr<void> m_InternalResourceState;
 		GraphicsDevice* device;
+		AssetHandle assetHandle = {.handle=-1};
 
 		inline bool IsValid() const { return m_InternalResourceState != nullptr; }
 		GraphicsDeviceResource() = default;
@@ -544,11 +550,12 @@ namespace Czuch
 	{
 		struct Binding
 		{
-			CzuchStr bindingName;
+			StringID bindingName;
 			DescriptorType type = DescriptorType::UNIFORM_BUFFER;
 			U32 size = 0;
 			U16 index = 0;
 			U16 count = 0;
+			bool internalParam = false;
 		};
 
 		Binding bindings[s_max_descriptors_per_set];
@@ -556,27 +563,40 @@ namespace Czuch
 		U32 setIndex = 0;
 		U32 shaderStage;
 
+		DescriptorSetLayoutDesc()
+		{
+			shaderStage = (U32)ShaderStage::ALL;
+			Reset();
+		}
+
 		DescriptorSetLayoutDesc& Reset();
-		DescriptorSetLayoutDesc& AddBinding(CzuchStr name,DescriptorType type, U32 bindingIndex, U32 count,U32 size);
+		DescriptorSetLayoutDesc& AddBinding(CzuchStr name,DescriptorType type, U32 bindingIndex, U32 count,U32 size,bool internalParam);
 	};
+
 
 	struct Buffer;
 	struct DescriptorSetLayout;
-	struct DescriptorSetDesc
+	struct ShaderParamsSet
 	{
-		struct DescriptorInfo
+		struct ShaderParamInfo
 		{
+			StringID paramName;
 			I32 resource;
 			DescriptorType type;
 			U16 binding;
 		};
 
-		DescriptorInfo descriptors[s_max_descriptors_per_set];
+		ShaderParamInfo descriptors[s_max_descriptors_per_set];
 		U16 descriptorsCount;
 
-		DescriptorSetDesc& Reset();
-		DescriptorSetDesc& AddBuffer(BufferHandle buffer,U16 binding);
-		DescriptorSetDesc& AddSampler(TextureHandle color_texture, U16 binding);
+		ShaderParamsSet()
+		{
+			Reset();
+		}
+
+		ShaderParamsSet& Reset();
+		ShaderParamsSet& AddBuffer(CzuchStr name,BufferHandle buffer,U16 binding);
+		ShaderParamsSet& AddSampler(CzuchStr name,TextureHandle color_texture, U16 binding);
 	};
 
 	union ClearValue
@@ -700,6 +720,8 @@ namespace Czuch
 		void AddStream(const VertexStream& stream);
 	};
 
+	struct MaterialInstanceDesc;
+	struct MaterialInstanceParams;
 	struct PipelineStateDesc
 	{
 		AssetHandle vs;
@@ -721,6 +743,9 @@ namespace Czuch
 			}
 			layouts[layoutsCount++] = layout;
 		}
+
+
+		void SetParams(MaterialInstanceDesc& desc,MaterialInstanceParams& params);
 
 
 		PipelineStateDesc() = default;
@@ -752,12 +777,36 @@ namespace Czuch
 			}
 			return *this;
 		}
+
+		PipelineStateDesc& operator=(PipelineStateDesc& other) noexcept
+		{
+			if (&other != this)
+			{
+				this->vs = (other.vs);
+				this->ps = (other.ps);
+				this->bs = (other.bs);
+				this->rs = (other.rs);
+				this->dss =(other.dss);
+				this->il = (other.il);
+				this->pt = (other.pt);
+				this->layoutsCount = (other.layoutsCount);
+
+				for (int a = 0; a < this->layoutsCount; ++a)
+				{
+					this->layouts[a] = (other.layouts[a]);
+				}
+
+				this->bindPoint = (other.bindPoint);
+			}
+			return *this;
+		}
+
+
 	};
 
-	struct MaterialDesc
+	struct  CZUCH_API MaterialDesc
 	{
 		PipelineStateDesc pipelineDesc;
-		DescriptorSetDesc descriptorsDesc[k_max_descriptor_set_layouts];
 		CzuchStr materialName;
 		int materialFlags;
 
@@ -774,15 +823,60 @@ namespace Czuch
 			{
 				this->materialName = std::move(other.materialName);
 				this->pipelineDesc = std::move(other.pipelineDesc);
+				this->materialFlags = std::move(other.materialFlags);
 			}
 			return *this;
 		}
 
-		void AddLayoutWithDescriptor(DescriptorSetLayoutDesc layout,DescriptorSetDesc desc)
+		MaterialDesc& operator=(MaterialDesc& other) noexcept
+		{
+			if (&other != this)
+			{
+				this->materialFlags = other.materialFlags;
+				this->pipelineDesc = other.pipelineDesc;
+			}
+			return *this;
+		}
+
+		void AddLayout(DescriptorSetLayoutDesc layout)
 		{
 			pipelineDesc.AddLayout(layout);
-			descriptorsDesc[pipelineDesc.layoutsCount - 1] = desc;
 		}
+	};
+
+	struct CZUCH_API MaterialInstanceDesc
+	{
+		struct ShaderParamDesc
+		{
+			CzuchStr name;
+			DescriptorType type;
+			I32 resource;
+		};
+
+		AssetHandle materialAsset;
+		std::vector<ShaderParamDesc> paramsDesc;
+		MaterialInstanceDesc()
+		{
+			Reset();
+		}
+
+		MaterialInstanceDesc& Reset();
+		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, BufferHandle buffer);
+		MaterialInstanceDesc& AddSampler(const CzuchStr& name, TextureHandle color_texture);
+	};
+
+	struct MaterialInstanceParams
+	{
+		ShaderParamsSet shaderParamsDesc[k_max_descriptor_set_layouts];
+		int setsCount = 0;
+		MaterialInstanceParams()
+		{
+			Reset();
+		}
+
+		MaterialInstanceParams& Reset();
+		MaterialInstanceParams& AddBuffer(int set,CzuchStr& name, BufferHandle buffer, U16 binding);
+		MaterialInstanceParams& AddSampler(int set,CzuchStr& name, TextureHandle color_texture, U16 binding);
 	};
 
 	struct SamplerDesc
@@ -832,13 +926,13 @@ namespace Czuch
 		std::vector<Vec4> colors;
 		std::vector<Vec4> uvs0;
 		std::vector<U32> indices;
-		AssetHandle material;
+		MaterialInstanceHandle material;
 		CzuchStr meshName;
 
 	public:
 		MeshData()
 		{
-			material = INVALID_HANDLE(AssetHandle);
+			material = INVALID_HANDLE(MaterialInstanceHandle);
 		}
 
 		MeshData(MeshData& other) noexcept
@@ -884,7 +978,7 @@ namespace Czuch
 		BufferHandle colorsHandle;
 		BufferHandle uvs0Handle;
 		BufferHandle indicesHandle;
-		MaterialHandle materialHandle;
+		MaterialInstanceHandle materialHandle;
 
 		Mesh()
 		{
@@ -893,7 +987,7 @@ namespace Czuch
 			colorsHandle = INVALID_HANDLE(BufferHandle);
 			uvs0Handle = INVALID_HANDLE(BufferHandle);
 			indicesHandle = INVALID_HANDLE(BufferHandle);
-			materialHandle = INVALID_HANDLE(MaterialHandle);
+			materialHandle = INVALID_HANDLE(MaterialInstanceHandle);
 		}
 
 		~Mesh();
@@ -911,6 +1005,15 @@ namespace Czuch
 		constexpr const MaterialDesc& GetDesc() const { return desc; }
 
 		PipelineHandle pipeline;
+
+	};
+
+	struct MaterialInstance : public GraphicsDeviceResource
+	{
+		MaterialInstanceDesc desc{};
+		MaterialInstanceParams params;
+		MaterialHandle handle;
+		constexpr const MaterialInstanceDesc& GetDesc() const { return desc; }
 	};
 
 	struct Pipeline : public GraphicsDeviceResource

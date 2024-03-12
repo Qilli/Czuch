@@ -27,6 +27,7 @@ namespace Czuch
 		virtual TextureHandle CreateTexture(const TextureDesc* desc)= 0;
 		virtual MeshHandle CreateMesh(MeshData& meshData) = 0;
 		virtual MaterialHandle CreateMaterial(MaterialDesc& materialData) = 0;
+		virtual MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) = 0;
 
 		virtual bool Release(PipelineHandle& pipeline) = 0;
 		virtual bool Release(ShaderHandle& shader)= 0;
@@ -38,6 +39,7 @@ namespace Czuch
 		virtual bool Release(TextureHandle& color_texture)= 0;
 		virtual bool Release(MeshHandle& mesh) = 0;
 		virtual bool Release(MaterialHandle& material) = 0;
+		virtual bool Release(MaterialInstanceHandle& materialInstance) = 0;
 
 		virtual Pipeline* AccessPipeline(PipelineHandle handle)= 0;
 		virtual RenderPass* AccessRenderPass(RenderPassHandle handle) = 0;
@@ -49,6 +51,7 @@ namespace Czuch
 		virtual Texture* AccessTexture(TextureHandle handle)= 0;
 		virtual Mesh* AccessMesh(MeshHandle handle) = 0;
 		virtual Material* AccessMaterial(MaterialHandle handle) = 0;
+		virtual MaterialInstance* AccessMaterialInstance(MaterialInstanceHandle handle) = 0;
 
 	};
 

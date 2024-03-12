@@ -2,6 +2,7 @@
 #include "MaterialAsset.h"
 #include "./Renderer/GraphicsDevice.h"
 #include "./Core/FileHelper.h"
+#include "./Subsystems/Assets/AssetsManager.h"
 
 namespace Czuch
 {
@@ -43,7 +44,7 @@ namespace Czuch
 
 		//TODO Parse material from file and create material assedt
 
-		if (!HANDLE_IS_VALID(m_MaterialAsset))
+		if (!HANDLE_IS_VALID(m_MaterialResource))
 		{
 			return false;
 		}
@@ -54,9 +55,9 @@ namespace Czuch
 
 	bool MaterialAsset::UnloadAsset()
 	{
-		if (ShouldUnload() && HANDLE_IS_VALID(m_MaterialAsset))
+		if (ShouldUnload() && HANDLE_IS_VALID(m_MaterialResource))
 		{
-			m_Device->Release(m_MaterialAsset);
+			m_Device->Release(m_MaterialResource);
 			m_State = AssetInnerState::UNLOADED;
 			return true;
 		}
@@ -69,10 +70,16 @@ namespace Czuch
 			return true;
 		}
 
-		m_MaterialAsset =m_Device->CreateMaterial(m_MaterialCreateSettings.desc);
-
+		m_MaterialResource = m_Device->CreateMaterial(m_MaterialCreateSettings.desc);
+		auto mat = m_Device->AccessMaterial(m_MaterialResource);
+		mat->assetHandle = this->GetHandle();
 		m_State = AssetInnerState::LOADED;
 		return true;
+	}
+
+	void MaterialAsset::CopyMaterialDescTo(MaterialDesc& desc)
+	{
+		desc = this->m_MaterialCreateSettings.desc;
 	}
 
 }

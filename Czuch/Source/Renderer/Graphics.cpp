@@ -10,9 +10,9 @@ namespace Czuch
 		setIndex = 0;
 		return *this;
 	}
-	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(CzuchStr name,DescriptorType type, U32 bindingIndex, U32 count, U32 size)
+	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(CzuchStr name,DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool internalParam)
 	{
-		bindings[bindingsCount++] = { name,type,size,(U16)bindingIndex, (U16)count};
+		bindings[bindingsCount++] = { StringID::MakeStringID(name),type,size,(U16)bindingIndex, (U16)count,internalParam };
 		return *this;
 	}
 
@@ -51,19 +51,19 @@ namespace Czuch
 		}
 	}
 
-	DescriptorSetDesc& DescriptorSetDesc::Reset()
+	ShaderParamsSet& ShaderParamsSet::Reset()
 	{
 		descriptorsCount = 0;
 		return *this;
 	}
 
-	DescriptorSetDesc& DescriptorSetDesc::AddBuffer(BufferHandle buffer, U16 binding)
+	ShaderParamsSet& ShaderParamsSet::AddBuffer(CzuchStr name,BufferHandle buffer, U16 binding)
 	{
 		if (descriptorsCount >= s_max_descriptors_per_set)
 		{
 			return *this;
 		}
-
+		descriptors[descriptorsCount].paramName=StringID::MakeStringID(name);
 		descriptors[descriptorsCount].binding = binding;
 		descriptors[descriptorsCount].resource = buffer.handle;
 		descriptors[descriptorsCount++].type = DescriptorType::UNIFORM_BUFFER;
@@ -72,13 +72,14 @@ namespace Czuch
 	}
 
 
-	DescriptorSetDesc& DescriptorSetDesc::AddSampler(TextureHandle color_texture, U16 binding)
+	ShaderParamsSet& ShaderParamsSet::AddSampler(CzuchStr name,TextureHandle color_texture, U16 binding)
 	{
 		if (descriptorsCount >= s_max_descriptors_per_set)
 		{
 			return *this;
 		}
 
+		descriptors[descriptorsCount].paramName = StringID::MakeStringID(name);
 		descriptors[descriptorsCount].binding = binding;
 		descriptors[descriptorsCount].resource = color_texture.handle;
 		descriptors[descriptorsCount++].type = DescriptorType::SAMPLER;
@@ -112,6 +113,84 @@ namespace Czuch
 		if (HANDLE_IS_VALID(indicesHandle))
 		{
 			device->Release(indicesHandle);
+		}
+	}
+
+	MaterialInstanceParams& MaterialInstanceParams::Reset()
+	{
+		for (int a = 0; a < setsCount; a++)
+		{
+			shaderParamsDesc[a].Reset();
+		}
+		setsCount = 0;
+		return *this;
+	}
+	MaterialInstanceParams& MaterialInstanceParams::AddBuffer(int set, CzuchStr& name, BufferHandle buffer, U16 binding)
+	{
+		if (set >= k_max_descriptor_set_layouts)
+		{
+			return *this;
+		}
+		setsCount = std::max(set, this->setsCount);
+
+		shaderParamsDesc[set].AddBuffer(name, buffer, binding);
+		return *this;
+
+	}
+	MaterialInstanceParams& MaterialInstanceParams::AddSampler(int set, CzuchStr& name, TextureHandle color_texture, U16 binding)
+	{
+		if (set >= k_max_descriptor_set_layouts)
+		{
+			return *this;
+		}
+		setsCount = std::max(set, this->setsCount);
+
+		shaderParamsDesc[set].AddSampler(name, color_texture, binding);
+		return *this;
+	}
+
+	MaterialInstanceDesc& MaterialInstanceDesc::Reset()
+	{
+		paramsDesc.clear();
+		INVALIDATE_HANDLE(materialAsset);
+		return *this;
+	}
+	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name, BufferHandle buffer)
+	{
+		paramsDesc.push_back({ .name = name,.type=DescriptorType::UNIFORM_BUFFER,.resource = buffer.handle  });
+		return *this;
+	}
+	MaterialInstanceDesc& MaterialInstanceDesc::AddSampler(const CzuchStr& name, TextureHandle color_texture)
+	{
+		paramsDesc.push_back({ .name = name,.type = DescriptorType::SAMPLER,.resource = color_texture.handle });
+		return *this;
+	}
+
+	void PipelineStateDesc::SetParams(MaterialInstanceDesc& desc,MaterialInstanceParams& params)
+	{
+		for (int a = 0; a < desc.paramsDesc.size(); ++a)
+		{
+			auto& param = desc.paramsDesc[a];
+			StringID nameId = StringID::MakeStringID(param.name);
+			for (int i = 0; i < layoutsCount; ++i)
+			{
+				auto& current = layouts[i];
+				for (int b = 0; b < current.bindingsCount; ++b)
+				{
+					auto& binding = current.bindings[b];
+					if (binding.bindingName.Compare(nameId) == 0)
+					{
+						if (param.type == DescriptorType::SAMPLER)
+						{
+							params.AddSampler(i, param.name, TextureHandle(param.resource), b);
+						 }
+						else if (param.type == DescriptorType::UNIFORM_BUFFER)
+						{
+							params.AddBuffer(i, param.name, BufferHandle(param.resource), b);
+						}
+					}
+				}
+			}
 		}
 	}
 }

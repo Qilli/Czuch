@@ -6,7 +6,7 @@ namespace Czuch
 {
     class GraphicsDevice;
 
-	class MaterialAsset: public Asset
+	class CZUCH_API MaterialAsset: public Asset
 	{
     public:
         MaterialAsset(const CzuchStr& path, GraphicsDevice* device, MaterialLoadSettings& loadSettings,AssetsManager* assetsManager);
@@ -15,10 +15,11 @@ namespace Czuch
         bool LoadAsset() override;
         bool UnloadAsset() override;
         bool CreateFromData() override;
-        inline MaterialHandle GetMaterialAssetHandle() const { return m_MaterialAsset; }
+        inline MaterialHandle GetMaterialResourceHandle() const { return m_MaterialResource; }
+        void CopyMaterialDescTo(MaterialDesc& desc);
     private:
         GraphicsDevice* m_Device;
-        MaterialHandle m_MaterialAsset;
+        MaterialHandle m_MaterialResource;
         MaterialCreateSettings m_MaterialCreateSettings;
         MaterialLoadSettings m_MaterialLoadSettings;
         std::vector<char> m_MaterialBuffer;

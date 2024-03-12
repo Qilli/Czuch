@@ -625,7 +625,7 @@ namespace Czuch
 	struct DescriptorSet : public VulkanDeviceRef
 	{
 		VkDescriptorSet descriptorSet;
-		DescriptorSetDesc desc;
+		ShaderParamsSet desc;
 		DescriptorSetLayout* descriptorLayout;
 	};
 }

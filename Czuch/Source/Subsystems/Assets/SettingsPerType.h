@@ -64,12 +64,23 @@ namespace Czuch
 		}
 	};
 
-	struct MaterialCreateSettings : BaseCreateSettings
+	struct CZUCH_API MaterialCreateSettings : BaseCreateSettings
 	{
 		MaterialDesc desc;
 	};
 
 	struct MaterialLoadSettings : BaseLoadSettings
+	{
+
+	};
+
+	struct CZUCH_API MaterialInstanceCreateSettings : BaseCreateSettings
+	{
+		MaterialInstanceDesc desc;
+		CzuchStr materialInstanceName;
+	};
+
+	struct MaterialInstanceLoadSettings : BaseLoadSettings
 	{
 
 	};

@@ -159,6 +159,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.h" />
     <ClInclude Include="source\Subsystems\Assets\BuildInAssets.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.h" />
@@ -212,6 +214,8 @@
     <ClInclude Include="source\czpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.cpp" />
     <ClCompile Include="source\Subsystems\Assets\BuildInAssets.cpp" />
     <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.cpp" />
     <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.cpp" />

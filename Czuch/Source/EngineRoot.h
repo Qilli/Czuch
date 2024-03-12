@@ -18,6 +18,7 @@ namespace Czuch
 		void Init(const std::string& configFilePath);
 		void Shutdown();
 		void Run();
+		Renderer& GetRenderer() const { return *m_Renderer; }
 		virtual void OnEvent(const Event& e) override;
 	private:
 		void UpdateDeltaTime(TimeDiffCounter& counter);

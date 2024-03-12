@@ -169,7 +169,7 @@ namespace Czuch
 
 		for (auto context : m_MainRenderContexts.m_RenderContexts)
 		{
-			for (auto renderItem : context->GetRenderObjectsList())
+			for (auto &renderItem : context->GetRenderObjectsList())
 			{
 				cmdBuffer->DrawMesh(renderItem, GetCurrentFrame().descriptorAllocator);
 			}

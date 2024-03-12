@@ -63,14 +63,16 @@ namespace Czuch
 		}
 	}
 
-	void VulkanCommandBuffer::DrawMesh(RenderObjectInstance renderElement, DescriptorAllocator* allocator)
+	void VulkanCommandBuffer::DrawMesh(const RenderObjectInstance& renderElement, DescriptorAllocator* allocator)
 	{
 		CZUCH_BE_ASSERT(renderElement.IsValid(), "Render object instance passed to command buffer is invalid");
 
 		Mesh* meshInstance = m_Device->AccessMesh(renderElement.mesh);
 		if (meshInstance != nullptr)
 		{
-			Material* material = m_Device->AccessMaterial(HANDLE_IS_VALID(renderElement.overrideMaterial)? renderElement.overrideMaterial:meshInstance->materialHandle);
+			MaterialInstance* materialInstance = m_Device->AccessMaterialInstance(HANDLE_IS_VALID(renderElement.overrideMaterial)? renderElement.overrideMaterial:meshInstance->materialHandle);
+			Material* material = m_Device->AccessMaterial(materialInstance->handle);
+			auto& paramsDesc = materialInstance->params.shaderParamsDesc;
 			BindPipeline(material->pipeline);
 
 			auto pipelinePtr = m_Device->AccessPipeline(material->pipeline);
@@ -81,18 +83,18 @@ namespace Czuch
 				writer.Clear();
 				auto descriptorLayout = pipelinePtr->layouts[a];
 				auto layout = m_Device->AccessDescriptorSetLayout(descriptorLayout);
-				auto descriptor = allocator->Allocate(material->desc.descriptorsDesc[a],layout);
+				auto descriptor = allocator->Allocate(paramsDesc[a],layout);
 
 				for (int b = 0; b < layout->desc.bindingsCount; b++)
 				{
 					auto binding = layout->desc.bindings[b];
 					if (binding.type == DescriptorType::UNIFORM_BUFFER)
 					{
-						writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(material->desc.descriptorsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
+						writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
 					}
 					else if (binding.type == DescriptorType::SAMPLER)
 					{
-						writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(material->desc.descriptorsDesc[a].descriptors[b].resource)), DescriptorType::SAMPLER);
+						writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(paramsDesc[a].descriptors[b].resource)), DescriptorType::SAMPLER);
 					}
 					writer.UpdateSet(m_Device, descriptor);
 				}
@@ -118,7 +120,7 @@ namespace Czuch
 			}
 
 			auto vulkanPipeline= Internal_To_Pipeline(pipelinePtr);
-			vkCmdPushConstants(m_Cmd, vulkanPipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(glm::mat4x4), (void*) & renderElement.localToClipSpaceTransformation);
+			vkCmdPushConstants(m_Cmd, vulkanPipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4x4), (void*) & renderElement.localToClipSpaceTransformation);
 
 			BindIndexBuffer(meshInstance->indicesHandle, 0);
 			DrawIndexed(m_Device->AccessBuffer(meshInstance->indicesHandle)->desc.elementsCount);
@@ -176,7 +178,7 @@ namespace Czuch
 
 	void VulkanCommandBuffer::BindIndexBuffer(BufferHandle buffer, U32 offset=0)
 	{
-		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(m_Device->AccessBuffer(buffer))->buffer, offset, VK_INDEX_TYPE_UINT16);
+		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(m_Device->AccessBuffer(buffer))->buffer, offset, VK_INDEX_TYPE_UINT32);
 	}
 
 	void VulkanCommandBuffer::BindDescriptorSet(DescriptorSet* descriptor,U16 setIndex, U32 num, U32* offsets, U32 num_offsets)
@@ -200,9 +202,9 @@ namespace Czuch
 	{
 		VkViewport viewportVk{};
 		viewportVk.x = 0.0f;
-		viewportVk.y = 0.0f;
+		viewportVk.y = viewport.height;
 		viewportVk.width = viewport.width;
-		viewportVk.height = viewport.height;
+		viewportVk.height = -viewport.height;
 		viewportVk.minDepth = viewport.minDepth;
 		viewportVk.maxDepth = viewport.maxDepth;
 		vkCmdSetViewport(m_Cmd, 0, 1, &viewportVk);

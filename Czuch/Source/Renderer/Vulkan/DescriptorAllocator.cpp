@@ -46,7 +46,7 @@ namespace Czuch
 		writer.UpdateSet(device, descriptor);
 	}
 
-	DescriptorSet* DescriptorAllocator::Allocate(DescriptorSetDesc& desc, DescriptorSetLayout* layout)
+	DescriptorSet* DescriptorAllocator::Allocate(ShaderParamsSet& desc, DescriptorSetLayout* layout)
 	{
 		if (m_CurrentPool == VK_NULL_HANDLE)
 		{

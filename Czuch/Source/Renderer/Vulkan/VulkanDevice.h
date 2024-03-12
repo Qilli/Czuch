@@ -33,7 +33,8 @@ namespace Czuch
 		BufferHandle CreateBuffer(const BufferDesc* desc) override;
 		TextureHandle CreateTexture(const TextureDesc* desc) override;
 		MeshHandle CreateMesh(MeshData& meshData) override;
-		MaterialHandle CreateMaterial(MaterialDesc& materialData);
+		MaterialHandle CreateMaterial(MaterialDesc& materialData) override;
+		MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) override;
 
 
 		DescriptorAllocator* CreateDescriptorAllocator();
@@ -51,6 +52,7 @@ namespace Czuch
 		bool Release(TextureHandle& color_texture) override;
 		bool Release(MeshHandle& mesh) override;
 		bool Release(MaterialHandle& material) override;
+		bool Release(MaterialInstanceHandle& materialInstance) override;
 
 
 		Pipeline* AccessPipeline(PipelineHandle handle) override;
@@ -63,6 +65,7 @@ namespace Czuch
 		Texture* AccessTexture(TextureHandle handle) override;
 		Mesh* AccessMesh(MeshHandle handle) override;
 		Material* AccessMaterial(MaterialHandle handle) override;
+		MaterialInstance* AccessMaterialInstance(MaterialInstanceHandle handle) override;
 
 	public:
 		VkDevice GetNativeDevice() const { return m_Device; }
@@ -139,6 +142,7 @@ namespace Czuch
 			GraphicsResourceAccessContainer<DescriptorSetLayout, DescriptorSetLayoutHandle> descriptorSetLayouts = GraphicsResourceAccessContainer<DescriptorSetLayout, DescriptorSetLayoutHandle>(k_max_resources);
 			GraphicsResourceAccessContainer<Mesh, MeshHandle> meshes = GraphicsResourceAccessContainer<Mesh, MeshHandle>(k_max_resources);
 			GraphicsResourceAccessContainer<Material, MaterialHandle> materials = GraphicsResourceAccessContainer<Material, MaterialHandle>(k_max_resources);
+			GraphicsResourceAccessContainer<MaterialInstance, MaterialInstanceHandle> materialInstances = GraphicsResourceAccessContainer<MaterialInstance, MaterialInstanceHandle>(k_max_resources);
 			void ReleaseAll();
 		};
 

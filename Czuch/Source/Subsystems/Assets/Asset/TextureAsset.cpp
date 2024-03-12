@@ -58,10 +58,10 @@ namespace Czuch
 			desc.format = Format::R8G8B8A8_UNORM_SRGB;
 		}
 
-		m_TextureAsset = m_Device->CreateTexture(&desc);
+		m_TextureResource = m_Device->CreateTexture(&desc);
 		stbi_image_free(pixels);
 
-		if (!HANDLE_IS_VALID(m_TextureAsset))
+		if (!HANDLE_IS_VALID(m_TextureResource))
 		{
 			return false;
 		}
@@ -74,10 +74,10 @@ namespace Czuch
 
 	bool TextureAsset::UnloadAsset()
 	{
-		if (ShouldUnload() && HANDLE_IS_VALID(m_TextureAsset))
+		if (ShouldUnload() && HANDLE_IS_VALID(m_TextureResource))
 		{
-			m_Device->Release(m_TextureAsset);
-			INVALIDATE_HANDLE(m_TextureAsset)
+			m_Device->Release(m_TextureResource);
+			INVALIDATE_HANDLE(m_TextureResource)
 			m_State = AssetInnerState::UNLOADED;
 			return true;
 		}
@@ -116,9 +116,9 @@ namespace Czuch
 			desc.format = Format::R8G8B8A8_UNORM_SRGB;
 		}
 
-		m_TextureAsset = m_Device->CreateTexture(&desc);
+		m_TextureResource = m_Device->CreateTexture(&desc);
 
-		if (!HANDLE_IS_VALID(m_TextureAsset))
+		if (!HANDLE_IS_VALID(m_TextureResource))
 		{
 			return false;
 		}

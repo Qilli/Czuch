@@ -6,7 +6,7 @@ namespace Czuch
 {
     class GraphicsDevice;
 
-    class TextureAsset :
+    class CZUCH_API TextureAsset :
         public Asset
     {
     public:
@@ -16,12 +16,12 @@ namespace Czuch
         bool LoadAsset() override;
         bool UnloadAsset() override;
         bool CreateFromData() override;
-        inline TextureHandle GetTextureAssetHandle() const { return m_TextureAsset; }
+        inline TextureHandle GetTextureResourceHandle() const { return m_TextureResource; }
     private:
         GraphicsDevice* m_Device;
         TextureLoadSettings m_CurrentLoadSettings;
         TextureCreateSettings m_CreateSettings;
-        TextureHandle m_TextureAsset;
+        TextureHandle m_TextureResource;
     };
 
 }

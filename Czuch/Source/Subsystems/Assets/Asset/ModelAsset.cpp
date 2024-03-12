@@ -3,6 +3,7 @@
 #include "./Renderer/GraphicsDevice.h"
 #include"../AssetsManager.h"
 #include"MaterialAsset.h"
+#include"MaterialInstanceAsset.h"
 
 namespace Czuch
 {
@@ -55,7 +56,7 @@ namespace Czuch
 
 			for (auto m : m_Materials)
 			{
-				m_AssetsMgr->UnloadAsset<MaterialAsset>(m);
+				m_AssetsMgr->UnloadAsset<MaterialInstanceAsset>(m);
 			}
 
 			m_Meshes.clear();
@@ -82,10 +83,10 @@ namespace Czuch
 		{
 			auto meshHandle= m_Device->CreateMesh(meshData);
 			Mesh* mesh = m_Device->AccessMesh(meshHandle);
-			auto materialAsset = m_AssetsMgr->GetAsset<MaterialAsset>(meshData.material);
-			mesh->materialHandle = materialAsset->GetMaterialAssetHandle();
+			MaterialInstance* instance = m_Device->AccessMaterialInstance(meshData.material);
+			Material* material = m_Device->AccessMaterial(instance->handle);
 			m_Meshes.push_back(meshHandle);
-			m_Materials.push_back(meshData.material);
+			m_Materials.push_back(material->assetHandle);
 		}
 
 		m_State = AssetInnerState::LOADED;
