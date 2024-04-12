@@ -12,12 +12,6 @@ namespace Czuch
 	static const U8 s_max_vertex_attributes = 16;
 	static const U8 k_max_descriptor_set_layouts = 8;
 
-	#define Mat4 glm::Mat4
-	#define Vec4 glm::Vec4
-	#define Vec3 glm::vec3
-	#define Vec2 glm::vec2
-	#define Color glm::vec4
-
 	typedef I32 Handle;
 	#define INVALID_HANDLE(Type) Type() 
 	#define HANDLE_IS_VALID(h)(h.handle!=-1)
@@ -465,6 +459,7 @@ namespace Czuch
 	CZUCH_API enum class RenderType
 	{
 		General,
+		UI,
 		Debug,
 		Editor,
 		Overlay,
@@ -735,6 +730,11 @@ namespace Czuch
 		U16 layoutsCount = 0;
 		BindPoint bindPoint;
 
+		bool IsTransparent() const
+		{
+			return bs.blendSettings.blendEnable;
+		}
+
 		void AddLayout(DescriptorSetLayoutDesc layout)
 		{
 			if (layoutsCount >= k_max_descriptor_set_layouts)
@@ -817,6 +817,11 @@ namespace Czuch
 			*this = std::move(other);
 		}
 
+		bool IsTransparent() const
+		{
+			return pipelineDesc.IsTransparent();
+		}
+
 		MaterialDesc& operator=(MaterialDesc&& other) noexcept
 		{
 			if (&other != this)
@@ -854,6 +859,7 @@ namespace Czuch
 		};
 
 		AssetHandle materialAsset;
+		bool isTransparent = false;
 		std::vector<ShaderParamDesc> paramsDesc;
 		MaterialInstanceDesc()
 		{
@@ -863,6 +869,7 @@ namespace Czuch
 		MaterialInstanceDesc& Reset();
 		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, BufferHandle buffer);
 		MaterialInstanceDesc& AddSampler(const CzuchStr& name, TextureHandle color_texture);
+		void SetTransparent(bool value){isTransparent=value;}
 	};
 
 	struct MaterialInstanceParams
@@ -1013,6 +1020,7 @@ namespace Czuch
 		MaterialInstanceDesc desc{};
 		MaterialInstanceParams params;
 		MaterialHandle handle;
+		bool IsTransparent() const { return desc.isTransparent; }
 		constexpr const MaterialInstanceDesc& GetDesc() const { return desc; }
 	};
 

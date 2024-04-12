@@ -27,6 +27,7 @@ namespace Czuch
 	public:
 		bool RegisterRenderContext(RenderContext* context) override;
 		void UnRegisterRenderContext(RenderContext* context) override;
+		void SetActiveScene(Scene* scene) override;
 	private:
 		void CreateSyncObjects();
 		void ReleaseSyncObjects();
@@ -74,6 +75,7 @@ namespace Czuch
 		VulkanDevice* m_Device;
 		uint32_t m_CurrentFrame = 0;
 		SceneDataContainer m_SceneData;
+		Scene* m_ActiveScene;
 	};
 
 }

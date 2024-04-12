@@ -452,6 +452,7 @@ namespace Czuch
 		matInstance->desc = std::move(materialInstanceDesc);
 		auto asset= AssetsManager::GetPtr()->GetAsset<MaterialAsset>(matInstance->desc.materialAsset);
 		matInstance->handle = asset->GetMaterialResourceHandle();
+		matInstance->desc.isTransparent = asset->IsTransparent();
 
 		auto material = AccessMaterial(matInstance->handle);
 		auto& matDesc=material->desc;

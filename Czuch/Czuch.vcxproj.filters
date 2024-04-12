@@ -34,6 +34,12 @@
     <Filter Include="Subsystems\Assets\AssetManagersTypes">
       <UniqueIdentifier>{3B8EA5E0-2775-67D8-D0C5-CDF5BC8BE03E}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Subsystems\Scenes">
+      <UniqueIdentifier>{B7801CF4-2397-1A8A-6C0E-A6ABD863EB11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Subsystems\Scenes\Components">
+      <UniqueIdentifier>{6C2571B4-58E0-6060-0198-D9AAED31ABF0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Core\AccessContainer.h">
@@ -51,6 +57,9 @@
     <ClInclude Include="source\Core\KeyCodes.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="source\Core\Math.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="source\Core\MouseCodes.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -63,7 +72,13 @@
     <ClInclude Include="source\Core\Time.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="source\Core\TimeDelta.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="source\Core\TimeDiffCounter.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\UpdatableValue.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="source\Core\Window.h">
@@ -101,6 +116,9 @@
     <ClInclude Include="source\Renderer\GraphicsResourceAccessContainer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="source\Renderer\RenderContext.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="source\Renderer\Renderer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
@@ -131,6 +149,15 @@
     <ClInclude Include="source\Subsystems\Assets\Asset\Asset.h">
       <Filter>Subsystems\Assets\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialAsset.h">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.h">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\ModelAsset.h">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="source\Subsystems\Assets\Asset\ShaderAsset.h">
       <Filter>Subsystems\Assets\Asset</Filter>
     </ClInclude>
@@ -140,6 +167,15 @@
     <ClInclude Include="source\Subsystems\Assets\AssetManager.h">
       <Filter>Subsystems\Assets</Filter>
     </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.h">
+      <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.h">
+      <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.h">
+      <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClInclude>
     <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.h">
       <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
     </ClInclude>
@@ -147,6 +183,9 @@
       <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
     </ClInclude>
     <ClInclude Include="source\Subsystems\Assets\AssetsManager.h">
+      <Filter>Subsystems\Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\BuildInAssets.h">
       <Filter>Subsystems\Assets</Filter>
     </ClInclude>
     <ClInclude Include="source\Subsystems\Assets\SettingsPerType.h">
@@ -161,16 +200,46 @@
     <ClInclude Include="source\Subsystems\Logging.h">
       <Filter>Subsystems</Filter>
     </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\CameraComponent.h">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\Component.h">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\ComponentState.h">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\HeaderComponent.h">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\MeshComponent.h">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\MeshRendererComponent.h">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\NativeBehaviourComponent.h">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\TransformComponent.h">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Entity.h">
+      <Filter>Subsystems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\IScene.h">
+      <Filter>Subsystems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\NativeBehaviour.h">
+      <Filter>Subsystems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Scene.h">
+      <Filter>Subsystems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\ScenesManager.h">
+      <Filter>Subsystems\Scenes</Filter>
+    </ClInclude>
     <ClInclude Include="source\czpch.h" />
-    <ClInclude Include="source\Core\Math.h" />
-    <ClInclude Include="source\Renderer\RenderContext.h" />
-    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialAsset.h" />
-    <ClInclude Include="source\Subsystems\Assets\Asset\ModelAsset.h" />
-    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.h" />
-    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.h" />
-    <ClInclude Include="source\Subsystems\Assets\BuildInAssets.h" />
-    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.h" />
-    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">
@@ -180,6 +249,9 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="source\Core\Time.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Core\TimeDelta.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="source\Core\TimeDiffCounter.cpp">
@@ -210,6 +282,12 @@
     <ClCompile Include="source\Renderer\GraphicsResourceAccessContainer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="source\Renderer\RenderContext.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Renderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="source\Renderer\Vulkan\DescriptorAllocator.cpp">
       <Filter>Renderer\Vulkan</Filter>
     </ClCompile>
@@ -234,6 +312,15 @@
     <ClCompile Include="source\Subsystems\Assets\Asset\Asset.cpp">
       <Filter>Subsystems\Assets\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialAsset.cpp">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.cpp">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\ModelAsset.cpp">
+      <Filter>Subsystems\Assets\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="source\Subsystems\Assets\Asset\ShaderAsset.cpp">
       <Filter>Subsystems\Assets\Asset</Filter>
     </ClCompile>
@@ -242,6 +329,15 @@
     </ClCompile>
     <ClCompile Include="source\Subsystems\Assets\AssetManager.cpp">
       <Filter>Subsystems\Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.cpp">
+      <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.cpp">
+      <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.cpp">
+      <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
     </ClCompile>
     <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.cpp">
       <Filter>Subsystems\Assets\AssetManagersTypes</Filter>
@@ -252,20 +348,48 @@
     <ClCompile Include="source\Subsystems\Assets\AssetsManager.cpp">
       <Filter>Subsystems\Assets</Filter>
     </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\BuildInAssets.cpp">
+      <Filter>Subsystems\Assets</Filter>
+    </ClCompile>
     <ClCompile Include="source\Subsystems\EventsManager.cpp">
       <Filter>Subsystems</Filter>
     </ClCompile>
     <ClCompile Include="source\Subsystems\Logging.cpp">
       <Filter>Subsystems</Filter>
     </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\CameraComponent.cpp">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\Component.cpp">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\HeaderComponent.cpp">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\MeshComponent.cpp">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\MeshRendererComponent.cpp">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\NativeBehaviourComponent.cpp">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\TransformComponent.cpp">
+      <Filter>Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Entity.cpp">
+      <Filter>Subsystems\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\NativeBehaviour.cpp">
+      <Filter>Subsystems\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Scene.cpp">
+      <Filter>Subsystems\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\ScenesManager.cpp">
+      <Filter>Subsystems\Scenes</Filter>
+    </ClCompile>
     <ClCompile Include="source\czpch.cpp" />
-    <ClCompile Include="source\Renderer\RenderContext.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialAsset.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\Asset\ModelAsset.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\BuildInAssets.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.cpp" />
   </ItemGroup>
 </Project>

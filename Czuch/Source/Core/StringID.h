@@ -12,6 +12,7 @@ namespace Czuch
 		U32 Compare(const StringID& comp);
 		inline bool IsValid() const { return m_id != 0; }
 		static StringID MakeStringID(const CzuchStr& rhl);
+		static StringID MakeStringID(const CzuchStr&& rhl);
 		StringID();
 	private:
 		StringID(Guid id,const CzuchStr& str);

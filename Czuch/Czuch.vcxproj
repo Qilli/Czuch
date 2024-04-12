@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DEBUG;CZUCH_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -108,7 +108,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -136,7 +136,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -159,13 +159,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.h" />
-    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.h" />
-    <ClInclude Include="source\Subsystems\Assets\BuildInAssets.h" />
-    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.h" />
-    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.h" />
-    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialAsset.h" />
-    <ClInclude Include="source\Renderer\RenderContext.h" />
     <ClInclude Include="source\Core\AccessContainer.h" />
     <ClInclude Include="source\Core\Common.h" />
     <ClInclude Include="source\Core\EngineCore.h" />
@@ -176,7 +169,9 @@
     <ClInclude Include="source\Core\Singleton.h" />
     <ClInclude Include="source\Core\StringID.h" />
     <ClInclude Include="source\Core\Time.h" />
+    <ClInclude Include="source\Core\TimeDelta.h" />
     <ClInclude Include="source\Core\TimeDiffCounter.h" />
+    <ClInclude Include="source\Core\UpdatableValue.h" />
     <ClInclude Include="source\Core\Window.h" />
     <ClInclude Include="source\Czuch.h" />
     <ClInclude Include="source\EngineRoot.h" />
@@ -190,6 +185,7 @@
     <ClInclude Include="source\Renderer\Graphics.h" />
     <ClInclude Include="source\Renderer\GraphicsDevice.h" />
     <ClInclude Include="source\Renderer\GraphicsResourceAccessContainer.h" />
+    <ClInclude Include="source\Renderer\RenderContext.h" />
     <ClInclude Include="source\Renderer\Renderer.h" />
     <ClInclude Include="source\Renderer\Vulkan\DescriptorAllocator.h" />
     <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h" />
@@ -200,30 +196,43 @@
     <ClInclude Include="source\Renderer\Vulkan\VulkanPipelineBuilder.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanRenderer.h" />
     <ClInclude Include="source\Subsystems\Assets\Asset\Asset.h" />
-    <ClInclude Include="source\Subsystems\Assets\Asset\ShaderAsset.h" />
+    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialAsset.h" />
+    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.h" />
     <ClInclude Include="source\Subsystems\Assets\Asset\ModelAsset.h" />
+    <ClInclude Include="source\Subsystems\Assets\Asset\ShaderAsset.h" />
     <ClInclude Include="source\Subsystems\Assets\Asset\TextureAsset.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\TextureAssetManager.h" />
     <ClInclude Include="source\Subsystems\Assets\AssetsManager.h" />
+    <ClInclude Include="source\Subsystems\Assets\BuildInAssets.h" />
     <ClInclude Include="source\Subsystems\Assets\SettingsPerType.h" />
     <ClInclude Include="source\Subsystems\BaseSubsystem.h" />
     <ClInclude Include="source\Subsystems\EventsManager.h" />
     <ClInclude Include="source\Subsystems\Logging.h" />
+    <ClInclude Include="source\Subsystems\Scenes\Components\CameraComponent.h" />
+    <ClInclude Include="source\Subsystems\Scenes\Components\Component.h" />
+    <ClInclude Include="source\Subsystems\Scenes\Components\ComponentState.h" />
+    <ClInclude Include="source\Subsystems\Scenes\Components\HeaderComponent.h" />
+    <ClInclude Include="source\Subsystems\Scenes\Components\MeshComponent.h" />
+    <ClInclude Include="source\Subsystems\Scenes\Components\MeshRendererComponent.h" />
+    <ClInclude Include="source\Subsystems\Scenes\Components\NativeBehaviourComponent.h" />
+    <ClInclude Include="source\Subsystems\Scenes\Components\TransformComponent.h" />
+    <ClInclude Include="source\Subsystems\Scenes\Entity.h" />
+    <ClInclude Include="source\Subsystems\Scenes\IScene.h" />
+    <ClInclude Include="source\Subsystems\Scenes\NativeBehaviour.h" />
+    <ClInclude Include="source\Subsystems\Scenes\Scene.h" />
+    <ClInclude Include="source\Subsystems\Scenes\ScenesManager.h" />
     <ClInclude Include="source\czpch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\BuildInAssets.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialAsset.cpp" />
-    <ClCompile Include="source\Renderer\RenderContext.cpp" />
     <ClCompile Include="source\Core\AccessContainer.cpp" />
     <ClCompile Include="source\Core\StringID.cpp" />
     <ClCompile Include="source\Core\Time.cpp" />
+    <ClCompile Include="source\Core\TimeDelta.cpp" />
     <ClCompile Include="source\Core\TimeDiffCounter.cpp" />
     <ClCompile Include="source\Core\Window.cpp" />
     <ClCompile Include="source\EngineRoot.cpp" />
@@ -234,6 +243,8 @@
     <ClCompile Include="source\Platform\Windows\WinWindow.cpp" />
     <ClCompile Include="source\Renderer\Graphics.cpp" />
     <ClCompile Include="source\Renderer\GraphicsResourceAccessContainer.cpp" />
+    <ClCompile Include="source\Renderer\RenderContext.cpp" />
+    <ClCompile Include="source\Renderer\Renderer.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\DescriptorAllocator.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanCommandBuffer.cpp" />
@@ -242,15 +253,32 @@
     <ClCompile Include="source\Renderer\Vulkan\VulkanPipelineBuilder.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanRenderer.cpp" />
     <ClCompile Include="source\Subsystems\Assets\Asset\Asset.cpp" />
-    <ClCompile Include="source\Subsystems\Assets\Asset\ShaderAsset.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialAsset.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.cpp" />
     <ClCompile Include="source\Subsystems\Assets\Asset\ModelAsset.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\Asset\ShaderAsset.cpp" />
     <ClCompile Include="source\Subsystems\Assets\Asset\TextureAsset.cpp" />
     <ClCompile Include="source\Subsystems\Assets\AssetManager.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.cpp" />
     <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.cpp" />
     <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\TextureAssetManager.cpp" />
     <ClCompile Include="source\Subsystems\Assets\AssetsManager.cpp" />
+    <ClCompile Include="source\Subsystems\Assets\BuildInAssets.cpp" />
     <ClCompile Include="source\Subsystems\EventsManager.cpp" />
     <ClCompile Include="source\Subsystems\Logging.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\Components\CameraComponent.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\Components\Component.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\Components\HeaderComponent.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\Components\MeshComponent.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\Components\MeshRendererComponent.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\Components\NativeBehaviourComponent.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\Components\TransformComponent.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\Entity.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\NativeBehaviour.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\Scene.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\ScenesManager.cpp" />
     <ClCompile Include="source\czpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

@@ -116,6 +116,7 @@ namespace Czuch
 		instanceCreateSettings.desc.AddBuffer("SceneData", INVALID_HANDLE(BufferHandle));
 		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE);
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
+		instanceCreateSettings.desc.isTransparent = false;
 
 		AssetHandle instanceAssetHandle=m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName,instanceCreateSettings);
 		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);

@@ -10,8 +10,12 @@
 #include "Subsystems/Assets/AssetManagersTypes/MaterialAssetManager.h"
 #include "Subsystems/Assets/AssetManagersTypes/MaterialInstanceAssetManager.h"
 #include "Subsystems/Assets/AssetManagersTypes/ModelAssetManager.h"
+#include "Subsystems/Scenes/ScenesManager.h"
 namespace Czuch
 {
+	U32 WindowInfo::Width = 0;
+	U32 WindowInfo::Height = 0;
+
 	void EngineRoot::Init(const std::string& configFilePath)
 	{
 		m_ShouldStopLoop = false;
@@ -25,6 +29,9 @@ namespace Czuch
 		m_EventsMgr->Init();
 
 		const WindowParams wndParams{};
+
+		WindowInfo::Width = wndParams.Width;
+		WindowInfo::Height = wndParams.Height;
 
 		//create window
 		m_Window = Window::Create(wndParams);
@@ -43,17 +50,22 @@ namespace Czuch
 		m_ResourcesMgr->RegisterManager(new ModelAssetManager(m_Renderer->GetDevice()), typeid(ModelAsset));
 		
 
-
 		//listen to events
 		m_EventsMgr->AddListener(WindowClosedEvent::GetStaticEventType(), this);
 
 		//create default assetse
 		m_DefaultAssets = new BuildInAssets(m_Renderer->GetDevice(), m_ResourcesMgr);
 		m_DefaultAssets->BuildAndLoad();
+
+		//init scenes manager
+		m_ScenesMgr = new ScenesManager(m_Renderer,m_ResourcesMgr);
+		m_ScenesMgr->Init();
 	}
 
 	void EngineRoot::Shutdown()
 	{
+		m_ScenesMgr->Shutdown();
+		delete m_ScenesMgr;
 		delete m_DefaultAssets;
 
 		//Shutdown

@@ -45,4 +45,17 @@ namespace Czuch
 		StringID::s_NameLookup.insert({ hashValue, rhl });
 		return StringID(hashValue, rhl);
 	}
+
+	StringID StringID::MakeStringID(const CzuchStr&& rhl)
+	{
+		U32 hashValue = Hash(rhl);
+		auto val = StringID::s_NameLookup.find(hashValue);
+		if (val != StringID::s_NameLookup.end())
+		{
+			return StringID(val->first, val->second);
+		}
+
+		StringID::s_NameLookup.insert({ hashValue, rhl });
+		return StringID(hashValue, rhl);
+	}
 }

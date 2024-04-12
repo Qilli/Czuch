@@ -23,6 +23,8 @@ int main()
 	Czuch::EngineRoot* root = new Czuch::EngineRoot();
 	root->Init("engineConfig.cfg");
 
+	//Czuch::Scene scene("MainScene");
+
 	Czuch::Renderer& renderer = root->GetRenderer();
 	Czuch::RenderContextCreateInfo renderContextCreateInfo{};
 	renderContextCreateInfo.autoClearAfterRender = false;
@@ -45,6 +47,7 @@ int main()
 	instanceCreateSettings.materialInstanceName = "DefaultAncientMaterial";
 	instanceCreateSettings.desc.AddSampler("MainTexture", texResource->GetTextureResourceHandle());
 	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
+	instanceCreateSettings.desc.isTransparent = false;
 
 	auto matInstanceHandle=Czuch::AssetsManager::GetPtr()->CreateAsset<Czuch::MaterialInstanceAsset>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
 	auto instanceResource = Czuch::AssetsManager::GetPtr()->GetAsset<Czuch::MaterialInstanceAsset>(matInstanceHandle);
@@ -58,7 +61,7 @@ int main()
 
 	cubeInstance.localToClipSpaceTransformation = projection * view * world;
 
-	renderContext.AddToRenderList(cubeInstance);
+	//renderContext.AddToRenderList(cubeInstance);
 
 	root->Run();
 	root->Shutdown();

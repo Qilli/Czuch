@@ -46,6 +46,7 @@ project "Czuch"
 		"%{prj.name}/vendors/glm",
 		"%{prj.name}/vendors/vma",
 		"%{prj.name}/vendors/stb",
+		"%{prj.name}/vendors/entt",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
@@ -124,6 +125,7 @@ project "Playground"
 	{
 		"Czuch/vendors/spdlog/include",
 		"Czuch/vendors/glm",
+		"Czuch/vendors/entt",
 		"Czuch/source"
 	}
 

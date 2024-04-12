@@ -11,6 +11,13 @@ namespace Czuch
 {
 	class Renderer;
 	class AssetsManager;
+	class ScenesManager;
+
+	struct WindowInfo
+	{
+		static U32 Width;
+		static U32 Height;
+	};
 
 	class CZUCH_API EngineRoot: public IEventsListener
 	{
@@ -30,6 +37,7 @@ namespace Czuch
 		Renderer* m_Renderer;
 		Scope<Window> m_Window;
 		AssetsManager* m_ResourcesMgr;
+		ScenesManager *m_ScenesMgr;
 	private:
 		BuildInAssets* m_DefaultAssets;
 	private:

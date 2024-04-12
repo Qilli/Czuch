@@ -6,6 +6,7 @@
 #include"Subsystems/Logging.h"
 #include"Renderer/RenderContext.h"
 #include"Renderer/Renderer.h"
+#include"Subsystems/Scenes/Scene.h"
 #include"Subsystems/Assets/AssetsManager.h"
 #include"Subsystems/Assets/Asset/MaterialAsset.h"
 #include"Subsystems/Assets/Asset/TextureAsset.h"

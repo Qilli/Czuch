@@ -9,6 +9,7 @@
 #include"Subsystems/Assets/Asset/ShaderAsset.h"
 #include"Subsystems/Assets/Asset/TextureAsset.h"
 #include"Subsystems/Assets/Asset/MaterialAsset.h"
+#include"Subsystems/Scenes/Scene.h"
 #include"Renderer/RenderContext.h"
 #include"DescriptorAllocator.h"
 #include"Core/Math.h"
@@ -119,6 +120,35 @@ namespace Czuch
 	void VulkanRenderer::UnRegisterRenderContext(RenderContext* context)
 	{
 		m_MainRenderContexts.Remove(context);
+	}
+
+	void VulkanRenderer::SetActiveScene(Scene* scene)
+	{
+		if (m_ActiveScene == scene)
+		{
+			return;
+		}
+
+		if (m_ActiveScene != nullptr)
+		{
+			for (auto context : m_MainRenderContexts.m_RenderContexts)
+			{
+				context->ClearRenderList();
+			}
+
+			UnRegisterRenderContext(&m_ActiveScene->GetGeneralRenderContext());
+			UnRegisterRenderContext(&m_ActiveScene->GetUIRenderContext());
+			UnRegisterRenderContext(&m_ActiveScene->GetDebugRenderContext());
+		}
+
+		m_ActiveScene = scene;
+
+		if (m_ActiveScene != nullptr)
+		{
+			RegisterRenderContext(&m_ActiveScene->GetGeneralRenderContext());
+			RegisterRenderContext(&m_ActiveScene->GetUIRenderContext());
+			RegisterRenderContext(&m_ActiveScene->GetDebugRenderContext());
+		}
 	}
 
 	void VulkanRenderer::CreateSyncObjects()
@@ -238,6 +268,11 @@ namespace Czuch
 
 	void VulkanRenderer::OnPreRenderUpdateContexts()
 	{
+		if (m_ActiveScene != nullptr)
+		{
+			m_ActiveScene->FillRenderContexts(this);
+		}
+
 		for (auto context: m_MainRenderContexts.m_RenderContexts)
 		{
 			auto renderList=context->GetRenderObjectsList();

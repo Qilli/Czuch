@@ -13,6 +13,7 @@ namespace Czuch
 	class GraphicsDevice;
 	struct RenderContextCreateInfo;
 	class RenderContext;
+	class Scene;
 
 	class CZUCH_API Renderer
 	{
@@ -25,6 +26,7 @@ namespace Czuch
 		virtual void AwaitDeviceIdle() = 0;
 		virtual bool RegisterRenderContext(RenderContext* context) = 0;
 		virtual void UnRegisterRenderContext(RenderContext* context) = 0;
+		virtual void SetActiveScene(Scene* scene) = 0;
 		virtual GraphicsDevice* GetDevice() = 0;
 	};
 }

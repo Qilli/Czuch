@@ -17,6 +17,7 @@ namespace Czuch
         bool CreateFromData() override;
         inline MaterialHandle GetMaterialResourceHandle() const { return m_MaterialResource; }
         void CopyMaterialDescTo(MaterialDesc& desc);
+        bool IsTransparent() const { return m_MaterialCreateSettings.desc.IsTransparent(); }
     private:
         GraphicsDevice* m_Device;
         MaterialHandle m_MaterialResource;
