@@ -6,8 +6,10 @@
 
 namespace Czuch
 {
+
 	TextureAsset::TextureAsset(const CzuchStr& path, TextureLoadSettings& loadSettings, GraphicsDevice* device, AssetsManager* assetsManager):Asset(path, GetNameFromPath(path),assetsManager),m_Device(device)
 	{
+		stbi_set_flip_vertically_on_load(true);
 		m_AssetType = AssetType::LOADED_TYPE;
 		m_CurrentLoadSettings = std::move(loadSettings);
 		LoadAsset();

@@ -24,6 +24,7 @@ namespace Czuch
 		Component(const Component&) = default;
 		ComponentState& GetState() { return m_State; }
 		bool IsEnabled() { return m_Enabled.GetValue(); }
+		Entity GetEntity() { return m_Owner; }
 		virtual void SetEnabled(bool enabled) { m_Enabled.UpdateValue(enabled); }
 		virtual void OnCreated() {}
 		virtual void OnRemoved() {}

@@ -159,6 +159,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.h" />
     <ClInclude Include="source\Core\AccessContainer.h" />
     <ClInclude Include="source\Core\Common.h" />
     <ClInclude Include="source\Core\EngineCore.h" />
@@ -229,6 +230,7 @@
     <ClInclude Include="source\czpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.cpp" />
     <ClCompile Include="source\Core\AccessContainer.cpp" />
     <ClCompile Include="source\Core\StringID.cpp" />
     <ClCompile Include="source\Core\Time.cpp" />

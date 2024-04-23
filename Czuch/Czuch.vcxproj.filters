@@ -240,6 +240,7 @@
       <Filter>Subsystems\Scenes</Filter>
     </ClInclude>
     <ClInclude Include="source\czpch.h" />
+    <ClInclude Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">
@@ -391,5 +392,6 @@
       <Filter>Subsystems\Scenes</Filter>
     </ClCompile>
     <ClCompile Include="source\czpch.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.cpp" />
   </ItemGroup>
 </Project>

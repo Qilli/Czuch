@@ -33,7 +33,7 @@ namespace Czuch
 		Clear();
 	}
 
-	void EventsManager::Update()
+	void EventsManager::Update(TimeDelta timeDelta)
 	{
 		while (!m_EventsToDispatch.empty())
 		{

@@ -8,7 +8,7 @@
 namespace Czuch
 {
 	class Renderer;
-	class Scene : public IScene
+	class CZUCH_API Scene : public IScene
 	{
 	public:
 
@@ -17,7 +17,7 @@ namespace Czuch
 
 		void OnUpdate(TimeDelta delta);
 		void FillRenderContexts(Renderer* renderer);
-		Entity CreateEntity(const CzuchStr& entityName,Entity parent=Entity());
+		Entity CreateEntity(const CzuchStr& entityName, Entity parent = Entity());
 		void DestroyEntity(Entity entity);
 		Entity GetRootEntity();
 		void ClearScene();
@@ -25,6 +25,10 @@ namespace Czuch
 		RenderContext& GetGeneralRenderContext() { return m_GeneralRenderContext; }
 		RenderContext& GetUIRenderContext() { return m_UIRenderContext; }
 		RenderContext& GetDebugRenderContext() { return m_DebugRenderContext; }
+		entt::registry& GetRegistry() override { return m_Registry; }
+	public:
+		CameraComponent* FindPrimaryCamera() override;
+	
 	public:
 		void OnAttached() {}
 		void OnDettached() {}

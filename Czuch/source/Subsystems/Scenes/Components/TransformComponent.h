@@ -6,14 +6,14 @@
 namespace Czuch
 {
 	class Entity;
-	struct TransformComponent:Component
+	struct CZUCH_API TransformComponent:Component
 	{
 	public:
 		TransformComponent(Entity owner);
 		TransformComponent(const TransformComponent&) = default;
 
-		const Mat4x4& GetLocalToWorld();
-		const Mat4x4& GetParentTransform();
+		Mat4x4 GetLocalToWorld();
+		const Mat4x4 GetParentTransform();
 		void SetLocalPosition(const Vec3& position);
 		void SetLocalEulerAngles(const Vec3& eulerAngles);
 

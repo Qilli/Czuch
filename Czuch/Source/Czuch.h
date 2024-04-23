@@ -11,3 +11,9 @@
 #include"Subsystems/Assets/Asset/MaterialAsset.h"
 #include"Subsystems/Assets/Asset/TextureAsset.h"
 #include"Subsystems/Assets/Asset/MaterialInstanceAsset.h"
+#include"Subsystems/Scenes/ScenesManager.h"
+#include"Subsystems/Scenes/Components/TransformComponent.h"
+#include"Subsystems/Scenes/Components/NativeBehaviourComponent.h"
+#include"Subsystems/Scenes/NativeBehaviour.h"
+#include"Subsystems/Scenes/NativeBehaviours/NativeFree3DCameraController.h"
+

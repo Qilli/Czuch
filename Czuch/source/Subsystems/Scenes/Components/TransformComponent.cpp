@@ -6,24 +6,33 @@ namespace Czuch
 {
 	TransformComponent::TransformComponent(Entity owner) :Component(owner)
 	{
-		
+		m_LocalPosition = Vec3(0.0f);
+		m_LocalEulerAngles = Vec3(0.0f);
+		m_LocalScale = Vec3(1.0f);
+		m_LocalRotation = glm::quat(1, 0, 0, 0);
+		m_LocalTransform = Mat4x4(1.0f);
+		m_LocalToWorld = Mat4x4(1.0f);
+		m_ParentTransform = Mat4x4(1.0f);
+		m_Parent = Entity();
+		m_State.SetDirty();
 	}
 
-	const Mat4x4& TransformComponent::GetLocalToWorld()
+	Mat4x4 TransformComponent::GetLocalToWorld()
 	{
 		if (m_State.IsDirty())
 		{
-			m_LocalToWorld = GetParentTransform() * m_LocalTransform;
+			m_LocalToWorld =GetParentTransform() * m_LocalTransform;
 			m_State.SetAsClean();
 		}
-		return m_LocalToWorld;
+		return m_LocalTransform;
 	}
 
-	const Mat4x4& TransformComponent::GetParentTransform()
+	const Mat4x4 TransformComponent::GetParentTransform()
 	{
 		if (m_Parent.IsValid())
 		{
 			auto& transformParent=m_Parent.GetComponent<TransformComponent>();
+			Mat4x4 l = transformParent.GetLocalToWorld();
 			return transformParent.GetLocalToWorld();
 		}
 		return Mat4x4(1.0f);
@@ -39,6 +48,14 @@ namespace Czuch
 	void TransformComponent::SetLocalEulerAngles(const Vec3& eulerAngles)
 	{
 		m_LocalEulerAngles = eulerAngles;
+
+		if(m_LocalEulerAngles.x>360.0f)
+			m_LocalEulerAngles.x = fmod(m_LocalEulerAngles.x, 360.0f);
+		if (m_LocalEulerAngles.y > 360.0f)
+			m_LocalEulerAngles.y = fmod(m_LocalEulerAngles.y, 360.0f);
+		if (m_LocalEulerAngles.z > 360.0f)
+			m_LocalEulerAngles.z = fmod(m_LocalEulerAngles.z, 360.0f);
+
 		m_LocalRotation=glm::quat(glm::vec3(eulerAngles.x, eulerAngles.y, eulerAngles.z));
 		UpdateLocalTransform();
 		m_State.SetDirty();

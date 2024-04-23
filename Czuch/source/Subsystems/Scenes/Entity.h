@@ -6,12 +6,12 @@ namespace Czuch
 {
 
 	struct TransformComponent;
-	class Entity
+	class CZUCH_API Entity
 	{
 	public:
 		static Entity CreateInvalidEntity() { Entity e; e.Invalidate(); return e; }
 
-		Entity() = default;
+		Entity():m_EntityHandle(entt::null),m_Scene(nullptr) {}
 		Entity(const Entity&) = default;
 		Entity(entt::entity handle, IScene* scene);
 		~Entity() = default;
@@ -45,7 +45,19 @@ namespace Czuch
 		inline void Invalidate() { m_EntityHandle = entt::null; }
 
 		TransformComponent& Transform();
+	public:
+		IScene* GetScene() { return m_Scene; }
+
+		template<typename T>
+		Entity FindEntityWithComponent()
+		{
+			auto entt= m_Scene->FindEntityWithComponent<T>();
+			return Entity(entt, m_Scene);
+		}
+
 	private:
+		template<typename T, typename... Args>
+		T& EmplaceComp(Args && ...args);
 
 		template <typename T>
 		void OnComponentRemoved(entt::registry& r, entt::entity e)
@@ -63,10 +75,16 @@ namespace Czuch
 	};
 
 	template<typename T, typename ...Args>
+	inline T& Entity::EmplaceComp(Args && ...args)
+	{
+		return m_Scene->GetRegistry().emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+	}
+
+	template<typename T, typename ...Args>
 	inline T& Entity::AddComponent(Args && ...args)
 	{
 		CZUCH_BE_ASSERT(!HasComponent<T>(), "Entity already has component!");
-		auto& comp = m_Scene->GetRegistry().emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+		auto& comp = EmplaceComp<T>(*this, std::forward<Args>(args)...);
 		comp.OnCreated();
 		return comp;
 	}
@@ -82,6 +100,7 @@ namespace Czuch
 		m_Scene->GetRegistry().get<T>(m_EntityHandle).OnRemoved();
 		m_Scene->GetRegistry().remove<T>(m_EntityHandle);
 	}
+
 	template<typename T>
 	inline T& Entity::GetComponent()
 	{

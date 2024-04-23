@@ -14,7 +14,7 @@ namespace Czuch
 		~ScenesManager();
 
 		void Init() override;
-		void Update() override;
+		void Update(TimeDelta timeDelta) override;
 		void Shutdown() override;
 
 		void AddScene(Scene* scene, bool setAsActive = false);

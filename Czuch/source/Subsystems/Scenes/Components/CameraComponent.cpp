@@ -14,7 +14,7 @@ namespace Czuch
 		m_ProjectionMatrix =glm::perspective(glm::radians(m_VerticalFov),m_AspectRatio,m_NearPlane,m_FarPlane);
 	}
 
-	Camera::Camera(float fov, float aspect, float nearPlane, float farPlane) :m_VerticalFov(fov), m_AspectRatio(aspect), m_NearPlane(-nearPlane), m_FarPlane(-farPlane)
+	Camera::Camera(float fov, float aspect, float nearPlane, float farPlane) :m_VerticalFov(fov), m_AspectRatio(aspect), m_NearPlane(nearPlane), m_FarPlane(farPlane)
 	{
 		Recalculate();
 	}
@@ -41,13 +41,13 @@ namespace Czuch
 
 	void Camera::SetNearPlane(float nearPlane)
 	{
-		m_NearPlane = -nearPlane;
+		m_NearPlane = nearPlane;
 		Recalculate();
 	}
 
 	void Camera::SetFarPlane(float farPlane)
 	{
-		m_FarPlane = -farPlane;
+		m_FarPlane = farPlane;
 		Recalculate();
 	}
 
@@ -61,8 +61,8 @@ namespace Czuch
 	{
 		m_VerticalFov = fov;
 		m_AspectRatio = aspectRatio;
-		m_NearPlane = -nearPlane;
-		m_FarPlane = -farPlane;
+		m_NearPlane = nearPlane;
+		m_FarPlane = farPlane;
 		Recalculate();
 	}
 

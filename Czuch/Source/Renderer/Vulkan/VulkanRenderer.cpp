@@ -20,6 +20,7 @@ namespace Czuch
 	{
 		m_RendererValidationMode = validationMode;
 		m_AttachedWindow = window;
+		m_ActiveScene = nullptr;
 	}
 
 

@@ -47,6 +47,7 @@ namespace Czuch
 	{
 		for (size_t i = 0; i < m_BehavioursCount; i++)
 		{
+			m_NativeBehaviours[i].behaviour->OnDisable();
 			m_NativeBehaviours[i].behaviour->OnDestroy();
 			delete m_NativeBehaviours[i].behaviour;
 		}
@@ -61,7 +62,10 @@ namespace Czuch
 		}
 		for (size_t i = 0; i < m_BehavioursCount; i++)
 		{
-			m_NativeBehaviours[i].behaviour->OnUpdate(delta);
+			if (m_NativeBehaviours[i].behaviour->IsEnabled())
+			{
+				m_NativeBehaviours[i].behaviour->OnUpdate(delta);
+			}
 		}
 	}
 
@@ -79,5 +83,12 @@ namespace Czuch
 		{
 			m_NativeBehaviours[i].behaviour->OnDisable();
 		}
+	}
+
+	void NativeBehaviourComponent::InitNewBehaviour(NativeBehaviour* behaviour)
+	{
+		behaviour->SetEntity(m_Owner);
+		behaviour->OnCreate();
+		behaviour->OnEnable();
 	}
 }

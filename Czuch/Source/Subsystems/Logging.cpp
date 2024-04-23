@@ -19,7 +19,7 @@ namespace Czuch
 
 	}
 
-	void Logging::Update()
+	void Logging::Update(TimeDelta timeDelta)
 	{
 
 	}

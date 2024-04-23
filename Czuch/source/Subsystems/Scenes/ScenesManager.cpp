@@ -2,6 +2,7 @@
 #include "ScenesManager.h"
 #include "Renderer/Renderer.h"
 #include "Subsystems/Assets/AssetsManager.h"
+#include"Core/Time.h"
 
 namespace Czuch
 {
@@ -24,11 +25,11 @@ namespace Czuch
 
 	}
 
-	void ScenesManager::Update()
+	void ScenesManager::Update(TimeDelta timeDelta)
 	{
 		if (m_ActiveScene != nullptr)
 		{
-			m_ActiveScene->OnUpdate(0.0f);
+			m_ActiveScene->OnUpdate(timeDelta);
 		}
 	}
 

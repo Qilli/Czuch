@@ -13,7 +13,7 @@ namespace Czuch
 		void RemoveListener(EventTypeID eventType, IEventsListener* listener);
 		void Init();
 		void Shutdown();
-		void Update();
+		void Update(TimeDelta timeDelta);
 	private:
 		void Clear();
 	private:
@@ -48,6 +48,8 @@ namespace Czuch
 	};
 
 #define DISPATCH_EVENT(evt)EventsManager::GetPtr()->DispatchEvent(evt);
+#define LISTEN_TO_EVENT(eventType, listener) EventsManager::GetPtr()->AddListener(eventType, listener);
+#define STOP_LISTEN_TO_EVENT(eventType, listener) EventsManager::GetPtr()->RemoveListener(eventType, listener);
 
 }
 

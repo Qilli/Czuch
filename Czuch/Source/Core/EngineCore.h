@@ -86,5 +86,11 @@ namespace Czuch
 		}
 	};
 
+	struct WindowInfo
+	{
+		static U32 Width;
+		static U32 Height;
+	};
+
 
 }

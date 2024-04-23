@@ -11,19 +11,19 @@
 
 namespace Czuch
 {
+	const CzuchStr SceneTag = "SceneControl";
 
 	Scene::Scene(const CzuchStr& sceneName) : m_SceneName(sceneName)
 	{
 		m_RootEntity = Entity{ m_Registry.create(),this };
-		m_RootEntity.AddComponent<HeaderComponent>(m_RootEntity, sceneName, "Root", Layer{ 0 });
-		m_RootEntity.AddComponent<TransformComponent>(m_RootEntity);
-
+		m_RootEntity.AddComponent<HeaderComponent>(sceneName, "Root", Layer{ 0 });
+		m_RootEntity.AddComponent<TransformComponent>();
 
 		//create default camera
-		Entity cameraEntity = CreateEntity("Main Camera", m_RootEntity);
-		auto& cam = cameraEntity.AddComponent<CameraComponent>(m_RootEntity);
+		Entity cameraEntity = CreateEntity("MainCamera", m_RootEntity);
+		auto& cam = cameraEntity.AddComponent<CameraComponent>();
 		cam.SetPrimary(true);
-		cameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,-10.0f });
+		cameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
 		m_MainCameraEntity = cameraEntity;
 
 		CreateRenderContexts();
@@ -40,7 +40,7 @@ namespace Czuch
 		auto view = m_Registry.view<NativeBehaviourComponent, ActiveComponent>();
 		for (auto entity : view)
 		{
-			auto nativeBehaviour = view.get<NativeBehaviourComponent>(entity);
+			auto& nativeBehaviour = view.get<NativeBehaviourComponent>(entity);
 			nativeBehaviour.OnUpdate(delta);
 		}
 	}
@@ -66,7 +66,10 @@ namespace Czuch
 			return;
 		}
 
-		//get all renderable entities
+		m_GeneralRenderContext.ClearRenderList();
+
+		Mat4x4 viewMat = mainCamera->GetCamera().GetViewMatrix();
+
 		auto renderableView = m_Registry.view<TransformComponent, MeshComponent, MeshRendererComponent>();
 		for (auto entity : renderableView)
 		{
@@ -76,7 +79,7 @@ namespace Czuch
 
 			for (int a = 0; a < mesh.GetSubMeshesCount(); ++a)
 			{
-				RenderObjectInstance renderObjectInstance{ .mesh = mesh.GetMesh(a),.overrideMaterial = meshRenderer.GetOverrideMaterial(a), .localToWorldTransformation = transform.GetLocalToWorld()
+				RenderObjectInstance renderObjectInstance{ .mesh = mesh.GetMesh(a),.overrideMaterial = meshRenderer.GetOverrideMaterial(a), .localToWorldTransformation = Mat4x4(1.0f)/*transform.GetLocalToWorld()*/
 				, .localToClipSpaceTransformation = mainCamera->GetCamera().GetViewProjectionMatrix() * transform.GetLocalToWorld() };
 				m_GeneralRenderContext.AddToRenderList(renderObjectInstance);
 			}
@@ -97,9 +100,9 @@ namespace Czuch
 		}
 
 		CzuchStr tag = "Default";
-		entity.AddComponent<HeaderComponent>(entity, entityName, tag, Layer{ 0 });
-		entity.AddComponent<TransformComponent>(entity);
-		entity.AddComponent<ActiveComponent>(entity);
+		entity.AddComponent<HeaderComponent>(entityName, tag, Layer{ 0 });
+		entity.AddComponent<TransformComponent>();
+		entity.AddComponent<ActiveComponent>();
 		if (parent.IsValid())
 		{
 			parent.AddChild(entity);
@@ -157,9 +160,24 @@ namespace Czuch
 	{
 		m_Registry.clear();
 		m_RootEntity = Entity{ m_Registry.create(),this };
-		m_RootEntity.AddComponent<HeaderComponent>(m_RootEntity, m_SceneName, "Root", Layer{ 0 });
-		m_RootEntity.AddComponent<TransformComponent>(m_RootEntity);
+		m_RootEntity.AddComponent<HeaderComponent>(m_SceneName, "Root", Layer{ 0 });
+		m_RootEntity.AddComponent<TransformComponent>();
 		CreateRenderContexts();
+	}
+
+	CameraComponent* Scene::FindPrimaryCamera()
+	{
+		auto view = m_Registry.view<CameraComponent>();
+		for (auto entity : view)
+		{
+			auto& camera = view.get<CameraComponent>(entity);
+			if (camera.IsPrimary())
+			{
+				return &camera;
+			}
+		}
+		LOG_BE_ERROR("{0} Scene does not have primary camera",SceneTag);
+		return nullptr;
 	}
 
 	void Scene::CreateRenderContexts()

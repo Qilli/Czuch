@@ -143,7 +143,7 @@ namespace Czuch
 			{ -halfSize, halfSize, halfSize },
 			{ -halfSize, halfSize, -halfSize },
 			{ halfSize, halfSize, -halfSize },
-			{-halfSize, halfSize, halfSize },
+			{ halfSize, halfSize, halfSize },
 
 			// Bottom face
 			{ -halfSize, -halfSize, halfSize },
@@ -170,10 +170,10 @@ namespace Czuch
 	{
 		return {
 			  {0.0f, 1.0f,0,0}, {1.0f, 1.0f,0,0}, {0.0f, 0.0f,0,0}, {1.0f, 0.0f,0,0}, // Front face
-			  {0.0f, 0.0f,0,0}, {1.0f, 0.0f,0,0}, {1.0f, 1.0f,0,0}, {0.0f, 1.0f,0,0}, // Back face
+			  {0.0f, 0.0f,0,0}, {0.0f, 1.0f,0,0}, {1.0f, 1.0f,0,0}, {1.0f, 0.0f,0,0}, // Back face
 			  {0.0f, 0.0f,0,0}, {1.0f, 0.0f,0,0}, {1.0f, 1.0f,0,0}, {0.0f, 1.0f,0,0}, // Top face
-			  {0.0f, 0.0f,0,0}, {1.0f, 0.0f,0,0}, {1.0f, 1.0f,0,0}, {0.0f, 1.0f,0,0}, // Bottom face
-			  {0.0f, 0.0f,0,0}, {1.0f, 0.0f,0,0}, {1.0f, 1.0f,0,0}, {0.0f, 1.0f,0,0}, // Right face
+			  {0.0f, 0.0f,0,0}, {0.0f, 1.0f,0,0}, {1.0f, 1.0f,0,0}, {1.0f, 0.0f,0,0}, // Bottom face
+			  {0.0f, 0.0f,0,0}, {0.0f, 1.0f,0,0}, {1.0f, 1.0f,0,0}, {1.0f, 0.0f,0,0}, // Right face
 			  {0.0f, 0.0f,0,0}, {1.0f, 0.0f,0,0}, {1.0f, 1.0f,0,0}, {0.0f, 1.0f,0,0}  // Left face
 		};
 	}
@@ -261,10 +261,10 @@ namespace Czuch
 
 
 		std::vector<Vec4> uvs = {
-			{0.0f, 0.0f,0,0},
+			{0.0f, 1.0f,0,0},
 			{1.0f, 1.0f,0,0},
 			{1.0f, 0.0f,0,0},
-			{0.0f, 1.0f,0,0},
+			{0.0f, 0.0f,0,0},
 		};
 
 		std::vector<U32> indices = { 0, 1, 2, 3, 0, 2 };

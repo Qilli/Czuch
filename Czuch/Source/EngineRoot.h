@@ -13,12 +13,6 @@ namespace Czuch
 	class AssetsManager;
 	class ScenesManager;
 
-	struct WindowInfo
-	{
-		static U32 Width;
-		static U32 Height;
-	};
-
 	class CZUCH_API EngineRoot: public IEventsListener
 	{
 	public:
@@ -26,9 +20,10 @@ namespace Czuch
 		void Shutdown();
 		void Run();
 		Renderer& GetRenderer() const { return *m_Renderer; }
+		ScenesManager& GetScenesManager() const { return *m_ScenesMgr; }
 		virtual void OnEvent(const Event& e) override;
 	private:
-		void UpdateDeltaTime(TimeDiffCounter& counter);
+		TimeDelta UpdateDeltaTime(TimeDiffCounter& counter);
 	private:
 		bool ShouldStopGameLoop();
 	private:

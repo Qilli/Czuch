@@ -8,6 +8,7 @@ namespace Czuch
 	struct AssetHandle
 	{
 		Guid handle;
+		bool IsValid() { return handle != InvalidID; }
 	};
 
 	enum AssetInnerState

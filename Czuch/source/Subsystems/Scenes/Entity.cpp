@@ -13,8 +13,8 @@ namespace Czuch
 
 	void Entity::AddRenderable(MeshHandle meshHandle, MaterialInstanceHandle overrideMaterial)
 	{
-		AddComponent<MeshComponent>(*this, meshHandle);
-		AddComponent<MeshRendererComponent>(*this, overrideMaterial);
+		AddComponent<MeshComponent>( meshHandle);
+		AddComponent<MeshRendererComponent>( overrideMaterial);
 	}
 
 	void Entity::RemoveRenderable()
@@ -52,7 +52,7 @@ namespace Czuch
 		}
 		else if (!hasActiveComponent && isActive)
 		{
-			AddComponent<ActiveComponent>(*this);
+			AddComponent<ActiveComponent>();
 		}
 	}
 

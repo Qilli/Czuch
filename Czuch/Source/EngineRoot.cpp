@@ -84,18 +84,20 @@ namespace Czuch
 	{
 		F32 dt = 1 / 30.0f;
 		TimeDiffCounter counter(TimeDiffCounter::Mode::Seconds);
+		counter.StartCounter();
 		
 		while (!ShouldStopGameLoop())
 		{
 			//Update events
-			m_EventsMgr->Update();
+			auto deltaTime=UpdateDeltaTime(counter);
+			m_EventsMgr->Update(deltaTime);
 			m_Window->Update();
-			UpdateDeltaTime(counter);
+			m_ScenesMgr->Update(deltaTime);
 			m_Renderer->DrawFrame();
 		}
 		m_Renderer->AwaitDeviceIdle();
 	}
-	void EngineRoot::UpdateDeltaTime(Czuch::TimeDiffCounter& counter)
+	TimeDelta EngineRoot::UpdateDeltaTime(Czuch::TimeDiffCounter& counter)
 	{
 		//Update game engine dt
 		F32 dt = counter.GetCounter(true);
@@ -106,6 +108,7 @@ namespace Czuch
 		}
 
 		Time::DeltaTime = dt;
+		return TimeDelta(dt);
 	}
 	bool EngineRoot::ShouldStopGameLoop()
 	{

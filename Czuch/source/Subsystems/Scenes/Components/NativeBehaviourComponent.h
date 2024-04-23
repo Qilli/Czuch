@@ -14,7 +14,7 @@ namespace Czuch
 		bool IsInited() const { return behaviour != nullptr; };
 	};
 
-	class NativeBehaviourComponent : public Component
+	class CZUCH_API NativeBehaviourComponent : public Component
 	{
 	public:
 		NativeBehaviourComponent(Entity owner);
@@ -33,7 +33,8 @@ namespace Czuch
 		{
 			CZUCH_BE_ASSERT(m_BehavioursCount < s_max_native_behaviours_per_entity - 1, "This native behaviours has max amount of native scripts");
 			m_NativeBehaviours[m_BehavioursCount].behaviour = new T();
-			return *m_NativeBehaviours[m_BehavioursCount++].behaviour;
+			InitNewBehaviour(m_NativeBehaviours[m_BehavioursCount].behaviour);
+			return static_cast<T&>(*m_NativeBehaviours[m_BehavioursCount++].behaviour);
 		}
 
 		template <typename T>
@@ -60,6 +61,9 @@ namespace Czuch
 				m_BehavioursCount--;
 			}
 		}
+
+	private:
+		void InitNewBehaviour(NativeBehaviour* beaviour);
 
 	private:
 		NativeBehaviourContainer m_NativeBehaviours[s_max_native_behaviours_per_entity];

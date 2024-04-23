@@ -14,7 +14,7 @@ namespace Czuch
 	public:
 		void Init();
 		void Shutdown();
-		void Update();
+		void Update(TimeDelta timeDelta);
 	public:
 		inline std::shared_ptr<spdlog::logger> GetBackendLogger() { return m_SpdBackendLogger; }
 		inline std::shared_ptr<spdlog::logger> GetFrontendLogger() { return m_SpdFrontendLogger; }

@@ -15,7 +15,7 @@ namespace Czuch
 	public:
 		void Init() override;
 		void Shutdown() override;
-		void Update() override;
+		void Update(TimeDelta timeDelta) override;
 
 		virtual void RegisterManager(AssetManager* newMgr,std::type_index type);
 
@@ -42,7 +42,10 @@ namespace Czuch
 
 		template<typename T,typename TM>
 		T LoadAndGetResouceHandle(const CzuchStr& path, TM&& settings);
-		
+	public:
+		TextureHandle Load2DTexture(const CzuchStr& path);
+		MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceCreateSettings& settings);
+		MaterialInstanceHandle CreateMaterialInstance(const CzuchStr& matName, AssetHandle materialSource);
 	private:
 		std::unordered_map<std::type_index,AssetManager*> m_AssetsMgrs;
 	};
