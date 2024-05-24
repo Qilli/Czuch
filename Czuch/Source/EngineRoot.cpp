@@ -11,6 +11,7 @@
 #include "Subsystems/Assets/AssetManagersTypes/MaterialInstanceAssetManager.h"
 #include "Subsystems/Assets/AssetManagersTypes/ModelAssetManager.h"
 #include "Subsystems/Scenes/ScenesManager.h"
+#include "Subsystems/UI/ImGUIManager.h"
 namespace Czuch
 {
 	U32 WindowInfo::Width = 0;
@@ -49,6 +50,9 @@ namespace Czuch
 		m_ResourcesMgr->RegisterManager(new MaterialInstanceAssetManager(m_Renderer->GetDevice()), typeid(MaterialInstanceAsset));
 		m_ResourcesMgr->RegisterManager(new ModelAssetManager(m_Renderer->GetDevice()), typeid(ModelAsset));
 		
+		//create ui manager
+		m_UIBaseMgr = new ImGUIManager(m_Renderer->GetDevice(), m_Window.get());
+		m_UIBaseMgr->Init();
 
 		//listen to events
 		m_EventsMgr->AddListener(WindowClosedEvent::GetStaticEventType(), this);
@@ -68,12 +72,15 @@ namespace Czuch
 		delete m_ScenesMgr;
 		delete m_DefaultAssets;
 
+		m_UIBaseMgr->Shutdown();
+
 		//Shutdown
 		m_ResourcesMgr->Shutdown();
 		m_EventsMgr->Shutdown();
 		m_Logging->Shutdown();
 		
 		//free memory
+		delete m_UIBaseMgr;
 		delete m_ResourcesMgr;
 		delete m_Renderer;
 		delete m_EventsMgr;
@@ -93,6 +100,7 @@ namespace Czuch
 			m_EventsMgr->Update(deltaTime);
 			m_Window->Update();
 			m_ScenesMgr->Update(deltaTime);
+			m_UIBaseMgr->Update(deltaTime);
 			m_Renderer->DrawFrame();
 		}
 		m_Renderer->AwaitDeviceIdle();

@@ -12,7 +12,7 @@ namespace Czuch
 		virtual void Init(const GraphicsDevice* gpu)=0;
 		virtual void Release()=0;
 	public:
-		virtual void Begin()=0;
+		virtual void Begin(CommandBufferUseFlag flags = CommandBufferUseFlag::NONE)=0;
 		virtual void End()=0;
 		virtual void EndCurrentRenderPass()=0;
 		virtual void BindPass(RenderPassHandle renderpass, FrameBufferHandle framebuffer)=0;

@@ -17,12 +17,14 @@ namespace Czuch
 		virtual float GetSwapchainWidth() const = 0;
 		virtual float GetSwapchainHeight() const = 0;
 
-		virtual PipelineHandle CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass) = 0;
+		virtual void DrawUI(CommandBuffer* commandBuffer) = 0;
+
+		virtual PipelineHandle CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass, bool dynamicRendering = false) = 0;
 		virtual ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize) =0;
 		virtual RenderPassHandle CreateRenderPass(const RenderPassDesc* desc) = 0; 
 		virtual DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc) = 0;
 		virtual FrameBufferHandle CreateFrameBuffer(const FrameBufferDesc* desc)  = 0;
-		virtual CommandBufferHandle CreateCommandBuffer(bool isPrimary)  = 0;
+		virtual CommandBufferHandle CreateCommandBuffer(bool isPrimary,void* pool=nullptr)  = 0;
 		virtual BufferHandle CreateBuffer(const BufferDesc* desc) = 0;
 		virtual TextureHandle CreateTexture(const TextureDesc* desc)= 0;
 		virtual MeshHandle CreateMesh(MeshData& meshData) = 0;

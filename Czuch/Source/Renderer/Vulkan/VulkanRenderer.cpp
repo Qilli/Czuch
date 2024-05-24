@@ -138,7 +138,6 @@ namespace Czuch
 			}
 
 			UnRegisterRenderContext(&m_ActiveScene->GetGeneralRenderContext());
-			UnRegisterRenderContext(&m_ActiveScene->GetUIRenderContext());
 			UnRegisterRenderContext(&m_ActiveScene->GetDebugRenderContext());
 		}
 
@@ -147,9 +146,22 @@ namespace Czuch
 		if (m_ActiveScene != nullptr)
 		{
 			RegisterRenderContext(&m_ActiveScene->GetGeneralRenderContext());
-			RegisterRenderContext(&m_ActiveScene->GetUIRenderContext());
 			RegisterRenderContext(&m_ActiveScene->GetDebugRenderContext());
 		}
+	}
+
+	void VulkanRenderer::ImmediateSubmitWithCommandBuffer(std::function<void(CommandBuffer* cmd)>&& processor)
+	{
+		auto device = m_Device->GetNativeDevice();
+		vkResetFences(device, 1, &m_ImmediateSubmitData.fence);
+		VulkanCommandBuffer* cmdBuffer = static_cast<VulkanCommandBuffer*>(m_Device->AccessCommandBuffer(m_ImmediateSubmitData.commandBuffer));
+		cmdBuffer->Begin(CommandBufferUseFlag::ONE_TIME_SUBMIT);
+
+		processor(cmdBuffer);
+
+		cmdBuffer->End();
+
+		m_Device->ImmediateSubmitToGraphicsQueueWithCommandBuffer(cmdBuffer->GetNativeBuffer(), m_ImmediateSubmitData.fence);
 	}
 
 	void VulkanRenderer::CreateSyncObjects()
@@ -161,6 +173,8 @@ namespace Czuch
 			m_FramesData[a].renderFinishedSemaphote = m_Device->CreateNewSemaphore();
 			m_FramesData[a].inFlightFence = m_Device->CreateNewFence(true);
 		}
+
+		m_ImmediateSubmitData.fence = m_Device->CreateNewFence(true);
 	}
 
 	void VulkanRenderer::ReleaseSyncObjects()
@@ -171,16 +185,20 @@ namespace Czuch
 			m_Device->ReleaseSemaphore(m_FramesData[a].renderFinishedSemaphote);
 			m_Device->ReleaseFence(m_FramesData[a].inFlightFence);
 		}
+
+		m_Device->ReleaseFence(m_ImmediateSubmitData.fence);
 	}
 
 	void VulkanRenderer::RecordCommandBuffer(uint32_t imageIndex)
 	{
-		auto cmdBuffer = m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer);
+		VulkanCommandBuffer* cmdBuffer = static_cast<VulkanCommandBuffer*>(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
 		cmdBuffer->Begin();
+
+		m_Device->TransitionSwapChainImageLayoutPreDraw(cmdBuffer, imageIndex);
 
 		cmdBuffer->SetClearColor(0.0f, 1.0f, 0.0f, 1.0f);
 		cmdBuffer->SetDepthStencil(1.0f, 0);
-		m_Device->BindSwapChainRenderPass(cmdBuffer, imageIndex);
+		m_Device->StartDynamicRenderPass(cmdBuffer, imageIndex);
 
 		ViewportDesc vpdesc{};
 		vpdesc.x = 0;
@@ -206,7 +224,10 @@ namespace Czuch
 			}
 		}
 
-		cmdBuffer->EndCurrentRenderPass();
+		m_Device->DrawUI(cmdBuffer);
+
+		cmdBuffer->EndDynamicRenderPass();
+		m_Device->TransitionSwapChainImageLayoutPostDraw(cmdBuffer, imageIndex);
 		cmdBuffer->End();
 	}
 
@@ -265,6 +286,14 @@ namespace Czuch
 		SceneData* data=(SceneData*)bufferVulkan->GetMappedData();
 		*data = m_SceneData.data;
 
+	}
+
+	void VulkanRenderer::InitImmediateSubmitData()
+	{
+		m_ImmediateSubmitData.pool = m_Device->CreateCommandPool(false, false);
+		m_ImmediateSubmitData.commandBuffer = m_Device->CreateCommandBuffer(true,m_ImmediateSubmitData.pool);
+		VulkanCommandBuffer* cmd = (VulkanCommandBuffer*)m_Device->AccessCommandBuffer(m_ImmediateSubmitData.commandBuffer);
+		cmd->Init(m_Device);
 	}
 
 	void VulkanRenderer::OnPreRenderUpdateContexts()

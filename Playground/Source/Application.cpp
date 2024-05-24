@@ -16,6 +16,15 @@ class EventHandler : public Czuch::IEventsListener
 	}
 };
 
+class DemoImGUI : public Czuch::UIBaseElement
+{
+public:
+	void UpdateUI(Czuch::TimeDelta timeDelta) override
+	{
+	//	ImGui::ShowDemoWindow();
+	}
+};
+
 class RotateAround : public Czuch::NativeBehaviour
 {
 public:
@@ -67,6 +76,10 @@ int main()
 	planeEntity.AddRenderable(Czuch::DefaultAssets::PLANE_HANDLE, matInstanceHandle);
 	planeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, -1.0f, 0.0f));
 	planeEntity.Transform().SetLocalScale(glm::vec3(10.0f, 1.0f, 10.0f));
+
+	DemoImGUI gui;
+
+	scene->AddUIElement(&gui);
 
 	root->Run();
 	root->Shutdown();

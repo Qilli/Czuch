@@ -13,6 +13,9 @@
 #include"./Subsystems/Assets/AssetsManager.h"
 #include"./Subsystems/Assets/Asset/ShaderAsset.h"
 #include"./Subsystems/Assets/Asset/MaterialAsset.h"
+#include "imgui.h"
+#include"Platform/Vulkan/ImGuiVulkanBackend.h"
+#include"Platform/GLFW/ImGuiGLFWBackend.h"
 #include<set>
 
 
@@ -21,7 +24,9 @@ namespace Czuch
 	const CzuchStr Tag = "[VulkanDevice]";
 
 	const std::vector<const char*> deviceExtensions = {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+		VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
 	};
 
 	const std::vector<const char*> validationLayers = {
@@ -30,29 +35,39 @@ namespace Czuch
 
 #pragma region Create methods
 
-	VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice);
+	VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice,bool includeStencil);
 	bool CreateImage(VmaAllocator allocator, TextureDesc::Type type, U32 width, U32 height, U32 depth, U32 mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memUsage,
 		VkImage& image, VmaAllocation& alloc);
 	bool HasStencilComponent(VkFormat format);
 	VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
-	PipelineHandle VulkanDevice::CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass)
+	void VulkanDevice::DrawUI(CommandBuffer* commandBuffer)
+	{
+		ImGui::Render();
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(),static_cast<VulkanCommandBuffer*>(commandBuffer)->GetNativeBuffer());
+	}
+
+	PipelineHandle VulkanDevice::CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass,bool dynamicRendering)
 	{
 		CZUCH_BE_ASSERT(desc, "CreatePipelineState NULL desc input");
 		
 		RenderPass* rp = nullptr;
-		if (!HANDLE_IS_VALID(rpass))
+		if (!dynamicRendering)
 		{
-			rp = AccessRenderPass(m_SwapChainRenderPass);
+			if (!HANDLE_IS_VALID(rpass))
+			{
+				rp = AccessRenderPass(m_SwapChainRenderPass);
+			}
+			else
+			{
+				m_ResContainer.renderPasses.Get(rpass.handle, &rp);
+			}
 		}
-		else
-		{
-			m_ResContainer.renderPasses.Get(rpass.handle, &rp);
-		}
+
 
 		Pipeline* ps = new Pipeline();
 		ps->m_InternalResourceState = std::make_shared<Pipeline_Vulkan>();
-		ps->m_desc = std::move(*desc);
+		ps->m_desc = std::move(*desc); 
 		ps->device = this;
 
 		auto vsAsset = AssetsManager::GetPtr()->GetAsset<ShaderAsset>(desc->vs);
@@ -61,13 +76,15 @@ namespace Czuch
 		ps->vs = vsAsset->GetShaderAssetHandle();
 		ps->ps = psAsset->GetShaderAssetHandle();
 
-		for (auto layout : desc->layouts)
+		for(int a=0;a<desc->layoutsCount;a++)
 		{
-			ps->AddLayout(CreateDescriptorSetLayout(&layout));
+			ps->AddLayout(CreateDescriptorSetLayout(&desc->layouts[a]));
 		}
 
+		VkRenderPass renderPass = rp != nullptr ? Internal_to_RenderPass(rp)->renderPass : VK_NULL_HANDLE;
+
 		VulkanPipelineBuilder builder(this,Internal_To_Pipeline(ps),ps);
-		if (!builder.BuildPipeline(Internal_to_RenderPass(rp)->renderPass))
+		if (!builder.BuildPipeline(renderPass))
 		{
 			LOG_BE_ERROR("[{0}] Failed to Build new pipeline",Tag);
 			delete ps;
@@ -130,7 +147,7 @@ namespace Czuch
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		VkAttachmentDescription depthAttachment{};
-		depthAttachment.format = FindDepthFormat(m_PhysicalDevice);
+		depthAttachment.format = FindDepthFormat(m_PhysicalDevice,true);
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -281,14 +298,14 @@ namespace Czuch
 		return h;
 	}
 
-	CommandBufferHandle VulkanDevice::CreateCommandBuffer(bool isPrimary)
+	CommandBufferHandle VulkanDevice::CreateCommandBuffer(bool isPrimary,void* pool)
 	{
 		VulkanCommandBuffer* cmdBuffer = nullptr;
 		VkCommandBuffer commandBuffer;
 
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = m_CommandPool;
+		allocInfo.commandPool = pool == nullptr ? m_CommandPool : (VkCommandPool)pool;;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandBufferCount = 1;
 
@@ -439,7 +456,7 @@ namespace Czuch
 	{
 		Material* material = new Material();
 		material->desc = std::move(materialData);
-		material->pipeline = CreatePipelineState(&material->desc.pipelineDesc, INVALID_HANDLE(RenderPassHandle));
+		material->pipeline = CreatePipelineState(&material->desc.pipelineDesc, INVALID_HANDLE(RenderPassHandle),true);
 
 		MaterialHandle h;
 		h.handle = m_ResContainer.materials.Add(material);
@@ -660,6 +677,26 @@ namespace Czuch
 		EndSingleTimeCommands(cmd);
 	}
 
+	void VulkanDevice::DoImageMemoryBarrier(VkCommandBuffer cmdbuffer, VkImage image, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImageSubresourceRange subresourceRange) const
+	{
+		VkImageMemoryBarrier imageMemoryBarrier{};
+		imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		imageMemoryBarrier.srcAccessMask = srcAccessMask;
+		imageMemoryBarrier.dstAccessMask = dstAccessMask;
+		imageMemoryBarrier.oldLayout = oldImageLayout;
+		imageMemoryBarrier.newLayout = newImageLayout;
+		imageMemoryBarrier.image = image;
+		imageMemoryBarrier.subresourceRange = subresourceRange;
+
+		vkCmdPipelineBarrier(
+			cmdbuffer,
+			srcStageMask,
+			dstStageMask,
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &imageMemoryBarrier);
+	}
 
 	void VulkanDevice::CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, U32 w, U32 h) const
 	{
@@ -866,6 +903,68 @@ namespace Czuch
 		vkDestroyFence(m_Device, fence, nullptr);
 	}
 
+	VkCommandPool VulkanDevice::CreateCommandPool(bool isTransient, bool isResettable)
+	{
+		QueueFamiliesIndexes queueFamilyIndices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
+		VkCommandPool commandPool;
+
+		VkCommandPoolCreateFlags flags = 0;
+		if (isTransient)
+		{
+			flags |= VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+		}
+
+		if (isResettable)
+		{
+			flags |= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		}
+
+		VkCommandPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.flags = flags;
+		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+		if (vkCreateCommandPool(m_Device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+			LOG_BE_ERROR("{0} Failed to create command pool.", Tag);
+			return nullptr;
+		}
+		return commandPool;
+	}
+
+	VkCommandBufferSubmitInfo VulkanDevice::CreateCommandBufferSubmitInfo(VkCommandBuffer cmdBuffer)
+	{
+		VkCommandBufferSubmitInfo info{};
+		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+		info.pNext = nullptr;
+		info.commandBuffer = cmdBuffer;
+		info.deviceMask = 0;
+
+		return info;
+	}
+
+	VkSubmitInfo2 VulkanDevice::CreateSubmitInfo(VkCommandBufferSubmitInfo* cmdBufferSubmitInfo, VkSemaphoreSubmitInfo* signalSemaphoreInfo, VkSemaphoreSubmitInfo* waitSemaphoreInfo)
+	{
+		VkSubmitInfo2 info = {};
+		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+		info.pNext = nullptr;
+
+		info.waitSemaphoreInfoCount = waitSemaphoreInfo == nullptr ? 0 : 1;
+		info.pWaitSemaphoreInfos = waitSemaphoreInfo;
+
+		info.signalSemaphoreInfoCount = signalSemaphoreInfo == nullptr ? 0 : 1;
+		info.pSignalSemaphoreInfos = signalSemaphoreInfo;
+
+		info.commandBufferInfoCount = 1;
+		info.pCommandBufferInfos = cmdBufferSubmitInfo;
+
+		return info;
+	}
+
+	void VulkanDevice::ReleaseCommandPool(VkCommandPool pool)
+	{
+		vkDestroyCommandPool(m_Device, pool, nullptr);
+	}
+
 	void VulkanDevice::Present(uint32_t imageIndex, VkSemaphore semaphore)
 	{
 		VkPresentInfoKHR presentInfo{};
@@ -892,10 +991,28 @@ namespace Czuch
 		cmdBuffer->BindPass(m_SwapChainRenderPass,m_SwapChainData.swapChainFrameBuffers[imageIndex]);
 	}
 
+	void VulkanDevice::StartDynamicRenderPass(VulkanCommandBuffer* cmdBuffer, uint32_t imageIndex)
+	{
+		cmdBuffer->BeginDynamicRenderPass(m_SwapChainData.swapChainImageViews[imageIndex], m_DepthImage.depthImageView,m_SwapChainData.swapChainExtent.width, m_SwapChainData.swapChainExtent.height);
+	}
+
 	void VulkanDevice::SubmitToGraphicsQueue(VkSubmitInfo info, VkFence fence)
 	{
 		if (vkQueueSubmit(m_GraphicsQueue, 1, &info, fence) != VK_SUCCESS) {
 			LOG_BE_ERROR("{0} Failed to submit to graphics queue", Tag);
+		}
+	}
+
+	void VulkanDevice::ImmediateSubmitToGraphicsQueueWithCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence)
+	{
+		VkCommandBufferSubmitInfo cmdInfo = CreateCommandBufferSubmitInfo(cmdBuffer);
+		VkSubmitInfo2 info = CreateSubmitInfo(&cmdInfo,nullptr,nullptr);
+		if(vkQueueSubmit2(m_GraphicsQueue,1,&info,fence)!=VK_SUCCESS) {
+			LOG_BE_ERROR("{0} Failed to  immediate submit to graphics queue", Tag);
+		}
+
+		if (vkWaitForFences(m_Device, 1, &fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
+			LOG_BE_ERROR("{0} Failed to wait for fence", Tag);
 		}
 	}
 
@@ -1081,16 +1198,7 @@ namespace Czuch
 		return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 	}
 
-	VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice)
-	{
-		return FindSupportedFormat(physicalDevice,
-			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-			VK_IMAGE_TILING_OPTIMAL,
-			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-		);
-	}
-
-	VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice,const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+		VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice,const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 	{
 		for (VkFormat format : candidates) {
 			VkFormatProperties props;
@@ -1104,6 +1212,25 @@ namespace Czuch
 			}
 			return VkFormat::VK_FORMAT_UNDEFINED;
 		}
+	}
+
+
+	VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice,bool includeStencil)
+	{
+		if (includeStencil)
+		{
+			return FindSupportedFormat(physicalDevice,
+								{ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+								VK_IMAGE_TILING_OPTIMAL,
+								VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+						);
+		}
+
+		return FindSupportedFormat(physicalDevice,
+			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+		);
 	}
 
 
@@ -1260,8 +1387,10 @@ namespace Czuch
 
 		vkDeviceWaitIdle(m_Device);
 		m_SwapChainData.Release(m_Device);
+		m_DepthImage.Release(m_Device, m_VmaAllocator);
 
 		CreateSwapChain();
+		CreateDepthImage();
 		CreateSwapChainFrameBuffers(false);
 		
 		return true;
@@ -1302,6 +1431,9 @@ namespace Czuch
 		{
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
+
+		extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
 		return extensions;
 	}
 
@@ -1368,8 +1500,8 @@ namespace Czuch
 		EventsManager::Get().RemoveListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
 		m_ResContainer.ReleaseAll();
 
-		vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
-		vkDestroyCommandPool(m_Device, m_CopyCommandPool, nullptr);
+		ReleaseCommandPool(m_CommandPool);
+		ReleaseCommandPool(m_CopyCommandPool);
 		m_DepthImage.Release(m_Device,m_VmaAllocator);
 		m_SwapChainData.Release(m_Device);
 		vmaDestroyAllocator(m_VmaAllocator);
@@ -1452,8 +1584,9 @@ namespace Czuch
 		VkApplicationInfo appInfo{};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pApplicationName = "CzuchEngine";
-		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.engineVersion = VK_MAKE_VERSION(1, 3, 0);
 		appInfo.applicationVersion = VK_API_VERSION_1_3;
+		appInfo.apiVersion = VK_API_VERSION_1_3;
 		appInfo.pEngineName = "Czuch";
 
 		VkInstanceCreateInfo createInfo{};
@@ -1479,6 +1612,7 @@ namespace Czuch
 		vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionsCount, nullptr);
 		std::vector<VkExtensionProperties> extensionsVector(vkExtensionsCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionsCount, extensionsVector.data());
+
 
 		VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
 
@@ -1546,6 +1680,12 @@ namespace Czuch
 			deviceCreateInfo.enabledLayerCount = 0;
 		}
 
+		VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingCreateInfo{};
+		dynamicRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+		dynamicRenderingCreateInfo.dynamicRendering = VK_TRUE;
+
+		deviceCreateInfo.pNext = &dynamicRenderingCreateInfo;
+
 		if (vkCreateDevice(m_PhysicalDevice, &deviceCreateInfo, nullptr, &m_Device) != VK_SUCCESS)
 		{
 			LOG_BE_ERROR("{0} Failed to Create Vulkan Device.", Tag);
@@ -1559,7 +1699,7 @@ namespace Czuch
 
 	bool VulkanDevice::CreateDepthImage()
 	{
-		VkFormat depthStencilFormat = FindDepthFormat(m_PhysicalDevice);
+		VkFormat depthStencilFormat = FindDepthFormat(m_PhysicalDevice,true);
 
 		if (depthStencilFormat == VK_FORMAT_UNDEFINED)
 		{
@@ -1575,6 +1715,7 @@ namespace Czuch
 		}
 
 		m_DepthImage.depthImageView=CreateImageView(m_DepthImage.depthImage, depthStencilFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+		m_DepthImage.depthFormat = depthStencilFormat;
 
 		TransitionImageLayout(m_DepthImage.depthImage, depthStencilFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 		return true;
@@ -1735,27 +1876,9 @@ namespace Czuch
 
 	bool VulkanDevice::CreateCommandsPool()
 	{
-		QueueFamiliesIndexes queueFamilyIndices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
-
-		VkCommandPoolCreateInfo poolInfo{};
-		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-
-		if (vkCreateCommandPool(m_Device, &poolInfo, nullptr, &m_CommandPool) != VK_SUCCESS) {
-			LOG_BE_ERROR("{0} Failed to create command pool.", Tag);
-			return false;
-		}
-
-		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-
-		if (vkCreateCommandPool(m_Device, &poolInfo, nullptr, &m_CopyCommandPool) != VK_SUCCESS) {
-			LOG_BE_ERROR("{0} Failed to create command pool.", Tag);
-			return false;
-		}
-
+		m_CommandPool = CreateCommandPool(false, true);
+		m_CopyCommandPool = CreateCommandPool(true, false);
+	
 		return true;
 	}
 
@@ -1860,13 +1983,134 @@ namespace Czuch
 		return nullptr;
 	}
 
+	void VulkanDevice::TransitionSwapChainImageLayoutPreDraw(VulkanCommandBuffer* cmd, uint32_t imageIndex)
+	{
+		DoImageMemoryBarrier(
+			cmd->GetNativeBuffer(),
+			m_SwapChainData.swapChainImages[imageIndex],
+			0,
+			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+		DoImageMemoryBarrier(
+			cmd->GetNativeBuffer(),
+			m_DepthImage.depthImage,
+			0,
+			VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+			VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+			VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+			VkImageSubresourceRange{ VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 });
+	}
+
+	void VulkanDevice::TransitionSwapChainImageLayoutPostDraw(VulkanCommandBuffer* cmd, uint32_t imageIndex)
+	{
+		DoImageMemoryBarrier(
+			cmd->GetNativeBuffer(),
+			m_SwapChainData.swapChainImages[imageIndex],
+			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+			0,
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+	}
+
+	static void check_vk_result(VkResult err)
+	{
+		if (err == 0)
+			return;
+		fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+		if (err < 0)
+			abort();
+	}
+
+
+	void VulkanDevice::InitImGUI()
+	{
+		VkDescriptorPoolSize pool_sizes[] = { { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 } };
+
+		VkDescriptorPoolCreateInfo pool_info = {};
+		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		pool_info.maxSets = 1000;
+		pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);
+		pool_info.pPoolSizes = pool_sizes;
+
+
+		vkCreateDescriptorPool(m_Device, &pool_info, nullptr, &m_ImguiPool);
+
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+
+		ImGuiIO& io = ImGui::GetIO();
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+		//io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
+
+		ImGui_ImplGlfw_InitForVulkan((GLFWwindow*)m_AttachedWindow->GetNativeWindowPtr(), true);
+		ImGui_ImplVulkan_InitInfo init_info{};
+
+		init_info.Instance = m_Instance;
+		init_info.PhysicalDevice = m_PhysicalDevice;
+		init_info.Device = m_Device;
+		init_info.Queue = m_GraphicsQueue;
+		init_info.DescriptorPool = m_ImguiPool;
+		init_info.MinImageCount = 3;
+		init_info.ImageCount = 3;
+		init_info.UseDynamicRendering = true;
+		init_info.CheckVkResultFn = check_vk_result;
+		init_info.RenderPass = Internal_to_RenderPass(AccessRenderPass(m_SwapChainRenderPass))->renderPass;
+
+		init_info.PipelineRenderingCreateInfo = { .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
+		init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+		init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &m_SwapChainData.swapChainImageFormat;
+		init_info.PipelineRenderingCreateInfo.depthAttachmentFormat = m_DepthImage.depthFormat;
+		init_info.PipelineRenderingCreateInfo.stencilAttachmentFormat = m_DepthImage.depthFormat;
+
+		init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+		ImGui_ImplVulkan_Init(&init_info);
+
+		ImGui_ImplVulkan_CreateFontsTexture();
+	}
+
+	void VulkanDevice::ShutdownImGUI()
+	{
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+		vkDestroyDescriptorPool(m_Device, m_ImguiPool, nullptr);
+	}
+
 	Pipeline* VulkanDevice::AccessPipeline(PipelineHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
 			Pipeline* result = nullptr;
-			m_ResContainer.pipelines.Get(handle.handle, &result);
-			return result;
+			bool success=m_ResContainer.pipelines.Get(handle.handle, &result);
+			if (success)
+			{
+				return result;
+			}
+			LOG_BE_ERROR("{0} AccessPipeline with invalid handle, return from access is equal to false.", Tag);
+			return nullptr;
 		}
 		LOG_BE_ERROR("{0} AccessPipeline with invalid handle.", Tag);
 		return nullptr;

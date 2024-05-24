@@ -8,12 +8,15 @@
 namespace Czuch
 {
 	class Renderer;
+	class UIBaseElement;
 	class CZUCH_API Scene : public IScene
 	{
 	public:
 
 		Scene(const CzuchStr& sceneName);
 		~Scene();
+
+		void AddUIElement(UIBaseElement* element);
 
 		void OnUpdate(TimeDelta delta);
 		void FillRenderContexts(Renderer* renderer);
@@ -23,7 +26,6 @@ namespace Czuch
 		void ClearScene();
 		const CzuchStr& GetSceneName() { return m_SceneName; }
 		RenderContext& GetGeneralRenderContext() { return m_GeneralRenderContext; }
-		RenderContext& GetUIRenderContext() { return m_UIRenderContext; }
 		RenderContext& GetDebugRenderContext() { return m_DebugRenderContext; }
 		entt::registry& GetRegistry() override { return m_Registry; }
 	public:
@@ -41,7 +43,7 @@ namespace Czuch
 		Entity m_MainCameraEntity;
 		CzuchStr m_SceneName;
 		RenderContext m_GeneralRenderContext;
-		RenderContext m_UIRenderContext;
 		RenderContext m_DebugRenderContext;
+		std::vector<UIBaseElement*> m_UIElements;
 	};
 }

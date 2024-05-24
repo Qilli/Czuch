@@ -16,4 +16,5 @@
 #include"Subsystems/Scenes/Components/NativeBehaviourComponent.h"
 #include"Subsystems/Scenes/NativeBehaviour.h"
 #include"Subsystems/Scenes/NativeBehaviours/NativeFree3DCameraController.h"
+#include"Subsystems/UI/UIBaseElement.h"
 

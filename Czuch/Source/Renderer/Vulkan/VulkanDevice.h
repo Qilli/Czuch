@@ -11,6 +11,7 @@ namespace Czuch
 	class DescriptorLayoutCache;
 	class DescriptorAllocator;
 	struct BufferInternalSettings;
+	class VulkanCommandBuffer;
 
 	static const U32 k_max_resources = 500;
 
@@ -23,13 +24,17 @@ namespace Czuch
 		bool InitDevice();
 		float GetSwapchainWidth() const override { return m_SwapChainData.swapChainExtent.width; }
 		float GetSwapchainHeight() const override { return m_SwapChainData.swapChainExtent.height; }
+		VkFormat* GetSwapchainFormat() { return &m_SwapChainData.swapChainImageFormat; }
+		VkFormat GetDepthFormat() { return m_DepthImage.depthFormat; }
 
-		PipelineHandle CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass) override;
+		void DrawUI(CommandBuffer* commandBuffer) override;
+
+		PipelineHandle CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass, bool dynamicRendering = false) override;
 		ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize)override;
 		RenderPassHandle CreateRenderPass(const RenderPassDesc* desc) override;
 		DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc)  override;
 		FrameBufferHandle CreateFrameBuffer(const FrameBufferDesc* desc) override;
-		CommandBufferHandle CreateCommandBuffer(bool isPrimary) override;
+		CommandBufferHandle CreateCommandBuffer(bool isPrimary,void* pool=nullptr) override;
 		BufferHandle CreateBuffer(const BufferDesc* desc) override;
 		TextureHandle CreateTexture(const TextureDesc* desc) override;
 		MeshHandle CreateMesh(MeshData& meshData) override;
@@ -66,17 +71,29 @@ namespace Czuch
 		Mesh* AccessMesh(MeshHandle handle) override;
 		Material* AccessMaterial(MaterialHandle handle) override;
 		MaterialInstance* AccessMaterialInstance(MaterialInstanceHandle handle) override;
-
+	public:
+		void TransitionSwapChainImageLayoutPreDraw(VulkanCommandBuffer* cmd, uint32_t imageIndex);
+		void TransitionSwapChainImageLayoutPostDraw(VulkanCommandBuffer* cmd, uint32_t imageIndex);
+	public:
+		void InitImGUI();
+		void ShutdownImGUI();
 	public:
 		VkDevice GetNativeDevice() const { return m_Device; }
 		VkSemaphore CreateNewSemaphore();
 		void ReleaseSemaphore(VkSemaphore sem);
 		VkFence CreateNewFence(bool signaledState=false);
 		void ReleaseFence(VkFence fence);
+		VkCommandPool CreateCommandPool(bool isTransient, bool isResettable);
+		VkCommandBufferSubmitInfo CreateCommandBufferSubmitInfo(VkCommandBuffer cmdBuffer);
+		VkSubmitInfo2 CreateSubmitInfo(VkCommandBufferSubmitInfo* cmdBufferSubmitInfo, VkSemaphoreSubmitInfo* signalSemaphoreInfo,VkSemaphoreSubmitInfo* waitSemaphoreInfo);
+		void ReleaseCommandPool(VkCommandPool pool);
 		uint32_t AcquireNextSwapChainImage(VkSemaphore sem,bool& aquireFailed);
 		void SubmitToGraphicsQueue(VkSubmitInfo info, VkFence fence);
+		void ImmediateSubmitToGraphicsQueueWithCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence);
 		void Present(uint32_t imageIndex, VkSemaphore semaphore);
 		void BindSwapChainRenderPass(CommandBuffer* cmdBuffer, uint32_t imageIndex);
+	public:
+		void StartDynamicRenderPass(VulkanCommandBuffer* cmdBuffer, uint32_t imageIndex);
 	private:
 
 		struct DepthImage
@@ -84,6 +101,7 @@ namespace Czuch
 			VkImage depthImage;
 			VmaAllocation allocation;
 			VkImageView depthImageView;
+			VkFormat depthFormat;
 
 			void Release(VkDevice device,VmaAllocator allocator);
 		};
@@ -174,6 +192,8 @@ namespace Czuch
 		VkPhysicalDeviceProperties m_DeviceProperties;
 
 		DepthImage m_DepthImage;
+	private:
+		VkDescriptorPool m_ImguiPool;
 
 	private:
 		bool CreateVulkanInstance();
@@ -195,6 +215,15 @@ namespace Czuch
 		bool CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
 		void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, U32 w, U32 h) const;
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout) const;
+		void DoImageMemoryBarrier(VkCommandBuffer cmdbuffer,
+			VkImage image,
+			VkAccessFlags srcAccessMask,
+			VkAccessFlags dstAccessMask,
+			VkImageLayout oldImageLayout,
+			VkImageLayout newImageLayout,
+			VkPipelineStageFlags srcStageMask,
+			VkPipelineStageFlags dstStageMask,
+			VkImageSubresourceRange subresourceRange) const;
 		VkCommandBuffer BeginSingleTimeCommands() const;
 		void EndSingleTimeCommands(VkCommandBuffer cmd) const;
 	private:

@@ -9,6 +9,7 @@ namespace Czuch
 	class VulkanCommandBuffer;
 	class Window;
 	class DescriptorAllocator;
+	class CommandBuffer;
 	struct DescriptorSet;
 
 	class CZUCH_API VulkanRenderer final: public Renderer
@@ -28,6 +29,8 @@ namespace Czuch
 		bool RegisterRenderContext(RenderContext* context) override;
 		void UnRegisterRenderContext(RenderContext* context) override;
 		void SetActiveScene(Scene* scene) override;
+	public:
+		void ImmediateSubmitWithCommandBuffer(std::function<void(CommandBuffer* cmd)> && processor);
 	private:
 		void CreateSyncObjects();
 		void ReleaseSyncObjects();
@@ -37,6 +40,7 @@ namespace Czuch
 		void InitSceneData();
 		void SetSceneData();
 
+		void InitImmediateSubmitData();
 	private:
 
 		struct FrameData
@@ -49,6 +53,13 @@ namespace Czuch
 			DeletionQueue frameDeletionQueue;
 
 			void Reset();
+		};
+
+		struct ImmediateSubmitData
+		{
+			CommandBufferHandle commandBuffer;
+			VkFence fence;
+			VkCommandPool pool;
 		};
 
 		struct SceneDataContainer
@@ -70,6 +81,7 @@ namespace Czuch
 	private:
 		RenderContextContainer m_MainRenderContexts;
 		FrameData m_FramesData[MAX_FRAMES_IN_FLIGHT];
+		ImmediateSubmitData m_ImmediateSubmitData;
 		ValidationMode m_RendererValidationMode;
 		Window* m_AttachedWindow;
 		VulkanDevice* m_Device;

@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DEBUG;CZUCH_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -108,7 +108,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -136,7 +136,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImgGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -159,7 +159,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.h" />
     <ClInclude Include="source\Core\AccessContainer.h" />
     <ClInclude Include="source\Core\Common.h" />
     <ClInclude Include="source\Core\EngineCore.h" />
@@ -181,6 +180,8 @@
     <ClInclude Include="source\Events\EventsTypes\InputEvents.h" />
     <ClInclude Include="source\Events\EventsTypes\MouseEvents.h" />
     <ClInclude Include="source\Events\IEventsListener.h" />
+    <ClInclude Include="source\Platform\GLFW\ImGuiGLFWBackend.h" />
+    <ClInclude Include="source\Platform\Vulkan\ImGuiVulkanBackend.h" />
     <ClInclude Include="source\Platform\Windows\WinWindow.h" />
     <ClInclude Include="source\Renderer\CommandBuffer.h" />
     <ClInclude Include="source\Renderer\Graphics.h" />
@@ -225,12 +226,15 @@
     <ClInclude Include="source\Subsystems\Scenes\Entity.h" />
     <ClInclude Include="source\Subsystems\Scenes\IScene.h" />
     <ClInclude Include="source\Subsystems\Scenes\NativeBehaviour.h" />
+    <ClInclude Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.h" />
     <ClInclude Include="source\Subsystems\Scenes\Scene.h" />
     <ClInclude Include="source\Subsystems\Scenes\ScenesManager.h" />
+    <ClInclude Include="source\Subsystems\UI\ImGUIManager.h" />
+    <ClInclude Include="source\Subsystems\UI\UIBaseElement.h" />
+    <ClInclude Include="source\Subsystems\UI\UIBaseManager.h" />
     <ClInclude Include="source\czpch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.cpp" />
     <ClCompile Include="source\Core\AccessContainer.cpp" />
     <ClCompile Include="source\Core\StringID.cpp" />
     <ClCompile Include="source\Core\Time.cpp" />
@@ -242,6 +246,8 @@
     <ClCompile Include="source\Events\EventsTypes\ApplicationEvents.cpp" />
     <ClCompile Include="source\Events\EventsTypes\InputEvents.cpp" />
     <ClCompile Include="source\Events\EventsTypes\MouseEvents.cpp" />
+    <ClCompile Include="source\Platform\GLFW\ImGuiGLFWBackend.cpp" />
+    <ClCompile Include="source\Platform\Vulkan\ImGuiVulkanBackend.cpp" />
     <ClCompile Include="source\Platform\Windows\WinWindow.cpp" />
     <ClCompile Include="source\Renderer\Graphics.cpp" />
     <ClCompile Include="source\Renderer\GraphicsResourceAccessContainer.cpp" />
@@ -279,8 +285,11 @@
     <ClCompile Include="source\Subsystems\Scenes\Components\TransformComponent.cpp" />
     <ClCompile Include="source\Subsystems\Scenes\Entity.cpp" />
     <ClCompile Include="source\Subsystems\Scenes\NativeBehaviour.cpp" />
+    <ClCompile Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.cpp" />
     <ClCompile Include="source\Subsystems\Scenes\Scene.cpp" />
     <ClCompile Include="source\Subsystems\Scenes\ScenesManager.cpp" />
+    <ClCompile Include="source\Subsystems\UI\ImGUIManager.cpp" />
+    <ClCompile Include="source\Subsystems\UI\UIBaseManager.cpp" />
     <ClCompile Include="source\czpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

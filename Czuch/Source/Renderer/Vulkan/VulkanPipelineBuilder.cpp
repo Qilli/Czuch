@@ -73,6 +73,17 @@ namespace Czuch
         pipelineInfo.basePipelineIndex = -1;
         pipelineInfo.pDepthStencilState = &depthStencilInfo;
 
+        VkPipelineRenderingCreateInfoKHR pipeline_rendering_create_info{};
+        if (renderPass == VK_NULL_HANDLE)
+        {
+            pipeline_rendering_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+            pipeline_rendering_create_info.colorAttachmentCount = 1;
+            pipeline_rendering_create_info.pColorAttachmentFormats = device->GetSwapchainFormat();
+            pipeline_rendering_create_info.depthAttachmentFormat = device->GetDepthFormat();
+            pipeline_rendering_create_info.stencilAttachmentFormat = device->GetDepthFormat();
+            pipelineInfo.pNext = &pipeline_rendering_create_info;
+		}
+
 
         if (vkCreateGraphicsPipelines(
             device->GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline) != VK_SUCCESS) {

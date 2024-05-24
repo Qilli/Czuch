@@ -12,6 +12,7 @@ namespace Czuch
 	class Renderer;
 	class AssetsManager;
 	class ScenesManager;
+	class UIBaseManager;
 
 	class CZUCH_API EngineRoot: public IEventsListener
 	{
@@ -33,6 +34,7 @@ namespace Czuch
 		Scope<Window> m_Window;
 		AssetsManager* m_ResourcesMgr;
 		ScenesManager *m_ScenesMgr;
+		UIBaseManager* m_UIBaseMgr;
 	private:
 		BuildInAssets* m_DefaultAssets;
 	private:

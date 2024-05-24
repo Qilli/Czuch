@@ -78,6 +78,7 @@ namespace Czuch
 		desc.dss.depth_func = CompFunc::LESS_EQUAL;
 		desc.dss.depth_write_mask = DepthWriteMask::ZERO;
 		desc.dss.stencil_enable = false;
+		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
 
 		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
@@ -113,7 +114,6 @@ namespace Czuch
 
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "DefaultMaterialInstance";
-		instanceCreateSettings.desc.AddBuffer("SceneData", INVALID_HANDLE(BufferHandle));
 		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE);
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = false;

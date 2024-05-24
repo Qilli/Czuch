@@ -6,7 +6,7 @@ project "Imgui"
 	targetdir("bin/" .. outputdir .. "/%{prj.name}")
 	objdir("bin-int/" .. outputdir .. "/%{prj.name}")
 
-	repodir= "Czuch/vendors/imgui/"
+	repodir= "Czuch/vendors/ImGui/"
 
 	files
 	{
@@ -20,11 +20,20 @@ project "Imgui"
 		repodir .."imstb_textedit.h",
 		repodir .."imstb_truetype",
 		repodir .."imgui_demo.cpp", 
+		repodir .."imgui_tables.cpp"
 	}
 
 	filter "system:windows"
 		systemversion "latest"
-		cppdialect "C++17"
+		cppdialect "C++20"
 		staticruntime "On"
+
+		filter "configurations:Debug"
+		runtime "Debug"
+		symbols "on"
+
+	filter "configurations:Release"
+		runtime "Release"
+		optimize "on"
 
 	

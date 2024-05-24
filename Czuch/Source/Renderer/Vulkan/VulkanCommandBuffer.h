@@ -14,7 +14,7 @@ namespace Czuch
 		void Release() override;
 		const VkCommandBuffer GetNativeBuffer() const { return m_Cmd; }
 	public:
-		void Begin() override;
+		void Begin(CommandBufferUseFlag flags = CommandBufferUseFlag::NONE) override;
 		void End() override;
 		void EndCurrentRenderPass() override;
 		void DrawMesh(const RenderObjectInstance& renderElement, DescriptorAllocator* allocator) override;
@@ -29,6 +29,9 @@ namespace Czuch
 		void SetScrissors(ScissorsDesc scissors) override;
 		void Draw(U32 vertexCount, U32 firstVertex=0, U32 instanceCount=1, U32 firstInstance=0) override;
 		void DrawIndexed(U32 indicesCount, U32 firstIndex=0, U32 instanceCount=1, U32 firstnstance=0, U32 vertexOffset=0) override;
+	public:
+		void BeginDynamicRenderPass(VkImageView colorVew, VkImageView depthView,U32 width,U32 height);
+		void EndDynamicRenderPass();
 	private:
 		VkCommandBuffer m_Cmd;
 		VulkanDevice* m_Device;

@@ -7,6 +7,7 @@
 #include"Components/MeshRendererComponent.h"
 #include"Components/CameraComponent.h"
 #include"Components/NativeBehaviourComponent.h"	
+#include"Subsystems/UI/UIBaseElement.h"
 
 
 namespace Czuch
@@ -35,6 +36,11 @@ namespace Czuch
 		m_Registry.clear();
 	}
 
+	void Scene::AddUIElement(UIBaseElement* element)
+	{
+		m_UIElements.push_back(element);
+	}
+
 	void Scene::OnUpdate(TimeDelta delta)
 	{
 		auto view = m_Registry.view<NativeBehaviourComponent, ActiveComponent>();
@@ -42,6 +48,11 @@ namespace Czuch
 		{
 			auto& nativeBehaviour = view.get<NativeBehaviourComponent>(entity);
 			nativeBehaviour.OnUpdate(delta);
+		}
+
+		for (auto element : m_UIElements)
+		{
+			element->UpdateUI(delta);
 		}
 	}
 
@@ -88,6 +99,7 @@ namespace Czuch
 		//sort them by layer and sorting order
 		//fill render contexts
 
+		//fill ui
 	}
 
 	Entity Scene::CreateEntity(const CzuchStr& entityName, Entity parent)
@@ -187,11 +199,8 @@ namespace Czuch
 		renderContextCreateInfo.renderType = RenderType::General;
 		renderContextCreateInfo.renderLayer = RenderLayer::LAYER_0;
 		renderContextCreateInfo.sortingOrder = 0;
-
 		m_GeneralRenderContext = RenderContext(renderContextCreateInfo);
-		renderContextCreateInfo.renderType = RenderType::UI;
-		renderContextCreateInfo.renderLayer = RenderLayer::LAYER_0;
-		m_UIRenderContext = RenderContext(renderContextCreateInfo);
+
 		renderContextCreateInfo.renderType = RenderType::Debug;
 		renderContextCreateInfo.renderLayer = RenderLayer::LAYER_0;
 		m_DebugRenderContext = RenderContext(renderContextCreateInfo);

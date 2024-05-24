@@ -78,6 +78,11 @@ namespace Czuch
 	{
 		MaterialInstanceDesc desc;
 		CzuchStr materialInstanceName;
+
+		MaterialInstanceCreateSettings()
+		{
+			desc.AddBuffer("SceneData", INVALID_HANDLE(BufferHandle));
+		}
 	};
 
 	struct MaterialInstanceLoadSettings : BaseLoadSettings

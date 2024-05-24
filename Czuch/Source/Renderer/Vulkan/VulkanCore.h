@@ -334,6 +334,29 @@ namespace Czuch
 		}
 	}
 
+	constexpr VkCommandBufferUsageFlags ConvertCommandBufferUsageFlags(CommandBufferUseFlag flags)
+	{
+		VkCommandBufferUsageFlags outFlags = 0;
+
+		if ((flags & (U32)CommandBufferUseFlag::ONE_TIME_SUBMIT) == CommandBufferUseFlag::ONE_TIME_SUBMIT)
+		{
+			outFlags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		}
+
+		if ((flags & (U32)CommandBufferUseFlag::RENDER_PASS_CONTINUE) == CommandBufferUseFlag::RENDER_PASS_CONTINUE)
+		{
+			outFlags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+		}
+
+		if ((flags & (U32)CommandBufferUseFlag::SIMULTANEOUS_USE) == CommandBufferUseFlag::SIMULTANEOUS_USE)
+		{
+			outFlags |= VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+		}
+
+		return outFlags;
+	}
+
+
 	constexpr VkFormat ConvertFormat(Format value)
 	{
 		switch (value)
@@ -540,9 +563,6 @@ namespace Czuch
 	{
 		VkPipeline pipeline = VK_NULL_HANDLE;
 		VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-		VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
-		VkGraphicsPipelineCreateInfo pipelineInfo;
-		VkPipelineShaderStageCreateInfo shaderStages[static_cast<size_t>(ShaderStage::Count)];
 		VkPipelineInputAssemblyStateCreateInfo inputAssembly;
 		VkPipelineRasterizationStateCreateInfo rasterizer;
 		VkViewport viewport;

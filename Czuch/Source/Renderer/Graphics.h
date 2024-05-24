@@ -87,6 +87,15 @@ namespace Czuch
 
 	};
 
+	enum CommandBufferUseFlag
+	{
+		NONE = 0,
+		ONE_TIME_SUBMIT = 1 << 0,
+		SECONDARY = 1 << 1,
+		RENDER_PASS_CONTINUE = 1 << 2,
+		SIMULTANEOUS_USE = 1 << 3,
+	};
+
 	enum QUEUE_TYPE
 	{
 		QUEUE_GRAPHICS,

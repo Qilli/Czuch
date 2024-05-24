@@ -19,7 +19,7 @@
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -127,7 +127,7 @@
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -169,7 +169,7 @@
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -296,7 +296,7 @@
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -5248,7 +5248,7 @@ struct radix_sort {
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -10297,7 +10297,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -10419,7 +10419,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -18188,28 +18188,27 @@ class group_handler<owned_t<Owned...>, get_t<Get...>, exclude_t<Exclude...>> fin
     using base_type = std::common_type_t<typename Owned::base_type..., typename Get::base_type..., typename Exclude::base_type...>;
     using entity_type = typename base_type::entity_type;
 
-    template<std::size_t... Index>
-    void swap_elements(const std::size_t pos, const entity_type entt, std::index_sequence<Index...>) {
-        (std::get<Index>(pools)->swap_elements(std::get<Index>(pools)->data()[pos], entt), ...);
+    void swap_elements(const std::size_t pos, const entity_type entt) {
+        std::apply([pos, entt](auto *...cpool) { (cpool->swap_elements(cpool->data()[pos], entt), ...); }, pools);
     }
 
     void push_on_construct(const entity_type entt) {
         if(std::apply([entt, len = len](auto *cpool, auto *...other) { return cpool->contains(entt) && !(cpool->index(entt) < len) && (other->contains(entt) && ...); }, pools)
            && std::apply([entt](auto *...cpool) { return (!cpool->contains(entt) && ...); }, filter)) {
-            swap_elements(len++, entt, std::index_sequence_for<Owned...>{});
+            swap_elements(len++, entt);
         }
     }
 
     void push_on_destroy(const entity_type entt) {
         if(std::apply([entt, len = len](auto *cpool, auto *...other) { return cpool->contains(entt) && !(cpool->index(entt) < len) && (other->contains(entt) && ...); }, pools)
            && std::apply([entt](auto *...cpool) { return (0u + ... + cpool->contains(entt)) == 1u; }, filter)) {
-            swap_elements(len++, entt, std::index_sequence_for<Owned...>{});
+            swap_elements(len++, entt);
         }
     }
 
     void remove_if(const entity_type entt) {
         if(std::get<0>(pools)->contains(entt) && (std::get<0>(pools)->index(entt) < len)) {
-            swap_elements(--len, entt, std::index_sequence_for<Owned...>{});
+            swap_elements(--len, entt);
         }
     }
 
@@ -18243,11 +18242,13 @@ public:
         return len;
     }
 
-    auto pools_as_tuple() const noexcept {
+    template<typename Type>
+    Type pools_as() const noexcept {
         return pools;
     }
 
-    auto filter_as_tuple() const noexcept {
+    template<typename Type>
+    Type filter_as() const noexcept {
         return filter;
     }
 
@@ -18309,11 +18310,13 @@ public:
         return elem;
     }
 
-    auto pools_as_tuple() const noexcept {
+    template<typename Type>
+    Type pools_as() const noexcept {
         return pools;
     }
 
-    auto filter_as_tuple() const noexcept {
+    template<typename Type>
+    Type filter_as() const noexcept {
         return filter;
     }
 
@@ -18367,12 +18370,12 @@ class basic_group<owned_t<>, get_t<Get...>, exclude_t<Exclude...>> {
 
     auto pools() const noexcept {
         using return_type = std::tuple<Get *...>;
-        return descriptor ? descriptor->pools_as_tuple() : return_type{};
+        return descriptor ? descriptor->template pools_as<return_type>() : return_type{};
     }
 
     auto filter() const noexcept {
         using return_type = std::tuple<Exclude *...>;
-        return descriptor ? descriptor->filter_as_tuple() : return_type{};
+        return descriptor ? descriptor->template filter_as<return_type>() : return_type{};
     }
 
 public:
@@ -18788,12 +18791,12 @@ class basic_group<owned_t<Owned...>, get_t<Get...>, exclude_t<Exclude...>> {
 
     auto pools() const noexcept {
         using return_type = std::tuple<Owned *..., Get *...>;
-        return descriptor ? descriptor->pools_as_tuple() : return_type{};
+        return descriptor ? descriptor->template pools_as<return_type>() : return_type{};
     }
 
     auto filter() const noexcept {
         using return_type = std::tuple<Exclude *...>;
-        return descriptor ? descriptor->filter_as_tuple() : return_type{};
+        return descriptor ? descriptor->template filter_as<return_type>() : return_type{};
     }
 
 public:
@@ -19566,7 +19569,7 @@ template<typename... Args, typename... Other>
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -19685,7 +19688,7 @@ template<typename... Args, typename... Other>
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -21211,28 +21214,27 @@ class group_handler<owned_t<Owned...>, get_t<Get...>, exclude_t<Exclude...>> fin
     using base_type = std::common_type_t<typename Owned::base_type..., typename Get::base_type..., typename Exclude::base_type...>;
     using entity_type = typename base_type::entity_type;
 
-    template<std::size_t... Index>
-    void swap_elements(const std::size_t pos, const entity_type entt, std::index_sequence<Index...>) {
-        (std::get<Index>(pools)->swap_elements(std::get<Index>(pools)->data()[pos], entt), ...);
+    void swap_elements(const std::size_t pos, const entity_type entt) {
+        std::apply([pos, entt](auto *...cpool) { (cpool->swap_elements(cpool->data()[pos], entt), ...); }, pools);
     }
 
     void push_on_construct(const entity_type entt) {
         if(std::apply([entt, len = len](auto *cpool, auto *...other) { return cpool->contains(entt) && !(cpool->index(entt) < len) && (other->contains(entt) && ...); }, pools)
            && std::apply([entt](auto *...cpool) { return (!cpool->contains(entt) && ...); }, filter)) {
-            swap_elements(len++, entt, std::index_sequence_for<Owned...>{});
+            swap_elements(len++, entt);
         }
     }
 
     void push_on_destroy(const entity_type entt) {
         if(std::apply([entt, len = len](auto *cpool, auto *...other) { return cpool->contains(entt) && !(cpool->index(entt) < len) && (other->contains(entt) && ...); }, pools)
            && std::apply([entt](auto *...cpool) { return (0u + ... + cpool->contains(entt)) == 1u; }, filter)) {
-            swap_elements(len++, entt, std::index_sequence_for<Owned...>{});
+            swap_elements(len++, entt);
         }
     }
 
     void remove_if(const entity_type entt) {
         if(std::get<0>(pools)->contains(entt) && (std::get<0>(pools)->index(entt) < len)) {
-            swap_elements(--len, entt, std::index_sequence_for<Owned...>{});
+            swap_elements(--len, entt);
         }
     }
 
@@ -21266,11 +21268,13 @@ public:
         return len;
     }
 
-    auto pools_as_tuple() const noexcept {
+    template<typename Type>
+    Type pools_as() const noexcept {
         return pools;
     }
 
-    auto filter_as_tuple() const noexcept {
+    template<typename Type>
+    Type filter_as() const noexcept {
         return filter;
     }
 
@@ -21332,11 +21336,13 @@ public:
         return elem;
     }
 
-    auto pools_as_tuple() const noexcept {
+    template<typename Type>
+    Type pools_as() const noexcept {
         return pools;
     }
 
-    auto filter_as_tuple() const noexcept {
+    template<typename Type>
+    Type filter_as() const noexcept {
         return filter;
     }
 
@@ -21390,12 +21396,12 @@ class basic_group<owned_t<>, get_t<Get...>, exclude_t<Exclude...>> {
 
     auto pools() const noexcept {
         using return_type = std::tuple<Get *...>;
-        return descriptor ? descriptor->pools_as_tuple() : return_type{};
+        return descriptor ? descriptor->template pools_as<return_type>() : return_type{};
     }
 
     auto filter() const noexcept {
         using return_type = std::tuple<Exclude *...>;
-        return descriptor ? descriptor->filter_as_tuple() : return_type{};
+        return descriptor ? descriptor->template filter_as<return_type>() : return_type{};
     }
 
 public:
@@ -21811,12 +21817,12 @@ class basic_group<owned_t<Owned...>, get_t<Get...>, exclude_t<Exclude...>> {
 
     auto pools() const noexcept {
         using return_type = std::tuple<Owned *..., Get *...>;
-        return descriptor ? descriptor->pools_as_tuple() : return_type{};
+        return descriptor ? descriptor->template pools_as<return_type>() : return_type{};
     }
 
     auto filter() const noexcept {
         using return_type = std::tuple<Exclude *...>;
-        return descriptor ? descriptor->filter_as_tuple() : return_type{};
+        return descriptor ? descriptor->template filter_as<return_type>() : return_type{};
     }
 
 public:
@@ -25120,7 +25126,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -25440,7 +25446,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -25946,7 +25952,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -26073,7 +26079,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -33474,7 +33480,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -33601,7 +33607,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -39344,7 +39350,7 @@ public:
     basic_snapshot_loader(registry_type &source) noexcept
         : reg{&source} {
         // restoring a snapshot as a whole requires a clean registry
-        ENTT_ASSERT(reg->template storage<entity_type>().free_list() == 0u, "Registry must be empty");
+        ENTT_ASSERT(reg->template storage<entity_type>().empty() && (reg->storage().begin() == reg->storage().end()), "Registry must be empty");
     }
 
     /*! @brief Default move constructor. */
@@ -42958,7 +42964,7 @@ basic_view(std::tuple<Get &...>, std::tuple<Exclude &...> = {}) -> basic_view<ge
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -43278,7 +43284,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -43845,7 +43851,7 @@ void dot(std::ostream &out, const Graph &graph) {
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -43972,7 +43978,7 @@ void dot(std::ostream &out, const Graph &graph) {
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -50675,7 +50681,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -50992,7 +50998,7 @@ struct adl_meta_pointer_like {
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -51119,7 +51125,7 @@ struct adl_meta_pointer_like {
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -55832,7 +55838,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -56116,7 +56122,7 @@ class meta_ctx: private internal::meta_context {
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -59824,7 +59830,7 @@ struct std::tuple_element<Index, entt::value_list<Value...>>: entt::value_list_e
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -67799,7 +67805,7 @@ using invoke_result_t = typename std::invoke_result<Func, Args...>::type;
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -71975,7 +71981,7 @@ struct process_adaptor: process<process_adaptor<Func, Delta>, Delta>, private Fu
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -72102,7 +72108,7 @@ struct process_adaptor: process<process_adaptor<Func, Delta>, Delta>, private Fu
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -74114,7 +74120,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -74241,7 +74247,7 @@ private:
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -78028,7 +78034,7 @@ struct uses_allocator<entt::internal::dense_map_node<Key, Value>, Allocator>
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -80653,7 +80659,7 @@ template<typename Lhs, typename Rhs>
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -80772,7 +80778,7 @@ template<typename Lhs, typename Rhs>
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -82219,7 +82225,7 @@ delegate(Ret (*)(const void *, Args...), const void * = nullptr) -> delegate<Ret
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \
@@ -82346,7 +82352,7 @@ delegate(Ret (*)(const void *, Args...), const void * = nullptr) -> delegate<Ret
 
 #define ENTT_VERSION_MAJOR 3
 #define ENTT_VERSION_MINOR 13
-#define ENTT_VERSION_PATCH 1
+#define ENTT_VERSION_PATCH 0
 
 #define ENTT_VERSION \
     ENTT_XSTR(ENTT_VERSION_MAJOR) \

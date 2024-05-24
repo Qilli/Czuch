@@ -26,13 +26,13 @@ namespace Czuch
 	{
 	}
 
-	void VulkanCommandBuffer::Begin()
+	void VulkanCommandBuffer::Begin(CommandBufferUseFlag flags)
 	{
 		if (m_isRecording == false)
 		{
 			VkCommandBufferBeginInfo beginInfo{};
 			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			beginInfo.flags = 0; // Optional
+			beginInfo.flags = ConvertCommandBufferUsageFlags(flags); // Optional
 			beginInfo.pInheritanceInfo = nullptr; // Optional
 
 			vkResetCommandBuffer(m_Cmd, 0);
@@ -101,7 +101,6 @@ namespace Czuch
 
 				BindDescriptorSet(descriptor, a, 1, nullptr, 0);
 			}
-
 
 			BindVertexBuffer(meshInstance->positionsHandle, 0, 0);
 			if (meshInstance->HasColors())
@@ -184,6 +183,11 @@ namespace Czuch
 	void VulkanCommandBuffer::BindDescriptorSet(DescriptorSet* descriptor,U16 setIndex, U32 num, U32* offsets, U32 num_offsets)
 	{
 		auto pp = m_Device->AccessPipeline(m_CurrentPipeline);
+		if (pp == nullptr)
+		{
+			LOG_BE_ERROR("{0} Failed to bind descriptor set, pipeline is invalid", Tag);
+			return;
+		}
 		auto vulkanPipeline = Internal_To_Pipeline(pp);
 		vkCmdBindDescriptorSets(m_Cmd, ConvertBindPoint(pp->m_desc.bindPoint), vulkanPipeline->pipelineLayout, setIndex, num,&descriptor->descriptorSet,num_offsets,offsets);
 	}
@@ -227,6 +231,42 @@ namespace Czuch
 	void VulkanCommandBuffer::DrawIndexed(U32 indicesCount, U32 firstIndex, U32 instanceCount, U32 firstnstance,U32 vertexOffset)
 	{
 		vkCmdDrawIndexed(m_Cmd, indicesCount, instanceCount, firstIndex, vertexOffset, firstnstance);
+	}
+
+	void VulkanCommandBuffer::BeginDynamicRenderPass(VkImageView colorView, VkImageView depthView, U32 width, U32 height)
+	{
+		VkRenderingAttachmentInfoKHR colorAttachment{};
+		colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+		colorAttachment.imageView = colorView;
+		colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachment.clearValue.color = { 0.0f,0.0f,0.0f,0.0f };
+
+		VkRenderingAttachmentInfoKHR depthStencilAttachment{};
+		depthStencilAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+		depthStencilAttachment.imageView = depthView;
+		depthStencilAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		depthStencilAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthStencilAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		depthStencilAttachment.clearValue.depthStencil = { 1.0f,  0 };
+
+		auto render_area = VkRect2D{ VkOffset2D{}, VkExtent2D{width, height} };
+		VkRenderingInfoKHR  render_info = {};
+		render_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+		render_info.layerCount = 1;
+		render_info.pDepthAttachment = &depthStencilAttachment;
+		render_info.pStencilAttachment = &depthStencilAttachment;
+		render_info.pColorAttachments = &colorAttachment;
+		render_info.renderArea = render_area;
+		render_info.colorAttachmentCount = 1;
+
+		vkCmdBeginRendering(m_Cmd, &render_info);
+	}
+
+	void VulkanCommandBuffer::EndDynamicRenderPass()
+	{
+		vkCmdEndRendering(m_Cmd);
 	}
 
 }

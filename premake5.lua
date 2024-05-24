@@ -13,7 +13,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 IncludeDir = {}
 IncludeDir["GLFW"] = "Czuch/vendors/GLFW/include"
 IncludeDir["Glad"] = "Czuch/vendors/Glad/include"
-IncludeDir["ImGui"] = "Czuch/vendors/ImgGui"
+IncludeDir["ImGui"] = "Czuch/vendors/ImGui"
 IncludeDir["Vulkan"] = "F:/VulkanSDK/Include"
 
 include "premake-glfw.lua"
@@ -51,7 +51,6 @@ project "Czuch"
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.Vulkan}"
-
 	}
 
 	links
@@ -111,6 +110,7 @@ project "Playground"
 	location "Playground"
 	kind "ConsoleApp"
 	language "C++"
+	cppdialect "C++20"
 
 	targetdir("bin/" .. outputdir .. "/%{prj.name}")
 	objdir("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -126,7 +126,7 @@ project "Playground"
 		"Czuch/vendors/spdlog/include",
 		"Czuch/vendors/glm",
 		"Czuch/vendors/entt",
-		"Czuch/source"
+		"Czuch/source",
 	}
 
 	links
