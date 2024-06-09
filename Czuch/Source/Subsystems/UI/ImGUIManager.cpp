@@ -3,24 +3,30 @@
 #include "./Renderer/Vulkan/VulkanDevice.h"
 #include "imgui.h"
 #include "./Platform/Windows/WinWindow.h"
-#include"Platform/GLFW/ImGuiGLFWBackend.h"
-#include"Platform/Vulkan/ImGuiVulkanBackend.h"
+#include"backends/imgui_impl_glfw.h"
+#include"backends/imgui_impl_vulkan.h"
+#include"Subsystems/Scenes/Scene.h"
+#include"UIBaseElement.h"
+#include"Editor/EngineEditorSubsystem.h"
 
 
 namespace Czuch
 {
-	ImGUIManager::ImGUIManager(GraphicsDevice* device, Window* wnd): UIBaseManager(),m_Device(static_cast<VulkanDevice*>(device))
+	Scene* currentScene = nullptr;
+	ImGUIManager::ImGUIManager(GraphicsDevice* device, Window* wnd): UIBaseManager(),m_Device(static_cast<VulkanDevice*>(device)),m_Window(static_cast<WinWindow*>(wnd))
 	{
 	
 	}
 
 	ImGUIManager::~ImGUIManager()
 	{
+		
 	}
 
 	void ImGUIManager::Init()
 	{
-		m_Device->InitImGUI();
+		m_UIContext=m_Device->InitImGUI();
+
 	}
 
 	void ImGUIManager::Update(TimeDelta timeDelta)
@@ -29,13 +35,32 @@ namespace Czuch
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		ImGui::ShowDemoWindow();
+;
+		if (m_EditorModeEnabled)
+		{
+			EngineEditorSubsystem::GetPtr()->FillUI();
+		}
+
+		if (currentScene != nullptr)
+		{
+			for (auto element : currentScene->GetSceneUIElements())
+			{
+				element->UpdateUI(timeDelta);
+			}
+			currentScene = nullptr;
+		}
+
 		ImGui::Render();
 	}
 
 	void ImGUIManager::Shutdown()
 	{
 		m_Device->ShutdownImGUI();
+	}
+
+	void ImGUIManager::SetSceneForUI(Scene* scene)
+	{
+		currentScene = scene;
 	}
 
 

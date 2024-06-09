@@ -86,7 +86,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalOptions>/MDd %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
@@ -95,11 +95,12 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opengl32.lib;$(VULKAN_SDK)\lib\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(VULKAN_SDK)\lib\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>..\bin\Debug-windows-x86_64\Czuch\Czuch.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST ..\bin\Debug-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\Debug-windows-x86_64\Czuch\Czuch.dll ..\bin\Debug-windows-x86_64\Playground &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Debug-windows-x86_64\Czuch\Czuch.dll ..\bin\Debug-windows-x86_64\Playground &gt; nul)</Command>
+      <Command>IF EXIST ..\bin\Debug-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\Debug-windows-x86_64\Czuch\Czuch.dll ..\bin\Debug-windows-x86_64\Playground &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Debug-windows-x86_64\Czuch\Czuch.dll ..\bin\Debug-windows-x86_64\Playground &gt; nul)
+IF EXIST ..\bin\Debug-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\Debug-windows-x86_64\Czuch\Czuch.dll ..\bin\Debug-windows-x86_64\CzuchEditor &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Debug-windows-x86_64\Czuch\Czuch.dll ..\bin\Debug-windows-x86_64\CzuchEditor &gt; nul)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -114,7 +115,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalOptions>/MD %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
@@ -123,11 +124,12 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opengl32.lib;$(VULKAN_SDK)\lib\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(VULKAN_SDK)\lib\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>..\bin\Release-windows-x86_64\Czuch\Czuch.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST ..\bin\Release-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\Release-windows-x86_64\Czuch\Czuch.dll ..\bin\Release-windows-x86_64\Playground &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Release-windows-x86_64\Czuch\Czuch.dll ..\bin\Release-windows-x86_64\Playground &gt; nul)</Command>
+      <Command>IF EXIST ..\bin\Release-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\Release-windows-x86_64\Czuch\Czuch.dll ..\bin\Release-windows-x86_64\Playground &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Release-windows-x86_64\Czuch\Czuch.dll ..\bin\Release-windows-x86_64\Playground &gt; nul)
+IF EXIST ..\bin\Release-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\Release-windows-x86_64\Czuch\Czuch.dll ..\bin\Release-windows-x86_64\CzuchEditor &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Release-windows-x86_64\Czuch\Czuch.dll ..\bin\Release-windows-x86_64\CzuchEditor &gt; nul)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
@@ -142,7 +144,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalOptions>/MD %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
@@ -151,11 +153,12 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opengl32.lib;$(VULKAN_SDK)\lib\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(VULKAN_SDK)\lib\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>..\bin\Dist-windows-x86_64\Czuch\Czuch.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll ..\bin\Dist-windows-x86_64\Playground &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll ..\bin\Dist-windows-x86_64\Playground &gt; nul)</Command>
+      <Command>IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll ..\bin\Dist-windows-x86_64\Playground &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll ..\bin\Dist-windows-x86_64\Playground &gt; nul)
+IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll ..\bin\Dist-windows-x86_64\CzuchEditor &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll ..\bin\Dist-windows-x86_64\CzuchEditor &gt; nul)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -180,8 +183,6 @@
     <ClInclude Include="source\Events\EventsTypes\InputEvents.h" />
     <ClInclude Include="source\Events\EventsTypes\MouseEvents.h" />
     <ClInclude Include="source\Events\IEventsListener.h" />
-    <ClInclude Include="source\Platform\GLFW\ImGuiGLFWBackend.h" />
-    <ClInclude Include="source\Platform\Vulkan\ImGuiVulkanBackend.h" />
     <ClInclude Include="source\Platform\Windows\WinWindow.h" />
     <ClInclude Include="source\Renderer\CommandBuffer.h" />
     <ClInclude Include="source\Renderer\Graphics.h" />
@@ -189,8 +190,11 @@
     <ClInclude Include="source\Renderer\GraphicsResourceAccessContainer.h" />
     <ClInclude Include="source\Renderer\RenderContext.h" />
     <ClInclude Include="source\Renderer\Renderer.h" />
+    <ClInclude Include="source\Renderer\RenderPassControl.h" />
     <ClInclude Include="source\Renderer\Vulkan\DescriptorAllocator.h" />
     <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h" />
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.h" />
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanBase.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanCommandBuffer.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanCore.h" />
@@ -229,6 +233,8 @@
     <ClInclude Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.h" />
     <ClInclude Include="source\Subsystems\Scenes\Scene.h" />
     <ClInclude Include="source\Subsystems\Scenes\ScenesManager.h" />
+    <ClInclude Include="source\Subsystems\UI\Editor\EngineEditorControl.h" />
+    <ClInclude Include="source\Subsystems\UI\Editor\EngineEditorSubsystem.h" />
     <ClInclude Include="source\Subsystems\UI\ImGUIManager.h" />
     <ClInclude Include="source\Subsystems\UI\UIBaseElement.h" />
     <ClInclude Include="source\Subsystems\UI\UIBaseManager.h" />
@@ -246,8 +252,6 @@
     <ClCompile Include="source\Events\EventsTypes\ApplicationEvents.cpp" />
     <ClCompile Include="source\Events\EventsTypes\InputEvents.cpp" />
     <ClCompile Include="source\Events\EventsTypes\MouseEvents.cpp" />
-    <ClCompile Include="source\Platform\GLFW\ImGuiGLFWBackend.cpp" />
-    <ClCompile Include="source\Platform\Vulkan\ImGuiVulkanBackend.cpp" />
     <ClCompile Include="source\Platform\Windows\WinWindow.cpp" />
     <ClCompile Include="source\Renderer\Graphics.cpp" />
     <ClCompile Include="source\Renderer\GraphicsResourceAccessContainer.cpp" />
@@ -255,6 +259,8 @@
     <ClCompile Include="source\Renderer\Renderer.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\DescriptorAllocator.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanCommandBuffer.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanCore.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanDevice.cpp" />
@@ -288,7 +294,10 @@
     <ClCompile Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.cpp" />
     <ClCompile Include="source\Subsystems\Scenes\Scene.cpp" />
     <ClCompile Include="source\Subsystems\Scenes\ScenesManager.cpp" />
+    <ClCompile Include="source\Subsystems\UI\Editor\EngineEditorControl.cpp" />
+    <ClCompile Include="source\Subsystems\UI\Editor\EngineEditorSubsystem.cpp" />
     <ClCompile Include="source\Subsystems\UI\ImGUIManager.cpp" />
+    <ClCompile Include="source\Subsystems\UI\ImGuiCompiler.cpp" />
     <ClCompile Include="source\Subsystems\UI\UIBaseManager.cpp" />
     <ClCompile Include="source\czpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

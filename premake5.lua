@@ -57,7 +57,6 @@ project "Czuch"
 	{
 		"GLFW",
 		"Glad",
-		"opengl32.lib",
 		"ImGui",
 		"$(VULKAN_SDK)/lib/vulkan-1.lib"
 	}
@@ -65,7 +64,7 @@ project "Czuch"
 	filter "system:windows"
 
 		cppdialect "C++20"
-		staticruntime "On"
+		staticruntime "Off"
 		systemversion "latest"
 
 		defines
@@ -77,7 +76,8 @@ project "Czuch"
 
 		postbuildcommands
 		{
-			("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Playground")
+			("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Playground"),
+			("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/CzuchEditor")
 		}
 
 	filter "configurations:Debug"
@@ -162,3 +162,64 @@ project "Playground"
 		}
 		optimize "On"
 		buildoptions "/MD"
+
+
+		project "CzuchEditor"
+	
+		location "CzuchEditor"
+		kind "ConsoleApp"
+		language "C++"
+		cppdialect "C++20"
+	
+		targetdir("bin/" .. outputdir .. "/%{prj.name}")
+		objdir("bin-int/" .. outputdir .. "/%{prj.name}")
+	
+		files
+		{
+			"%{prj.name}/source/**.h",
+			"%{prj.name}/source/**.cpp"
+		}
+	
+		includedirs
+		{
+			"Czuch/vendors/spdlog/include",
+			"Czuch/vendors/glm",
+			"Czuch/vendors/entt",
+			"Czuch/source",
+			"%{IncludeDir.ImGui}",
+		}
+	
+		links
+		{
+			"ImGui",
+			"Czuch"
+		}
+	
+		defines
+		{
+			"CZUCH_PLATFORM_WINDOWS"
+		}
+	
+		filter "configurations:Debug"
+			defines
+			{
+				"CZUCH_DEBUG"
+			}
+			optimize "On"
+			buildoptions "/MDd"
+	
+		filter "configurations:Release"
+			defines
+			{
+				"CZUCH_RELEASE"
+			}
+			optimize "On"
+			buildoptions "/MD"
+	
+		filter "configurations:Dist"
+			defines
+			{
+				"CZUCH_DIST"
+			}
+			optimize "On"
+			buildoptions "/MD"

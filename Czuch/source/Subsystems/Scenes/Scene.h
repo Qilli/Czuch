@@ -9,6 +9,7 @@ namespace Czuch
 {
 	class Renderer;
 	class UIBaseElement;
+	class Camera;
 	class CZUCH_API Scene : public IScene
 	{
 	public:
@@ -19,7 +20,7 @@ namespace Czuch
 		void AddUIElement(UIBaseElement* element);
 
 		void OnUpdate(TimeDelta delta);
-		void FillRenderContexts(Renderer* renderer);
+		void FillRenderContexts(Camera* cam,Renderer* renderer,int width,int height);
 		Entity CreateEntity(const CzuchStr& entityName, Entity parent = Entity());
 		void DestroyEntity(Entity entity);
 		Entity GetRootEntity();
@@ -29,8 +30,9 @@ namespace Czuch
 		RenderContext& GetDebugRenderContext() { return m_DebugRenderContext; }
 		entt::registry& GetRegistry() override { return m_Registry; }
 	public:
+		std::vector<UIBaseElement*>& GetSceneUIElements() { return m_UIElements; }
+	public:
 		CameraComponent* FindPrimaryCamera() override;
-	
 	public:
 		void OnAttached() {}
 		void OnDettached() {}

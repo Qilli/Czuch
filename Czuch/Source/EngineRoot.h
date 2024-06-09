@@ -13,15 +13,19 @@ namespace Czuch
 	class AssetsManager;
 	class ScenesManager;
 	class UIBaseManager;
+	class EngineEditorControl;
+	class Camera;
+	class EngineEditorSubsystem;
 
-	class CZUCH_API EngineRoot: public IEventsListener
+	class CZUCH_API EngineRoot:public Singleton<EngineRoot>,IEventsListener
 	{
 	public:
-		void Init(const std::string& configFilePath);
+		void Init(const std::string& configFilePath,EngineEditorControl* editorControl);
 		void Shutdown();
 		void Run();
 		Renderer& GetRenderer() const { return *m_Renderer; }
 		ScenesManager& GetScenesManager() const { return *m_ScenesMgr; }
+		UIBaseManager& GetUIBaseManager() const { return *m_UIBaseMgr; }
 		virtual void OnEvent(const Event& e) override;
 	private:
 		TimeDelta UpdateDeltaTime(TimeDiffCounter& counter);
@@ -35,10 +39,12 @@ namespace Czuch
 		AssetsManager* m_ResourcesMgr;
 		ScenesManager *m_ScenesMgr;
 		UIBaseManager* m_UIBaseMgr;
+		EngineEditorSubsystem* m_EditorSubsystem;
 	private:
 		BuildInAssets* m_DefaultAssets;
 	private:
 		bool m_ShouldStopLoop;
+		RenderSettings m_RenderSettings;
 	};
 }
 

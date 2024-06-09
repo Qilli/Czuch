@@ -1,6 +1,6 @@
 project "Imgui"
 	kind "StaticLib"
-	language "C"
+	language "C++"
 	location "Czuch/vendors/ImGui"
 
 	targetdir("bin/" .. outputdir .. "/%{prj.name}")
@@ -20,7 +20,7 @@ project "Imgui"
 		repodir .."imstb_textedit.h",
 		repodir .."imstb_truetype",
 		repodir .."imgui_demo.cpp", 
-		repodir .."imgui_tables.cpp"
+		repodir .."imgui_tables.cpp",
 	}
 
 	filter "system:windows"

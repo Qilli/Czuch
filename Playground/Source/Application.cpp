@@ -5,7 +5,6 @@
 #include <glm.hpp>
 #include "../vendors/glm/gtc/matrix_transform.hpp"
 
-
 class EventHandler : public Czuch::IEventsListener
 {
 	// Odziedziczono za poœrednictwem elementu IEventsListener
@@ -21,7 +20,7 @@ class DemoImGUI : public Czuch::UIBaseElement
 public:
 	void UpdateUI(Czuch::TimeDelta timeDelta) override
 	{
-	//	ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 	}
 };
 
@@ -49,14 +48,18 @@ int main()
 {
 
 	Czuch::EngineRoot* root = new Czuch::EngineRoot();
-	root->Init("engineConfig.cfg");
+	root->Init("engineConfig.cfg",nullptr);
 
 	Czuch::Scene *scene= new Czuch::Scene("MainScene");
 
 	auto& sceneMgr = root->GetScenesManager();
 	sceneMgr.AddScene(scene, true);
 
-	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("/Textures/texture.jpg");
+	DemoImGUI gui;
+
+	scene->AddUIElement(&gui);
+
+/*	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("/Textures/texture.jpg");
 
 	Czuch::MaterialInstanceCreateSettings instanceCreateSettings{};
 	instanceCreateSettings.materialInstanceName = "DefaultAncientMaterial";
@@ -79,7 +82,7 @@ int main()
 
 	DemoImGUI gui;
 
-	scene->AddUIElement(&gui);
+	scene->AddUIElement(&gui);*/
 
 	root->Run();
 	root->Shutdown();

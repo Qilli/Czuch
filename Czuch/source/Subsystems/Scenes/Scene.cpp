@@ -8,6 +8,8 @@
 #include"Components/CameraComponent.h"
 #include"Components/NativeBehaviourComponent.h"	
 #include"Subsystems/UI/UIBaseElement.h"
+#include"Subsystems/Scenes/Components/CameraComponent.h"
+#include"Renderer/Renderer.h"
 
 
 namespace Czuch
@@ -49,37 +51,38 @@ namespace Czuch
 			auto& nativeBehaviour = view.get<NativeBehaviourComponent>(entity);
 			nativeBehaviour.OnUpdate(delta);
 		}
-
-		for (auto element : m_UIElements)
-		{
-			element->UpdateUI(delta);
-		}
 	}
 
-	void Scene::FillRenderContexts(Renderer* renderer)
+	void Scene::FillRenderContexts(Camera* cam,Renderer* renderer,int width,int height)
 	{
 		//get main camera
-		auto cameraView = m_Registry.view<CameraComponent>();
-		CameraComponent* mainCamera = nullptr;
-		for (auto entity : cameraView)
+		Camera* currentCamera = cam;
+		if (cam == nullptr)
 		{
-			auto& camera = cameraView.get<CameraComponent>(entity);
-			if (camera.IsPrimary())
+			auto cameraView = m_Registry.view<CameraComponent>();
+			CameraComponent* mainCamera = nullptr;
+			for (auto e : cameraView)
 			{
-				mainCamera = &camera;
-				break;
+				auto& camera = cameraView.get<CameraComponent>(e);
+				if (camera.IsPrimary())
+				{
+					mainCamera = &camera;
+					break;
+				}
 			}
-		}
 
-		if (!mainCamera)
-		{
-			LOG_BE_ERROR("No primary camera in the scene");
-			return;
+			if (!mainCamera)
+			{
+				LOG_BE_ERROR("No primary camera in the scene");
+				return;
+			}
+			currentCamera = &mainCamera->GetCamera();
 		}
 
 		m_GeneralRenderContext.ClearRenderList();
 
-		Mat4x4 viewMat = mainCamera->GetCamera().GetViewMatrix();
+		currentCamera->SetAspectRatio((float)width / (float)height);
+		Mat4x4 viewMat = currentCamera->GetViewMatrix();
 
 		auto renderableView = m_Registry.view<TransformComponent, MeshComponent, MeshRendererComponent>();
 		for (auto entity : renderableView)
@@ -91,7 +94,7 @@ namespace Czuch
 			for (int a = 0; a < mesh.GetSubMeshesCount(); ++a)
 			{
 				RenderObjectInstance renderObjectInstance{ .mesh = mesh.GetMesh(a),.overrideMaterial = meshRenderer.GetOverrideMaterial(a), .localToWorldTransformation = Mat4x4(1.0f)/*transform.GetLocalToWorld()*/
-				, .localToClipSpaceTransformation = mainCamera->GetCamera().GetViewProjectionMatrix() * transform.GetLocalToWorld() };
+				, .localToClipSpaceTransformation = currentCamera->GetViewProjectionMatrix() * transform.GetLocalToWorld() };
 				m_GeneralRenderContext.AddToRenderList(renderObjectInstance);
 			}
 		}

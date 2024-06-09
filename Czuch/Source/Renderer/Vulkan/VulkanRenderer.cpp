@@ -14,13 +14,17 @@
 #include"DescriptorAllocator.h"
 #include"Core/Math.h"
 
+#include"RenderPass/VulkanMainRenderPass.h"
+#include"RenderPass/VulkanOffscreenRenderPass.h"
+#include"Subsystems/Scenes/Components/CameraComponent.h"
+
 namespace Czuch
 {
-	VulkanRenderer::VulkanRenderer(Window* window,ValidationMode validationMode)
+	VulkanRenderer::VulkanRenderer(Window* window, RenderSettings* renderSettings)
 	{
-		m_RendererValidationMode = validationMode;
 		m_AttachedWindow = window;
 		m_ActiveScene = nullptr;
+		m_RenderSettings = renderSettings;
 	}
 
 
@@ -36,26 +40,33 @@ namespace Czuch
 	{
 		m_Device->AwaitDevice();
 
+		for (auto renderPass : m_RenderPasses)
+		{
+			delete renderPass;
+		}
+
+		m_ImmediateSubmitData.Release(m_Device);
 
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			m_FramesData[a].frameDeletionQueue.Flush();
 		}
-		
+
 		ReleaseSyncObjects();
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			m_FramesData[a].descriptorAllocator->CleanUp();
 			m_Device->ReleaseDescriptorAllocator(m_FramesData[a].descriptorAllocator);
 		}
-		
+
 		delete m_Device;
 	}
 
 	void VulkanRenderer::Init()
 	{
-		m_Device = new VulkanDevice(m_AttachedWindow, m_RendererValidationMode);
-		bool init=m_Device->InitDevice();
+		m_Device = new VulkanDevice(m_AttachedWindow);
+
+		bool init = m_Device->InitDevice(m_RenderSettings);
 
 		if (init == false)
 		{
@@ -73,6 +84,13 @@ namespace Czuch
 
 		CreateSyncObjects();
 		InitSceneData();
+		InitImmediateSubmitData();
+
+		if (m_RenderSettings->mainRenderPassActive)
+		{
+			AddRenderPass(new VulkanMainRenderPass(this, m_Device));
+		}
+
 	}
 
 	void VulkanRenderer::DrawFrame()
@@ -82,21 +100,54 @@ namespace Czuch
 		GetCurrentFrame().Reset();
 		GetCurrentFrame().frameDeletionQueue.Flush();
 
+		m_Device->PreDrawFrame();
+
 		bool failedToAcquire = false;
-		uint32_t imageIndex = m_Device->AcquireNextSwapChainImage(GetCurrentFrame().imageAvailableSemaphore,failedToAcquire);
+		uint32_t imageIndex = m_Device->AcquireNextSwapChainImage(GetCurrentFrame().imageAvailableSemaphore, failedToAcquire);
 		if (failedToAcquire)
 		{
 			return;
 		}
 
 		SetSceneData();
-		OnPreRenderUpdateContexts();
+		OnPreRenderUpdateContexts(nullptr, m_Device->GetSwapchainWidth(), m_Device->GetSwapchainHeight());
 		vkResetFences(device, 1, &GetCurrentFrame().inFlightFence);
-		
-		RecordCommandBuffer(imageIndex);
+
+		int lastWidth = m_Device->GetSwapchainWidth();
+		int lastHeight = m_Device->GetSwapchainHeight();
+		Camera* currentCamera = nullptr;
+
+
+		for (auto it = m_RenderPasses.begin(); it != m_RenderPasses.end(); ++it)
+		{
+			if ((*it)->GetType() == RenderPassType::MainForward)
+			{
+				(*it)->BeginRenderPass(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
+				(*it)->Execute(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
+				(*it)->EndRenderPass(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
+			}
+			else
+			{
+				if ((*it)->IsDifferentAspect(lastWidth, lastHeight) || (*it)->IsDifferentCamera(currentCamera))
+				{
+					OnPostRenderUpdateContexts();
+					lastWidth = (*it)->GetWidth();
+					lastHeight = (*it)->GetHeight();
+					currentCamera = (*it)->GetCamera();
+					OnPreRenderUpdateContexts(currentCamera, lastWidth, lastHeight);
+				}
+				(*it)->Execute(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
+				(*it)->BeginRenderPass(nullptr);
+				(*it)->Execute(nullptr);
+				(*it)->EndRenderPass(nullptr);
+			}
+		}
+
 
 		SubmitCommandBuffer();
 		m_Device->Present(imageIndex, GetCurrentFrame().renderFinishedSemaphote);
+
+		CheckForResizeQueries();
 
 		OnPostRenderUpdateContexts();
 		m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -109,7 +160,7 @@ namespace Czuch
 
 	GraphicsDevice* VulkanRenderer::GetDevice()
 	{
-		 return static_cast<GraphicsDevice*>(m_Device); 
+		return static_cast<GraphicsDevice*>(m_Device);
 	}
 
 	bool VulkanRenderer::RegisterRenderContext(RenderContext* context)
@@ -164,6 +215,78 @@ namespace Czuch
 		m_Device->ImmediateSubmitToGraphicsQueueWithCommandBuffer(cmdBuffer->GetNativeBuffer(), m_ImmediateSubmitData.fence);
 	}
 
+	void VulkanRenderer::DrawScene(VulkanCommandBuffer* cmdBuffer)
+	{
+		for (auto context : m_MainRenderContexts.m_RenderContexts)
+		{
+			for (auto& renderItem : context->GetRenderObjectsList())
+			{
+				cmdBuffer->DrawMesh(renderItem, GetCurrentFrame().descriptorAllocator);
+			}
+		}
+	}
+
+	void* VulkanRenderer::GetRenderPassResult(RenderPassType type)
+	{
+		auto iterator = m_RenderPasses.begin();
+		for (; iterator != m_RenderPasses.end(); ++iterator)
+		{
+			if ((*iterator)->GetType() == type)
+			{
+				return (*iterator)->GetRenderPassResult();
+			}
+		}
+		return nullptr;
+	}
+
+	void VulkanRenderer::AddRenderPass(RenderPassControl* renderPass)
+	{
+		auto iterator = m_RenderPasses.begin();
+		for (; iterator != m_RenderPasses.end(); ++iterator)
+		{
+			if ((*iterator)->GetPriority() < renderPass->GetPriority())
+			{
+				break;
+			}
+		}
+
+		if (iterator == m_RenderPasses.end())
+		{
+			m_RenderPasses.push_back(renderPass);
+		}
+		else
+		{
+			m_RenderPasses.insert(iterator, renderPass);
+		}
+	}
+
+	void VulkanRenderer::RemoveRenderPass(RenderPassType type)
+	{
+		for (auto it = m_RenderPasses.begin(); it != m_RenderPasses.end(); ++it)
+		{
+			if ((*it)->GetType() == type)
+			{
+				delete* it;
+				m_RenderPasses.erase(it);
+				break;
+			}
+		}
+	}
+
+	void VulkanRenderer::AddOffscreenRenderPass(Camera* cam, U32 width, U32 height, bool handleWindowResize, std::function<void(U32, U32)>* onResize)
+	{
+		if (m_RenderSettings->offscreenRendering)
+		{
+			AddRenderPass(new VulkanOffscreenRenderPass(cam, this, m_Device, Format::R8G8B8A8_UNORM, Format::D24_UNORM_S8_UINT, width, height));
+			if (onResize != nullptr)
+			{
+				(*onResize) = [this](U32 width, U32 height) {
+					m_RenderPassResizeQueries.push_back({ RenderPassType::OffscreenTexture,width,height });
+				};
+			}
+		}
+	}
+
 	void VulkanRenderer::CreateSyncObjects()
 	{
 
@@ -186,49 +309,6 @@ namespace Czuch
 			m_Device->ReleaseFence(m_FramesData[a].inFlightFence);
 		}
 
-		m_Device->ReleaseFence(m_ImmediateSubmitData.fence);
-	}
-
-	void VulkanRenderer::RecordCommandBuffer(uint32_t imageIndex)
-	{
-		VulkanCommandBuffer* cmdBuffer = static_cast<VulkanCommandBuffer*>(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
-		cmdBuffer->Begin();
-
-		m_Device->TransitionSwapChainImageLayoutPreDraw(cmdBuffer, imageIndex);
-
-		cmdBuffer->SetClearColor(0.0f, 1.0f, 0.0f, 1.0f);
-		cmdBuffer->SetDepthStencil(1.0f, 0);
-		m_Device->StartDynamicRenderPass(cmdBuffer, imageIndex);
-
-		ViewportDesc vpdesc{};
-		vpdesc.x = 0;
-		vpdesc.y = 0;
-		vpdesc.minDepth = 0.0f;
-		vpdesc.maxDepth = 1.0f;
-		vpdesc.width = m_Device->GetSwapchainWidth();
-		vpdesc.height = m_Device->GetSwapchainHeight();
-		cmdBuffer->SetViewport(vpdesc);
-
-		ScissorsDesc scissors{};
-		scissors.offsetX = 0;
-		scissors.offsetY = 0;
-		scissors.width = m_Device->GetSwapchainWidth();
-		scissors.height = m_Device->GetSwapchainHeight();
-		cmdBuffer->SetScrissors(scissors);
-
-		for (auto context : m_MainRenderContexts.m_RenderContexts)
-		{
-			for (auto &renderItem : context->GetRenderObjectsList())
-			{
-				cmdBuffer->DrawMesh(renderItem, GetCurrentFrame().descriptorAllocator);
-			}
-		}
-
-		m_Device->DrawUI(cmdBuffer);
-
-		cmdBuffer->EndDynamicRenderPass();
-		m_Device->TransitionSwapChainImageLayoutPostDraw(cmdBuffer, imageIndex);
-		cmdBuffer->End();
 	}
 
 	void VulkanRenderer::SubmitCommandBuffer()
@@ -275,40 +355,78 @@ namespace Czuch
 	{
 		m_SceneData.buffer[m_CurrentFrame] = m_Device->CreateBuffer(&m_SceneData.bufferDesc);
 		GetCurrentFrame().frameDeletionQueue.PushFunction([=, this]() {
-			if (HANDLE_IS_VALID(m_SceneData.buffer[m_CurrentFrame])) 
-			{ 
-				m_Device->Release(m_SceneData.buffer[m_CurrentFrame]); } 
+			if (HANDLE_IS_VALID(m_SceneData.buffer[m_CurrentFrame]))
+			{
+				m_Device->Release(m_SceneData.buffer[m_CurrentFrame]);
+			}
 			});
-		auto bufferVulkan =Internal_to_Buffer(m_Device->AccessBuffer(m_SceneData.buffer[m_CurrentFrame]));
+		auto bufferVulkan = Internal_to_Buffer(m_Device->AccessBuffer(m_SceneData.buffer[m_CurrentFrame]));
 
 		m_SceneData.data.ambientColor = Vec4(1, 1, 0, 1);
 
-		SceneData* data=(SceneData*)bufferVulkan->GetMappedData();
+		SceneData* data = (SceneData*)bufferVulkan->GetMappedData();
 		*data = m_SceneData.data;
 
 	}
 
 	void VulkanRenderer::InitImmediateSubmitData()
 	{
-		m_ImmediateSubmitData.pool = m_Device->CreateCommandPool(false, false);
-		m_ImmediateSubmitData.commandBuffer = m_Device->CreateCommandBuffer(true,m_ImmediateSubmitData.pool);
+		m_ImmediateSubmitData.pool = m_Device->CreateCommandPool(false, true);
+		m_ImmediateSubmitData.commandBuffer = m_Device->CreateCommandBuffer(true, m_ImmediateSubmitData.pool);
 		VulkanCommandBuffer* cmd = (VulkanCommandBuffer*)m_Device->AccessCommandBuffer(m_ImmediateSubmitData.commandBuffer);
-		cmd->Init(m_Device);
 	}
 
-	void VulkanRenderer::OnPreRenderUpdateContexts()
+	void VulkanRenderer::OnWindowResize(uint32_t width, uint32_t height)
+	{
+		//handle only additional passes, main render pass is handled by the device
+		for (auto it = m_RenderPasses.begin(); it != m_RenderPasses.end(); ++it)
+		{
+			if ((*it)->HandleWindowResize())
+			{
+				(*it)->Resize(width, height);
+			}
+		}
+	}
+
+	void VulkanRenderer::CheckForResizeQueries()
+	{
+		for (auto it = m_RenderPassResizeQueries.begin(); it != m_RenderPassResizeQueries.end(); ++it)
+		{
+			auto renderPass = GetRenderPassByType(it->type);
+			if (renderPass != nullptr)
+			{
+				renderPass->Resize(it->width, it->height);
+			}
+		}
+		m_RenderPassResizeQueries.clear();
+	}
+
+	RenderPassControl* VulkanRenderer::GetRenderPassByType(RenderPassType type)
+	{
+		for (auto it = m_RenderPasses.begin(); it != m_RenderPasses.end(); ++it)
+		{
+			if ((*it)->GetType() == type)
+			{
+				return (*it);
+			}
+		}
+		return nullptr;
+	}
+
+
+	void VulkanRenderer::OnPreRenderUpdateContexts(Camera* cam, int width, int height)
 	{
 		if (m_ActiveScene != nullptr)
 		{
-			m_ActiveScene->FillRenderContexts(this);
+			m_ActiveScene->FillRenderContexts(cam, this, width, height);
 		}
 
-		for (auto context: m_MainRenderContexts.m_RenderContexts)
+		for (auto context : m_MainRenderContexts.m_RenderContexts)
 		{
-			auto renderList=context->GetRenderObjectsList();
+			auto renderList = context->GetRenderObjectsList();
 			for (auto renderElement : renderList)
 			{
-				renderElement.UpdateSceneDataIfRequired(m_Device,m_SceneData.buffer[m_CurrentFrame]);
+				renderElement.UpdateSceneDataIfRequired(m_Device, m_SceneData.buffer[m_CurrentFrame]);
 			}
 		}
 	}
@@ -327,6 +445,13 @@ namespace Czuch
 	void VulkanRenderer::FrameData::Reset()
 	{
 		descriptorAllocator->ResetPools();
+	}
+
+	void VulkanRenderer::ImmediateSubmitData::Release(VulkanDevice* device)
+	{
+		device->ReleaseFence(fence);
+		device->Release(commandBuffer);
+		device->ReleaseCommandPool(pool);
 	}
 
 }

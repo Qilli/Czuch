@@ -17,4 +17,9 @@
 #include"Subsystems/Scenes/NativeBehaviour.h"
 #include"Subsystems/Scenes/NativeBehaviours/NativeFree3DCameraController.h"
 #include"Subsystems/UI/UIBaseElement.h"
+#include"Subsystems/UI/UIBaseManager.h"
+#include"Subsystems/UI/Editor/EngineEditorControl.h"
+#include"./Subsystems/EventsManager.h"
+#include"./Events/EventsTypes/ApplicationEvents.h"
+#include"Renderer/RenderPassControl.h"
 

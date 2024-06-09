@@ -13,12 +13,6 @@
     <Filter Include="Platform">
       <UniqueIdentifier>{2AC788B4-1694-E3BF-3FAD-D1672BD9184E}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Platform\GLFW">
-      <UniqueIdentifier>{A98C9061-154D-0C98-DE87-55154A075174}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Platform\Vulkan">
-      <UniqueIdentifier>{6AE1DE2D-D66C-4CF2-DF7D-CFE64B88A8F2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Platform\Windows">
       <UniqueIdentifier>{64FBD71A-50F4-F66C-7926-DCF1657ED678}</UniqueIdentifier>
     </Filter>
@@ -51,6 +45,9 @@
     </Filter>
     <Filter Include="Subsystems\UI">
       <UniqueIdentifier>{3497966B-A057-12A2-6992-5B1FD511577E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Subsystems\UI\Editor">
+      <UniqueIdentifier>{EA31F862-D6C0-812C-7FDF-95276B4D92D2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -112,12 +109,6 @@
     </ClInclude>
     <ClInclude Include="source\Events\IEventsListener.h">
       <Filter>Events</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Platform\GLFW\ImGuiGLFWBackend.h">
-      <Filter>Platform\GLFW</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Platform\Vulkan\ImGuiVulkanBackend.h">
-      <Filter>Platform\Vulkan</Filter>
     </ClInclude>
     <ClInclude Include="source\Platform\Windows\WinWindow.h">
       <Filter>Platform\Windows</Filter>
@@ -260,6 +251,12 @@
     <ClInclude Include="source\Subsystems\Scenes\ScenesManager.h">
       <Filter>Subsystems\Scenes</Filter>
     </ClInclude>
+    <ClInclude Include="source\Subsystems\UI\Editor\EngineEditorControl.h">
+      <Filter>Subsystems\UI\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\UI\Editor\EngineEditorSubsystem.h">
+      <Filter>Subsystems\UI\Editor</Filter>
+    </ClInclude>
     <ClInclude Include="source\Subsystems\UI\ImGUIManager.h">
       <Filter>Subsystems\UI</Filter>
     </ClInclude>
@@ -270,6 +267,9 @@
       <Filter>Subsystems\UI</Filter>
     </ClInclude>
     <ClInclude Include="source\czpch.h" />
+    <ClInclude Include="source\Renderer\RenderPassControl.h" />
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.h" />
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">
@@ -302,12 +302,6 @@
     </ClCompile>
     <ClCompile Include="source\Events\EventsTypes\MouseEvents.cpp">
       <Filter>Events\EventsTypes</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Platform\GLFW\ImGuiGLFWBackend.cpp">
-      <Filter>Platform\GLFW</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Platform\Vulkan\ImGuiVulkanBackend.cpp">
-      <Filter>Platform\Vulkan</Filter>
     </ClCompile>
     <ClCompile Include="source\Platform\Windows\WinWindow.cpp">
       <Filter>Platform\Windows</Filter>
@@ -429,12 +423,23 @@
     <ClCompile Include="source\Subsystems\Scenes\ScenesManager.cpp">
       <Filter>Subsystems\Scenes</Filter>
     </ClCompile>
+    <ClCompile Include="source\Subsystems\UI\Editor\EngineEditorControl.cpp">
+      <Filter>Subsystems\UI\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\UI\Editor\EngineEditorSubsystem.cpp">
+      <Filter>Subsystems\UI\Editor</Filter>
+    </ClCompile>
     <ClCompile Include="source\Subsystems\UI\ImGUIManager.cpp">
+      <Filter>Subsystems\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\UI\ImGuiCompiler.cpp">
       <Filter>Subsystems\UI</Filter>
     </ClCompile>
     <ClCompile Include="source\Subsystems\UI\UIBaseManager.cpp">
       <Filter>Subsystems\UI</Filter>
     </ClCompile>
     <ClCompile Include="source\czpch.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.cpp" />
   </ItemGroup>
 </Project>

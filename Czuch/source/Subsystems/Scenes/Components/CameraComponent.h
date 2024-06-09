@@ -4,7 +4,7 @@
 
 namespace Czuch
 {
-	struct Camera
+	struct CZUCH_API Camera
 	{
 	public:
 		Camera(float fov,float aspect,float nearPlane,float farPlane);

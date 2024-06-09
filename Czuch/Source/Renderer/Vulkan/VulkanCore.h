@@ -52,11 +52,11 @@ namespace Czuch
 
 	inline VkShaderStageFlags ConvertShaderStage(U32 stage)
 	{
-		VkShaderStageFlags flags=0;
+		VkShaderStageFlags flags = 0;
 
-		if ((stage&(U32)ShaderStage::VS) == (U32)ShaderStage::VS)
+		if ((stage & (U32)ShaderStage::VS) == (U32)ShaderStage::VS)
 		{
-			flags|= VK_SHADER_STAGE_VERTEX_BIT;
+			flags |= VK_SHADER_STAGE_VERTEX_BIT;
 		}
 
 		if ((stage & (U32)ShaderStage::PS) == (U32)ShaderStage::PS)
@@ -69,7 +69,7 @@ namespace Czuch
 			flags |= VK_SHADER_STAGE_ALL;
 		}
 
-	
+
 		return flags;
 	}
 
@@ -173,6 +173,10 @@ namespace Czuch
 		if (mode == TextureAddressMode::BORDER)
 		{
 			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		}
+		if (mode == TextureAddressMode::EDGE_CLAMP)
+		{
+			return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
 		}
 
 		return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
@@ -498,7 +502,178 @@ namespace Czuch
 	}
 
 
+	constexpr VkSampleCountFlagBits ConvertSamplesCount(U32 count)
+	{
+		switch (count)
+		{
+		case 1:
+			return VK_SAMPLE_COUNT_1_BIT;
+		case 2:
+			return VK_SAMPLE_COUNT_2_BIT;
+		case 4:
+			return VK_SAMPLE_COUNT_4_BIT;
+		case 8:
+			return VK_SAMPLE_COUNT_8_BIT;
+		case 16:
+			return VK_SAMPLE_COUNT_16_BIT;
+		case 32:
+			return VK_SAMPLE_COUNT_32_BIT;
+		case 64:
+			return VK_SAMPLE_COUNT_64_BIT;
+		default:
+			return VK_SAMPLE_COUNT_1_BIT;
+		}
+
+	}
+
+	constexpr VkImageUsageFlags ConvertImageUsageFlags(U32 flags)
+	{
+		VkImageUsageFlags outFlags = 0;
+
+		if ((flags & (U32)ImageUsageFlag::TRANSFER_SRC) == (U32)ImageUsageFlag::TRANSFER_SRC)
+		{
+			outFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+		}
+
+		if ((flags & (U32)ImageUsageFlag::TRANSFER_DST) == (U32)ImageUsageFlag::TRANSFER_DST)
+		{
+			outFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+		}
+
+		if ((flags & (U32)ImageUsageFlag::SAMPLED) == (U32)ImageUsageFlag::SAMPLED)
+		{
+			outFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+		}
+
+		if ((flags & (U32)ImageUsageFlag::STORAGE) == (U32)ImageUsageFlag::STORAGE)
+		{
+			outFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
+		}
+
+		if ((flags & (U32)ImageUsageFlag::COLOR_ATTACHMENT) == (U32)ImageUsageFlag::COLOR_ATTACHMENT)
+		{
+			outFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		}
+
+		if ((flags & (U32)ImageUsageFlag::DEPTH_STENCIL_ATTACHMENT) == (U32)ImageUsageFlag::DEPTH_STENCIL_ATTACHMENT)
+		{
+			outFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		}
+
+		return outFlags;
+	}
+
+	constexpr VkImageAspectFlags ConvertImageAspect(U32 aspectsFlags)
+	{
+		VkImageAspectFlags outFlags=0;
+
+		if ((aspectsFlags & (U32)ImageAspectFlag::COLOR) == (U32)ImageAspectFlag::COLOR)
+		{
+			outFlags |= VK_IMAGE_ASPECT_COLOR_BIT;
+		}
+
+		if ((aspectsFlags & (U32)ImageAspectFlag::DEPTH) == (U32)ImageAspectFlag::DEPTH)
+		{
+			outFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
+		}
+
+		if ((aspectsFlags & (U32)ImageAspectFlag::STENCIL) == (U32)ImageAspectFlag::STENCIL)
+		{
+			outFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
+		}
+
+		if ((aspectsFlags & (U32)ImageAspectFlag::METADATA) == (U32)ImageAspectFlag::METADATA)
+		{
+			outFlags |= VK_IMAGE_ASPECT_METADATA_BIT;
+		}
+
+		if ((aspectsFlags & (U32)ImageAspectFlag::PLANE_0) == (U32)ImageAspectFlag::PLANE_0)
+		{
+			outFlags |= VK_IMAGE_ASPECT_PLANE_0_BIT;
+		}
+
+		if ((aspectsFlags & (U32)ImageAspectFlag::PLANE_1) == (U32)ImageAspectFlag::PLANE_1)
+		{
+			outFlags |= VK_IMAGE_ASPECT_PLANE_1_BIT;
+		}
+
+		if ((aspectsFlags & (U32)ImageAspectFlag::PLANE_2) == (U32)ImageAspectFlag::PLANE_2)
+		{
+			outFlags |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+		}
+
+		if ((aspectsFlags & (U32)ImageAspectFlag::MEMORY_PLANE_0) == (U32)ImageAspectFlag::MEMORY_PLANE_0)
+		{
+			outFlags |= VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT;
+		}
+
+		if ((aspectsFlags & (U32)ImageAspectFlag::MEMORY_PLANE_1) == (U32)ImageAspectFlag::MEMORY_PLANE_1)
+		{
+			outFlags |= VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
+		}
+
+		if ((aspectsFlags & (U32)ImageAspectFlag::MEMORY_PLANE_2) == (U32)ImageAspectFlag::MEMORY_PLANE_2)
+		{
+			outFlags |= VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
+		}
+		return outFlags;
+	}
+
+	constexpr VkImageLayout ConvertImageLayout(ImageLayout layout)
+	{
+		switch (layout)
+		{
+		case ImageLayout::UNDEFINED:
+			return VK_IMAGE_LAYOUT_UNDEFINED;
+		case ImageLayout::GENERAL:
+			return VK_IMAGE_LAYOUT_GENERAL;
+		case ImageLayout::COLOR_ATTACHMENT_OPTIMAL:
+			return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		case ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+			return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		case ImageLayout::DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+			return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		case ImageLayout::SHADER_READ_ONLY_OPTIMAL:
+			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		case ImageLayout::TRANSFER_SRC_OPTIMAL:
+			return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		case ImageLayout::TRANSFER_DST_OPTIMAL:
+			return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		case ImageLayout::PREINITIALIZED:
+			return VK_IMAGE_LAYOUT_PREINITIALIZED;
+		case ImageLayout::DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+			return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+		case ImageLayout::DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+			return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
+		case ImageLayout::PRESENT_SRC_KHR:
+			return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		case ImageLayout::SHARED_PRESENT_KHR:
+			return VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR;
+		case ImageLayout::DEPTH_ATTACHMENT_OPTIMAL:
+			return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+		case ImageLayout::DEPTH_READ_ONLY_OPTIMAL:
+			return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+		case ImageLayout::STENCIL_ATTACHMENT_OPTIMAL:
+			return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+		case ImageLayout::STENCIL_READ_ONLY_OPTIMAL:
+			return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+		}
+	}
+
 #pragma endregion
+
+	struct VulkanRenderPassDesc : public RenderPassDesc
+	{
+		bool mainRenderPass = false;
+		VkRenderPassCreateInfo renderPassInfo;
+	};
+
+
+	struct VulkanFrameBufferDesc : public FrameBufferDesc
+	{
+		VkImageView color;
+		VkImageView depth;
+	};
 
 	struct BufferInternalSettings
 	{
@@ -545,6 +720,7 @@ namespace Czuch
 			}
 		}
 	};
+
 
 	struct RenderPass_Vulkan : public VulkanDeviceRef
 	{
@@ -613,7 +789,7 @@ namespace Czuch
 
 	struct Buffer_Vulkan : public VulkanDeviceRef
 	{
-		VkBuffer buffer= VK_NULL_HANDLE;
+		VkBuffer buffer = VK_NULL_HANDLE;
 		VkDeviceSize size;
 		VkBufferUsageFlags flags;
 		U32 offset = 0;
@@ -625,7 +801,7 @@ namespace Czuch
 
 		~Buffer_Vulkan()
 		{
-			if (buffer!=VK_NULL_HANDLE)
+			if (buffer != VK_NULL_HANDLE)
 			{
 				vmaDestroyBuffer(allocator, buffer, allocation);
 				buffer = VK_NULL_HANDLE;
@@ -638,7 +814,7 @@ namespace Czuch
 		VkDescriptorSetLayout layout;
 		~DescriptorSetLayout_Vulkan()
 		{
-			
+
 		}
 	};
 

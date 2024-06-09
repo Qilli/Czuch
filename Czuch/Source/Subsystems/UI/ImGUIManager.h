@@ -7,6 +7,7 @@ namespace Czuch
 	class GraphicsDevice;
 	class VulkanDevice;
 	class Window;
+	class EngineEditorControl;
     class CZUCH_API ImGUIManager :
         public UIBaseManager
     {
@@ -17,6 +18,7 @@ namespace Czuch
 		void Init() override;
 		void Update(TimeDelta timeDelta) override;
 		void Shutdown() override;
+		void SetSceneForUI(Scene* scene) override;
     private:
 		VulkanDevice* m_Device;
 		Window* m_Window;

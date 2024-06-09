@@ -93,4 +93,27 @@ namespace Czuch
 	};
 
 
+	enum class ValidationMode
+	{
+		Disabled,	// No validation is enabled
+		Enabled,	// CPU command validation
+		GPU,		// CPU and GPU-based validation
+		Verbose		// Print all warnings, errors and info messages
+	};
+
+	enum class EngineMode
+	{
+		Runtime,
+		Editor
+	};
+
+	struct RenderSettings
+	{
+		bool dynamicRendering = false;
+		bool offscreenRendering = false;
+		bool mainRenderPassActive = true;
+		ValidationMode validationMode = ValidationMode::Disabled;
+		EngineMode engineMode = EngineMode::Runtime;
+	};
+
 }

@@ -106,14 +106,6 @@ namespace Czuch
 	};
 
 
-	enum class ValidationMode
-	{
-		Disabled,	// No validation is enabled
-		Enabled,	// CPU command validation
-		GPU,		// CPU and GPU-based validation
-		Verbose		// Print all warnings, errors and info messages
-	};
-
 	enum class GraphicsDeviceCapability
 	{
 		NONE = 0,
@@ -422,6 +414,7 @@ namespace Czuch
 		CLAMP,
 		BORDER,
 		MIRROR_ONCE,
+		EDGE_CLAMP,
 	};
 
 	enum class TextureFilter
@@ -473,6 +466,61 @@ namespace Czuch
 		Editor,
 		Overlay,
 	};
+
+	enum class ImageUsageFlag : U32
+	{	
+		TRANSFER_SRC = 1 << 0,
+		TRANSFER_DST = 1 << 1,
+		SAMPLED = 1 << 2,
+		STORAGE = 1 << 3,
+		COLOR_ATTACHMENT = 1 << 4,
+		DEPTH_STENCIL_ATTACHMENT = 1 << 5,
+		TRANSIENT_ATTACHMENT = 1 << 6,
+		INPUT_ATTACHMENT = 1 << 7,
+	};
+
+	ENUM_FLAG_OPERATORS(ImageUsageFlag)
+
+	enum class ImageAspectFlag : U32
+	{
+		COLOR = 1 << 0,
+		DEPTH = 1 << 1,
+		STENCIL = 1 << 2,
+		METADATA = 1 << 3,
+		PLANE_0 = 1 << 4,
+		PLANE_1 = 1 << 5,
+		PLANE_2 = 1 << 6,
+		MEMORY_PLANE_0 = 1 << 7,
+		MEMORY_PLANE_1 = 1 << 8,
+		MEMORY_PLANE_2 = 1 << 9,
+	};
+
+	ENUM_FLAG_OPERATORS(ImageAspectFlag)
+
+	enum class ImageLayout
+	{
+		UNDEFINED,
+		GENERAL,
+		COLOR_ATTACHMENT_OPTIMAL,
+		DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+		SHADER_READ_ONLY_OPTIMAL,
+		TRANSFER_SRC_OPTIMAL,
+		TRANSFER_DST_OPTIMAL,
+		PREINITIALIZED,
+		PRESENT_SRC,
+		SHADING_RATE_OPTIMAL,
+		FRAGMENT_DENSITY_MAP_OPTIMAL,
+		DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
+		DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
+		PRESENT_SRC_KHR,
+		SHARED_PRESENT_KHR,
+		DEPTH_ATTACHMENT_OPTIMAL,
+		DEPTH_READ_ONLY_OPTIMAL,
+		STENCIL_ATTACHMENT_OPTIMAL,
+		STENCIL_READ_ONLY_OPTIMAL,
+	};
+
 
 #pragma region Info definitions
 	struct Texture;
@@ -532,9 +580,9 @@ namespace Czuch
 
 	struct FrameBufferDesc
 	{
-		TextureHandle color_texture;
-		TextureHandle depth_texture;
 		RenderPassHandle renderPass;
+		U32 width;
+		U32 height;
 	};
 
 	struct BufferDesc
@@ -925,7 +973,10 @@ namespace Czuch
 		Usage usage = Usage::DEFAULT;
 		BindFlag bind_flags = BindFlag::NONE;
 		ClearValue clear = {};
-		ResourceState layout = ResourceState::SHADER_RESOURCE;
+		ResourceState resourceType = ResourceState::SHADER_RESOURCE;
+		ImageUsageFlag usageFlags = ImageUsageFlag::SAMPLED|ImageUsageFlag::TRANSFER_DST;
+		ImageLayout initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+		ImageAspectFlag aspectFlags = ImageAspectFlag::COLOR;
 		Swizzle swizzle;
 		U8* texData;
 

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="App">
+      <UniqueIdentifier>{46D6870B-B2DF-877C-3B5B-9E7CA763937C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\EditorControl.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="source\App\CzuchEditorApplication.cpp">
+      <Filter>App</Filter>
+    </ClCompile>
+    <ClCompile Include="source\EditorControl.cpp" />
+    <ClCompile Include="source\ImGuiCompiler.cpp" />
+  </ItemGroup>
+</Project>

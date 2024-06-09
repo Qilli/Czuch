@@ -13,21 +13,29 @@ namespace Czuch
 	struct BufferInternalSettings;
 	class VulkanCommandBuffer;
 
+
+	struct ImageWithAllocation
+	{
+		VkImage image;
+		VmaAllocation allocation;
+	};
+
 	static const U32 k_max_resources = 500;
 
 	class VulkanDevice final : public GraphicsDevice, public Czuch::IEventsListener
 	{
 	public:
-		VulkanDevice(Window* window,ValidationMode validationMode = ValidationMode::Disabled);
+		VulkanDevice(Window* window);
 		~VulkanDevice() override;
 
-		bool InitDevice();
+		bool InitDevice(RenderSettings* settings) override;
 		float GetSwapchainWidth() const override { return m_SwapChainData.swapChainExtent.width; }
 		float GetSwapchainHeight() const override { return m_SwapChainData.swapChainExtent.height; }
 		VkFormat* GetSwapchainFormat() { return &m_SwapChainData.swapChainImageFormat; }
 		VkFormat GetDepthFormat() { return m_DepthImage.depthFormat; }
 
 		void DrawUI(CommandBuffer* commandBuffer) override;
+		void PreDrawFrame();
 
 		PipelineHandle CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass, bool dynamicRendering = false) override;
 		ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize)override;
@@ -75,10 +83,13 @@ namespace Czuch
 		void TransitionSwapChainImageLayoutPreDraw(VulkanCommandBuffer* cmd, uint32_t imageIndex);
 		void TransitionSwapChainImageLayoutPostDraw(VulkanCommandBuffer* cmd, uint32_t imageIndex);
 	public:
-		void InitImGUI();
+		void* InitImGUI();
 		void ShutdownImGUI();
+		void TransitionImageLayout(TextureHandle handle,ImageLayout oldLayout,ImageLayout newLayout);
 	public:
 		VkDevice GetNativeDevice() const { return m_Device; }
+		VmaAllocator GetAllocator() const { return m_VmaAllocator; }
+		int GetCurrentImageIndex() const { return m_CurrentImageIndex; }
 		VkSemaphore CreateNewSemaphore();
 		void ReleaseSemaphore(VkSemaphore sem);
 		VkFence CreateNewFence(bool signaledState=false);
@@ -94,6 +105,10 @@ namespace Czuch
 		void BindSwapChainRenderPass(CommandBuffer* cmdBuffer, uint32_t imageIndex);
 	public:
 		void StartDynamicRenderPass(VulkanCommandBuffer* cmdBuffer, uint32_t imageIndex);
+		void BeginOffscreenPass(VulkanCommandBuffer* cmdBuffer, VkRenderPass renderPass, FrameBufferHandle framebuffer, U32 width, U32 height);
+		void EndOffscreenPass(VulkanCommandBuffer* cmdBuffer);
+	public:
+
 	private:
 
 		struct DepthImage
@@ -166,9 +181,9 @@ namespace Czuch
 
 	private:
 		ResourcesContainer m_ResContainer;
-
 	private:
 		Window* m_AttachedWindow;
+		int m_CurrentImageIndex;
 
 		VkInstance m_Instance;
 		VkSurfaceKHR m_Surface;
@@ -194,7 +209,6 @@ namespace Czuch
 		DepthImage m_DepthImage;
 	private:
 		VkDescriptorPool m_ImguiPool;
-
 	private:
 		bool CreateVulkanInstance();
 		bool CreateSurface();
@@ -228,6 +242,7 @@ namespace Czuch
 		void EndSingleTimeCommands(VkCommandBuffer cmd) const;
 	private:
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
+		ImageWithAllocation CreateImage(TextureDesc::Type type,U32 width, U32 height, U32 mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageLayout initLayout, VkSharingMode sharingMode) const;
 		VkSampler CreateImageSampler(const SamplerDesc& desc) const;
 	private:
 		virtual void OnEvent(const Czuch::Event& e) override;
