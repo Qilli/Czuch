@@ -37,6 +37,7 @@ namespace Czuch
 		void ImmediateSubmitWithCommandBuffer(std::function<void(CommandBuffer* cmd)>&& processor);
 		void DrawScene(VulkanCommandBuffer* cmdBuffer);
 		void* GetRenderPassResult(RenderPassType type) override;
+		bool HasRenderPass(RenderPassType type) override;
 	public:
 		void AddRenderPass(RenderPassControl* renderPass) override;
 		void RemoveRenderPass(RenderPassType type) override;

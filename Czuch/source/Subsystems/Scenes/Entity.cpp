@@ -6,7 +6,7 @@
 
 namespace Czuch
 {
-	Entity::Entity(entt::entity handle, IScene* scene)
+	Entity::Entity(entt::entity handle,IScene* scene)
 		: m_EntityHandle(handle), m_Scene(scene)
 	{
 	}

@@ -245,7 +245,7 @@ namespace Czuch
 		ImageWithAllocation CreateImage(TextureDesc::Type type,U32 width, U32 height, U32 mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageLayout initLayout, VkSharingMode sharingMode) const;
 		VkSampler CreateImageSampler(const SamplerDesc& desc) const;
 	private:
-		virtual void OnEvent(const Czuch::Event& e) override;
+		virtual void OnEvent(Czuch::Event& e) override;
 		
 	private:
 		bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface);

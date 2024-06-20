@@ -4,7 +4,7 @@
 
 namespace Czuch
 {
-	void Czuch::Renderer::OnEvent(const Event& e)
+	void Czuch::Renderer::OnEvent(Event& e)
 	{
 		auto windowSizeChangedEvent = dynamic_cast<const WindowSizeChangedEvent*>(&e);
 		if (windowSizeChangedEvent)

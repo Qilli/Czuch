@@ -101,7 +101,7 @@ namespace Czuch
 		STOP_LISTEN_TO_EVENT(MouseButtonUpEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);	
 	}
 
-	void NativeFree3DCameraController::OnEvent(const Event& event)
+	void NativeFree3DCameraController::OnEvent(Event& event)
 	{
 		if (event.GetEventType() == KeyDownEvent::GetStaticEventType())
 		{

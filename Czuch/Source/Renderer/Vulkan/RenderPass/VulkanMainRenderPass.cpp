@@ -79,7 +79,7 @@ namespace Czuch
 	void VulkanMainRenderPass::Execute(CommandBuffer* cmd)
 	{
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
-		if (!m_Renderer->GetRenderSettings().offscreenRendering)
+		if (m_Renderer->HasRenderPass(RenderPassType::OffscreenTexture)==false)
 		{
 			m_Renderer->DrawScene(cmdBuffer);
 		}

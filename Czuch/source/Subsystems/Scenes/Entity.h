@@ -45,6 +45,7 @@ namespace Czuch
 		inline void Invalidate() { m_EntityHandle = entt::null; }
 
 		TransformComponent& Transform();
+		intptr_t GetID() const { return (intptr_t)m_EntityHandle; }
 	public:
 		IScene* GetScene() { return m_Scene; }
 

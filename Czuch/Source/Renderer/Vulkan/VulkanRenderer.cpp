@@ -239,6 +239,18 @@ namespace Czuch
 		return nullptr;
 	}
 
+	bool VulkanRenderer::HasRenderPass(RenderPassType type)
+	{
+		for (auto it = m_RenderPasses.begin(); it != m_RenderPasses.end(); ++it)
+		{
+			if ((*it)->GetType() == type)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	void VulkanRenderer::AddRenderPass(RenderPassControl* renderPass)
 	{
 		auto iterator = m_RenderPasses.begin();

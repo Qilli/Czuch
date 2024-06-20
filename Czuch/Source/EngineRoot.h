@@ -26,7 +26,7 @@ namespace Czuch
 		Renderer& GetRenderer() const { return *m_Renderer; }
 		ScenesManager& GetScenesManager() const { return *m_ScenesMgr; }
 		UIBaseManager& GetUIBaseManager() const { return *m_UIBaseMgr; }
-		virtual void OnEvent(const Event& e) override;
+		virtual void OnEvent(Event& e) override;
 	private:
 		TimeDelta UpdateDeltaTime(TimeDiffCounter& counter);
 	private:

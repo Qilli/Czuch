@@ -25,12 +25,13 @@ namespace Czuch
 		void DestroyEntity(Entity entity);
 		Entity GetRootEntity();
 		void ClearScene();
-		const CzuchStr& GetSceneName() { return m_SceneName; }
+		const CzuchStr& GetSceneName() const { return m_SceneName; }
 		RenderContext& GetGeneralRenderContext() { return m_GeneralRenderContext; }
 		RenderContext& GetDebugRenderContext() { return m_DebugRenderContext; }
 		entt::registry& GetRegistry() override { return m_Registry; }
 	public:
 		std::vector<UIBaseElement*>& GetSceneUIElements() { return m_UIElements; }
+		void ForEachEntity(std::function<void(Entity)> func);
 	public:
 		CameraComponent* FindPrimaryCamera() override;
 	public:

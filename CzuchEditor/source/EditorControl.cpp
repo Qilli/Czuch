@@ -6,6 +6,12 @@ namespace Czuch
 {
 	EditorControl::EditorControl() : m_Root(EngineRoot::GetPtr())
 	{
+		m_OffscreenPassAdded = false;
+		m_SceneHierarchyPanel = nullptr;
+	}
+	EditorControl::~EditorControl()
+	{
+		delete m_SceneHierarchyPanel;
 	}
 	void EditorControl::Init(void* context)
 	{
@@ -22,13 +28,22 @@ namespace Czuch
 
 	void EditorControl::FillUI(void* sceneViewportTexture)
 	{
+		if (m_SceneHierarchyPanel == nullptr)
+		{
+			m_SceneHierarchyPanel = new SceneHierarchyEditorPanel(m_Root->GetScenesManager().GetActiveScene());
+		}
+
+
 		FillMainMenubar();
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
 		ImGui::Begin("Scene");
-		// Image((ImTextureID)VC.TC.DescriptorSet, ImGui::GetContentRegionAvail());
-		//LOG_BE_INFO("Scene viewport texture: {0}", sceneViewportTexture);
+		bool isFocused=ImGui::IsWindowFocused();
+		bool isHovered = ImGui::IsWindowHovered();
+
+		m_Root->GetUIBaseManager().SetBlockEvents(!isFocused || !isHovered);
+
 		auto targetViewportSize = ImGui::GetContentRegionAvail();
 		if (UpdateOffscreenPass((U32)targetViewportSize.x, (U32)targetViewportSize.y))
 		{
@@ -36,6 +51,11 @@ namespace Czuch
 		}
 
 		ImGui::End();
+
+		//scene hierarchy panel
+		m_SceneHierarchyPanel->FillUI();
+
+
 		ImGui::PopStyleVar();
 	}
 
@@ -69,8 +89,6 @@ namespace Czuch
 
 		if (ImGui::BeginMenu("Open Recent"))
 		{
-			// ImGui::MenuItem("fish_hat.c");
-		  // //  ImGui::MenuItem("fish_hat.inl");
 			ImGui::EndMenu();
 		}
 		if (ImGui::MenuItem("Save", "Ctrl+S")) {}

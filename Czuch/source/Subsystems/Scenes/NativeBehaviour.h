@@ -28,7 +28,7 @@ namespace Czuch
 		virtual void OnUpdate(TimeDelta delta) {}
 		virtual void OnEnable() {}
 		virtual void OnDisable() {}
-		void OnEvent(const Event& event) override  {}
+		void OnEvent(Event& event) override  {}
 
 		void SetEntity(Entity entity) { m_Entity = entity; }
 		Entity GetEntity() { return m_Entity; }

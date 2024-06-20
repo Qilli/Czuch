@@ -7,7 +7,7 @@ namespace Czuch
 	class IEventsListener
 	{
 	public:
-		virtual void OnEvent(const Event& e)=0;
+		virtual void OnEvent(Event& e)=0;
 	};
 
 }

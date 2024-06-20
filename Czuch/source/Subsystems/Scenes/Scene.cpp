@@ -53,7 +53,7 @@ namespace Czuch
 		}
 	}
 
-	void Scene::FillRenderContexts(Camera* cam,Renderer* renderer,int width,int height)
+	void Scene::FillRenderContexts(Camera* cam, Renderer* renderer, int width, int height)
 	{
 		//get main camera
 		Camera* currentCamera = cam;
@@ -180,6 +180,15 @@ namespace Czuch
 		CreateRenderContexts();
 	}
 
+	void Scene::ForEachEntity(std::function<void(Entity)> func)
+	{
+		auto view = m_Registry.view<HeaderComponent>();
+		for (auto entity : view)
+		{
+			func(Entity{ entity,this });
+		}
+	}
+
 	CameraComponent* Scene::FindPrimaryCamera()
 	{
 		auto view = m_Registry.view<CameraComponent>();
@@ -191,7 +200,7 @@ namespace Czuch
 				return &camera;
 			}
 		}
-		LOG_BE_ERROR("{0} Scene does not have primary camera",SceneTag);
+		LOG_BE_ERROR("{0} Scene does not have primary camera", SceneTag);
 		return nullptr;
 	}
 

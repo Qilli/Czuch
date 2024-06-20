@@ -8,6 +8,7 @@
 #include"Subsystems/Scenes/Scene.h"
 #include"UIBaseElement.h"
 #include"Editor/EngineEditorSubsystem.h"
+#include"Subsystems/EventsManager.h"
 
 
 namespace Czuch
@@ -26,7 +27,7 @@ namespace Czuch
 	void ImGUIManager::Init()
 	{
 		m_UIContext=m_Device->InitImGUI();
-
+		LISTEN_TO_ALL_EVENTS(this)
 	}
 
 	void ImGUIManager::Update(TimeDelta timeDelta)
@@ -63,6 +64,14 @@ namespace Czuch
 		currentScene = scene;
 	}
 
-
+	void ImGUIManager::OnEvent(Event& e)
+	{
+		if (m_BlockEvents)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			e.SetHandled(io.WantCaptureMouse && e.GetCategory() == EventCategoryType::Mouse);
+			e.SetHandled(io.WantCaptureKeyboard && e.GetCategory() == EventCategoryType::Keyboard);
+		}
+	}
 }
 

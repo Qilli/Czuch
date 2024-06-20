@@ -8,7 +8,7 @@
 class EventHandler : public Czuch::IEventsListener
 {
 	// Odziedziczono za poœrednictwem elementu IEventsListener
-	virtual void OnEvent(const Czuch::Event& e) override
+	virtual void OnEvent(Czuch::Event& e) override
 	{
 		LOG_BE_ERROR(e.ToString());
 		LOG_BE_INFO("Test log only gfdgdfgdfg");
@@ -55,11 +55,7 @@ int main()
 	auto& sceneMgr = root->GetScenesManager();
 	sceneMgr.AddScene(scene, true);
 
-	DemoImGUI gui;
-
-	scene->AddUIElement(&gui);
-
-/*	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("/Textures/texture.jpg");
+	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("/Textures/texture.jpg");
 
 	Czuch::MaterialInstanceCreateSettings instanceCreateSettings{};
 	instanceCreateSettings.materialInstanceName = "DefaultAncientMaterial";
@@ -79,10 +75,6 @@ int main()
 	planeEntity.AddRenderable(Czuch::DefaultAssets::PLANE_HANDLE, matInstanceHandle);
 	planeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, -1.0f, 0.0f));
 	planeEntity.Transform().SetLocalScale(glm::vec3(10.0f, 1.0f, 10.0f));
-
-	DemoImGUI gui;
-
-	scene->AddUIElement(&gui);*/
 
 	root->Run();
 	root->Shutdown();

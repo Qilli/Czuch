@@ -12,7 +12,7 @@ namespace Czuch
 		inline void SetData(U32 width, U32 height) { m_Width = width; m_Height = height; }
 		inline U32 GetWidth() const { return m_Width; }
 		inline U32 GetHeight() const { return m_Height; }
-		EVENT_METHODS("WindowSizeChangedEvent")
+		EVENT_METHODS("WindowSizeChangedEvent",EventCategoryType::Application)
 	protected:
 		WindowSizeChangedEvent() :m_Width(0),m_Height(0) {}
 	private:
@@ -26,7 +26,7 @@ namespace Czuch
 	public:
 		static void CreateAndDispatch();
 	public:
-		EVENT_METHODS("WindowClosedEvent")
+		EVENT_METHODS("WindowClosedEvent", EventCategoryType::Application)
 	protected:
 		WindowClosedEvent(){}
 

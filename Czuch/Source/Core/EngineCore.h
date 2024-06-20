@@ -3,6 +3,7 @@
 #include <string>
 #include <type_traits>
 #include<functional>
+#include<deque>
 
 #ifdef CZUCH_PLATFORM_WINDOWS
 	#ifdef CZUCH_BUILD_DLL

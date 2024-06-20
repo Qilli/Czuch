@@ -1502,7 +1502,7 @@ namespace Czuch
 		return true;
 	}
 
-	void VulkanDevice::OnEvent(const Czuch::Event& e)
+	void VulkanDevice::OnEvent(Czuch::Event& e)
 	{
 		if (e.GetEventType() == WindowSizeChangedEvent::GetStaticEventType())
 		{

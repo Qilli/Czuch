@@ -141,7 +141,7 @@ namespace Czuch
 	{
 		return m_ShouldStopLoop;
 	}
-	void EngineRoot::OnEvent(const Event& e)
+	void EngineRoot::OnEvent(Event& e)
 	{
 		if (e.GetEventType() == WindowClosedEvent::GetStaticEventType())
 		{

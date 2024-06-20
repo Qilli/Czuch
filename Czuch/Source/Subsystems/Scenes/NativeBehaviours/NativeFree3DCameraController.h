@@ -18,7 +18,7 @@ namespace Czuch
 		void OnCreate() override;
 		void OnEnable() override;
 		void OnDisable() override;
-		void OnEvent(const Event& event) override;
+		void OnEvent(Event& event) override;
 	private:
 		float m_Speed = 1.0f;
 		float m_Sensitivity = 0.003f;

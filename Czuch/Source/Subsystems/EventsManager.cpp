@@ -1,5 +1,8 @@
 #include"czpch.h"
 #include "EventsManager.h"
+#include "Events/EventsTypes/ApplicationEvents.h"
+#include "Events/EventsTypes/InputEvents.h"
+#include "Events/EventsTypes/MouseEvents.h"
 
 namespace Czuch
 {
@@ -8,16 +11,29 @@ namespace Czuch
 		m_EventsToDispatch.push(event);
 	}
 
-	void EventsManager::AddListener(EventTypeID eventType, IEventsListener* listener)
+	void EventsManager::AddListener(EventTypeID eventType, IEventsListener* listener, int priority)
 	{
 		auto &result = GetContainerOfType(eventType);
-		result.AddListener(listener);
+		result.AddListener(listener,priority);
+	}
+
+	void EventsManager::AddListenerForAllEvents(IEventsListener* listener, int priority)
+	{
+		AddListener(WindowClosedEvent::GetStaticEventType(), listener,priority);
+		AddListener(WindowSizeChangedEvent::GetStaticEventType(), listener,priority);
+		AddListener(KeyUpEvent::GetStaticEventType(), listener, priority);
+		AddListener(KeyDownEvent::GetStaticEventType(), listener, priority);
+		AddListener(KeyTypedEvent::GetStaticEventType(), listener, priority);
+		AddListener(MouseMovedEvent::GetStaticEventType(), listener, priority);
+		AddListener(MouseButtonDownEvent::GetStaticEventType(), listener, priority);
+		AddListener(MouseButtonUpEvent::GetStaticEventType(), listener, priority);
+		AddListener(MouseScrolledEvent::GetStaticEventType(), listener, priority);
 	}
 
 	void EventsManager::RemoveListener(EventTypeID eventType, IEventsListener* listener)
 	{
-		auto result=m_listeners.find(eventType);
-		if (result != m_listeners.end())
+		auto result=m_ListenersContainer.find(eventType);
+		if (result != m_ListenersContainer.end())
 		{
 			result->second.RemoveListener(listener);
 		}
@@ -47,22 +63,22 @@ namespace Czuch
 
 	void EventsManager::Clear()
 	{
-		for (auto current= m_listeners.begin(); current != m_listeners.end();current++)
+		for (auto current= m_ListenersContainer.begin(); current != m_ListenersContainer.end();current++)
 		{
 			current->second.RemoveAll();
 		}
-		m_listeners.clear();
+		m_ListenersContainer.clear();
 	}
 
 	EventsManager::ListenersContainer& EventsManager::GetContainerOfType(const EventTypeID& type)
 	{
-		auto iterator=m_listeners.find(type);
-		if (iterator != m_listeners.end())
+		auto iterator=m_ListenersContainer.find(type);
+		if (iterator != m_ListenersContainer.end())
 		{
 			return iterator->second;
 		}
-		m_listeners.insert(std::make_pair(type, EventsManager::ListenersContainer(type)));
-		auto it = m_listeners.find(type);
+		m_ListenersContainer.insert(std::make_pair(type, EventsManager::ListenersContainer(type)));
+		auto it = m_ListenersContainer.find(type);
 		return it->second;
 	}
 
@@ -75,18 +91,19 @@ namespace Czuch
 	{
 	}
 
-	void EventsManager::ListenersContainer::AddListener(IEventsListener* listener)
+	void EventsManager::ListenersContainer::AddListener(IEventsListener* listener,int priority)
 	{
-		m_listeners.push_back({listener});
+		m_Listeners.push_back({listener,priority});
+		std::sort(m_Listeners.begin(), m_Listeners.end(), std::greater<EventsManager::Listener>());
 	}
 
 	const void EventsManager::ListenersContainer::RemoveListener(IEventsListener* listener)
 	{
 		int at = -1;
-		Listener toSearch = { listener };
-		for (size_t i = 0; i < m_listeners.size(); i++)
+		Listener toSearch = { listener,0 };
+		for (size_t i = 0; i < m_Listeners.size(); i++)
 		{
-			if (m_listeners[i] == toSearch)
+			if (m_Listeners[i] == toSearch)
 			{
 				at = i;
 				break;
@@ -95,33 +112,78 @@ namespace Czuch
 
 		if (at != -1)
 		{
-			m_listeners.erase(m_listeners.begin()+at);
+			m_Listeners.erase(m_Listeners.begin()+at);
 		}
 	}
 
 	void EventsManager::ListenersContainer::RemoveAll()
 	{
-		m_listeners.clear();
+		m_Listeners.clear();
 	}
 
 	const void EventsManager::ListenersContainer::Invoke(Event& e)
 	{
-		for(Listener list: m_listeners)
+		for(Listener list: m_Listeners)
 		{
+			if (e.IsHandled())
+			{
+				break;
+			}
 			list.TryInvoke(e);
 		}
 	}
 
 	bool EventsManager::Listener::operator==(Listener& comp)
 	{
-		return m_listener == comp.m_listener;
+		return m_Listener == comp.m_Listener;
+	}
+
+	bool EventsManager::Listener::operator!=(Listener& comp)
+	{
+		return !(*this == comp);
+	}
+
+	bool EventsManager::Listener::operator<(Listener& comp)
+	{
+		return (m_Priority < comp.m_Priority);
+	}
+
+	bool EventsManager::Listener::operator>(const Listener& comp) const
+	{
+		return (m_Priority > comp.m_Priority);
+	}
+
+	EventsManager::Listener::Listener(IEventsListener* listener, int priority)
+	{
+		m_Listener = listener;
+		m_Priority = priority;
+	}
+
+	EventsManager::Listener::Listener(const Listener& other)
+	{
+		m_Listener = other.m_Listener;
+		m_Priority = other.m_Priority;
+	}
+
+	EventsManager::Listener& EventsManager::Listener::operator=(const Listener&& other) noexcept(true)
+	{
+		m_Listener = other.m_Listener;
+		m_Priority = other.m_Priority;
+		return *this;
+	}
+
+	EventsManager::Listener& EventsManager::Listener::operator=(const Listener& other)
+	{
+		m_Listener = other.m_Listener;
+		m_Priority = other.m_Priority;
+		return *this;
 	}
 
 	void EventsManager::Listener::TryInvoke(Event& e)
 	{
-		if (m_listener != nullptr)
+		if (m_Listener != nullptr)
 		{
-			m_listener->OnEvent(e);
+			m_Listener->OnEvent(e);
 		}
 	}
 

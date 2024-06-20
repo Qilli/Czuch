@@ -21,7 +21,7 @@ namespace Czuch
 	public:
 		static void CreateAndDispatch(KeyCode keyCode,bool repeated=false);
 	public:
-		EVENT_METHODS("KeyDownEvent")
+		EVENT_METHODS("KeyDownEvent",EventCategoryType::Keyboard)
 	protected:
 		KeyDownEvent(KeyCode keyCode,bool repeated) :KeyEvent(keyCode),m_Repeated(repeated) {}
 	private:
@@ -33,7 +33,7 @@ namespace Czuch
 	public:
 		static void CreateAndDispatch(KeyCode keyCode);
 	public:
-		EVENT_METHODS("KeyUpEvent")
+		EVENT_METHODS("KeyUpEvent", EventCategoryType::Keyboard)
 	protected:
 		KeyUpEvent(KeyCode keyCode) :KeyEvent(keyCode) {}
 	};
@@ -43,7 +43,7 @@ namespace Czuch
 	public:
 		static void CreateAndDispatch(KeyCode keyCode);
 	public:
-		EVENT_METHODS("KeyTypedEvent")
+		EVENT_METHODS("KeyTypedEvent", EventCategoryType::Keyboard)
 	protected:
 		KeyTypedEvent(KeyCode keyCode) :KeyEvent(keyCode) {}
 	};
