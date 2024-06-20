@@ -1,6 +1,5 @@
 #pragma once
 #include "BaseEditorPanel.h"
-#include"Subsystems/Scenes/Scene.h"
 
 namespace Czuch
 {
@@ -11,10 +10,12 @@ namespace Czuch
         SceneHierarchyEditorPanel(Scene* activeScene);
         void SetActiveScene(Scene* activeScene);
         void FillUI() override;
+        void AddOnSelectedEntityListener(BaseEditorPanel* listener);
     private:
 		void DrawEntityNode(Entity entity);
+        void NotifyOnSelectedEntityListeners();
     private:
-        Entity m_SelectedEntity;
+        std::vector<BaseEditorPanel*> m_OnSelectedEntityListeners;
         Scene* m_ActiveScene;
     };
 }

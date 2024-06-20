@@ -1,6 +1,7 @@
 #pragma once
 #include "Czuch.h"
 #include"Panels/SceneHierarchyEditorPanel.h"
+#include"Panels/EntityInspectorEditorPanel.h"
 
 namespace Czuch
 {
@@ -21,6 +22,7 @@ namespace Czuch
     private:
         EngineRoot* m_Root;
         SceneHierarchyEditorPanel* m_SceneHierarchyPanel;
+        EntityInspectorEditorPanel* m_EntityInspectorPanel;
         bool m_OffscreenPassAdded;
         U32 m_Width,m_Height;
         std::function<void(U32,U32)> m_UpdateOffscreenPass;

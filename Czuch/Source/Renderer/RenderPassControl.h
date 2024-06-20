@@ -27,8 +27,8 @@ namespace Czuch
 
 		virtual void Resize(int width, int height) { m_Width = width; m_Height = height; }
 
-		int GetWidth() const { return m_Width; }
-		int GetHeight() const { return m_Height; }
+		int GetWidth() const { return m_Width<=0?1:m_Width; }
+		int GetHeight() const { return m_Height<=0?1:m_Height; }
 		RenderPassType GetType() const { return Type; }
 		int GetPriority() const { return m_Priority; }
 		void SetPriority(int priority) { m_Priority = priority; }

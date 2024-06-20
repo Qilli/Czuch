@@ -28,6 +28,11 @@ namespace Czuch
 		ImGui::End();
 	}
 
+	void SceneHierarchyEditorPanel::AddOnSelectedEntityListener(BaseEditorPanel* listener)
+	{
+		m_OnSelectedEntityListeners.push_back(listener);
+	}
+
 	void SceneHierarchyEditorPanel::DrawEntityNode(Entity entity)
 	{
 		if (entity.HasComponent<HeaderComponent>())
@@ -55,7 +60,15 @@ namespace Czuch
 			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 			{
 				m_SelectedEntity = entity;
+				NotifyOnSelectedEntityListeners();
 			}
+
+			if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+			{
+				m_SelectedEntity = {};
+				NotifyOnSelectedEntityListeners();
+			}
+
 			if (node_open)
 			{
 				//draw children
@@ -66,6 +79,14 @@ namespace Czuch
 				}
 				ImGui::TreePop();
 			}
+		}
+	}
+
+	void SceneHierarchyEditorPanel::NotifyOnSelectedEntityListeners()
+	{
+		for (auto listener : m_OnSelectedEntityListeners)
+		{
+			listener->SelectedEntityChanged(m_SelectedEntity);
 		}
 	}
 }

@@ -4,18 +4,79 @@
 
 namespace Czuch
 {
+
+	void SetLightGreyStyle()
+	{
+		ImGuiStyle& style = ImGui::GetStyle();
+		ImVec4* colors = style.Colors;
+
+		// Set default dark theme colors
+		ImGui::StyleColorsDark();
+
+		// Adjust specific colors to use dark grey instead of blue
+		ImVec4 darkGrey = ImVec4(0.17f, 0.17f, 0.17f, 1.0f);
+		ImVec4 darkGreyHover = ImVec4(0.25f, 0.25f, 0.25f, 0.3f);
+		ImVec4 darkGreyActive = ImVec4(0.20f, 0.20f, 0.20f, 0.3f);
+
+		colors[ImGuiCol_Header] = darkGrey;                               // Header background
+		colors[ImGuiCol_HeaderHovered] = darkGreyHover;                   // Header background when hovered
+		colors[ImGuiCol_HeaderActive] = darkGreyActive;                   // Header background when active
+		colors[ImGuiCol_Button] = darkGrey;                               // Button background
+		colors[ImGuiCol_ButtonHovered] = darkGreyHover;                   // Button background when hovered
+		colors[ImGuiCol_ButtonActive] = darkGreyActive;                   // Button background when active
+		colors[ImGuiCol_FrameBg] = darkGrey;                              // Frame background
+		colors[ImGuiCol_FrameBgHovered] = darkGreyHover;                  // Frame background when hovered
+		colors[ImGuiCol_FrameBgActive] = darkGreyActive;                  // Frame background when active
+		colors[ImGuiCol_SliderGrab] = darkGrey;                           // Slider grab
+		colors[ImGuiCol_SliderGrabActive] = darkGreyActive;               // Slider grab when active
+		colors[ImGuiCol_CheckMark] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);      // Check mark color (white for visibility)
+		colors[ImGuiCol_Separator] = darkGrey;                            // Separator
+		colors[ImGuiCol_SeparatorHovered] = darkGreyHover;                // Separator when hovered
+		colors[ImGuiCol_SeparatorActive] = darkGreyActive;                // Separator when active
+		colors[ImGuiCol_ResizeGrip] = darkGrey;                           // Resize grip
+		colors[ImGuiCol_ResizeGripHovered] = darkGreyHover;               // Resize grip when hovered
+		colors[ImGuiCol_ResizeGripActive] = darkGreyActive;               // Resize grip when active
+		colors[ImGuiCol_Tab] = darkGrey;                                  // Tab background
+		colors[ImGuiCol_TabHovered] = darkGreyHover;                      // Tab background when hovered
+		colors[ImGuiCol_TabActive] = darkGreyActive;                      // Tab background when active
+		colors[ImGuiCol_TabUnfocused] = darkGrey;                         // Tab background when unfocused
+		colors[ImGuiCol_TabUnfocusedActive] = darkGreyActive;             // Tab background when unfocused and active
+
+		// Adjust window bar colors
+		colors[ImGuiCol_TitleBg] = darkGrey;                              // Title bar background
+		colors[ImGuiCol_TitleBgActive] = darkGreyActive;                  // Title bar background when active
+		colors[ImGuiCol_TitleBgCollapsed] = darkGrey;                     // Title bar background when collapsed
+		colors[ImGuiCol_MenuBarBg] = darkGrey;                            // Menubar background
+		colors[ImGuiCol_ScrollbarBg] = darkGrey;                          // Scrollbar background
+		colors[ImGuiCol_ScrollbarGrab] = darkGrey;                        // Scrollbar grab
+		colors[ImGuiCol_ScrollbarGrabHovered] = darkGreyHover;            // Scrollbar grab when hovered
+		colors[ImGuiCol_ScrollbarGrabActive] = darkGreyActive;            // Scrollbar grab when active
+
+		// Adjust other elements as needed
+		colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);       // Window background
+		colors[ImGuiCol_ChildBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);        // Child window background
+		colors[ImGuiCol_PopupBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);        // Popup background
+		colors[ImGuiCol_Border] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);         // Border color
+		colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);           // Text color
+		colors[ImGuiCol_TextDisabled] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);   // Disabled text color
+
+	}
+
 	EditorControl::EditorControl() : m_Root(EngineRoot::GetPtr())
 	{
 		m_OffscreenPassAdded = false;
 		m_SceneHierarchyPanel = nullptr;
+		m_EntityInspectorPanel = nullptr;
 	}
 	EditorControl::~EditorControl()
 	{
 		delete m_SceneHierarchyPanel;
+		delete m_EntityInspectorPanel;
 	}
 	void EditorControl::Init(void* context)
 	{
 		ImGui::SetCurrentContext((ImGuiContext*)context);
+		SetLightGreyStyle();
 	}
 
 	void EditorControl::Shutdown()
@@ -31,6 +92,12 @@ namespace Czuch
 		if (m_SceneHierarchyPanel == nullptr)
 		{
 			m_SceneHierarchyPanel = new SceneHierarchyEditorPanel(m_Root->GetScenesManager().GetActiveScene());
+		}
+
+		if (m_EntityInspectorPanel == nullptr)
+		{
+			m_EntityInspectorPanel = new EntityInspectorEditorPanel();
+			m_SceneHierarchyPanel->AddOnSelectedEntityListener(m_EntityInspectorPanel);
 		}
 
 
@@ -54,6 +121,8 @@ namespace Czuch
 
 		//scene hierarchy panel
 		m_SceneHierarchyPanel->FillUI();
+		//inspector panel
+		m_EntityInspectorPanel->FillUI();
 
 
 		ImGui::PopStyleVar();

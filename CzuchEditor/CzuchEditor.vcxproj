@@ -139,6 +139,7 @@
   <ItemGroup>
     <ClInclude Include="source\EditorControl.h" />
     <ClInclude Include="source\Panels\BaseEditorPanel.h" />
+    <ClInclude Include="source\Panels\EntityInspectorEditorPanel.h" />
     <ClInclude Include="source\Panels\SceneHierarchyEditorPanel.h" />
   </ItemGroup>
   <ItemGroup>
@@ -146,6 +147,7 @@
     <ClCompile Include="source\EditorControl.cpp" />
     <ClCompile Include="source\ImGuiCompiler.cpp" />
     <ClCompile Include="source\Panels\BaseEditorPanel.cpp" />
+    <ClCompile Include="source\Panels\EntityInspectorEditorPanel.cpp" />
     <ClCompile Include="source\Panels\SceneHierarchyEditorPanel.cpp" />
   </ItemGroup>
   <ItemGroup>

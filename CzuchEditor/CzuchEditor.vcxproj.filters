@@ -16,6 +16,9 @@
     <ClInclude Include="source\Panels\BaseEditorPanel.h">
       <Filter>Panels</Filter>
     </ClInclude>
+    <ClInclude Include="source\Panels\EntityInspectorEditorPanel.h">
+      <Filter>Panels</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\App\CzuchEditorApplication.cpp">
@@ -27,6 +30,9 @@
       <Filter>Panels</Filter>
     </ClCompile>
     <ClCompile Include="source\Panels\BaseEditorPanel.cpp">
+      <Filter>Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Panels\EntityInspectorEditorPanel.cpp">
       <Filter>Panels</Filter>
     </ClCompile>
   </ItemGroup>
