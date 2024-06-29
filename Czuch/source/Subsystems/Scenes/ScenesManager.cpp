@@ -33,6 +33,14 @@ namespace Czuch
 		}
 	}
 
+	void ScenesManager::OnFinishFrame()
+	{
+		if (m_ActiveScene != nullptr)
+		{
+			m_ActiveScene->OnFinishFrame();
+		}
+	}
+
 
 	void ScenesManager::Shutdown()
 	{

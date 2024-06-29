@@ -8,5 +8,6 @@ namespace Czuch
 	{
 	public:
 		virtual void UpdateUI(TimeDelta timeDelta) {}
+		virtual void OnFinishFrame() {}
 	};
 }

@@ -28,6 +28,7 @@ namespace Czuch
 		virtual void SetEnabled(bool enabled) { m_Enabled.UpdateValue(enabled); }
 		virtual void OnCreated() {}
 		virtual void OnRemoved() {}
+		virtual void OnFinishFrame() {}
 	private:
 
 	protected:

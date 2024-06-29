@@ -15,6 +15,7 @@ namespace Czuch
 
 		void Init() override;
 		void Update(TimeDelta timeDelta) override;
+		void OnFinishFrame() override;
 		void Shutdown() override;
 
 		void AddScene(Scene* scene, bool setAsActive = false);

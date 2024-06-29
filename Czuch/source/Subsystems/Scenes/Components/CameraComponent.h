@@ -15,6 +15,9 @@ namespace Czuch
 		void SetVerticalFov(float fov);
 		void SetNearPlane(float near);
 		void SetFarPlane(float far);
+		inline float GetFov()const { return m_VerticalFov; }
+		inline float GetNearPlane()const { return m_NearPlane; }
+		inline float GetFarPlane()const { return m_FarPlane; }
 		void SetAspectRatio(float aspectRatio);
 		void Set(float fov, float aspectRatio, float nearPlane, float farPlane);
 
@@ -30,10 +33,9 @@ namespace Czuch
 		float m_AspectRatio;
 		float m_NearPlane;
 		float m_FarPlane;
-		float m_HorizontalFov;
 	};
 
-	struct CameraComponent : public Component
+	struct CZUCH_API CameraComponent : public Component
 	{
 	public:
 		CameraComponent(Entity owner);

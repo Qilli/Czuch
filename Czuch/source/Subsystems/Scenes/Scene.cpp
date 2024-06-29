@@ -53,6 +53,21 @@ namespace Czuch
 		}
 	}
 
+	void Scene::OnFinishFrame()
+	{
+		DestroyMarkedEntities();
+		auto view = m_Registry.view<NativeBehaviourComponent, ActiveComponent>();
+		for (auto entity : view)
+		{
+			auto& nativeBehaviour = view.get<NativeBehaviourComponent>(entity);
+			nativeBehaviour.OnFinishFrame();
+		}
+		for (auto uiElement : m_UIElements)
+		{
+			uiElement->OnFinishFrame();
+		}
+	}
+
 	void Scene::FillRenderContexts(Camera* cam, Renderer* renderer, int width, int height)
 	{
 		//get main camera
@@ -166,6 +181,11 @@ namespace Czuch
 		m_Registry.destroy(internalHandle);
 	}
 
+	void Scene::MarkEntityForDestroy(Entity entity)
+	{
+		m_EntitiesToDestroy.push_back(entity);
+	}
+
 	Entity Scene::GetRootEntity()
 	{
 		return m_RootEntity;
@@ -216,6 +236,15 @@ namespace Czuch
 		renderContextCreateInfo.renderType = RenderType::Debug;
 		renderContextCreateInfo.renderLayer = RenderLayer::LAYER_0;
 		m_DebugRenderContext = RenderContext(renderContextCreateInfo);
+	}
+
+	void Scene::DestroyMarkedEntities()
+	{
+		for (auto entity : m_EntitiesToDestroy)
+		{
+			DestroyEntity(entity);
+		}
+		m_EntitiesToDestroy.clear();
 	}
 
 }

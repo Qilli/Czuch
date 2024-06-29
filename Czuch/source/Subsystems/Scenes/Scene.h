@@ -20,9 +20,11 @@ namespace Czuch
 		void AddUIElement(UIBaseElement* element);
 
 		void OnUpdate(TimeDelta delta);
+		void OnFinishFrame();
 		void FillRenderContexts(Camera* cam,Renderer* renderer,int width,int height);
 		Entity CreateEntity(const CzuchStr& entityName, Entity parent = Entity());
 		void DestroyEntity(Entity entity);
+		void MarkEntityForDestroy(Entity entity);
 		Entity GetRootEntity();
 		void ClearScene();
 		const CzuchStr& GetSceneName() const { return m_SceneName; }
@@ -39,6 +41,7 @@ namespace Czuch
 		void OnDettached() {}
 	private:
 		void CreateRenderContexts();
+		void DestroyMarkedEntities();
 	private:
 		friend class Entity;
 		entt::registry m_Registry;
@@ -48,5 +51,6 @@ namespace Czuch
 		RenderContext m_GeneralRenderContext;
 		RenderContext m_DebugRenderContext;
 		std::vector<UIBaseElement*> m_UIElements;
+		std::vector<Entity> m_EntitiesToDestroy;
 	};
 }

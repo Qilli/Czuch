@@ -121,6 +121,7 @@ namespace Czuch
 			m_UIBaseMgr->SetSceneForUI(m_ScenesMgr->GetActiveScene());
 			m_UIBaseMgr->Update(deltaTime);
 			m_Renderer->DrawFrame();
+			m_ScenesMgr->OnFinishFrame();
 		}
 		m_Renderer->AwaitDeviceIdle();
 	}

@@ -20,9 +20,9 @@ namespace Czuch
 		void SetLocalScale(const Vec3& scale);
 		void SetParentTransform(const Mat4x4& transform);
 
-		const Vec3& GetLocalPosition() const { return m_LocalPosition; }
-		const Vec3& GetLocalEulerAngles() const { return m_LocalEulerAngles; }
-		const Vec3& GetLocalScale() const { return m_LocalScale; }
+		Vec3& GetLocalPosition() { return m_LocalPosition; }
+		Vec3& GetLocalEulerAngles(){ return m_LocalEulerAngles; }
+		Vec3& GetLocalScale() { return m_LocalScale; }
 		const Mat4x4& GetLocalTransform() const { return m_LocalTransform; }
 		const ComponentState& GetState() const { return m_State; }
 		void SetDirty() { m_State.SetDirty(); }
