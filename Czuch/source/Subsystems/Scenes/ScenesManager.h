@@ -13,7 +13,7 @@ namespace Czuch
 		ScenesManager(Renderer* renderer, AssetsManager* assetsMgr);
 		~ScenesManager();
 
-		void Init() override;
+		void Init(RenderSettings* settings) override;
 		void Update(TimeDelta timeDelta) override;
 		void OnFinishFrame() override;
 		void Shutdown() override;
@@ -22,6 +22,8 @@ namespace Czuch
 		void RemoveScene(Scene* scene);
 		void SetActiveScene(Scene* scene);
 		Scene* GetActiveScene() const;
+	public:
+		bool SaveActiveScene(const std::string& path);
 	private:
 		void DeactivateActiveScene();
 	private:

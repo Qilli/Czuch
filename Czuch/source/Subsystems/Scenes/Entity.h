@@ -1,12 +1,13 @@
 #pragma once
 #include"IScene.h"
 #include"Renderer/Graphics.h"
+#include "Serialization/ISerializer.h"
 
 namespace Czuch
 {
 
 	struct TransformComponent;
-	class CZUCH_API Entity
+	class CZUCH_API Entity: public ISerializer
 	{
 	public:
 		static Entity CreateInvalidEntity() { Entity e; e.Invalidate(); return e; }
@@ -46,6 +47,9 @@ namespace Czuch
 
 		TransformComponent& Transform();
 		intptr_t GetID() const { return (intptr_t)m_EntityHandle; }
+	public:
+		virtual bool Serialize(YAML::Emitter& out, bool binary = false) override;
+		virtual bool Deserialize(const YAML::Node& in, bool binary = false) override;
 	public:
 		IScene* GetScene() { return m_Scene; }
 

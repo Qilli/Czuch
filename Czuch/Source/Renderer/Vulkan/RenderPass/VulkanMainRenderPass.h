@@ -8,7 +8,7 @@ namespace Czuch
 	class VulkanMainRenderPass : public RenderPassControl
 	{
 	public:
-		VulkanMainRenderPass(VulkanRenderer* renderer, VulkanDevice* device);
+		VulkanMainRenderPass(RenderSettings* settings,VulkanRenderer* renderer, VulkanDevice* device);
 		~VulkanMainRenderPass();
 		void BeginRenderPass(CommandBuffer* cmdBuffer) override;
 		void EndRenderPass(CommandBuffer* cmdBuffer) override;

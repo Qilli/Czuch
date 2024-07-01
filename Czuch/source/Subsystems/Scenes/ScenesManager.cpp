@@ -3,6 +3,7 @@
 #include "Renderer/Renderer.h"
 #include "Subsystems/Assets/AssetsManager.h"
 #include"Core/Time.h"
+#include"Serialization/SceneSerializer.h"
 
 namespace Czuch
 {
@@ -20,9 +21,19 @@ namespace Czuch
 		}
 	}
 
-	void ScenesManager::Init()
+	bool ScenesManager::SaveActiveScene(const std::string& path)
 	{
+		if (m_ActiveScene == nullptr)
+		{
+			return false;
+		}
+		SceneSerializer serializer(m_ActiveScene);
+		return serializer.Serialize(path, false);
+	}
 
+	void ScenesManager::Init(RenderSettings* settings)
+	{
+		BaseSubsystem::Init(settings);
 	}
 
 	void ScenesManager::Update(TimeDelta timeDelta)

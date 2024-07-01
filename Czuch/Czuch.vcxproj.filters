@@ -22,6 +22,12 @@
     <Filter Include="Renderer\Vulkan">
       <UniqueIdentifier>{7C380408-E8C3-71CC-F1D4-F4C05DDFCDCC}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Vulkan\RenderPass">
+      <UniqueIdentifier>{227B31B6-0E8B-DD86-7744-42A56373CC1F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Serialization">
+      <UniqueIdentifier>{2319AF09-8FD9-2A40-5814-74BDC4936F1C}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Subsystems">
       <UniqueIdentifier>{67E939EA-53A1-7B37-BCA8-5493A87F1628}</UniqueIdentifier>
     </Filter>
@@ -128,6 +134,9 @@
     <ClInclude Include="source\Renderer\RenderContext.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="source\Renderer\RenderPassControl.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="source\Renderer\Renderer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
@@ -136,6 +145,12 @@
     </ClInclude>
     <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h">
       <Filter>Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.h">
+      <Filter>Renderer\Vulkan\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.h">
+      <Filter>Renderer\Vulkan\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="source\Renderer\Vulkan\VulkanBase.h">
       <Filter>Renderer\Vulkan</Filter>
@@ -154,6 +169,15 @@
     </ClInclude>
     <ClInclude Include="source\Renderer\Vulkan\VulkanRenderer.h">
       <Filter>Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Serialization\ISerializer.h">
+      <Filter>Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Serialization\SceneSerializer.h">
+      <Filter>Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Serialization\SerializationComponentHelper.h">
+      <Filter>Serialization</Filter>
     </ClInclude>
     <ClInclude Include="source\Subsystems\Assets\Asset\Asset.h">
       <Filter>Subsystems\Assets\Asset</Filter>
@@ -267,9 +291,6 @@
       <Filter>Subsystems\UI</Filter>
     </ClInclude>
     <ClInclude Include="source\czpch.h" />
-    <ClInclude Include="source\Renderer\RenderPassControl.h" />
-    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.h" />
-    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">
@@ -324,6 +345,12 @@
     <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp">
       <Filter>Renderer\Vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.cpp">
+      <Filter>Renderer\Vulkan\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.cpp">
+      <Filter>Renderer\Vulkan\RenderPass</Filter>
+    </ClCompile>
     <ClCompile Include="source\Renderer\Vulkan\VulkanCommandBuffer.cpp">
       <Filter>Renderer\Vulkan</Filter>
     </ClCompile>
@@ -338,6 +365,15 @@
     </ClCompile>
     <ClCompile Include="source\Renderer\Vulkan\VulkanRenderer.cpp">
       <Filter>Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Serialization\ISerializer.cpp">
+      <Filter>Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Serialization\SceneSerializer.cpp">
+      <Filter>Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Serialization\SerializationComponentHelper.cpp">
+      <Filter>Serialization</Filter>
     </ClCompile>
     <ClCompile Include="source\Subsystems\Assets\Asset\Asset.cpp">
       <Filter>Subsystems\Assets\Asset</Filter>
@@ -439,7 +475,5 @@
       <Filter>Subsystems\UI</Filter>
     </ClCompile>
     <ClCompile Include="source\czpch.cpp" />
-    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.cpp" />
-    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.cpp" />
   </ItemGroup>
 </Project>

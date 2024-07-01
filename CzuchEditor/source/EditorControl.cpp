@@ -14,9 +14,9 @@ namespace Czuch
 		ImGui::StyleColorsDark();
 
 		// Adjust specific colors to use dark grey instead of blue
-		ImVec4 darkGrey = ImVec4(0.17f, 0.17f, 0.17f, 1.0f);
-		ImVec4 darkGreyHover = ImVec4(0.25f, 0.25f, 0.25f, 0.3f);
-		ImVec4 darkGreyActive = ImVec4(0.20f, 0.20f, 0.20f, 0.3f);
+		ImVec4 darkGrey = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
+		ImVec4 darkGreyHover = ImVec4(0.15f, 0.15f, 0.15f, 0.3f);
+		ImVec4 darkGreyActive = ImVec4(0.1f, 0.1f, 0.1f, 0.3f);
 
 		colors[ImGuiCol_Header] = darkGrey;                               // Header background
 		colors[ImGuiCol_HeaderHovered] = darkGreyHover;                   // Header background when hovered
@@ -53,9 +53,9 @@ namespace Czuch
 		colors[ImGuiCol_ScrollbarGrabActive] = darkGreyActive;            // Scrollbar grab when active
 
 		// Adjust other elements as needed
-		colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);       // Window background
-		colors[ImGuiCol_ChildBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);        // Child window background
-		colors[ImGuiCol_PopupBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);        // Popup background
+		colors[ImGuiCol_WindowBg] = ImVec4(0.03f, 0.03f, 0.03f, 1.0f);       // Window background
+		colors[ImGuiCol_ChildBg] = ImVec4(0.03f, 0.03f, 0.03f, 1.0f);        // Child window background
+		colors[ImGuiCol_PopupBg] = ImVec4(0.03f, 0.03f, 0.03f, 1.0f);        // Popup background
 		colors[ImGuiCol_Border] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);         // Border color
 		colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);           // Text color
 		colors[ImGuiCol_TextDisabled] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);   // Disabled text color
@@ -70,6 +70,7 @@ namespace Czuch
 	}
 	EditorControl::~EditorControl()
 	{
+		delete m_CommandsControl;
 		delete m_SceneHierarchyPanel;
 		delete m_EntityInspectorPanel;
 	}
@@ -77,6 +78,7 @@ namespace Czuch
 	{
 		ImGui::SetCurrentContext((ImGuiContext*)context);
 		SetLightGreyStyle();
+		m_CommandsControl = new EditorCommandsControl();
 	}
 
 	void EditorControl::Shutdown()
@@ -160,7 +162,10 @@ namespace Czuch
 		{
 			ImGui::EndMenu();
 		}
-		if (ImGui::MenuItem("Save", "Ctrl+S")) {}
+		if (ImGui::MenuItem("Save", "Ctrl+S")) 
+		{
+			m_Root->GetScenesManager().SaveActiveScene("Assets/Scenes/testScene.scene");
+		}
 		if (ImGui::MenuItem("Save As..")) {}
 
 		ImGui::Separator();

@@ -88,7 +88,7 @@ namespace Czuch
 
 		if (m_RenderSettings->mainRenderPassActive)
 		{
-			AddRenderPass(new VulkanMainRenderPass(this, m_Device));
+			AddRenderPass(new VulkanMainRenderPass(m_RenderSettings,this, m_Device));
 		}
 
 	}
@@ -289,7 +289,7 @@ namespace Czuch
 	{
 		if (m_RenderSettings->offscreenRendering)
 		{
-			AddRenderPass(new VulkanOffscreenRenderPass(cam, this, m_Device, Format::R8G8B8A8_UNORM, Format::D24_UNORM_S8_UINT, width, height));
+			AddRenderPass(new VulkanOffscreenRenderPass(m_RenderSettings,cam, this, m_Device, Format::R8G8B8A8_UNORM, Format::D24_UNORM_S8_UINT, width, height));
 			if (onResize != nullptr)
 			{
 				(*onResize) = [this](U32 width, U32 height) {

@@ -3,18 +3,20 @@
 #include"Components/TransformComponent.h"
 #include"Components/MeshRendererComponent.h"
 #include"Components/MeshComponent.h"
+#include"Components/HeaderComponent.h"
+#include"Serialization/SerializationComponentHelper.h"
 
 namespace Czuch
 {
-	Entity::Entity(entt::entity handle,IScene* scene)
+	Entity::Entity(entt::entity handle, IScene* scene)
 		: m_EntityHandle(handle), m_Scene(scene)
 	{
 	}
 
 	void Entity::AddRenderable(MeshHandle meshHandle, MaterialInstanceHandle overrideMaterial)
 	{
-		AddComponent<MeshComponent>( meshHandle);
-		AddComponent<MeshRendererComponent>( overrideMaterial);
+		AddComponent<MeshComponent>(meshHandle);
+		AddComponent<MeshRendererComponent>(overrideMaterial);
 	}
 
 	void Entity::RemoveRenderable()
@@ -46,7 +48,7 @@ namespace Czuch
 	void Entity::SetActive(bool isActive)
 	{
 		bool hasActiveComponent = HasComponent<ActiveComponent>();
-		if (hasActiveComponent&&!isActive)
+		if (hasActiveComponent && !isActive)
 		{
 			RemoveComponent<ActiveComponent>();
 		}
@@ -58,5 +60,47 @@ namespace Czuch
 
 	TransformComponent& Entity::Transform() { return GetComponent<TransformComponent>(); }
 
+
+#pragma region Serialization
+	bool Entity::Serialize(YAML::Emitter& out, bool binary)
+	{
+		if (binary)
+		{
+			return false;
+		}
+		else
+		{
+
+			SerializerHelper::SetEmitter(&out);
+			SerializerHelper::BeginMap();
+			SerializerHelper::Key("Entity");
+			SerializerHelper::Value("GUID:8979879");
+
+			//Header component
+			if (HasComponent<HeaderComponent>())
+			{
+				SerializerHelper::Key("HeaderComponent");
+				SerializationComponentHelper::SerializeHeaderComponent(&GetComponent<HeaderComponent>(),binary);
+			}
+
+			//Transform component
+			if (HasComponent<TransformComponent>())
+			{
+				SerializerHelper::Key("TransformComponent");
+				SerializationComponentHelper::SerializeTransformComponent(&GetComponent<TransformComponent>(),binary);
+			}
+
+			SerializerHelper::EndMap();
+
+			return true;
+		}
+
+	}
+
+	bool Entity::Deserialize(const YAML::Node& in, bool binary)
+	{
+		return false;
+	}
+#pragma endregion
 }
 

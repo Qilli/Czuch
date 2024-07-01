@@ -14,7 +14,7 @@ int main()
 	Czuch::EditorControl editorControl;
 	root->Init("engineConfig.cfg",&editorControl);
 
-	Czuch::Scene *scene= new Czuch::Scene("MainScene");
+	Czuch::Scene *scene= new Czuch::Scene("MainScene", &root->GetRenderSettings());
 
 	scene->CreateEntity("Cube1");
 	scene->CreateEntity("Cube2");

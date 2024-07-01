@@ -13,7 +13,7 @@ namespace Czuch
 	class CZUCH_API AssetsManager: public BaseSubsystem<AssetsManager>
 	{
 	public:
-		void Init() override;
+		void Init(RenderSettings* settings) override;
 		void Shutdown() override;
 		void Update(TimeDelta timeDelta) override;
 

@@ -4,6 +4,7 @@
 #include <type_traits>
 #include<functional>
 #include<deque>
+#include<assert.h>
 
 #ifdef CZUCH_PLATFORM_WINDOWS
 	#ifdef CZUCH_BUILD_DLL

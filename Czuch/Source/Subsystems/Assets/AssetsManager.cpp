@@ -10,9 +10,9 @@
 namespace Czuch
 {
 
-	void AssetsManager::Init()
+	void AssetsManager::Init(RenderSettings* settings)
 	{
-
+		BaseSubsystem::Init(settings);
 	}
 
 	void AssetsManager::Shutdown()

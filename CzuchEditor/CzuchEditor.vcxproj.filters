@@ -4,19 +4,37 @@
     <Filter Include="App">
       <UniqueIdentifier>{46D6870B-B2DF-877C-3B5B-9E7CA763937C}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Commands">
+      <UniqueIdentifier>{17269CB7-03F3-F6C2-2C0C-E56A18382C51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Commands\CommandTypes">
+      <UniqueIdentifier>{5AB3311F-C61F-ED19-8F13-8577FB3E0F82}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Panels">
-      <UniqueIdentifier>{94a461e7-b25d-4f66-a253-043883fa82bc}</UniqueIdentifier>
+      <UniqueIdentifier>{A80D95C9-94AF-BF9F-7D6A-D3F369AB46F0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\EditorControl.h" />
-    <ClInclude Include="source\Panels\SceneHierarchyEditorPanel.h">
-      <Filter>Panels</Filter>
+    <ClInclude Include="source\Commands\CommandTypes\CreateNewEntityCommand.h">
+      <Filter>Commands\CommandTypes</Filter>
     </ClInclude>
+    <ClInclude Include="source\Commands\CommandTypes\RemoveEntityCommand.h">
+      <Filter>Commands\CommandTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Commands\EditorCommandsControl.h">
+      <Filter>Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Commands\IEditorCommand.h">
+      <Filter>Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="source\EditorControl.h" />
     <ClInclude Include="source\Panels\BaseEditorPanel.h">
       <Filter>Panels</Filter>
     </ClInclude>
     <ClInclude Include="source\Panels\EntityInspectorEditorPanel.h">
+      <Filter>Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Panels\SceneHierarchyEditorPanel.h">
       <Filter>Panels</Filter>
     </ClInclude>
   </ItemGroup>
@@ -24,15 +42,18 @@
     <ClCompile Include="source\App\CzuchEditorApplication.cpp">
       <Filter>App</Filter>
     </ClCompile>
+    <ClCompile Include="source\Commands\EditorCommandsControl.cpp">
+      <Filter>Commands</Filter>
+    </ClCompile>
     <ClCompile Include="source\EditorControl.cpp" />
     <ClCompile Include="source\ImGuiCompiler.cpp" />
-    <ClCompile Include="source\Panels\SceneHierarchyEditorPanel.cpp">
-      <Filter>Panels</Filter>
-    </ClCompile>
     <ClCompile Include="source\Panels\BaseEditorPanel.cpp">
       <Filter>Panels</Filter>
     </ClCompile>
     <ClCompile Include="source\Panels\EntityInspectorEditorPanel.cpp">
+      <Filter>Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Panels\SceneHierarchyEditorPanel.cpp">
       <Filter>Panels</Filter>
     </ClCompile>
   </ItemGroup>

@@ -39,8 +39,9 @@ namespace Czuch
 		}
 	}
 
-	void EventsManager::Init()
+	void EventsManager::Init(RenderSettings* settings)
 	{
+		BaseSubsystem::Init(settings);
 		Clear();
 	}
 

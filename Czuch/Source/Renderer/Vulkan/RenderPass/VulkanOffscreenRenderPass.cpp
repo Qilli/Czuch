@@ -8,7 +8,8 @@
 
 namespace Czuch
 {
-	VulkanOffscreenRenderPass::VulkanOffscreenRenderPass(Camera* cam,VulkanRenderer* renderer, VulkanDevice* device, Format colorFormat, Format depthFormat, U32 width, U32 height, VkSampleCountFlagBits samples,bool handleWindowResize) : RenderPassControl(cam,width, height, RenderPassType::OffscreenTexture,handleWindowResize),
+	VulkanOffscreenRenderPass::VulkanOffscreenRenderPass(RenderSettings* settings,Camera* cam,VulkanRenderer* renderer, VulkanDevice* device, Format colorFormat, Format depthFormat,
+		U32 width, U32 height, VkSampleCountFlagBits samples,bool handleWindowResize) : RenderPassControl(settings,cam,width, height, RenderPassType::OffscreenTexture,handleWindowResize),
 		m_Device(device), m_ColorFormat(colorFormat), m_DepthFormat(depthFormat), m_Renderer(renderer)
 	{
 		Init();

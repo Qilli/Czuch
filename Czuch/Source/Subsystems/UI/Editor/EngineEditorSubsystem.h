@@ -9,7 +9,7 @@ namespace Czuch
 	{
     public:
         EngineEditorSubsystem(EngineEditorControl* editorControl);
-        virtual void Init() override;
+        virtual void Init(RenderSettings* settings) override;
         virtual void Shutdown() override;
         virtual void Update(TimeDelta timeDelta) override;
         virtual void FillUI();

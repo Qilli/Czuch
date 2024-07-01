@@ -34,8 +34,8 @@ namespace Czuch
 		m_EventsMgr = new EventsManager();
 
 		//Init subsystems
-		m_Logging->Init();
-		m_EventsMgr->Init();
+		m_Logging->Init(&m_RenderSettings);
+		m_EventsMgr->Init(&m_RenderSettings);
 
 		const WindowParams wndParams{};
 
@@ -51,7 +51,7 @@ namespace Czuch
 
 		//create resources managers
 		m_ResourcesMgr = new AssetsManager();
-		m_ResourcesMgr->Init();
+		m_ResourcesMgr->Init(&m_RenderSettings);
 		m_ResourcesMgr->RegisterManager(new ShaderAssetManager(m_Renderer->GetDevice()), typeid(ShaderAsset));
 		m_ResourcesMgr->RegisterManager(new TextureAssetManager(m_Renderer->GetDevice()), typeid(TextureAsset));
 		m_ResourcesMgr->RegisterManager(new MaterialAssetManager(m_Renderer->GetDevice()), typeid(MaterialAsset));
@@ -60,11 +60,11 @@ namespace Czuch
 
 		//create ui manager
 		m_UIBaseMgr = new ImGUIManager(m_Renderer->GetDevice(), m_Window.get());
-		m_UIBaseMgr->Init();
+		m_UIBaseMgr->Init(&m_RenderSettings);
 
 		//create editor subsystem
 		m_EditorSubsystem = new EngineEditorSubsystem(control);
-		m_EditorSubsystem->Init();
+		m_EditorSubsystem->Init(&m_RenderSettings);
 
 		//listen to events
 		m_EventsMgr->AddListener(WindowClosedEvent::GetStaticEventType(), this);
@@ -75,7 +75,7 @@ namespace Czuch
 
 		//init scenes manager
 		m_ScenesMgr = new ScenesManager(m_Renderer, m_ResourcesMgr);
-		m_ScenesMgr->Init();
+		m_ScenesMgr->Init(&m_RenderSettings);
 
 		//for editor mode add dockspace with editor ui
 		m_UIBaseMgr->EnableEditorMode(m_RenderSettings.engineMode == EngineMode::Editor);

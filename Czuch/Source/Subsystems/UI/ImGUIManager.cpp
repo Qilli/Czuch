@@ -24,8 +24,9 @@ namespace Czuch
 		
 	}
 
-	void ImGUIManager::Init()
+	void ImGUIManager::Init(RenderSettings* settings)
 	{
+		BaseSubsystem::Init(settings);
 		m_UIContext=m_Device->InitImGUI();
 		LISTEN_TO_ALL_EVENTS(this)
 	}

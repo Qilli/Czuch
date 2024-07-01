@@ -4,17 +4,18 @@
 #include"IScene.h"
 #include"Entity.h"
 #include"Renderer/RenderContext.h"
+#include"Serialization/ISerializer.h"
 
 namespace Czuch
 {
 	class Renderer;
 	class UIBaseElement;
 	class Camera;
-	class CZUCH_API Scene : public IScene
+	class CZUCH_API Scene : public IScene, public ISerializer
 	{
 	public:
 
-		Scene(const CzuchStr& sceneName);
+		Scene(const CzuchStr& sceneName, RenderSettings* settings);
 		~Scene();
 
 		void AddUIElement(UIBaseElement* element);
@@ -36,21 +37,28 @@ namespace Czuch
 		void ForEachEntity(std::function<void(Entity)> func);
 	public:
 		CameraComponent* FindPrimaryCamera() override;
+		CameraComponent* FindEditorCamera() override;
+		void SetPrimaryCamera(CameraComponent* camera) override;
+		void SetEditorCamera(CameraComponent* camera) override;
 	public:
 		void OnAttached() {}
 		void OnDettached() {}
+	public:
+		virtual bool Serialize(YAML::Emitter& out, bool binary = false) override;
+		virtual bool Deserialize(const YAML::Node& in, bool binary = false) override;
 	private:
 		void CreateRenderContexts();
 		void DestroyMarkedEntities();
 	private:
 		friend class Entity;
+		friend class SceneSerializer;
 		entt::registry m_Registry;
 		Entity m_RootEntity;
-		Entity m_MainCameraEntity;
 		CzuchStr m_SceneName;
 		RenderContext m_GeneralRenderContext;
 		RenderContext m_DebugRenderContext;
 		std::vector<UIBaseElement*> m_UIElements;
 		std::vector<Entity> m_EntitiesToDestroy;
+		RenderSettings* m_RenderSettings;
 	};
 }

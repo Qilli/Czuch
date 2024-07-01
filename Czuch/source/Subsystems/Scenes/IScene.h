@@ -1,10 +1,11 @@
 #pragma once
 #include"entt.hpp"
+#include"Serialization/ISerializer.h"
 
 namespace Czuch
 {
 	class CameraComponent;
-	class IScene
+	class IScene: public ISerializer
 	{
 	public:
 		template<typename T>
@@ -18,6 +19,9 @@ namespace Czuch
 			return entt::null;
 		}
 		virtual CameraComponent* FindPrimaryCamera() = 0;
+		virtual CameraComponent* FindEditorCamera() = 0;
+		virtual void SetPrimaryCamera(CameraComponent* camera) = 0;
+		virtual void SetEditorCamera(CameraComponent* camera) = 0;
 		friend class Entity;
 	protected:
 		virtual entt::registry& GetRegistry() = 0;

@@ -15,9 +15,11 @@ IncludeDir["GLFW"] = "Czuch/vendors/GLFW/include"
 IncludeDir["Glad"] = "Czuch/vendors/Glad/include"
 IncludeDir["ImGui"] = "Czuch/vendors/ImGui"
 IncludeDir["Vulkan"] = "F:/VulkanSDK/Include"
+IncludeDir["YamlCpp"] = "Czuch/vendors/yaml-cpp/include"
 
 include "premake-glfw.lua"
 include "premake-imgui.lua"
+include "premake-yaml-cpp.lua"
 include "Czuch/vendors/Glad/premake-glad.lua"
 
 
@@ -50,7 +52,8 @@ project "Czuch"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.Vulkan}"
+		"%{IncludeDir.Vulkan}",
+		"%{IncludeDir.YamlCpp}",
 	}
 
 	links
@@ -58,6 +61,7 @@ project "Czuch"
 		"GLFW",
 		"Glad",
 		"ImGui",
+		"yaml-cpp",
 		"$(VULKAN_SDK)/lib/vulkan-1.lib"
 	}
 
@@ -187,11 +191,13 @@ project "Playground"
 			"Czuch/vendors/entt",
 			"Czuch/source",
 			"%{IncludeDir.ImGui}",
+			"%{IncludeDir.YamlCpp}",
 		}
 	
 		links
 		{
 			"ImGui",
+			"yaml-cpp",
 			"Czuch"
 		}
 	

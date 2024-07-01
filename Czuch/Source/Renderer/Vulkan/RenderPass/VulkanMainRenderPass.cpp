@@ -10,7 +10,7 @@
 
 namespace Czuch
 {
-	VulkanMainRenderPass::VulkanMainRenderPass(VulkanRenderer* renderer, VulkanDevice* device) : RenderPassControl(nullptr,0, 0, RenderPassType::MainForward,false),
+	VulkanMainRenderPass::VulkanMainRenderPass(RenderSettings* settings,VulkanRenderer* renderer, VulkanDevice* device) : RenderPassControl(settings,nullptr,0, 0, RenderPassType::MainForward,false),
 		m_Device(device), m_Renderer(renderer)
 	{
 		Init();

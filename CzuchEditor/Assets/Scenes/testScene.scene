@@ -1,0 +1,72 @@
+Scene: MainScene
+Entities:
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default
+      Name: Cube4
+    TransformComponent:
+      IsEnabled: 1
+      Position: 0.000000 0.000000 0.000000
+      Rotation: 0.000000 0.000000 0.000000
+      Scale: 1.000000 1.000000 1.000000
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default
+      Name: Cube3
+    TransformComponent:
+      IsEnabled: 1
+      Position: 0.000000 0.000000 0.000000
+      Rotation: 0.000000 0.000000 0.000000
+      Scale: 1.000000 1.000000 1.000000
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default
+      Name: Cube2
+    TransformComponent:
+      IsEnabled: 1
+      Position: 0.000000 0.000000 0.000000
+      Rotation: 0.000000 0.000000 0.000000
+      Scale: 1.000000 1.000000 1.000000
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default
+      Name: Cube1
+    TransformComponent:
+      IsEnabled: 1
+      Position: 0.000000 0.000000 0.000000
+      Rotation: 0.000000 0.000000 0.000000
+      Scale: 1.000000 1.000000 1.000000
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default
+      Name: EditorCamera
+    TransformComponent:
+      IsEnabled: 1
+      Position: 0.000000 0.000000 3.000000
+      Rotation: 0.000000 0.000000 0.000000
+      Scale: 1.000000 1.000000 1.000000
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default
+      Name: MainCamera
+    TransformComponent:
+      IsEnabled: 1
+      Position: 0.000000 0.000000 3.000000
+      Rotation: 0.000000 0.000000 0.000000
+      Scale: 1.000000 1.000000 1.000000
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Root
+      Name: MainScene
+    TransformComponent:
+      IsEnabled: 1
+      Position: 0.000000 0.000000 0.000000
+      Rotation: 0.000000 0.000000 0.000000
+      Scale: 1.000000 1.000000 1.000000

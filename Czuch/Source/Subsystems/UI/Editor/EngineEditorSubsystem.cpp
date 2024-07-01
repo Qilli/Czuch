@@ -12,8 +12,9 @@ namespace Czuch
 	{
 	}
 
-	void EngineEditorSubsystem::Init()
+	void EngineEditorSubsystem::Init(RenderSettings* settings)
 	{
+		BaseSubsystem::Init(settings);
 		if (m_EditorControl != nullptr)
 		{
 			m_EditorControl->Init(m_Root->GetUIBaseManager().GetUIContext());

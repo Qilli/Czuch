@@ -17,6 +17,7 @@ namespace Czuch
 	class Camera;
 	class EngineEditorSubsystem;
 
+
 	class CZUCH_API EngineRoot:public Singleton<EngineRoot>,IEventsListener
 	{
 	public:
@@ -27,6 +28,9 @@ namespace Czuch
 		ScenesManager& GetScenesManager() const { return *m_ScenesMgr; }
 		UIBaseManager& GetUIBaseManager() const { return *m_UIBaseMgr; }
 		virtual void OnEvent(Event& e) override;
+		inline void SetGameMode(EngineMode mode) { m_RenderSettings.engineMode = mode; }
+		EngineMode GetGameMode() const { return m_RenderSettings.engineMode; }
+		RenderSettings& GetRenderSettings() { return m_RenderSettings; }
 	private:
 		TimeDelta UpdateDeltaTime(TimeDiffCounter& counter);
 	private:

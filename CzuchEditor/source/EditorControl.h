@@ -2,6 +2,7 @@
 #include "Czuch.h"
 #include"Panels/SceneHierarchyEditorPanel.h"
 #include"Panels/EntityInspectorEditorPanel.h"
+#include"Commands/EditorCommandsControl.h"
 
 namespace Czuch
 {
@@ -26,6 +27,7 @@ namespace Czuch
         bool m_OffscreenPassAdded;
         U32 m_Width,m_Height;
         std::function<void(U32,U32)> m_UpdateOffscreenPass;
+        EditorCommandsControl* m_CommandsControl;
 	};
 }
 

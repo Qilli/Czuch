@@ -35,18 +35,31 @@ namespace Czuch
 		float m_FarPlane;
 	};
 
+	enum CameraType
+	{
+		EditorCamera,
+		GameCamera
+	};
+
 	struct CZUCH_API CameraComponent : public Component
 	{
 	public:
 		CameraComponent(Entity owner);
 		CameraComponent(const CameraComponent&) = default;
-		CameraComponent(Entity owner, bool primary):Component(owner),m_Primary(primary){}
+		CameraComponent(Entity owner, bool primary):Component(owner),m_Primary(primary),m_Type(CameraType::GameCamera){}
 		~CameraComponent() = default;
 		inline Camera& GetCamera() {return m_Camera;}
-		inline void SetPrimary(bool primary) { m_Primary = primary; }
+		inline void SetPrimaryFlag(bool primary) {
+			m_Primary = primary;
+		}
+		inline void SetAsPrimary() { m_Owner.GetScene()->SetPrimaryCamera(this); }
+		void SetAsEditorCamera() { m_Owner.GetScene()->SetEditorCamera(this); }
 		inline bool IsPrimary() { return m_Primary; }
+		inline void SetType(CameraType type) { m_Type = type; }
+		inline CameraType GetType() { return m_Type; }
 	private:
 		Camera m_Camera;
+		CameraType m_Type;
 		bool m_Primary;
 	};
 

@@ -16,18 +16,24 @@ namespace Czuch
 {
 	const CzuchStr SceneTag = "SceneControl";
 
-	Scene::Scene(const CzuchStr& sceneName) : m_SceneName(sceneName)
+	Scene::Scene(const CzuchStr& sceneName, RenderSettings* settings) : m_SceneName(sceneName), m_RenderSettings(settings)
 	{
 		m_RootEntity = Entity{ m_Registry.create(),this };
 		m_RootEntity.AddComponent<HeaderComponent>(sceneName, "Root", Layer{ 0 });
 		m_RootEntity.AddComponent<TransformComponent>();
 
-		//create default camera
+		//create default game mode camera
 		Entity cameraEntity = CreateEntity("MainCamera", m_RootEntity);
 		auto& cam = cameraEntity.AddComponent<CameraComponent>();
-		cam.SetPrimary(true);
+		cam.SetPrimaryFlag(true);
+		cam.SetType(CameraType::GameCamera);
 		cameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
-		m_MainCameraEntity = cameraEntity;
+
+		//create default editor camera
+		Entity editorCameraEntity = CreateEntity("EditorCamera", m_RootEntity);
+		auto& editorCam = editorCameraEntity.AddComponent<CameraComponent>();
+		editorCam.SetType(CameraType::EditorCamera);
+		editorCameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
 
 		CreateRenderContexts();
 	}
@@ -79,7 +85,12 @@ namespace Czuch
 			for (auto e : cameraView)
 			{
 				auto& camera = cameraView.get<CameraComponent>(e);
-				if (camera.IsPrimary())
+				if (m_RenderSettings->engineMode == EngineMode::Runtime && camera.IsPrimary())
+				{
+					mainCamera = &camera;
+					break;
+				}
+				else if (m_RenderSettings->engineMode == EngineMode::Editor && camera.GetType() == CameraType::EditorCamera)
 				{
 					mainCamera = &camera;
 					break;
@@ -224,6 +235,43 @@ namespace Czuch
 		return nullptr;
 	}
 
+	CameraComponent* Scene::FindEditorCamera()
+	{
+		auto view = m_Registry.view<CameraComponent>();
+		for (auto entity : view)
+		{
+			auto& camera = view.get<CameraComponent>(entity);
+			if (camera.GetType() == CameraType::EditorCamera)
+			{
+				return &camera;
+			}
+		}
+		LOG_BE_ERROR("{0} Scene does not have editor camera", SceneTag);
+		return nullptr;
+	}
+
+	void Scene::SetPrimaryCamera(CameraComponent* camera)
+	{
+		auto view = m_Registry.view<CameraComponent>();
+		for (auto entity : view)
+		{
+			auto& camera = view.get<CameraComponent>(entity);
+			camera.SetPrimaryFlag(false);
+		}
+		camera->SetPrimaryFlag(true);
+	}
+
+	void Scene::SetEditorCamera(CameraComponent* camera)
+	{
+		auto view = m_Registry.view<CameraComponent>();
+		for (auto entity : view)
+		{
+			auto& camera = view.get<CameraComponent>(entity);
+			camera.SetType(CameraType::GameCamera);
+		}
+		camera->SetType(CameraType::EditorCamera);
+	}
+
 	void Scene::CreateRenderContexts()
 	{
 		RenderContextCreateInfo renderContextCreateInfo{};
@@ -246,5 +294,45 @@ namespace Czuch
 		}
 		m_EntitiesToDestroy.clear();
 	}
+
+#pragma region Serialization
+	bool Scene::Serialize(YAML::Emitter& out, bool binary)
+	{
+		if (binary)
+		{
+			return true;
+		}
+		SerializerHelper::SetEmitter(&out);
+		SerializerHelper::BeginMap();
+		SerializerHelper::KeyVal("Scene", GetSceneName());
+		SerializerHelper::Key("Entities");
+		SerializerHelper::BeginSeq();
+		ForEachEntity([&](Entity entity)
+			{
+				if (entity.IsValid())
+				{
+					bool result=entity.Serialize(out, binary);
+					if (result == false)
+					{
+						LOG_BE_ERROR("[Scene][Save]Failed to save scene {0} to the file. Entity {1} serialization failed.", GetSceneName(),entity.GetComponent<HeaderComponent>().GetHeader());
+						return false;
+					}
+				}
+				else
+				{
+					LOG_BE_ERROR("[Scene][Save]Failed to save scene {0} to the file. Entity is invalid.", GetSceneName());
+					return false;
+				}
+			});
+		SerializerHelper::EndSeq();
+		SerializerHelper::EndMap();
+		return true;
+	}
+
+	bool Scene::Deserialize(const YAML::Node& in, bool binary)
+	{
+		return false;
+	}
+#pragma endregion
 
 }

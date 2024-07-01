@@ -1,5 +1,6 @@
 #pragma once
 #include"Graphics.h"
+#include"Core/EngineCore.h"
 
 namespace Czuch
 {
@@ -18,7 +19,7 @@ namespace Czuch
 	class RenderPassControl
 	{
 	public:
-		RenderPassControl(Camera* cam, int width, int height, RenderPassType type, bool handleWindowResize) : m_Width(width), m_Height(height), Type(type), m_HandleWindowResize(handleWindowResize), m_Camera(cam),m_Priority(10) {}
+		RenderPassControl(RenderSettings* settings,Camera* cam, int width, int height, RenderPassType type, bool handleWindowResize) :m_Settings(settings), m_Width(width), m_Height(height), Type(type), m_HandleWindowResize(handleWindowResize), m_Camera(cam),m_Priority(10) {}
 		virtual ~RenderPassControl() = default;
 		virtual void BeginRenderPass(CommandBuffer* cmd) = 0;
 		virtual void EndRenderPass(CommandBuffer* cmd) = 0;
@@ -33,8 +34,8 @@ namespace Czuch
 		int GetPriority() const { return m_Priority; }
 		void SetPriority(int priority) { m_Priority = priority; }
 		bool IsDifferentAspect(int width, int height) const { return ((m_Width / (float)m_Height) - (width / (float)height)) > EPSILON; }
-		bool IsDifferentCamera(Camera* cam) const { return m_Camera != cam; }
-		Camera* GetCamera() const { return m_Camera; }
+		bool IsDifferentCamera(Camera* cam) const { return GetCamera() != cam; }
+		virtual Camera* GetCamera() const { return m_Camera; }
 		bool HandleWindowResize() const { return m_HandleWindowResize; }
 	protected:
 		int m_Width, m_Height;
@@ -42,5 +43,6 @@ namespace Czuch
 		bool m_HandleWindowResize;
 		Camera* m_Camera;
 		RenderPassType Type;
+		RenderSettings* m_Settings;
 	};
 }

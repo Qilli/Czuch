@@ -5,8 +5,9 @@
 
 namespace Czuch
 {
-	void Logging::Init()
+	void Logging::Init(RenderSettings* settings)
 	{
+		BaseSubsystem::Init(settings);
 		spdlog::set_pattern("%^[%T] %n: %v%$");
 		m_SpdBackendLogger = spdlog::stdout_color_mt("Czuch");
 		m_SpdBackendLogger->set_level(spdlog::level::trace);

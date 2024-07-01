@@ -2,6 +2,8 @@
 #include"imgui.h"
 #include"Subsystems/Scenes/Components/HeaderComponent.h"
 #include"Subsystems/Scenes/Components/TransformComponent.h"
+#include"../Commands/EditorCommandsControl.h"
+#include"../Commands/CommandTypes/CreateNewEntityCommand.h"
 
 namespace Czuch
 {
@@ -36,7 +38,7 @@ namespace Czuch
 				ImGui::Separator();
 				if (ImGui::MenuItem(" Create Empty Entity "))
 				{
-					m_ActiveScene->CreateEntity("Empty Entity", m_SelectedEntity);
+					EditorCommandsControl::Get().ExecuteCommand(new CreateNewEntityCommand(m_ActiveScene, m_SelectedEntity));
 				}
 				ImGui::Separator();
 				ImGui::EndPopup();
