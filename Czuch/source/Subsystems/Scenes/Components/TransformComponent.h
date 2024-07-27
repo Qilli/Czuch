@@ -36,9 +36,12 @@ namespace Czuch
 		void Scale(const Vec3& scale);
 
 		std::vector<Entity>& GetChildren() { return m_Children; }
+		bool HasAnyChild();
 
 	public:
 		void SetParent(Entity parent);
+		GUID GetParentGUID() { return m_Parent.IsValid()?m_Parent.GetComponent<GUIDComponent>().GetGUID():INVALID_GUID; }
+		void SetParentFromGUID(GUID guid);
 		void AddChild(Entity child);
 		void UpdateLocalToWorld();
 	private:

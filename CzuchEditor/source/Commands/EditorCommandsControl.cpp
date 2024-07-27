@@ -10,6 +10,7 @@ namespace Czuch
 		{
 			auto command = m_UndoCommands.front();
 			m_UndoCommands.pop_front();
+			command->OnRemoveFromUndoStack();
 			delete command;
 		}
 	}
@@ -23,6 +24,14 @@ namespace Czuch
 		command->Undo();
 		m_UndoCommands.pop_back();
 		m_RedoCommands.emplace_back(command);
+
+		if (m_RedoCommands.size() > m_MaxCommands)
+		{
+			auto command = m_RedoCommands.front();
+			m_RedoCommands.pop_front();
+			command->OnRemoveFromRedoStack();
+			delete command;
+		}
 	}
 	void EditorCommandsControl::Redo()
 	{

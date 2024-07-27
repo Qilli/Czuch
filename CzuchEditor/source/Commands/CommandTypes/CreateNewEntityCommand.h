@@ -18,6 +18,8 @@ namespace Czuch
 		{
 			m_Scene->DestroyEntity(m_Entity);
 		}
+
+		Entity GetCreatedEntity() { return m_Entity; }
 	private:
 		Entity m_Entity;
 		Entity m_Parent;

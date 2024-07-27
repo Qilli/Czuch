@@ -50,6 +50,9 @@ namespace Czuch
 	public:
 		virtual bool Serialize(YAML::Emitter& out, bool binary = false) override;
 		virtual bool Deserialize(const YAML::Node& in, bool binary = false) override;
+		bool IsDestroyed();
+	public:
+		void OnEachChild(std::function<void(Entity)> func,bool recursive,bool ignoreDestroyedComponent=false);
 	public:
 		IScene* GetScene() { return m_Scene; }
 
@@ -104,6 +107,7 @@ namespace Czuch
 		GetComponent<T>().OnRemoved();
 		m_Scene->GetRegistry().get<T>(m_EntityHandle).OnRemoved();
 		m_Scene->GetRegistry().remove<T>(m_EntityHandle);
+		m_Scene->Dirty();
 	}
 
 	template<typename T>

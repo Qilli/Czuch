@@ -19,9 +19,12 @@ namespace Czuch
     protected:
         virtual void FillMainMenubar();
         void ShowMenuFile();
+        bool ShowSaveMenu();
+        bool CheckCurrentSceneForSave();
         bool UpdateOffscreenPass(U32 width,U32 height);
     private:
         EngineRoot* m_Root;
+        std::string m_CurrentScenePath;
         SceneHierarchyEditorPanel* m_SceneHierarchyPanel;
         EntityInspectorEditorPanel* m_EntityInspectorPanel;
         bool m_OffscreenPassAdded;

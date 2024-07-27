@@ -21,14 +21,28 @@ namespace Czuch
 		}
 	}
 
-	bool ScenesManager::SaveActiveScene(const std::string& path)
+	bool ScenesManager::SaveActiveScene(std::string& path)
 	{
 		if (m_ActiveScene == nullptr)
 		{
 			return false;
 		}
 		SceneSerializer serializer(m_ActiveScene);
+		m_ActiveScene->SetDirty(false);
 		return serializer.Serialize(path, false);
+	}
+
+	bool ScenesManager::LoadScene(std::string& path)
+	{
+		Scene* scene = new Scene("NewScene",m_RenderSettings);
+		SceneSerializer serializer(scene);
+		if (serializer.Deserialize(path, false))
+		{
+			AddScene(scene, true);
+			LOG_BE_INFO("Successfuly loaded scene from file: {0}", path);
+			return true;
+		}
+		return false;
 	}
 
 	void ScenesManager::Init(RenderSettings* settings)
@@ -113,6 +127,16 @@ namespace Czuch
 			m_ActiveScene->OnAttached();
 			m_Renderer -> SetActiveScene(m_ActiveScene);
 		}
+	}
+
+	void ScenesManager::CreateNewScene(const std::string& name, bool clearCurrent)
+	{
+		if (clearCurrent)
+		{
+			RemoveScene(m_ActiveScene);
+		}
+		Scene* scene = new Scene(name, m_RenderSettings);
+		AddScene(scene, true);
 	}
 
 	Scene* ScenesManager::GetActiveScene() const

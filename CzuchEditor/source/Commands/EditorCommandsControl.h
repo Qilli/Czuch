@@ -13,6 +13,8 @@ namespace Czuch
 		void Undo();
 		void Redo();
 		void Clear();
+		bool CanUndo() { return !m_UndoCommands.empty(); }
+		bool CanRedo() { return !m_RedoCommands.empty(); }
 	private:
 		std::list<IEditorCommand*> m_UndoCommands;
 		std::list<IEditorCommand*> m_RedoCommands;

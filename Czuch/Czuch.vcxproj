@@ -162,6 +162,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="source\Core\GUID.h" />
     <ClInclude Include="source\Core\AccessContainer.h" />
     <ClInclude Include="source\Core\Common.h" />
     <ClInclude Include="source\Core\EngineCore.h" />
@@ -183,6 +184,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClInclude Include="source\Events\EventsTypes\InputEvents.h" />
     <ClInclude Include="source\Events\EventsTypes\MouseEvents.h" />
     <ClInclude Include="source\Events\IEventsListener.h" />
+    <ClInclude Include="source\Platform\Windows\WinUtils.h" />
     <ClInclude Include="source\Platform\Windows\WinWindow.h" />
     <ClInclude Include="source\Renderer\CommandBuffer.h" />
     <ClInclude Include="source\Renderer\Graphics.h" />
@@ -244,6 +246,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClInclude Include="source\czpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Core\GUID.cpp" />
     <ClCompile Include="source\Core\AccessContainer.cpp" />
     <ClCompile Include="source\Core\StringID.cpp" />
     <ClCompile Include="source\Core\Time.cpp" />
@@ -255,6 +258,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClCompile Include="source\Events\EventsTypes\ApplicationEvents.cpp" />
     <ClCompile Include="source\Events\EventsTypes\InputEvents.cpp" />
     <ClCompile Include="source\Events\EventsTypes\MouseEvents.cpp" />
+    <ClCompile Include="source\Platform\Windows\WinUtils.cpp" />
     <ClCompile Include="source\Platform\Windows\WinWindow.cpp" />
     <ClCompile Include="source\Renderer\Graphics.cpp" />
     <ClCompile Include="source\Renderer\GraphicsResourceAccessContainer.cpp" />

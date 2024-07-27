@@ -18,6 +18,7 @@ namespace Czuch
 		inline float GetFov()const { return m_VerticalFov; }
 		inline float GetNearPlane()const { return m_NearPlane; }
 		inline float GetFarPlane()const { return m_FarPlane; }
+		inline float GetAspectRatio()const { return m_AspectRatio; }
 		void SetAspectRatio(float aspectRatio);
 		void Set(float fov, float aspectRatio, float nearPlane, float farPlane);
 
@@ -37,8 +38,8 @@ namespace Czuch
 
 	enum CameraType
 	{
-		EditorCamera,
-		GameCamera
+		EditorCamera=0,
+		GameCamera=1
 	};
 
 	struct CZUCH_API CameraComponent : public Component

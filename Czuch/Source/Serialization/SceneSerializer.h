@@ -9,8 +9,8 @@ namespace Czuch
 		SceneSerializer(Scene* scene) :m_Scene(scene) {}
 		virtual ~SceneSerializer() = default;
 	public:
-		virtual bool Serialize(const std::string& filepath, bool binary = false) override;
-		virtual bool Deserialize(const std::string& filepath, bool binary = false) override;
+		virtual bool Serialize(std::string& filepath, bool binary = false) override;
+		virtual bool Deserialize(std::string& filepath, bool binary = false) override;
 	private:
 		Scene* m_Scene;
 	};

@@ -24,6 +24,8 @@
 #define CZUCH_ASSERT(x,...)
 #endif
 
+#define NEW(x) new x
+
 
 typedef unsigned long U64;
 typedef unsigned int U32;

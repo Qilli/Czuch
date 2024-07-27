@@ -1,6 +1,7 @@
 #include "czpch.h"
 #include "EditorControl.h"
 #include"imgui.h"
+#include"Platform/Windows/WinUtils.h"
 
 namespace Czuch
 {
@@ -14,9 +15,9 @@ namespace Czuch
 		ImGui::StyleColorsDark();
 
 		// Adjust specific colors to use dark grey instead of blue
-		ImVec4 darkGrey = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
-		ImVec4 darkGreyHover = ImVec4(0.15f, 0.15f, 0.15f, 0.3f);
-		ImVec4 darkGreyActive = ImVec4(0.1f, 0.1f, 0.1f, 0.3f);
+		ImVec4 darkGrey = ImVec4(0.03f, 0.03f, 0.03f, 1.0f);
+		ImVec4 darkGreyHover = ImVec4(0.07f, 0.07f, 0.07f, 0.3f);
+		ImVec4 darkGreyActive = ImVec4(0.03f, 0.03f, 0.03f, 0.3f);
 
 		colors[ImGuiCol_Header] = darkGrey;                               // Header background
 		colors[ImGuiCol_HeaderHovered] = darkGreyHover;                   // Header background when hovered
@@ -53,9 +54,9 @@ namespace Czuch
 		colors[ImGuiCol_ScrollbarGrabActive] = darkGreyActive;            // Scrollbar grab when active
 
 		// Adjust other elements as needed
-		colors[ImGuiCol_WindowBg] = ImVec4(0.03f, 0.03f, 0.03f, 1.0f);       // Window background
-		colors[ImGuiCol_ChildBg] = ImVec4(0.03f, 0.03f, 0.03f, 1.0f);        // Child window background
-		colors[ImGuiCol_PopupBg] = ImVec4(0.03f, 0.03f, 0.03f, 1.0f);        // Popup background
+		colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 1.0f);       // Window background
+		colors[ImGuiCol_ChildBg] = ImVec4(0.01f, 0.01f, 0.01f, 1.0f);        // Child window background
+		colors[ImGuiCol_PopupBg] = ImVec4(0.01f, 0.01f, 0.01f, 1.0f);        // Popup background
 		colors[ImGuiCol_Border] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);         // Border color
 		colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);           // Text color
 		colors[ImGuiCol_TextDisabled] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);   // Disabled text color
@@ -94,6 +95,10 @@ namespace Czuch
 		if (m_SceneHierarchyPanel == nullptr)
 		{
 			m_SceneHierarchyPanel = new SceneHierarchyEditorPanel(m_Root->GetScenesManager().GetActiveScene());
+		}
+		else
+		{
+			m_SceneHierarchyPanel->SetActiveScene(m_Root->GetScenesManager().GetActiveScene());
 		}
 
 		if (m_EntityInspectorPanel == nullptr)
@@ -142,8 +147,14 @@ namespace Czuch
 			}
 			if (ImGui::BeginMenu("Edit"))
 			{
-				if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
-				if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
+				if (ImGui::MenuItem("Undo", "CTRL+Z",false, EditorCommandsControl::Get().CanUndo()))
+				{
+					EditorCommandsControl::Get().Undo();
+				}
+				if (ImGui::MenuItem("Redo", "CTRL+Y", false, EditorCommandsControl::Get().CanRedo()))
+				{
+					EditorCommandsControl::Get().Redo();
+				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Cut", "CTRL+X")) {}
 				if (ImGui::MenuItem("Copy", "CTRL+C")) {}
@@ -155,18 +166,40 @@ namespace Czuch
 	}
 	void EditorControl::ShowMenuFile()
 	{
-		if (ImGui::MenuItem("New")) {}
-		if (ImGui::MenuItem("Open", "Ctrl+O")) {}
-
-		if (ImGui::BeginMenu("Open Recent"))
+		if (ImGui::MenuItem("New")) 
 		{
-			ImGui::EndMenu();
+			CheckCurrentSceneForSave();
+			m_Root->GetScenesManager().CreateNewScene("NewScene", true);
+			m_SceneHierarchyPanel->SetActiveScene(m_Root->GetScenesManager().GetActiveScene());
 		}
+		if (ImGui::MenuItem("Open", "Ctrl+O")) 
+		{
+			//m_Root->GetScenesManager().LoadScene("Assets/Scenes/testScene.scene");
+			std::string path = WinUtils::GetOpenFileNameDialog("Scene Files\0*.scene\0", "Open Scene");
+			if (!path.empty())
+			{
+				CheckCurrentSceneForSave();	
+				m_Root->GetScenesManager().LoadScene(path);
+				m_CurrentScenePath = path;
+				m_SceneHierarchyPanel->SetActiveScene(m_Root->GetScenesManager().GetActiveScene());
+			}
+		}
+
 		if (ImGui::MenuItem("Save", "Ctrl+S")) 
 		{
-			m_Root->GetScenesManager().SaveActiveScene("Assets/Scenes/testScene.scene");
+			if (m_CurrentScenePath.empty())
+			{
+				ShowSaveMenu();
+			}
+			else
+			{
+				m_Root->GetScenesManager().SaveActiveScene(m_CurrentScenePath);
+			}
 		}
-		if (ImGui::MenuItem("Save As..")) {}
+		if (ImGui::MenuItem("Save As..")) 
+		{
+			ShowSaveMenu();
+		}
 
 		ImGui::Separator();
 
@@ -180,6 +213,32 @@ namespace Czuch
 		{
 			WindowClosedEvent::CreateAndDispatch();
 		}
+	}
+
+	bool EditorControl::ShowSaveMenu()
+	{
+		std::string path = WinUtils::GetSaveFileNameDialog("Scene Files\0*.scene\0", "Save Scene");
+		if (!path.empty())
+		{
+			m_Root->GetScenesManager().SaveActiveScene(path);
+			m_CurrentScenePath = path;
+			return true;
+		}
+		return false;
+	}
+
+	bool EditorControl::CheckCurrentSceneForSave()
+	{
+		auto currentScene = m_Root->GetScenesManager().GetActiveScene();
+
+		if (currentScene->IsDirty())
+		{
+			if (WinUtils::ShowYesNoDialog("Save Scene", "You have some unsaved changes in current scene.\nDo you want to save it ? "))
+			{
+				return ShowSaveMenu();
+			}
+		}
+		return false;
 	}
 
 	bool EditorControl::UpdateOffscreenPass(U32 width, U32 height)

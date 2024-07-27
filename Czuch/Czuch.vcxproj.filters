@@ -291,6 +291,8 @@
       <Filter>Subsystems\UI</Filter>
     </ClInclude>
     <ClInclude Include="source\czpch.h" />
+    <ClInclude Include="source\Platform\Windows\WinUtils.h" />
+    <ClInclude Include="source\Core\GUID.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">
@@ -475,5 +477,7 @@
       <Filter>Subsystems\UI</Filter>
     </ClCompile>
     <ClCompile Include="source\czpch.cpp" />
+    <ClCompile Include="source\Platform\Windows\WinUtils.cpp" />
+    <ClCompile Include="source\Core\GUID.cpp" />
   </ItemGroup>
 </Project>

@@ -139,6 +139,7 @@
   <ItemGroup>
     <ClInclude Include="source\Commands\CommandTypes\CreateNewEntityCommand.h" />
     <ClInclude Include="source\Commands\CommandTypes\RemoveEntityCommand.h" />
+    <ClInclude Include="source\Commands\CommandTypes\ReparentEntityCommand.h" />
     <ClInclude Include="source\Commands\EditorCommandsControl.h" />
     <ClInclude Include="source\Commands\IEditorCommand.h" />
     <ClInclude Include="source\EditorControl.h" />

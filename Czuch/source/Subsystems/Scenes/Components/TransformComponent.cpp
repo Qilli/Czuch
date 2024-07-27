@@ -141,6 +141,34 @@ namespace Czuch
 		m_State.SetDirty();
 	}
 
+	void TransformComponent::SetParentFromGUID(GUID guid)
+	{
+		if (!guid.IsValid())
+		{
+			//root entity has no parent
+			return;
+		}
+		entt::entity parent = m_Owner.GetScene()->GetEntityWithGUID(guid);
+		SetParent(Entity(parent,m_Owner.GetScene()));
+	}
+
+	bool TransformComponent::HasAnyChild()
+	{
+		if (m_Children.size() == 0)
+		{
+			return false;
+		}
+		
+		for (size_t i = 0; i < m_Children.size(); i++)
+		{
+			if (m_Children[i].IsValid() && !m_Children[i].IsDestroyed())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	void TransformComponent::AddChild(Entity child)
 	{
 		bool isChild = false;

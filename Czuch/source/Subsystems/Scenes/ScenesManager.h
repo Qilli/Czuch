@@ -21,9 +21,11 @@ namespace Czuch
 		void AddScene(Scene* scene, bool setAsActive = false);
 		void RemoveScene(Scene* scene);
 		void SetActiveScene(Scene* scene);
+		void CreateNewScene(const std::string& name,bool clearCurrent);
 		Scene* GetActiveScene() const;
 	public:
-		bool SaveActiveScene(const std::string& path);
+		bool SaveActiveScene(std::string& path);
+		bool LoadScene(std::string& path);
 	private:
 		void DeactivateActiveScene();
 	private:

@@ -27,6 +27,7 @@ namespace Czuch
 		Renderer& GetRenderer() const { return *m_Renderer; }
 		ScenesManager& GetScenesManager() const { return *m_ScenesMgr; }
 		UIBaseManager& GetUIBaseManager() const { return *m_UIBaseMgr; }
+		Window& GetWindow() const { return *m_Window; }
 		virtual void OnEvent(Event& e) override;
 		inline void SetGameMode(EngineMode mode) { m_RenderSettings.engineMode = mode; }
 		EngineMode GetGameMode() const { return m_RenderSettings.engineMode; }

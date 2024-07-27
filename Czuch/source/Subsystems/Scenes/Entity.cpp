@@ -4,6 +4,7 @@
 #include"Components/MeshRendererComponent.h"
 #include"Components/MeshComponent.h"
 #include"Components/HeaderComponent.h"
+#include"Components/CameraComponent.h"
 #include"Serialization/SerializationComponentHelper.h"
 
 namespace Czuch
@@ -60,6 +61,27 @@ namespace Czuch
 
 	TransformComponent& Entity::Transform() { return GetComponent<TransformComponent>(); }
 
+	bool Entity::IsDestroyed()
+	{
+		return HasComponent<DestroyedComponent>();
+	}
+
+	void Entity::OnEachChild(std::function<void(Entity)> func,bool recursive,bool ignoreDestroyedComponent)
+	{
+		auto& transform = GetComponent<TransformComponent>();
+		for (auto& child : transform.GetChildren())
+		{
+			if (child.IsValid() && (ignoreDestroyedComponent ==true||!child.IsDestroyed()))
+			{
+				func(child);
+				if (recursive)
+				{
+					child.OnEachChild(func, recursive, ignoreDestroyedComponent);
+				}
+			}
+		}
+	}
+
 
 #pragma region Serialization
 	bool Entity::Serialize(YAML::Emitter& out, bool binary)
@@ -73,21 +95,42 @@ namespace Czuch
 
 			SerializerHelper::SetEmitter(&out);
 			SerializerHelper::BeginMap();
-			SerializerHelper::Key("Entity");
-			SerializerHelper::Value("GUID:8979879");
+		//	SerializerHelper::Key("Entity");
+		//	SerializerHelper::Value("1");
+			//GUID component
+			if (HasComponent<GUIDComponent>())
+			{
+				SerializerHelper::Key("GUIDComponent");
+				SerializationComponentHelper::SerializeGUIDComponent(&GetComponent<GUIDComponent>(), binary);
+			}
+
 
 			//Header component
 			if (HasComponent<HeaderComponent>())
 			{
 				SerializerHelper::Key("HeaderComponent");
-				SerializationComponentHelper::SerializeHeaderComponent(&GetComponent<HeaderComponent>(),binary);
+				SerializationComponentHelper::SerializeHeaderComponent(&GetComponent<HeaderComponent>(), binary);
+			}
+
+			//Active component
+			if (HasComponent<ActiveComponent>())
+			{
+				SerializerHelper::Key("ActiveComponent");
+				SerializerHelper::Value("1");
 			}
 
 			//Transform component
 			if (HasComponent<TransformComponent>())
 			{
 				SerializerHelper::Key("TransformComponent");
-				SerializationComponentHelper::SerializeTransformComponent(&GetComponent<TransformComponent>(),binary);
+				SerializationComponentHelper::SerializeTransformComponent(&GetComponent<TransformComponent>(), binary);
+			}
+
+			//Camera component
+			if (HasComponent<CameraComponent>())
+			{
+				SerializerHelper::Key("CameraComponent");
+				SerializationComponentHelper::SerializeCameraComponent(&GetComponent<CameraComponent>(), binary);
 			}
 
 			SerializerHelper::EndMap();
@@ -99,7 +142,79 @@ namespace Czuch
 
 	bool Entity::Deserialize(const YAML::Node& in, bool binary)
 	{
-		return false;
+		if (binary)
+		{
+			return false;
+		}
+
+		auto entityNode = in;
+		//uint64_t guid = entityNode.as<uint64_t>();
+		if (entityNode["HeaderComponent"])
+		{
+			auto headerNode = entityNode["HeaderComponent"];
+			auto &header = GetComponent<HeaderComponent>();
+			bool headerComponentResult = SerializationComponentHelper::DeserializeHeaderComponent(&header, headerNode, binary);
+			if (!headerComponentResult)
+			{
+				LOG_BE_ERROR("Failed to deserialize header component");
+				return false;
+			}
+		}
+
+		if (entityNode["GUIDComponent"])
+		{
+			auto guidNode = entityNode["GUIDComponent"];
+			LOG_BE_INFO("Deserializing GUID component for entity: {0}",GetComponent<HeaderComponent>().GetHeader());
+			auto &guid = GetComponent<GUIDComponent>();
+			bool guidComponentResult = SerializationComponentHelper::DeserializeGUIDComponent(&guid, guidNode, binary);
+			if (!guidComponentResult)
+			{
+				LOG_BE_ERROR("Failed to deserialize GUID component");
+				return false;
+			}
+		}
+
+		if (!entityNode["ActiveComponent"])
+		{
+			RemoveComponent<ActiveComponent>();
+		}
+
+		if (entityNode["TransformComponent"])
+		{
+			auto transformNode = entityNode["TransformComponent"];
+			auto &transform = GetComponent<TransformComponent>();
+			bool resultBaseComponent = SerializationComponentHelper::DeserializeBaseComponent(&transform, transformNode, binary);
+			if (!resultBaseComponent)
+			{
+				LOG_BE_ERROR("Failed to deserialize base component of transform component");
+				return false;
+			}
+			bool transformComponentResult = SerializationComponentHelper::DeserializeTransformComponent(&transform, transformNode, binary);
+			if (!transformComponentResult)
+			{
+				LOG_BE_ERROR("Failed to deserialize transform component");
+				return false;
+			}
+		}
+
+		if (entityNode["CameraComponent"])
+		{
+			auto cameraNode = entityNode["CameraComponent"];
+			auto &camera = AddComponent<CameraComponent>();
+			bool resultBaseComponent = SerializationComponentHelper::DeserializeBaseComponent(&camera, cameraNode, binary);
+			if (!resultBaseComponent)
+			{
+				LOG_BE_ERROR("Failed to deserialize base component of transform component");
+				return false;
+			}
+			bool cameraComponentResult = SerializationComponentHelper::DeserializeCameraComponent(&camera, cameraNode, binary);
+			if (!cameraComponentResult)
+			{
+				LOG_BE_ERROR("Failed to deserialize camera component");
+				return false;
+			}
+		}
+		return true;
 	}
 #pragma endregion
 }

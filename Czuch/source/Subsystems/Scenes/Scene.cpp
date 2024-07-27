@@ -21,6 +21,8 @@ namespace Czuch
 		m_RootEntity = Entity{ m_Registry.create(),this };
 		m_RootEntity.AddComponent<HeaderComponent>(sceneName, "Root", Layer{ 0 });
 		m_RootEntity.AddComponent<TransformComponent>();
+		m_RootEntity.AddComponent<ActiveComponent>();
+		m_RootEntity.AddComponent<GUIDComponent>(GUID());
 
 		//create default game mode camera
 		Entity cameraEntity = CreateEntity("MainCamera", m_RootEntity);
@@ -36,6 +38,7 @@ namespace Czuch
 		editorCameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
 
 		CreateRenderContexts();
+		Dirty();
 	}
 
 
@@ -47,6 +50,7 @@ namespace Czuch
 	void Scene::AddUIElement(UIBaseElement* element)
 	{
 		m_UIElements.push_back(element);
+		Dirty();
 	}
 
 	void Scene::OnUpdate(TimeDelta delta)
@@ -110,9 +114,10 @@ namespace Czuch
 		currentCamera->SetAspectRatio((float)width / (float)height);
 		Mat4x4 viewMat = currentCamera->GetViewMatrix();
 
-		auto renderableView = m_Registry.view<TransformComponent, MeshComponent, MeshRendererComponent>();
+		auto renderableView = m_Registry.view<TransformComponent, MeshComponent, MeshRendererComponent, ActiveComponent>(entt::exclude<DestroyedComponent>);
 		for (auto entity : renderableView)
 		{
+
 			auto& transform = renderableView.get<TransformComponent>(entity);
 			auto& mesh = renderableView.get<MeshComponent>(entity);
 			auto& meshRenderer = renderableView.get<MeshRendererComponent>(entity);
@@ -144,6 +149,9 @@ namespace Czuch
 		entity.AddComponent<HeaderComponent>(entityName, tag, Layer{ 0 });
 		entity.AddComponent<TransformComponent>();
 		entity.AddComponent<ActiveComponent>();
+		entity.AddComponent<GUIDComponent>(GUID());
+		
+
 		if (parent.IsValid())
 		{
 			parent.AddChild(entity);
@@ -152,6 +160,7 @@ namespace Czuch
 		{
 			entity.SetAsParent(m_RootEntity);
 		}
+		Dirty();
 		return entity;
 	}
 
@@ -190,6 +199,7 @@ namespace Czuch
 		TryToRemoveComponentFromEntity<NativeBehaviourComponent>(entity);
 
 		m_Registry.destroy(internalHandle);
+		Dirty();
 	}
 
 	void Scene::MarkEntityForDestroy(Entity entity)
@@ -208,6 +218,8 @@ namespace Czuch
 		m_RootEntity = Entity{ m_Registry.create(),this };
 		m_RootEntity.AddComponent<HeaderComponent>(m_SceneName, "Root", Layer{ 0 });
 		m_RootEntity.AddComponent<TransformComponent>();
+		m_RootEntity.AddComponent<ActiveComponent>();
+		m_RootEntity.AddComponent<GUIDComponent>(GUID());
 		CreateRenderContexts();
 	}
 
@@ -220,9 +232,51 @@ namespace Czuch
 		}
 	}
 
+	void ForEachChildEntity(TransformComponent* transform, std::function<void(Entity)> func,Czuch::IScene* scene)
+	{
+		for (auto child : transform->GetChildren())
+		{
+			if (child.IsDestroyed())
+			{
+				continue;
+			}
+			func(child);
+			ForEachChildEntity(&child.GetComponent<TransformComponent>(), func,scene);
+		}
+	}
+
+	void Scene::ForEachEntityWithHierarchy(std::function<void(Entity)> func)
+	{
+		TransformComponent* rootTransform = &m_RootEntity.GetComponent<TransformComponent>();
+		func(m_RootEntity);
+		ForEachChildEntity(rootTransform, func,this);
+	}
+
+	entt::entity Scene::GetEntityWithGUID(GUID guid)
+	{
+		auto guids = m_Registry.view<GUIDComponent>(entt::exclude<DestroyedComponent>);
+		for (auto entity : guids)
+		{
+			auto& guidComponent = guids.get<GUIDComponent>(entity);
+			if (guidComponent.GetGUID() == guid)
+			{
+				return entity;
+			}
+		}
+	}
+
+	Entity Scene::GetEntityObjectWithGUID(GUID guid)
+	{
+		auto entity = GetEntityWithGUID(guid);
+		if (entity != entt::null)
+		{
+			return Entity{ entity,this };
+		}
+	}
+
 	CameraComponent* Scene::FindPrimaryCamera()
 	{
-		auto view = m_Registry.view<CameraComponent>();
+		auto view = m_Registry.view<CameraComponent>(entt::exclude<DestroyedComponent>);
 		for (auto entity : view)
 		{
 			auto& camera = view.get<CameraComponent>(entity);
@@ -237,7 +291,7 @@ namespace Czuch
 
 	CameraComponent* Scene::FindEditorCamera()
 	{
-		auto view = m_Registry.view<CameraComponent>();
+		auto view = m_Registry.view<CameraComponent>(entt::exclude<DestroyedComponent>);
 		for (auto entity : view)
 		{
 			auto& camera = view.get<CameraComponent>(entity);
@@ -252,24 +306,26 @@ namespace Czuch
 
 	void Scene::SetPrimaryCamera(CameraComponent* camera)
 	{
-		auto view = m_Registry.view<CameraComponent>();
+		auto view = m_Registry.view<CameraComponent>(entt::exclude<DestroyedComponent>);
 		for (auto entity : view)
 		{
 			auto& camera = view.get<CameraComponent>(entity);
 			camera.SetPrimaryFlag(false);
 		}
 		camera->SetPrimaryFlag(true);
+		Dirty();
 	}
 
 	void Scene::SetEditorCamera(CameraComponent* camera)
 	{
-		auto view = m_Registry.view<CameraComponent>();
+		auto view = m_Registry.view<CameraComponent>(entt::exclude<DestroyedComponent>);
 		for (auto entity : view)
 		{
 			auto& camera = view.get<CameraComponent>(entity);
 			camera.SetType(CameraType::GameCamera);
 		}
 		camera->SetType(CameraType::EditorCamera);
+		Dirty();
 	}
 
 	void Scene::CreateRenderContexts()
@@ -307,7 +363,7 @@ namespace Czuch
 		SerializerHelper::KeyVal("Scene", GetSceneName());
 		SerializerHelper::Key("Entities");
 		SerializerHelper::BeginSeq();
-		ForEachEntity([&](Entity entity)
+		ForEachEntityWithHierarchy([&](Entity entity)
 			{
 				if (entity.IsValid())
 				{
@@ -331,7 +387,65 @@ namespace Czuch
 
 	bool Scene::Deserialize(const YAML::Node& in, bool binary)
 	{
-		return false;
+		if (binary)
+		{
+			return true;
+		}
+
+		if (in["Scene"])
+		{
+			m_SceneName = in["Scene"].as<CzuchStr>();
+			LOG_BE_INFO("[Scene]Loading scene with name: {0}", m_SceneName);
+
+			if (in["Entities"])
+			{
+				const YAML::Node& entities = in["Entities"];
+				for (auto entity : entities)
+				{
+					Entity newEntity;
+					if (entity["HeaderComponent"])
+					{
+						auto headerNode = entity["HeaderComponent"];
+						CzuchStr tag = headerNode["Tag"].as<CzuchStr>();
+						if (tag == "Root")
+						{
+							newEntity = m_RootEntity;
+						}
+						else
+						{
+							newEntity = CreateEntity(headerNode["Name"].as<CzuchStr>(), m_RootEntity);
+						}
+					}
+					
+					if (newEntity.IsValid())
+					{
+						bool result=newEntity.Deserialize(entity, binary);
+						if (result == false)
+						{
+							LOG_BE_ERROR("[Scene][Load]Failed to load scene. Entity deserialization failed.");
+							return false;
+						}
+					}
+					else
+					{
+						LOG_BE_ERROR("[Scene][Load]Failed to load scene. Entity creation failed.");
+						return false;
+					}
+				}
+			}
+			else
+			{
+				LOG_BE_ERROR("[Scene][Load]Failed to load scene. Entities are missing.");
+				return false;
+			}
+		}
+		else
+		{
+			LOG_BE_ERROR("[Scene][Load]Failed to load scene. Scene name is missing.");
+			return false;
+		}
+
+		return true;
 	}
 #pragma endregion
 

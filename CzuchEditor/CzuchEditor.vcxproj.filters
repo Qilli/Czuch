@@ -37,6 +37,7 @@
     <ClInclude Include="source\Panels\SceneHierarchyEditorPanel.h">
       <Filter>Panels</Filter>
     </ClInclude>
+    <ClInclude Include="source\Commands\CommandTypes\ReparentEntityCommand.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\App\CzuchEditorApplication.cpp">

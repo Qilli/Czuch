@@ -5,6 +5,7 @@
 #include"Entity.h"
 #include"Renderer/RenderContext.h"
 #include"Serialization/ISerializer.h"
+#include"Core/GUID.h"
 
 namespace Czuch
 {
@@ -35,6 +36,9 @@ namespace Czuch
 	public:
 		std::vector<UIBaseElement*>& GetSceneUIElements() { return m_UIElements; }
 		void ForEachEntity(std::function<void(Entity)> func);
+		void ForEachEntityWithHierarchy(std::function<void(Entity)> func);
+		entt::entity GetEntityWithGUID(GUID guid) override;
+		Entity GetEntityObjectWithGUID(GUID guid);
 	public:
 		CameraComponent* FindPrimaryCamera() override;
 		CameraComponent* FindEditorCamera() override;

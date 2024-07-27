@@ -3,6 +3,7 @@
 #include"ComponentState.h"
 #include"../Entity.h"
 #include"Core/UpdatableValue.h"
+#include"Core/GUID.h"
 
 namespace Czuch
 {
@@ -45,4 +46,25 @@ namespace Czuch
 		ActiveComponent(const ActiveComponent&) = default;
 		virtual ~ActiveComponent() = default;
 	};
+
+	struct CZUCH_API GUIDComponent : public Component
+	{
+	public:
+		GUIDComponent(Entity owner, GUID guid) : Component::Component(owner), m_GUID(guid) {}
+		GUIDComponent(const GUIDComponent&) = default;
+		virtual ~GUIDComponent() = default;
+		GUID GetGUID() { return m_GUID; }
+		void SetGUID(GUID guid) { m_GUID = guid; }
+	private:
+		GUID m_GUID;
+	};
+
+	struct CZUCH_API DestroyedComponent : public Component
+	{
+	public:
+		DestroyedComponent(Entity owner) : Component::Component(owner) {}
+		DestroyedComponent(const DestroyedComponent&) = default;
+		virtual ~DestroyedComponent() = default;
+	};
+
 }

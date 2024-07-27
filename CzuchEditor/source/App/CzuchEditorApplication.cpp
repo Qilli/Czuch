@@ -15,12 +15,6 @@ int main()
 	root->Init("engineConfig.cfg",&editorControl);
 
 	Czuch::Scene *scene= new Czuch::Scene("MainScene", &root->GetRenderSettings());
-
-	scene->CreateEntity("Cube1");
-	scene->CreateEntity("Cube2");
-	auto e=scene->CreateEntity("Cube3");
-	scene->CreateEntity("Cube4",e);
-
 	auto& sceneMgr = root->GetScenesManager();
 	sceneMgr.AddScene(scene, true);
 

@@ -4,6 +4,8 @@
 #include"Subsystems/Scenes/Components/TransformComponent.h"
 #include"../Commands/EditorCommandsControl.h"
 #include"../Commands/CommandTypes/CreateNewEntityCommand.h"
+#include"../Commands/CommandTypes/RemoveEntityCommand.h"
+#include"../Commands/CommandTypes/ReparentEntityCommand.h"
 
 namespace Czuch
 {
@@ -67,7 +69,7 @@ namespace Czuch
 
 			int flags = ImGuiTreeNodeFlags_SpanAvailWidth;
 
-			if (transformComponent.GetChildren().size() > 0)
+			if (transformComponent.HasAnyChild())
 			{
 				flags |= (ImGuiTreeNodeFlags_OpenOnArrow);
 			}
@@ -76,35 +78,81 @@ namespace Czuch
 				flags |= (ImGuiTreeNodeFlags_Leaf);
 			}
 
+			bool popStyle = false;
 			if (m_SelectedEntity == entity)
 			{
 				flags |= ImGuiTreeNodeFlags_Selected;
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.85f, 0.1f, 1.0f)); // green color
+				popStyle = true;
 			}
+			auto& guid = entity.GetComponent<GUIDComponent>();
 
 			auto& header = entity.GetComponent<HeaderComponent>();
-			bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)entity, flags, header.GetHeader().c_str());
-			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+			bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)entity.GetID(), flags, header.GetHeader().c_str());
+
+			// Start drag-and-drop source
+			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+			{
+				ImGui::SetDragDropPayload("TREE_NODE", &guid, sizeof(GUIDComponent));
+				ImGui::EndDragDropSource();
+			}
+
+			// Handle drag-and-drop target
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TREE_NODE"))
+				{
+					GUIDComponent* droppedData = (GUIDComponent*)payload->Data;
+					if (droppedData->GetGUID() != guid.GetGUID())
+					{
+						auto droppedEntity = m_ActiveScene->GetEntityObjectWithGUID(droppedData->GetGUID());
+						EditorCommandsControl::Get().ExecuteCommand(NEW(ReparentEntityCommand(m_ActiveScene,droppedEntity, entity)));
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			if (popStyle)
+			{
+				ImGui::PopStyleColor();
+			}
+
+			if ((ImGui::IsItemClicked()|| ImGui::IsItemClicked(1)) && !ImGui::IsItemToggledOpen())
 			{
 				m_SelectedEntity = entity;
 				NotifyOnSelectedEntityListeners();
 			}
 
-			bool deleteEntity = false;
 
-			if (ImGui::BeginPopupContextItem(header.GetHeader().c_str()))
+			if (m_SelectedEntity == entity)
 			{
-				ImGui::Separator();
-				if (ImGui::MenuItem(" Delete Entity "))
+
+				if (ImGui::BeginPopupContextItem(guid.GetGUID().ToString().c_str()))
 				{
-					deleteEntity = true;
-					if (m_SelectedEntity == entity)
+					ImGui::Separator();
+
+					if (ImGui::MenuItem(" Create Child Entity "))
 					{
-						m_SelectedEntity = {};
+						auto command = new CreateNewEntityCommand(m_ActiveScene, m_SelectedEntity);
+						EditorCommandsControl::Get().ExecuteCommand(command);
+
+						m_SelectedEntity = command->GetCreatedEntity();
 						NotifyOnSelectedEntityListeners();
 					}
+
+					if (ImGui::MenuItem(" Delete Entity "))
+					{
+						EditorCommandsControl::Get().ExecuteCommand(new RemoveNewEntityCommand(m_ActiveScene, m_SelectedEntity));
+						if (m_SelectedEntity == entity)
+						{
+							m_SelectedEntity = {};
+							NotifyOnSelectedEntityListeners();
+						}
+					}
+					ImGui::Separator();
+					ImGui::EndPopup();
 				}
-				ImGui::Separator();
-				ImGui::EndPopup();
+
 			}
 
 
@@ -114,15 +162,15 @@ namespace Czuch
 				auto transformComponent = entity.GetComponent<TransformComponent>();
 				for (auto child : transformComponent.GetChildren())
 				{
+					if (child.IsDestroyed())
+					{
+						continue;
+					}
 					DrawEntityNode(child);
 				}
 				ImGui::TreePop();
 			}
 
-			if (deleteEntity)
-			{
-				m_ActiveScene->DestroyEntity(entity);
-			}
 		}
 	}
 

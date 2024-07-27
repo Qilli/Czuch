@@ -3,70 +3,70 @@ Entities:
   - Entity: GUID:8979879
     HeaderComponent:
       IsEnabled: 1
-      Tag: Default
+      Tag: Default1
       Name: Cube4
     TransformComponent:
       IsEnabled: 1
-      Position: 0.000000 0.000000 0.000000
-      Rotation: 0.000000 0.000000 0.000000
-      Scale: 1.000000 1.000000 1.000000
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
   - Entity: GUID:8979879
     HeaderComponent:
       IsEnabled: 1
-      Tag: Default
+      Tag: Default2
       Name: Cube3
     TransformComponent:
       IsEnabled: 1
-      Position: 0.000000 0.000000 0.000000
-      Rotation: 0.000000 0.000000 0.000000
-      Scale: 1.000000 1.000000 1.000000
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
   - Entity: GUID:8979879
     HeaderComponent:
       IsEnabled: 1
-      Tag: Default
+      Tag: Default3
       Name: Cube2
     TransformComponent:
       IsEnabled: 1
-      Position: 0.000000 0.000000 0.000000
-      Rotation: 0.000000 0.000000 0.000000
-      Scale: 1.000000 1.000000 1.000000
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
   - Entity: GUID:8979879
     HeaderComponent:
       IsEnabled: 1
-      Tag: Default
+      Tag: Default4
       Name: Cube1
     TransformComponent:
       IsEnabled: 1
-      Position: 0.000000 0.000000 0.000000
-      Rotation: 0.000000 0.000000 0.000000
-      Scale: 1.000000 1.000000 1.000000
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
   - Entity: GUID:8979879
     HeaderComponent:
       IsEnabled: 1
-      Tag: Default
+      Tag: Default6
       Name: EditorCamera
     TransformComponent:
       IsEnabled: 1
-      Position: 0.000000 0.000000 3.000000
-      Rotation: 0.000000 0.000000 0.000000
-      Scale: 1.000000 1.000000 1.000000
+      Position: [0, 0, 3]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
   - Entity: GUID:8979879
     HeaderComponent:
       IsEnabled: 1
-      Tag: Default
+      Tag: Default7
       Name: MainCamera
     TransformComponent:
       IsEnabled: 1
-      Position: 0.000000 0.000000 3.000000
-      Rotation: 0.000000 0.000000 0.000000
-      Scale: 1.000000 1.000000 1.000000
+      Position: [0, 0, 3]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
   - Entity: GUID:8979879
     HeaderComponent:
       IsEnabled: 1
       Tag: Root
-      Name: MainScene
+      Name: MainScene9
     TransformComponent:
       IsEnabled: 1
-      Position: 0.000000 0.000000 0.000000
-      Rotation: 0.000000 0.000000 0.000000
-      Scale: 1.000000 1.000000 1.000000
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
