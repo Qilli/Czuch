@@ -6,11 +6,18 @@ namespace Czuch
 	class CommandBuffer;
 	struct RenderSettings;
 
+	enum class RenderMode
+	{
+		Default,
+		Offscreen
+	};
+
 	class GraphicsDevice
 	{
 	protected:
 		GraphicsDeviceCapability m_DeviceCapabilities = GraphicsDeviceCapability::NONE;
 		RenderSettings *m_RenderSettings;
+		RenderMode m_RenderMode;
 	public:
 		virtual ~GraphicsDevice() = default;
 		virtual bool InitDevice(RenderSettings* settings) = 0;
@@ -19,6 +26,9 @@ namespace Czuch
 		virtual float GetSwapchainHeight() const = 0;
 
 		virtual void DrawUI(CommandBuffer* commandBuffer) = 0;
+		virtual void SetRenderMode(RenderMode mode) { m_RenderMode = mode; }
+		virtual RenderMode GetRenderMode() const { return m_RenderMode; }
+		virtual void* CreatePointerForUITexture(TextureHandle tex) = 0;
 
 		virtual PipelineHandle CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass, bool dynamicRendering = false) = 0;
 		virtual ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize) =0;
@@ -46,6 +56,7 @@ namespace Czuch
 
 		virtual Pipeline* AccessPipeline(PipelineHandle handle)= 0;
 		virtual RenderPass* AccessRenderPass(RenderPassHandle handle) = 0;
+		virtual RenderPassHandle GetRenderPassHandleOfType(RenderPassType type) = 0;
 		virtual Shader* AccessShader(ShaderHandle handle)= 0;
 		virtual DescriptorSetLayout* AccessDescriptorSetLayout(DescriptorSetLayoutHandle handle) = 0;
 		virtual FrameBuffer* AccessFrameBuffer(FrameBufferHandle handle)= 0;

@@ -5,6 +5,8 @@
 #include"Subsystems/Scenes/Components/HeaderComponent.h"
 #include"Subsystems/Scenes/Components/TransformComponent.h"
 #include"Subsystems/Scenes/Components/CameraComponent.h"
+#include"../Commands/CommandTypes/ChangeTransformCommand.h"
+#include"../Commands/EditorCommandsControl.h"
 
 namespace Czuch
 {
@@ -132,12 +134,39 @@ namespace Czuch
 		if (entity.HasComponent<TransformComponent>())
 		{
 			auto& transform = entity.GetComponent<TransformComponent>();
-			bool open=DrawComponentHeader("Transform Component", entity);
+			bool open = DrawComponentHeader("Transform Component", entity);
 			if (open)
 			{
-				CustomDrawers::DrawVector3("Position", transform.GetLocalPosition(), 80.0f, 0.0f);
-				CustomDrawers::DrawVector3("Rotation", transform.GetLocalEulerAngles(), 80.0f, 0.0f);
-				CustomDrawers::DrawVector3("Scale", transform.GetLocalScale(), 80.0f, 1.0f);
+				bool changed = false;
+
+				if (CustomDrawers::DrawVector3("Position", transform.GetLocalPosition(), 80.0f, 0.0f, m_Position))
+				{
+					transform.ForceUpdateLocalTransform();
+					changed = true;
+				}
+				if (CustomDrawers::DrawVector3("Rotation", transform.GetLocalEulerAngles(), 80.0f, 0.0f, m_Rotation))
+				{
+					transform.ForceUpdateLocalTransform();
+					changed = true;
+				}
+				if (CustomDrawers::DrawVector3("Scale", transform.GetLocalScale(), 80.0f, 1.0f, m_Scale))
+				{
+					transform.ForceUpdateLocalTransform();
+					changed = true;
+				}
+
+				if (changed)
+				{
+					auto command = NEW(ChangeTransformCommand((Scene*)entity.GetScene(), entity, m_Position.value, m_Rotation.value, m_Scale.value));
+					m_Position.isLocked = false;
+					m_Rotation.isLocked = false;
+					m_Scale.isLocked = false;
+					m_Position.value = transform.GetLocalPosition();
+					m_Rotation.value = transform.GetLocalEulerAngles();
+					m_Scale.value = transform.GetLocalScale();
+					EditorCommandsControl::Get().ExecuteCommand(command);
+				}
+				transform.ForceUpdateLocalTransform();
 			}
 		}
 	}
@@ -195,7 +224,7 @@ namespace Czuch
 #pragma endregion
 
 #pragma region CustomDrawers
-	void CustomDrawers::DrawVector3(const CzuchStr& label, Vec3& vec, float colWidth, float resetValue)
+	bool CustomDrawers::DrawVector3(const CzuchStr& label, Vec3& vec, float colWidth, float resetValue, LockedVec3& locked)
 	{
 		ImGui::PushID(label.c_str());
 		ImGui::Columns(2);
@@ -207,36 +236,76 @@ namespace Czuch
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
 		ImVec2 buttonSize = ImVec2(lineHeight + 3.0f, lineHeight);
+		bool changed = false;
 
 		if (ImGui::Button("X", buttonSize))
 		{
+			locked.isLocked = true;
+			locked.value = vec;
 			vec.x = resetValue;
+			changed = true;
 		}
 		ImGui::SameLine();
+
 		ImGui::DragFloat("##X", &vec.x, 0.1f);
+		if (ImGui::IsItemActivated() && locked.isLocked == false)
+		{
+			locked.value = vec;
+			locked.isLocked = true;
+		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			changed = true;
+		}
+
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
 		if (ImGui::Button("Y", buttonSize))
 		{
+			locked.isLocked = true;
+			locked.value = vec;
 			vec.y = resetValue;
+			changed = true;
 		}
 		ImGui::SameLine();
 		ImGui::DragFloat("##Y", &vec.y, 0.1f);
+		if (ImGui::IsItemActivated() && locked.isLocked == false)
+		{
+			locked.value = vec;
+			locked.isLocked = true;
+		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			changed = true;
+		}
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 		if (ImGui::Button("Z", buttonSize))
 		{
+			locked.isLocked = true;
+			locked.value = vec;
 			vec.z = resetValue;
+			changed = true;
 		}
 		ImGui::SameLine();
 		ImGui::DragFloat("##Z", &vec.z, 0.1f);
+		if (ImGui::IsItemActivated() && locked.isLocked == false)
+		{
+			locked.value = vec;
+			locked.isLocked = true;
+		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			changed = true;
+		}
 		ImGui::PopItemWidth();
 
 		ImGui::PopStyleVar();
 		ImGui::Columns(1);
 		ImGui::PopID();
 		ImGui::Spacing();
+		return changed;
 	}
 	bool CustomDrawers::ButtonCenteredOnLine(const char* label, float alignment)
 	{
@@ -251,7 +320,7 @@ namespace Czuch
 
 		return ImGui::Button(label);
 	}
-	void CustomDrawers::LabelCenteredOnLine(const char* label, float alignment,float leftPadding,float rightPadding)
+	void CustomDrawers::LabelCenteredOnLine(const char* label, float alignment, float leftPadding, float rightPadding)
 	{
 		auto windowWidth = ImGui::GetWindowSize().x;
 		auto textWidth = ImGui::CalcTextSize(label).x;
@@ -263,7 +332,7 @@ namespace Czuch
 		ImGui::SameLine();
 		ImGui::Dummy(ImVec2(rightPadding, 0.0f));
 	}
-	void CustomDrawers::ShowModalWindow(const char* title, const char* text,bool & isOpen)
+	void CustomDrawers::ShowModalWindow(const char* title, const char* text, bool& isOpen)
 	{
 		ImGui::OpenPopup(title);
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -271,7 +340,7 @@ namespace Czuch
 		if (ImGui::BeginPopupModal(title, NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Dummy(ImVec2(0.0f, 10.0f));
-			CustomDrawers::LabelCenteredOnLine(text,0.5f,5.0f,5.0f);
+			CustomDrawers::LabelCenteredOnLine(text, 0.5f, 5.0f, 5.0f);
 			ImGui::Dummy(ImVec2(0.0f, 5.0f));
 			if (CustomDrawers::ButtonCenteredOnLine("OK")) { ImGui::CloseCurrentPopup(); isOpen = false; }
 			ImGui::Dummy(ImVec2(0.0f, 10.0f));
@@ -295,7 +364,7 @@ namespace Czuch
 		if (ImGui::BeginPopup(name))
 		{
 			ImGui::SeparatorText("Actions");
-			ImGui::Dummy(ImVec2(0.0f,2.0f));
+			ImGui::Dummy(ImVec2(0.0f, 2.0f));
 			if (ImGui::MenuItem(" Delete Component "))
 			{
 				OnRemoveComponent(entity);

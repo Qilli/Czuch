@@ -48,17 +48,7 @@ namespace Czuch
 	void TransformComponent::SetLocalEulerAngles(const Vec3& eulerAngles)
 	{
 		m_LocalEulerAngles = eulerAngles;
-
-		if(m_LocalEulerAngles.x>360.0f)
-			m_LocalEulerAngles.x = fmod(m_LocalEulerAngles.x, 360.0f);
-		if (m_LocalEulerAngles.y > 360.0f)
-			m_LocalEulerAngles.y = fmod(m_LocalEulerAngles.y, 360.0f);
-		if (m_LocalEulerAngles.z > 360.0f)
-			m_LocalEulerAngles.z = fmod(m_LocalEulerAngles.z, 360.0f);
-
-		m_LocalRotation=glm::quat(glm::vec3(eulerAngles.x, eulerAngles.y, eulerAngles.z));
-		UpdateLocalTransform();
-		m_State.SetDirty();
+		ForceUpdateLocalTransform();
 	}
 
 	void TransformComponent::SetLocalScale(const Vec3& scale)
@@ -225,6 +215,18 @@ namespace Czuch
 	void TransformComponent::UpdateLocalTransform()
 	{
 		m_LocalTransform = glm::translate(Mat4x4(1.0f), m_LocalPosition) * glm::toMat4(m_LocalRotation) * glm::scale(Mat4x4(1.0f), m_LocalScale);
+	}
+
+	void TransformComponent::UpdateLocalRotation()
+	{
+		if (m_LocalEulerAngles.x > 360.0f)
+			m_LocalEulerAngles.x = fmod(m_LocalEulerAngles.x, 360.0f);
+		if (m_LocalEulerAngles.y > 360.0f)
+			m_LocalEulerAngles.y = fmod(m_LocalEulerAngles.y, 360.0f);
+		if (m_LocalEulerAngles.z > 360.0f)
+			m_LocalEulerAngles.z = fmod(m_LocalEulerAngles.z, 360.0f);
+
+		m_LocalRotation = glm::quat(glm::vec3(glm::radians(m_LocalEulerAngles.x), glm::radians(m_LocalEulerAngles.y), glm::radians(m_LocalEulerAngles.z)));
 	}
 
 	void TransformComponent::UpdateLocalToWorld()

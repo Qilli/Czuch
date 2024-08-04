@@ -664,7 +664,7 @@ namespace Czuch
 
 	struct VulkanRenderPassDesc : public RenderPassDesc
 	{
-		bool mainRenderPass = false;
+		bool mainRenderPass = false; 
 		VkRenderPassCreateInfo renderPassInfo;
 	};
 

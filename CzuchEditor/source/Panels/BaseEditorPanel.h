@@ -3,10 +3,11 @@
 
 namespace Czuch
 {
-	static class ImGuiExtension
+	struct LockedVec3
 	{
-	public:
-		
+		LockedVec3() { isLocked = false; value = Vec3(0, 0, 0); }
+		bool isLocked;
+		Vec3 value;
 	};
 
 
@@ -17,6 +18,7 @@ namespace Czuch
 		virtual ~BaseEditorPanel() = default;
 		virtual void FillUI() = 0;
 		virtual void SelectedEntityChanged(Entity entity) {};
+		virtual Entity GetSelectedEntity() { return m_SelectedEntity; }
 	protected:
 		inline bool IsEntityValid(Entity entity) {return entity.IsValid(); }
 	protected:

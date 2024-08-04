@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DEBUG;CZUCH_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;vendors\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;vendors\yaml-cpp\include;vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -109,7 +109,7 @@ IF EXIST ..\bin\Debug-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;vendors\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;vendors\yaml-cpp\include;vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -138,7 +138,7 @@ IF EXIST ..\bin\Release-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bi
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;vendors\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;vendors\yaml-cpp\include;vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -162,11 +162,11 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="source\Core\GUID.h" />
     <ClInclude Include="source\Core\AccessContainer.h" />
     <ClInclude Include="source\Core\Common.h" />
     <ClInclude Include="source\Core\EngineCore.h" />
     <ClInclude Include="source\Core\FileHelper.h" />
+    <ClInclude Include="source\Core\GUID.h" />
     <ClInclude Include="source\Core\KeyCodes.h" />
     <ClInclude Include="source\Core\Math.h" />
     <ClInclude Include="source\Core\MouseCodes.h" />
@@ -244,10 +244,11 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClInclude Include="source\Subsystems\UI\UIBaseElement.h" />
     <ClInclude Include="source\Subsystems\UI\UIBaseManager.h" />
     <ClInclude Include="source\czpch.h" />
+    <ClInclude Include="vendors\ImGuizmoCzuch\ImGuizmo.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\Core\GUID.cpp" />
     <ClCompile Include="source\Core\AccessContainer.cpp" />
+    <ClCompile Include="source\Core\GUID.cpp" />
     <ClCompile Include="source\Core\StringID.cpp" />
     <ClCompile Include="source\Core\Time.cpp" />
     <ClCompile Include="source\Core\TimeDelta.cpp" />
@@ -311,6 +312,11 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClCompile Include="source\Subsystems\UI\UIBaseManager.cpp" />
     <ClCompile Include="source\czpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="vendors\ImGuizmoCzuch\ImGuizmo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

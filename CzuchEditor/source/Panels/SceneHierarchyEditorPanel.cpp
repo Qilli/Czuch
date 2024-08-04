@@ -5,6 +5,7 @@
 #include"../Commands/EditorCommandsControl.h"
 #include"../Commands/CommandTypes/CreateNewEntityCommand.h"
 #include"../Commands/CommandTypes/RemoveEntityCommand.h"
+#include"../Commands/CommandTypes/CreateDefaultMeshesCommands.h"
 #include"../Commands/CommandTypes/ReparentEntityCommand.h"
 
 namespace Czuch
@@ -134,6 +135,15 @@ namespace Czuch
 					if (ImGui::MenuItem(" Create Child Entity "))
 					{
 						auto command = new CreateNewEntityCommand(m_ActiveScene, m_SelectedEntity);
+						EditorCommandsControl::Get().ExecuteCommand(command);
+
+						m_SelectedEntity = command->GetCreatedEntity();
+						NotifyOnSelectedEntityListeners();
+					}
+
+					if (ImGui::MenuItem(" Create Plane Mesh"))
+					{
+						auto command = NEW(CreateNewEntityWithPlaneMeshCommand(m_ActiveScene, m_SelectedEntity));
 						EditorCommandsControl::Get().ExecuteCommand(command);
 
 						m_SelectedEntity = command->GetCreatedEntity();

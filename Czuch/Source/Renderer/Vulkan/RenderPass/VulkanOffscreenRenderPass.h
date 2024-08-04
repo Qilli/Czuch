@@ -11,7 +11,7 @@ namespace Czuch
 	class VulkanOffscreenRenderPass : public RenderPassControl
 	{
 	public:
-		VulkanOffscreenRenderPass(RenderSettings* settings,Camera* cam,VulkanRenderer* renderer, VulkanDevice* device, Format colorFormat, Format depthFormat, U32 width, U32 height, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT, bool handleWindowResize=true);
+		VulkanOffscreenRenderPass(RenderSettings* settings,Camera* cam,VulkanRenderer* renderer, VulkanDevice* device, Format colorFormat, Format depthFormat, U32 width, U32 height, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT, bool handleWindowResize=false);
 		~VulkanOffscreenRenderPass();
 		void BeginRenderPass(CommandBuffer* cmdBuffer) override;
 		void EndRenderPass(CommandBuffer* cmdBuffer) override;

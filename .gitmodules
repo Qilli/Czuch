@@ -13,3 +13,9 @@
 [submodule "Czuch/vendors/yaml-cpp"]
 	path = Czuch/vendors/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "Czuch/vendor/ImGuizmoCzuch"]
+	path = Czuch/vendor/ImGuizmoCzuch
+	url = https://github.com/Qilli/ImGuizmoCzuch.git
+[submodule "Czuch/vendors/ImGuizmoCzuch"]
+	path = Czuch/vendors/ImGuizmoCzuch
+	url = https://github.com/Qilli/ImGuizmoCzuch.git

@@ -78,7 +78,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;..\Czuch\vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -99,7 +99,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;..\Czuch\vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -120,7 +120,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;..\Czuch\vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -137,6 +137,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\Czuch\vendors\ImGuizmoCzuch\ImGuizmo.h" />
+    <ClInclude Include="source\Commands\CommandTypes\ChangeTransformCommand.h" />
+    <ClInclude Include="source\Commands\CommandTypes\CreateDefaultMeshesCommands.h" />
     <ClInclude Include="source\Commands\CommandTypes\CreateNewEntityCommand.h" />
     <ClInclude Include="source\Commands\CommandTypes\RemoveEntityCommand.h" />
     <ClInclude Include="source\Commands\CommandTypes\ReparentEntityCommand.h" />
@@ -148,6 +151,7 @@
     <ClInclude Include="source\Panels\SceneHierarchyEditorPanel.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Czuch\vendors\ImGuizmoCzuch\ImGuizmo.cpp" />
     <ClCompile Include="source\App\CzuchEditorApplication.cpp" />
     <ClCompile Include="source\Commands\EditorCommandsControl.cpp" />
     <ClCompile Include="source\EditorControl.cpp" />

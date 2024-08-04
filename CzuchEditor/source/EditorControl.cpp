@@ -1,7 +1,11 @@
 #include "czpch.h"
 #include "EditorControl.h"
 #include"imgui.h"
+#include"imgui_internal.h"
 #include"Platform/Windows/WinUtils.h"
+#include"ImGuizmo.h"
+#include"Subsystems/Scenes/Components/CameraComponent.h"
+#include"Commands/CommandTypes/ChangeTransformCommand.h"
 
 namespace Czuch
 {
@@ -68,6 +72,7 @@ namespace Czuch
 		m_OffscreenPassAdded = false;
 		m_SceneHierarchyPanel = nullptr;
 		m_EntityInspectorPanel = nullptr;
+		m_GizmoMode = GizmoMode::Translate;
 	}
 	EditorControl::~EditorControl()
 	{
@@ -80,6 +85,7 @@ namespace Czuch
 		ImGui::SetCurrentContext((ImGuiContext*)context);
 		SetLightGreyStyle();
 		m_CommandsControl = new EditorCommandsControl();
+		UpdateOffscreenPass((U32)800, (U32)600);
 	}
 
 	void EditorControl::Shutdown()
@@ -109,9 +115,11 @@ namespace Czuch
 
 
 		FillMainMenubar();
+		HandleTopBar();
+
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0.0f });
 		ImGui::Begin("Scene");
 		bool isFocused=ImGui::IsWindowFocused();
 		bool isHovered = ImGui::IsWindowHovered();
@@ -124,6 +132,11 @@ namespace Czuch
 			ImGui::Image(m_Root->GetRenderer().GetRenderPassResult(RenderPassType::OffscreenTexture), ImGui::GetContentRegionAvail());
 		}
 
+		//Handle gizmos
+		Entity currentSelectedEntity = m_SceneHierarchyPanel->GetSelectedEntity();
+
+		HandelGizmoTransforms(currentSelectedEntity);
+
 		ImGui::End();
 
 		//scene hierarchy panel
@@ -131,8 +144,151 @@ namespace Czuch
 		//inspector panel
 		m_EntityInspectorPanel->FillUI();
 
+		if (m_ShowCommandsStackPopup)
+		{
+			ShowCommandsStackPopup();
+		}
 
 		ImGui::PopStyleVar();
+	}
+
+	void EditorControl::HandleTopBar()
+	{
+		ImGuiViewportP* viewport = (ImGuiViewportP*)(void*)ImGui::GetMainViewport();
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings;
+		float height = 40.0f;
+
+		if (ImGui::BeginViewportSideBar("##SecondaryMenuBar", viewport, ImGuiDir_Up, height, window_flags)) {
+				ImVec2 sizeButton = { height*0.5f,height * 0.5f };
+
+				auto mgr = AssetsManager::GetPtr();
+				auto translateIconId = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_TRANSLATE)->GetUITextureIDPtr();
+				auto rotateIconId = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_ROTATE)->GetUITextureIDPtr();
+				auto scaleIconId = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_SCALE)->GetUITextureIDPtr();
+
+				ImVec4 buttonSelected = ImVec4(0.8f, 0.8f, 0.8f, 0.5f);
+				ImVec4 buttonUnselected = ImVec4(0.05f, 0.05f, 0.05f, 0.5f);
+
+				if (m_GizmoMode == GizmoMode::Translate)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, buttonSelected);
+				}
+				else
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, buttonUnselected);
+				}
+
+				if (ImGui::ImageButton(translateIconId,sizeButton))
+				{
+					m_GizmoMode = GizmoMode::Translate;
+				}
+				ImGui::PopStyleColor();
+
+				if (m_GizmoMode == GizmoMode::Rotate)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, buttonSelected);
+				}
+				else
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, buttonUnselected);
+				}
+
+
+				ImGui::SameLine();
+				if (ImGui::ImageButton(rotateIconId, sizeButton))
+				{
+					m_GizmoMode = GizmoMode::Rotate;
+				}
+				ImGui::PopStyleColor();
+
+
+				if (m_GizmoMode == GizmoMode::Scale)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, buttonSelected);
+				}
+				else
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, buttonUnselected);
+				}
+
+				ImGui::SameLine();
+				if (ImGui::ImageButton(scaleIconId, sizeButton))
+				{
+					m_GizmoMode = GizmoMode::Scale;
+				}
+
+				ImGui::PopStyleColor();
+			
+			ImGui::End();
+		}
+
+		window_flags |= ImGuiWindowFlags_MenuBar;
+		if (ImGui::BeginViewportSideBar("##MainStatusBar", viewport, ImGuiDir_Down, ImGui::GetFrameHeight(), window_flags)) {
+			if (ImGui::BeginMenuBar()) {
+				ImGui::Text("Bottom status bar");
+				ImGui::EndMenuBar();
+			}
+			ImGui::End();
+		}
+	}
+
+	void EditorControl::HandelGizmoTransforms(Czuch::Entity& currentSelectedEntity)
+	{
+		if (currentSelectedEntity.IsValid())
+		{
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist();
+			ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+			auto currentCamera = m_Root->GetScenesManager().GetActiveScene()->FindEditorCamera();
+
+			if (currentCamera != nullptr)
+			{
+				auto entity = currentCamera->GetEntity();
+				auto& cameraTransform = entity.GetComponent<TransformComponent>();
+				auto cameraProjection = currentCamera->GetCamera().GetProjectionMatrix();
+				cameraProjection = glm::perspective(glm::radians(45.0f), ImGui::GetWindowWidth() / (float)ImGui::GetWindowHeight(), 0.1f, 1000.0f);
+				auto cameraView = currentCamera->GetCamera().GetViewMatrix();
+
+				auto& selectedTransform = currentSelectedEntity.GetComponent<TransformComponent>();
+				auto selectedTransformMatrix = selectedTransform.GetLocalToWorld();
+
+				auto cameraViewProjection = cameraProjection * cameraView;
+				auto cameraViewProjectionInverse = glm::inverse(cameraViewProjection);
+
+				auto selectedTransformMatrixInverse = glm::inverse(selectedTransformMatrix);
+
+				ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), GetCurrentGizmoMode(), ImGuizmo::MODE::LOCAL, glm::value_ptr(selectedTransformMatrix), nullptr, nullptr);
+
+
+
+				if (ImGuizmo::IsUsing())
+				{
+					m_IsGizmoActive = true;
+					float matrixTranslation[3], matrixRotation[3], matrixScale[3];
+					ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selectedTransformMatrix), matrixTranslation, matrixRotation, matrixScale);
+					selectedTransform.SetLocalPosition(Vec3(matrixTranslation[0], matrixTranslation[1], matrixTranslation[2]));
+					selectedTransform.SetLocalEulerAngles(Vec3(matrixRotation[0], matrixRotation[1], matrixRotation[2]));
+					selectedTransform.SetLocalScale(Vec3(matrixScale[0], matrixScale[1], matrixScale[2]));
+					selectedTransform.ForceUpdateLocalTransform();
+				}
+				else
+				{
+					if (m_IsGizmoActive)
+					{
+						m_IsGizmoActive = false;
+						auto command = NEW(ChangeTransformCommand((Scene*)currentSelectedEntity.GetScene(), currentSelectedEntity, m_GizmoFrame.position, m_GizmoFrame.rotation, m_GizmoFrame.scale));
+						EditorCommandsControl::Get().ExecuteCommand(command);
+					}
+
+					if (ImGuizmo::IsOver())
+					{
+						m_GizmoFrame.position = selectedTransform.GetLocalPosition();
+						m_GizmoFrame.rotation = selectedTransform.GetLocalEulerAngles();
+						m_GizmoFrame.scale = selectedTransform.GetLocalScale();
+					}
+				}
+			}
+		}
 	}
 
 
@@ -159,6 +315,14 @@ namespace Czuch
 				if (ImGui::MenuItem("Cut", "CTRL+X")) {}
 				if (ImGui::MenuItem("Copy", "CTRL+C")) {}
 				if (ImGui::MenuItem("Paste", "CTRL+V")) {}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Debug"))
+			{
+				if (ImGui::MenuItem("Show Commands Stack", "CTRL+P")) {
+					m_ShowCommandsStackPopup = true;
+				}
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();
@@ -227,6 +391,29 @@ namespace Czuch
 		return false;
 	}
 
+	void EditorControl::ShowCommandsStackPopup()
+	{
+		if (ImGui::Begin("Commands Stack", &m_ShowCommandsStackPopup, ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_AlwaysVerticalScrollbar))
+		{
+			ImGui::Text("Undo Stack");
+			ImGui::Separator();
+			auto commandsStack = m_CommandsControl->GetUndoCommandsBeginIterator();
+			for (auto it = commandsStack; it != m_CommandsControl->GetUndoCommandsEndIterator(); ++it)
+			{
+				ImGui::Text((*it)->ToString().c_str());
+			}
+			ImGui::Separator();
+			ImGui::Text("Redo Stack");
+			ImGui::Separator();
+			commandsStack = m_CommandsControl->GetRedoCommandsBeginIterator();
+			for (auto it = commandsStack; it != m_CommandsControl->GetRedoCommandsEndIterator(); ++it)
+			{
+				ImGui::Text((*it)->ToString().c_str());
+			}
+			ImGui::End();
+		}	
+	}
+
 	bool EditorControl::CheckCurrentSceneForSave()
 	{
 		auto currentScene = m_Root->GetScenesManager().GetActiveScene();
@@ -257,6 +444,23 @@ namespace Czuch
 		m_OffscreenPassAdded = true;
 		m_Root->GetRenderer().AddOffscreenRenderPass(nullptr, width, height, false,&m_UpdateOffscreenPass);
 		return false;
+	}
+
+	ImGuizmo::OPERATION EditorControl::GetCurrentGizmoMode()
+	{
+		if (m_GizmoMode == GizmoMode::Translate)
+		{
+			return ImGuizmo::OPERATION::TRANSLATE;
+		}
+		else if (m_GizmoMode == GizmoMode::Rotate)
+		{
+			return ImGuizmo::OPERATION::ROTATE;
+		}
+		else if (m_GizmoMode == GizmoMode::Scale)
+		{
+			return ImGuizmo::OPERATION::SCALE;
+		}
+		return ImGuizmo::OPERATION::TRANSLATE;
 	}
 
 }

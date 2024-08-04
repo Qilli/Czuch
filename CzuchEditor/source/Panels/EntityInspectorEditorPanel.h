@@ -7,7 +7,7 @@ namespace Czuch
 	struct CustomDrawers
 	{
 	public:
-		static void DrawVector3(const CzuchStr& label, Vec3& vec,float colWidth,float resetValue);
+		static bool DrawVector3(const CzuchStr& label, Vec3& vec,float colWidth,float resetValue,LockedVec3& locked);
 		static bool ButtonCenteredOnLine(const char* label,float alignment=0.5f);
 		static void LabelCenteredOnLine(const char* label, float alignment = 0.5f, float leftPadding = 0.0f, float rightPadding = 0.0f);
 		static void ShowModalWindow(const char* title,const char* text, bool& isOpen);
@@ -49,6 +49,9 @@ namespace Czuch
 
 	struct TransformDrawer : public ComponentDrawer
 	{
+		LockedVec3 m_Position;
+		LockedVec3 m_Rotation;
+		LockedVec3 m_Scale;
 		void DrawComponent(Entity entity) override;
 		void OnSelectionChanged(Entity entity) override;
 		TransformDrawer() { id = 2; }

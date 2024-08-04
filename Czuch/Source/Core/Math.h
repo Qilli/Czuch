@@ -5,6 +5,9 @@
 #include "glm.hpp"
 #include "../vendors/glm/gtc/matrix_transform.hpp"
 #include "../vendors/glm/gtx/quaternion.hpp"
+#include "../vendors/glm/gtx/euler_angles.hpp"
+#include "../vendors/glm/gtx/transform.hpp"
+#include "../vendors/glm/gtc/type_ptr.hpp"
 #include "../vendors/glm/vec3.hpp" // glm::vec3
 #include "../vendors/glm/vec4.hpp" // glm::vec4
 #include "../vendors/glm/mat4x4.hpp" // glm::mat4
@@ -21,5 +24,10 @@ namespace Czuch
 #define Vec2 glm::vec2
 
 #define EPSILON 0.001f
+#define PI glm::pi<float>()
+#define RAD2DEG 180.0f / PI
+
+#define Vec3ToString(vec) std::string(std::to_string(vec.x) + ", " + std::to_string(vec.y) + ", " + std::to_string(vec.z))
+
 }
 

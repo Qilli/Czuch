@@ -9,7 +9,7 @@
 #include"UIBaseElement.h"
 #include"Editor/EngineEditorSubsystem.h"
 #include"Subsystems/EventsManager.h"
-
+#include"ImGuizmo.h"
 
 namespace Czuch
 {
@@ -36,7 +36,7 @@ namespace Czuch
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
+		ImGuizmo::BeginFrame();
 ;
 		if (m_EditorModeEnabled)
 		{

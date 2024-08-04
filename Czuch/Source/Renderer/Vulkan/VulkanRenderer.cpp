@@ -110,31 +110,33 @@ namespace Czuch
 		}
 
 		SetSceneData();
-		OnPreRenderUpdateContexts(nullptr, m_Device->GetSwapchainWidth(), m_Device->GetSwapchainHeight());
 		vkResetFences(device, 1, &GetCurrentFrame().inFlightFence);
-
-		int lastWidth = m_Device->GetSwapchainWidth();
-		int lastHeight = m_Device->GetSwapchainHeight();
-		Camera* currentCamera = nullptr;
 
 
 		for (auto it = m_RenderPasses.begin(); it != m_RenderPasses.end(); ++it)
 		{
 			if ((*it)->GetType() == RenderPassType::MainForward)
 			{
+				OnPreRenderUpdateContexts(nullptr, m_Device->GetSwapchainWidth(), m_Device->GetSwapchainHeight());
 				(*it)->BeginRenderPass(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
 				(*it)->Execute(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
 				(*it)->EndRenderPass(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
 			}
 			else
 			{
-				if ((*it)->IsDifferentAspect(lastWidth, lastHeight) || (*it)->IsDifferentCamera(currentCamera))
+				Camera* currentCamera = nullptr;
+
+				if ((*it)->IsDifferentAspect(m_LastWidth, m_LastHeight) || (*it)->IsDifferentCamera(currentCamera))
 				{
 					OnPostRenderUpdateContexts();
-					lastWidth = (*it)->GetWidth();
-					lastHeight = (*it)->GetHeight();
+					m_LastWidth = (*it)->GetWidth();
+					m_LastHeight = (*it)->GetHeight();
 					currentCamera = (*it)->GetCamera();
-					OnPreRenderUpdateContexts(currentCamera, lastWidth, lastHeight);
+					OnPreRenderUpdateContexts(currentCamera, m_LastWidth, m_LastHeight);
+				}
+				else
+				{
+					OnPreRenderUpdateContexts(currentCamera, m_LastWidth, m_LastHeight);
 				}
 				(*it)->Execute(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
 				(*it)->BeginRenderPass(nullptr);
@@ -289,7 +291,7 @@ namespace Czuch
 	{
 		if (m_RenderSettings->offscreenRendering)
 		{
-			AddRenderPass(new VulkanOffscreenRenderPass(m_RenderSettings,cam, this, m_Device, Format::R8G8B8A8_UNORM, Format::D24_UNORM_S8_UINT, width, height));
+			AddRenderPass(new VulkanOffscreenRenderPass(m_RenderSettings,cam, this, m_Device, Format::R8G8B8A8_UNORM, Format::D24_UNORM_S8_UINT, width, height,VK_SAMPLE_COUNT_1_BIT,false));
 			if (onResize != nullptr)
 			{
 				(*onResize) = [this](U32 width, U32 height) {

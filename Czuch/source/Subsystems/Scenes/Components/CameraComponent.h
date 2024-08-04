@@ -24,6 +24,7 @@ namespace Czuch
 
 		Mat4x4 GetProjectionMatrix();
 		Mat4x4 GetViewMatrix();
+		Mat4x4 GetInverseViewMatrix();
 		Mat4x4 GetViewProjectionMatrix();
 	private:
 		void Recalculate();

@@ -25,10 +25,25 @@ namespace Czuch
 		{
 			m_Scene->DestroyEntity(m_Entity);
 		}
+
+		CzuchStr& ToString() override
+		{
+			if (m_Desc.empty())
+			{
+				m_Desc = "Cmd: Remove Entity ";
+				m_Desc += m_Entity.GetComponent<HeaderComponent>().GetHeader();
+				return m_Desc;
+			}
+			else
+			{
+				return m_Desc;
+			}
+		}
 	private:
 		Entity m_Entity;
 		Entity m_Parent;
 		Scene* m_Scene;
+		CzuchStr m_Desc;
 	};
 
 }

@@ -65,6 +65,14 @@ namespace Czuch
 		
 	}
 
+	void* VulkanDevice::CreatePointerForUITexture(TextureHandle tex)
+	{
+		auto texture = AccessTexture(tex);
+		auto vulkanTexture=Internal_to_Texture(texture);
+		VkDescriptorSet set= ImGui_ImplVulkan_AddTexture(vulkanTexture->sampler, vulkanTexture->imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		return set;
+	}
+
 	PipelineHandle VulkanDevice::CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass, bool dynamicRendering)
 	{
 		CZUCH_BE_ASSERT(desc, "CreatePipelineState NULL desc input");
@@ -152,7 +160,10 @@ namespace Czuch
 	{
 		RenderPass* rp = new RenderPass();
 		rp->m_InternalResourceState = std::make_shared<RenderPass_Vulkan>();
-		rp->desc = *desc;
+		if (desc != nullptr)
+		{
+			rp->desc = *desc;
+		}
 
 		bool mainPass = desc == nullptr;
 		const VulkanRenderPassDesc* m_RpDesc = !mainPass ? static_cast<const VulkanRenderPassDesc*>(desc) : nullptr;
@@ -238,6 +249,15 @@ namespace Czuch
 
 		RenderPassHandle h;
 		h.handle = m_ResContainer.renderPasses.Add(rp);
+
+		if (desc != nullptr)
+		{
+			if (desc->type == RenderPassType::OffscreenTexture)
+			{
+				m_OffscreenRenderPassHandle = h;
+			}
+		}
+
 		return h;
 
 
@@ -524,7 +544,7 @@ namespace Czuch
 	{
 		Material* material = new Material();
 		material->desc = std::move(materialData);
-		material->pipeline = CreatePipelineState(&material->desc.pipelineDesc, INVALID_HANDLE(RenderPassHandle), m_RenderSettings->dynamicRendering);
+		material->pipeline = CreatePipelineState(&material->desc.pipelineDesc, GetRenderPassHandleOfType(RenderPassType::OffscreenTexture), m_RenderSettings->dynamicRendering);
 
 		MaterialHandle h;
 		h.handle = m_ResContainer.materials.Add(material);
@@ -2336,6 +2356,16 @@ namespace Czuch
 		}
 		LOG_BE_ERROR("{0} AccessRenderPass with invalid handle.", Tag);
 		return nullptr;
+	}
+
+	RenderPassHandle VulkanDevice::GetRenderPassHandleOfType(RenderPassType type)
+	{
+		if (m_RenderSettings->offscreenRendering==true && HANDLE_IS_VALID(m_OffscreenRenderPassHandle) == true && type == RenderPassType::OffscreenTexture)
+		{
+			return m_OffscreenRenderPassHandle;
+		}
+
+		return INVALID_HANDLE(RenderPassHandle);
 	}
 
 	FrameBuffer* VulkanDevice::AccessFrameBuffer(FrameBufferHandle handle)

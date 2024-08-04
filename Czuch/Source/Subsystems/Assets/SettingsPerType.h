@@ -31,6 +31,7 @@ namespace Czuch
 	struct TextureLoadSettings: BaseLoadSettings
 	{
 		TextureDesc::Type type= TextureDesc::Type::TEXTURE_2D;
+		bool isUITexture = false;
 	};
 
 	struct TextureCreateSettings: BaseCreateSettings
@@ -40,6 +41,7 @@ namespace Czuch
 		U32 height = 128;
 		U16 channels = 4;
 		std::vector<unsigned char> colors;
+		bool isUITexture = false;
 
 		TextureCreateSettings() = default;
 

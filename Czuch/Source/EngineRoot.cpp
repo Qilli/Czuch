@@ -70,7 +70,7 @@ namespace Czuch
 		m_EventsMgr->AddListener(WindowClosedEvent::GetStaticEventType(), this);
 
 		//create default assetse
-		m_DefaultAssets = new BuildInAssets(m_Renderer->GetDevice(), m_ResourcesMgr);
+		m_DefaultAssets = new BuildInAssets(m_Renderer->GetDevice(), m_ResourcesMgr, m_RenderSettings.engineMode);
 		m_DefaultAssets->BuildAndLoad();
 
 		//init scenes manager

@@ -12,15 +12,30 @@ namespace Czuch
 		stbi_set_flip_vertically_on_load(true);
 		m_AssetType = AssetType::LOADED_TYPE;
 		m_CurrentLoadSettings = std::move(loadSettings);
-		LoadAsset();
+		if (LoadAsset())
+		{
+			LOG_BE_INFO("Loaded new texture with path: {0}", AssetPath());
+		}
+		else
+		{
+			LOG_BE_ERROR("Failed to load new texture with path: {0}", AssetPath());
+		}
 	}
 
 	TextureAsset::TextureAsset(const CzuchStr& path, TextureCreateSettings& settings, GraphicsDevice* device, AssetsManager* assetsManager) :Asset(path,path,assetsManager), m_Device(device)
 	{
 		m_AssetType = AssetType::CREATED_TYPE;
 		m_CreateSettings = std::move(settings);
-		CreateFromData();
+		if (CreateFromData())
+		{
+			LOG_BE_INFO("Created new texture from data with name: {0}", AssetName());
+		}
+		else
+		{
+			LOG_BE_ERROR("Failed to create new texture from data with name: {0}", AssetName());
+		}
 	}
+
 
 	TextureAsset::~TextureAsset()
 	{
@@ -69,6 +84,12 @@ namespace Czuch
 		}
 
 		m_State = AssetInnerState::LOADED;
+
+		if (m_CurrentLoadSettings.isUITexture)
+		{
+			InitUITexturePtr();
+		}
+
 		m_RefCounter.Up();
 		
 		return true;
@@ -127,6 +148,15 @@ namespace Czuch
 
 		m_State = AssetInnerState::LOADED;
 
+		if (m_CreateSettings.isUITexture)
+		{
+			InitUITexturePtr();
+		}
+
 		return true;
+	}
+	void TextureAsset::InitUITexturePtr()
+	{
+		m_UITextureIDPtr = m_Device->CreatePointerForUITexture(m_TextureResource);
 	}
 }

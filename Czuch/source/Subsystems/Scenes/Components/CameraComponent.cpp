@@ -80,6 +80,11 @@ namespace Czuch
 		return Mat4x4(1.0f);
 	}
 
+	Mat4x4 Camera::GetInverseViewMatrix()
+	{
+		return glm::inverse(GetViewMatrix());
+	}
+
 	Mat4x4 Camera::GetViewProjectionMatrix()
 	{
 		return m_ProjectionMatrix * GetViewMatrix();

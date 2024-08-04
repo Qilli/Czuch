@@ -17,11 +17,15 @@ namespace Czuch
         bool UnloadAsset() override;
         bool CreateFromData() override;
         inline TextureHandle GetTextureResourceHandle() const { return m_TextureResource; }
+		inline void* GetUITextureIDPtr() const { return m_UITextureIDPtr; }
+    private:
+        void InitUITexturePtr();
     private:
         GraphicsDevice* m_Device;
         TextureLoadSettings m_CurrentLoadSettings;
         TextureCreateSettings m_CreateSettings;
         TextureHandle m_TextureResource;
+        void* m_UITextureIDPtr;
     };
 
 }

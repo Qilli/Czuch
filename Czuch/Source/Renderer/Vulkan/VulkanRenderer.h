@@ -112,6 +112,8 @@ namespace Czuch
 		uint32_t m_CurrentFrame = 0;
 		SceneDataContainer m_SceneData;
 		Scene* m_ActiveScene;
+		int m_LastWidth = 0;
+		int m_LastHeight = 0;
 	};
 
 }

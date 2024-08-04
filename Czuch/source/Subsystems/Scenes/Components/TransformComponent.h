@@ -26,6 +26,7 @@ namespace Czuch
 		const Mat4x4& GetLocalTransform() const { return m_LocalTransform; }
 		const ComponentState& GetState() const { return m_State; }
 		void SetDirty() { m_State.SetDirty(); }
+		void ForceUpdateLocalTransform() { UpdateLocalRotation(); UpdateLocalTransform(); SetDirty(); }
 
 		const Vec3 GetForward() const { return glm::normalize(m_LocalTransform[2]); }
 		const Vec3 GetRight() const { return glm::normalize(m_LocalTransform[0]); }
@@ -51,6 +52,7 @@ namespace Czuch
 
 	private:
 		void UpdateLocalTransform();
+		void UpdateLocalRotation();
 	private:
 		std::vector<Entity> m_Children;
 		Entity m_Parent;

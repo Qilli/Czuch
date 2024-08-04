@@ -16,6 +16,7 @@ IncludeDir["Glad"] = "Czuch/vendors/Glad/include"
 IncludeDir["ImGui"] = "Czuch/vendors/ImGui"
 IncludeDir["Vulkan"] = "F:/VulkanSDK/Include"
 IncludeDir["YamlCpp"] = "Czuch/vendors/yaml-cpp/include"
+IncludeDir["ImGuizmoCzuch"]= "Czuch/vendors/ImGuizmoCzuch"
 
 include "premake-glfw.lua"
 include "premake-imgui.lua"
@@ -35,10 +36,16 @@ project "Czuch"
 	pchheader "czpch.h"
 	pchsource "Czuch/source/czpch.cpp"
 
+	filter "files:vendors/ImGuizmoCzuch/**.cpp"
+	flags { "NoPCH" }
+	filter {}
+
 	files
 	{
 		"%{prj.name}/source/**.h",
-		"%{prj.name}/source/**.cpp"
+		"%{prj.name}/source/**.cpp",
+		"%{prj.name}/vendors/ImGuizmoCzuch/ImGuizmo.h",
+		"%{prj.name}/vendors/ImGuizmoCzuch/ImGuizmo.cpp"
 	}
 
 	includedirs
@@ -54,6 +61,7 @@ project "Czuch"
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.Vulkan}",
 		"%{IncludeDir.YamlCpp}",
+		"%{IncludeDir.ImGuizmoCzuch}",
 	}
 
 	links
@@ -64,6 +72,10 @@ project "Czuch"
 		"yaml-cpp",
 		"$(VULKAN_SDK)/lib/vulkan-1.lib"
 	}
+
+	filter "files:vendors/ImGuizmoCzuch/**.cpp"
+	flags { "NoPCH" }
+	filter {}
 
 	filter "system:windows"
 
@@ -108,6 +120,7 @@ project "Czuch"
 		}
 		optimize "On"
 		buildoptions "/MD"
+
 
 project "Playground"
 	
@@ -168,7 +181,7 @@ project "Playground"
 		buildoptions "/MD"
 
 
-		project "CzuchEditor"
+project "CzuchEditor"
 	
 		location "CzuchEditor"
 		kind "ConsoleApp"
@@ -177,11 +190,20 @@ project "Playground"
 	
 		targetdir("bin/" .. outputdir .. "/%{prj.name}")
 		objdir("bin-int/" .. outputdir .. "/%{prj.name}")
+
+
+		filter "files:vendors/ImGuizmoCzuch/**.cpp"
+		flags { "NoPCH" }
+		filter {}
+	
+
 	
 		files
 		{
 			"%{prj.name}/source/**.h",
-			"%{prj.name}/source/**.cpp"
+			"%{prj.name}/source/**.cpp",
+			"%{IncludeDir.ImGuizmoCzuch}/ImGuizmo.h",
+			"%{IncludeDir.ImGuizmoCzuch}/ImGuizmo.cpp"
 		}
 	
 		includedirs
@@ -192,6 +214,7 @@ project "Playground"
 			"Czuch/source",
 			"%{IncludeDir.ImGui}",
 			"%{IncludeDir.YamlCpp}",
+			"%{IncludeDir.ImGuizmoCzuch}",
 		}
 	
 		links

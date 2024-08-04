@@ -36,6 +36,7 @@ namespace Czuch
 
 		void DrawUI(CommandBuffer* commandBuffer) override;
 		void PreDrawFrame();
+		void* CreatePointerForUITexture(TextureHandle tex) override;
 
 		PipelineHandle CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass, bool dynamicRendering = false) override;
 		ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize)override;
@@ -70,6 +71,7 @@ namespace Czuch
 
 		Pipeline* AccessPipeline(PipelineHandle handle) override;
 		RenderPass* AccessRenderPass(RenderPassHandle handle) override;
+		RenderPassHandle GetRenderPassHandleOfType(RenderPassType type) override;
 		Shader* AccessShader(ShaderHandle handle)  override;
 		DescriptorSetLayout* AccessDescriptorSetLayout(DescriptorSetLayoutHandle handle) override;
 		FrameBuffer* AccessFrameBuffer(FrameBufferHandle handle) override;
@@ -181,6 +183,8 @@ namespace Czuch
 
 	private:
 		ResourcesContainer m_ResContainer;
+	private:
+		RenderPassHandle m_OffscreenRenderPassHandle;
 	private:
 		Window* m_AttachedWindow;
 		int m_CurrentImageIndex;

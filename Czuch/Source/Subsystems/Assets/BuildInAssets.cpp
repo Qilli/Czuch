@@ -23,10 +23,13 @@ namespace Czuch
 
 	TextureHandle DefaultAssets::WHITE_TEXTURE;
 	AssetHandle DefaultAssets::WHITE_TEXTURE_ASSET;
+	AssetHandle DefaultAssets::EDITOR_ICON_TRANSLATE;
+	AssetHandle DefaultAssets::EDITOR_ICON_ROTATE;
+	AssetHandle DefaultAssets::EDITOR_ICON_SCALE;
 
-	BuildInAssets::BuildInAssets(GraphicsDevice* device, AssetsManager* mgr) :m_Device(device), m_AssetsMgr(mgr)
+	BuildInAssets::BuildInAssets(GraphicsDevice* device, AssetsManager* mgr,EngineMode mode) :m_Device(device), m_AssetsMgr(mgr)
 	{
-
+		m_Mode = mode;
 	}
 
 	void BuildInAssets::BuildAndLoad()
@@ -34,6 +37,7 @@ namespace Czuch
 		CreateDefaultTextures();
 		CreateDefaultMaterials();
 		CreateDefaultModels();
+		LoadUIAssets();
 	}
 
 
@@ -309,5 +313,18 @@ namespace Czuch
 		auto cubeModel = m_AssetsMgr->GetAsset<ModelAsset>(DefaultAssets::CUBE_ASSET);
 		DefaultAssets::CUBE_HANDLE = cubeModel->GetMeshHandle(0);
 
+	}
+
+	void BuildInAssets::LoadUIAssets()
+	{
+		if (m_Mode == EngineMode::Editor)
+		{
+			//Transform icons for editor
+			DefaultAssets::EDITOR_ICON_TRANSLATE =m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("/Editor/Icons/Editor_TranslateIcon.png",{.type=TextureDesc::Type::TEXTURE_2D,.isUITexture=true});
+
+			DefaultAssets::EDITOR_ICON_ROTATE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("/Editor/Icons/Editor_RotateIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+
+			DefaultAssets::EDITOR_ICON_SCALE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("/Editor/Icons/Editor_ScaleIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+		}
 	}
 }

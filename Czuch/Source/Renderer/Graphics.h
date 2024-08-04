@@ -87,6 +87,15 @@ namespace Czuch
 
 	};
 
+	enum class CZUCH_API RenderPassType
+	{
+		MainForward,
+		Shadow,
+		PostProcess,
+		OffscreenTexture,
+		Custom
+	};
+
 	enum CommandBufferUseFlag
 	{
 		NONE = 0,
@@ -557,7 +566,12 @@ namespace Czuch
 
 	struct RenderPassDesc
 	{
+		RenderPassType type;
 
+		RenderPassDesc()
+		{
+			type = RenderPassType::MainForward;
+		}
 	};
 
 	struct ViewportDesc
@@ -867,7 +881,10 @@ namespace Czuch
 		CzuchStr materialName;
 		int materialFlags;
 
-		MaterialDesc() = default;
+		MaterialDesc()
+		{
+			materialFlags = 0;
+		}
 
 		MaterialDesc(MaterialDesc& other) noexcept
 		{

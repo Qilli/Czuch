@@ -162,6 +162,7 @@ namespace Czuch
 		VulkanRenderPassDesc desc;
 		desc.renderPassInfo = renderPassInfo;
 		desc.mainRenderPass = false;
+		desc.type = RenderPassType::OffscreenTexture;
 		auto renderPassHandle =m_Device->CreateRenderPass(&desc);
 
 

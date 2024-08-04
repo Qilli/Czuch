@@ -3,6 +3,7 @@
 #include"Subsystems/Scenes/Scene.h"
 #include"Subsystems/Scenes/Components/Component.h"
 #include"Subsystems/Scenes/Components/TransformComponent.h"	
+#include"Subsystems/Scenes/Components/HeaderComponent.h"
 
 namespace Czuch
 {
@@ -23,11 +24,28 @@ namespace Czuch
 			m_Entity.GetComponent<TransformComponent>().SetParent(m_Scene->GetEntityObjectWithGUID(parentTemp));
 		}
 
+		CzuchStr& ToString() override
+		{
+			if (m_Desc.empty())
+			{
+				m_Desc = "Cmd: Reparent Entity ";
+				m_Desc += m_Entity.GetComponent<HeaderComponent>().GetHeader();
+				m_Desc += " to ";
+				m_Desc += m_Parent.GetComponent<HeaderComponent>().GetHeader();
+				return m_Desc;
+			}
+			else
+			{
+				return m_Desc;
+			}
+		}
+
 	private:
 		Entity m_Entity;
 		Entity m_Parent;
 		GUID m_OldParent;
 		Scene* m_Scene;
+		CzuchStr m_Desc;
 	};
 
 }
