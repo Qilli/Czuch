@@ -172,7 +172,8 @@ namespace Czuch
 				auto transformComponent = entity.GetComponent<TransformComponent>();
 				for (auto child : transformComponent.GetChildren())
 				{
-					if (child.IsDestroyed())
+					auto& header = child.GetComponent<HeaderComponent>();
+					if (child.IsDestroyed() || !header.IsVisibleInEditorHierarchy())
 					{
 						continue;
 					}

@@ -39,6 +39,7 @@ namespace Czuch
 		virtual void FillUI(void* sceneViewportTexture);
 		void HandleTopBar();
 		void HandelGizmoTransforms(Czuch::Entity& currentSelectedEntity);
+		float GetSnapValue();
 	protected:
 		virtual void FillMainMenubar();
 		void ShowMenuFile();
