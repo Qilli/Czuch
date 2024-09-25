@@ -5,6 +5,13 @@
 
 namespace Czuch
 {
+	enum CZUCH_API ScriptRunningMode
+	{
+		EditorOnly,
+		PlayMode,
+		EditorAndPlayMode
+	};
+
 	class Scene;
 	class CZUCH_API NativeBehaviour : public IEventsListener
 	{
@@ -35,8 +42,11 @@ namespace Czuch
 
 		inline void SetEnabled(bool enabled) { m_IsEnabled = enabled; }
 		inline bool IsEnabled() { return m_IsEnabled; }
+		inline void SetRunningMode(ScriptRunningMode mode) { m_RunningMode = mode; }
+		inline ScriptRunningMode GetRunningMode() { return m_RunningMode; }
 	private:
 		friend class Scene;
+		ScriptRunningMode m_RunningMode = ScriptRunningMode::PlayMode;
 		Entity m_Entity;
 		bool m_IsEnabled = true;
 	};

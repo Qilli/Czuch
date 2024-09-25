@@ -162,6 +162,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="source\Subsystems\InputManager.h" />
     <ClInclude Include="source\Core\AccessContainer.h" />
     <ClInclude Include="source\Core\Common.h" />
     <ClInclude Include="source\Core\EngineCore.h" />
@@ -247,6 +248,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClInclude Include="vendors\ImGuizmoCzuch\ImGuizmo.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Subsystems\InputManager.cpp" />
     <ClCompile Include="source\Core\AccessContainer.cpp" />
     <ClCompile Include="source\Core\GUID.cpp" />
     <ClCompile Include="source\Core\StringID.cpp" />

@@ -32,9 +32,39 @@ namespace Czuch
 		const Vec3 GetRight() const { return glm::normalize(m_LocalTransform[0]); }
 		const Vec3 GetUp() const { return glm::normalize(m_LocalTransform[1]); }
 
+		const Vec3 GetInvWorldForward() const { return glm::normalize(glm::inverse(m_LocalToWorld)[2]); }
+		const Vec3 GetInvWorldRight() const { return glm::normalize(glm::inverse(m_LocalToWorld)[0]); }
+		const Vec3 GetInvWorldUp() const { return glm::normalize(glm::inverse(m_LocalToWorld)[1]); }
+
+		const Mat3x3 GetWorldInv3x3()
+		{
+			UpdateLocalToWorld();
+			auto inv = glm::inverse(m_LocalToWorld);
+			return Mat3x3(inv);
+		}
+
+		const Mat4x4 GetWorldInv4x4()
+		{
+			UpdateLocalToWorld();
+			auto inv = glm::inverse(m_LocalToWorld);
+			return Mat4x4(inv);
+		}
+
+		const Vec3 TransformPointToLocalSpace(Vec3 vec)
+		{
+			return GetWorldInv3x3() * vec;
+		}
+
+		const Mat4x4 TransformToLocalSpace(Mat4x4& mat)
+		{
+			return GetWorldInv4x4() * mat;
+		}
+
 		void Translate(const Vec3& translation, TransformSpace space = TransformSpace::Local);
 		void Rotate(float angle,Vec3 axis=Vec3(0,1,0), TransformSpace space = TransformSpace::Local);
 		void Scale(const Vec3& scale);
+
+		Vec3 GetWorldPosition();
 
 		std::vector<Entity>& GetChildren() { return m_Children; }
 		bool HasAnyChild();

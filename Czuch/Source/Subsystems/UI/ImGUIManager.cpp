@@ -9,6 +9,8 @@
 #include"UIBaseElement.h"
 #include"Editor/EngineEditorSubsystem.h"
 #include"Subsystems/EventsManager.h"
+#include"Events/EventsTypes/InputEvents.h"
+#include"Events/EventsTypes/MouseEvents.h"
 #include"ImGuizmo.h"
 
 namespace Czuch
@@ -70,8 +72,8 @@ namespace Czuch
 		if (m_BlockEvents)
 		{
 			ImGuiIO& io = ImGui::GetIO();
-			e.SetHandled(io.WantCaptureMouse && e.GetCategory() == EventCategoryType::Mouse);
-			e.SetHandled(io.WantCaptureKeyboard && e.GetCategory() == EventCategoryType::Keyboard);
+			e.SetHandled(io.WantCaptureMouse && e.GetCategory() == EventCategoryType::Mouse && e.GetEventType()!=MouseButtonUpEvent::GetStaticEventType());
+			e.SetHandled(io.WantCaptureKeyboard && e.GetCategory() == EventCategoryType::Keyboard && e.GetEventType()!= KeyUpEvent::GetStaticEventType());
 		}
 	}
 }

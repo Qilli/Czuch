@@ -21,9 +21,9 @@ namespace Czuch
 		void OnEvent(Event& event) override;
 	private:
 		float m_Speed = 1.0f;
-		float m_Sensitivity = 0.003f;
+		float m_ScrollSpeed = -8.0f;
+		float m_Sensitivity = 0.4f;
 		TransformComponent* m_CameraTransformComponent;
     };
 }
-;
 

@@ -9,6 +9,7 @@
 #include"Components/NativeBehaviourComponent.h"	
 #include"Subsystems/UI/UIBaseElement.h"
 #include"Subsystems/Scenes/Components/CameraComponent.h"
+#include"Subsystems/Scenes/NativeBehaviours/NativeFree3DCameraController.h"
 #include"Renderer/Renderer.h"
 
 
@@ -31,11 +32,21 @@ namespace Czuch
 		cam.SetType(CameraType::GameCamera);
 		cameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
 
-		//create default editor camera
-		Entity editorCameraEntity = CreateEntity("EditorCamera", m_RootEntity);
-		auto& editorCam = editorCameraEntity.AddComponent<CameraComponent>();
-		editorCam.SetType(CameraType::EditorCamera);
-		editorCameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
+		if (EngineRoot::Get().GetGameMode() == EngineMode::Editor)
+		{
+			//create default editor camera
+			Entity editorCameraEntity = CreateEntity("EditorCamera", m_RootEntity);
+			auto& editorCam = editorCameraEntity.AddComponent<CameraComponent>();
+			editorCam.SetType(CameraType::EditorCamera);
+			editorCameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
+			auto& headerComponent = editorCameraEntity.GetComponent<HeaderComponent>();
+			headerComponent.SetVisibleInEditorHierarchy(false);
+
+			//add 3d control component
+			auto& nativeScriptsComponent = editorCameraEntity.AddComponent<NativeBehaviourComponent>();
+			auto& behaviour = nativeScriptsComponent.AddNativeBehaviour<NativeFree3DCameraController>();
+			behaviour.SetRunningMode(ScriptRunningMode::EditorOnly);
+		}
 
 		CreateRenderContexts();
 		Dirty();

@@ -7,7 +7,7 @@ namespace Czuch
 
 	namespace Key
 	{
-		enum : KeyCode
+		enum CZUCH_API : KeyCode
 		{
 			// From glfw3.h
 			Space = 32,

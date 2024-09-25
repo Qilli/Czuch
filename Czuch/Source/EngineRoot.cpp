@@ -23,6 +23,7 @@ namespace Czuch
 	void EngineRoot::Init(const std::string& configFilePath, EngineEditorControl* control)
 	{
 		m_ShouldStopLoop = false;
+		m_UpdateMode = UpdateMode::Unlocked;
 
 		m_RenderSettings.dynamicRendering = false;
 		m_RenderSettings.offscreenRendering = true;
@@ -48,6 +49,10 @@ namespace Czuch
 		//create renderer
 		m_Renderer = new VulkanRenderer(m_Window.get(), &m_RenderSettings);
 		m_Renderer->Init();
+
+		//create input manager
+		m_InputMgr = new InputManager();
+		m_InputMgr->Init(&m_RenderSettings);
 
 		//create resources managers
 		m_ResourcesMgr = new AssetsManager();
@@ -89,6 +94,9 @@ namespace Czuch
 
 		m_EditorSubsystem->Shutdown();
 		m_UIBaseMgr->Shutdown();
+
+		m_InputMgr->Shutdown();
+		delete m_InputMgr;
 
 		//Shutdown
 		m_ResourcesMgr->Shutdown();

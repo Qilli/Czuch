@@ -21,10 +21,22 @@ namespace Czuch
 	{
 		if (m_State.IsDirty())
 		{
-			m_LocalToWorld =GetParentTransform() * m_LocalTransform;
+			m_LocalToWorld = GetParentTransform() * m_LocalTransform;
 			m_State.SetAsClean();
+
+			if (HasAnyChild())
+			{
+				for (size_t i = 0; i < m_Children.size(); i++)
+				{
+					if (m_Children[i].IsValid() && !m_Children[i].IsDestroyed())
+					{
+						auto& childTransform = m_Children[i].GetComponent<TransformComponent>();
+						childTransform.UpdateLocalToWorld();
+					}
+				}
+			}	
 		}
-		return m_LocalTransform;
+		return m_LocalToWorld;
 	}
 
 	const Mat4x4 TransformComponent::GetParentTransform()
@@ -32,7 +44,6 @@ namespace Czuch
 		if (m_Parent.IsValid())
 		{
 			auto& transformParent=m_Parent.GetComponent<TransformComponent>();
-			Mat4x4 l = transformParent.GetLocalToWorld();
 			return transformParent.GetLocalToWorld();
 		}
 		return Mat4x4(1.0f);
@@ -65,6 +76,11 @@ namespace Czuch
 		UpdateLocalToWorld();
 	}
 
+	Vec3 TransformComponent::GetWorldPosition()
+	{
+		return Vec3(GetLocalToWorld()[3]);
+	}
+
 	void TransformComponent::Translate(const Vec3& translation, TransformSpace space)
 	{
 		if (space == TransformSpace::Local)
@@ -75,7 +91,11 @@ namespace Czuch
 		}
 		else
 		{
-			m_LocalPosition += translation;
+			//compute inv with parent forward/right/up
+			auto & transformParent = m_Parent.GetComponent<TransformComponent>();
+			m_LocalPosition += transformParent.GetInvWorldForward() * translation.z;
+			m_LocalPosition += transformParent.GetInvWorldRight() * translation.x;
+			m_LocalPosition += transformParent.GetInvWorldUp() * translation.y;
 		}
 		m_LocalTransform[3] = Vec4(m_LocalPosition, 1.0f);
 		m_State.SetDirty();
@@ -91,6 +111,8 @@ namespace Czuch
 		{
 			m_LocalRotation = m_LocalRotation*glm::rotate(glm::quat(1,0,0,0), angle, axis);
 		}
+		m_LocalEulerAngles = glm::degrees(glm::eulerAngles(m_LocalRotation));
+		UpdateLocalRotation();
 		UpdateLocalTransform();
 		m_State.SetDirty();
 	}
@@ -231,10 +253,13 @@ namespace Czuch
 
 	void TransformComponent::UpdateLocalToWorld()
 	{
-		if (m_State.IsDirty())
+		if (m_Parent.IsValid())
 		{
-			m_LocalToWorld = m_ParentTransform * m_LocalTransform;
-			m_State.SetAsClean();
+			m_LocalToWorld = m_Parent.GetComponent<TransformComponent>().GetLocalToWorld() * m_LocalTransform;
+		}
+		else
+		{
+			m_LocalToWorld = m_LocalTransform;
 		}
 	}
 }

@@ -11,12 +11,14 @@ namespace Czuch
 	bool backwardButtonDown = false;
 	bool leftButtonDown = false;
 	bool rightButtonDown = false;
-	bool leftMouseButtonPressed = false;
+	bool middleMouseButtonPressed = false;
 	bool rightMouseButtonPressed = false;
+	bool leftMouseButtonPressed = false;
 	float mouseOffsetX = 0.0f;
 	float mouseOffsetY = 0.0f;
 	float lastMouseX = 0.0f;
 	float lastMouseY = 0.0f;
+	float lastScrollY = 0.0f;
 
 
 	NativeFree3DCameraController::NativeFree3DCameraController(Entity entity)
@@ -51,7 +53,13 @@ namespace Czuch
 			m_CameraTransformComponent->Translate({ m_Speed * delta.GetDeltaTime(),0.0f,0.0f });
 		}
 
-		if (leftMouseButtonPressed)
+		if (lastScrollY != 0.0f)
+		{
+			m_CameraTransformComponent->Translate({ 0.0f,0.0f,lastScrollY * m_ScrollSpeed * delta.GetDeltaTime() });
+			lastScrollY = 0.0f;
+		}
+
+		if (rightMouseButtonPressed)
 		{
 			Vec3 eulerCurrent = m_CameraTransformComponent->GetLocalEulerAngles();
 
@@ -67,7 +75,14 @@ namespace Czuch
 				eulerCurrent.x = -89.0f;
 			}
 			m_CameraTransformComponent->SetLocalEulerAngles(eulerCurrent);
+			m_CameraTransformComponent->ForceUpdateLocalTransform();
 
+			mouseOffsetX = 0.0f;
+			mouseOffsetY = 0.0f;
+		}
+		else if (middleMouseButtonPressed)
+		{
+			m_CameraTransformComponent->Translate({ -m_Speed * delta.GetDeltaTime()*mouseOffsetX,m_Speed * delta.GetDeltaTime() * mouseOffsetY,0.0f });
 			mouseOffsetX = 0.0f;
 			mouseOffsetY = 0.0f;
 		}
@@ -151,7 +166,7 @@ namespace Czuch
 			auto x = mouseMovedEvent.GetMouseX();
 			auto y = mouseMovedEvent.GetMouseY();
 
-			if (leftMouseButtonPressed)
+			if (rightMouseButtonPressed || middleMouseButtonPressed)
 			{
 				mouseOffsetX = x -lastMouseX;
 				mouseOffsetY = y - lastMouseY;
@@ -167,20 +182,25 @@ namespace Czuch
 		}
 		else if (event.GetEventType() == MouseScrolledEvent::GetStaticEventType())
 		{
-			
+			auto mouseScrolledEvent = static_cast<const MouseScrolledEvent&>(event);
+			lastScrollY = mouseScrolledEvent.GetMouseYOffset();
 		}
 		else if (event.GetEventType() == MouseButtonDownEvent::GetStaticEventType())
 		{
 			auto mouseButtonDownEvent = static_cast<const MouseButtonDownEvent&>(event);
 			auto mouseCode = mouseButtonDownEvent.GetMouseCode();
 			
-			if (mouseCode == Czuch::Mouse::ButtonLeft)
+			if (mouseCode == Czuch::Mouse::ButtonMiddle)
 			{
-				leftMouseButtonPressed = true;
+				middleMouseButtonPressed = true;
 			}
 			else if (mouseCode == Czuch::Mouse::ButtonRight)
 			{
 				rightMouseButtonPressed = true;
+			}
+			else if (mouseCode == Czuch::Mouse::ButtonLeft)
+			{
+				leftMouseButtonPressed = true;
 			}
 		}
 		else if (event.GetEventType() == MouseButtonUpEvent::GetStaticEventType())
@@ -188,13 +208,17 @@ namespace Czuch
 			auto mouseButtonUpEvent = static_cast<const MouseButtonUpEvent&>(event);
 			auto mouseCode = mouseButtonUpEvent.GetMouseCode();
 
-			if (mouseCode == Czuch::Mouse::ButtonLeft)
+			if (mouseCode == Czuch::Mouse::ButtonMiddle)
 			{
-				leftMouseButtonPressed = false;
+				middleMouseButtonPressed = false;
 			}
 			else if (mouseCode == Czuch::Mouse::ButtonRight)
 			{
 				rightMouseButtonPressed = false;
+			}
+			else if (mouseCode == Czuch::Mouse::ButtonLeft)
+			{
+				leftMouseButtonPressed = false;
 			}
 		}
 	}

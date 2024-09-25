@@ -7,7 +7,7 @@ namespace Czuch
 	NativeBehaviourComponent::NativeBehaviourComponent(Entity owner)
 		:Component(owner), m_BehavioursCount(0)
 	{
-
+		
 	}
 
 	NativeBehaviourComponent::~NativeBehaviourComponent()
@@ -60,8 +60,37 @@ namespace Czuch
 		{
 			return;
 		}
+		EngineMode mode = EngineRoot::Get().GetGameMode();
+		EngineStateMode state = EngineRoot::Get().GetEngineStateMode();
+
+		if (EngineRoot::Get().GetUpdateMode() == UpdateMode::Locked)
+		{
+			return;
+		}
+
 		for (size_t i = 0; i < m_BehavioursCount; i++)
 		{
+			if (mode == EngineMode::Editor)
+			{
+
+				if (state == EngineStateMode::Editor && m_NativeBehaviours[i].behaviour->GetRunningMode() == ScriptRunningMode::PlayMode)
+				{
+					continue;
+				}
+
+				if (state == EngineStateMode::Playmode && m_NativeBehaviours[i].behaviour->GetRunningMode() == ScriptRunningMode::EditorOnly)
+				{
+					continue;
+				}
+			}
+			else
+			{
+				if (m_NativeBehaviours[i].behaviour->GetRunningMode() == ScriptRunningMode::EditorOnly)
+				{
+					continue;
+				}
+			}
+
 			if (m_NativeBehaviours[i].behaviour->IsEnabled())
 			{
 				m_NativeBehaviours[i].behaviour->OnUpdate(delta);

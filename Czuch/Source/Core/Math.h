@@ -19,6 +19,7 @@
 namespace Czuch
 {
 #define Mat4x4 glm::Mat4
+#define Mat3x3 glm::mat3
 #define Vec4 glm::Vec4
 #define Vec3 glm::vec3
 #define Vec2 glm::vec2

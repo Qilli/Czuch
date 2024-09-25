@@ -6,6 +6,7 @@
 #include"Subsystems/EventsManager.h"
 #include"Core/Window.h"
 #include"Subsystems/Assets/BuildInAssets.h"
+#include"Subsystems/InputManager.h"
 
 namespace Czuch
 {
@@ -17,6 +18,17 @@ namespace Czuch
 	class Camera;
 	class EngineEditorSubsystem;
 
+	enum class CZUCH_API EngineStateMode
+	{
+		Editor,
+		Playmode
+	};
+
+	enum class CZUCH_API UpdateMode
+	{
+		Locked,
+		Unlocked
+	};
 
 	class CZUCH_API EngineRoot:public Singleton<EngineRoot>,IEventsListener
 	{
@@ -32,6 +44,10 @@ namespace Czuch
 		inline void SetGameMode(EngineMode mode) { m_RenderSettings.engineMode = mode; }
 		EngineMode GetGameMode() const { return m_RenderSettings.engineMode; }
 		RenderSettings& GetRenderSettings() { return m_RenderSettings; }
+		EngineStateMode GetEngineStateMode() const { return m_EngineStateMode; }
+		void SetEngineStateMode(EngineStateMode mode) { m_EngineStateMode = mode; }
+		UpdateMode GetUpdateMode() const { return m_UpdateMode; }
+		void SetUpdateMode(UpdateMode mode) { m_UpdateMode = mode; }
 	private:
 		TimeDelta UpdateDeltaTime(TimeDiffCounter& counter);
 	private:
@@ -44,12 +60,15 @@ namespace Czuch
 		AssetsManager* m_ResourcesMgr;
 		ScenesManager *m_ScenesMgr;
 		UIBaseManager* m_UIBaseMgr;
+		InputManager* m_InputMgr;
 		EngineEditorSubsystem* m_EditorSubsystem;
 	private:
 		BuildInAssets* m_DefaultAssets;
 	private:
 		bool m_ShouldStopLoop;
 		RenderSettings m_RenderSettings;
+		EngineStateMode m_EngineStateMode;
+		UpdateMode m_UpdateMode;
 	};
 }
 

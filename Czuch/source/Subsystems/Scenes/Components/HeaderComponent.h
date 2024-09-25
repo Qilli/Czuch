@@ -15,7 +15,10 @@ namespace Czuch
 		Layer GetLayer() const { return m_Layer; }
 		void SetHeader(const CzuchStr& name) { m_Name = StringID::MakeStringID(name); }
 		void SetTag(const CzuchStr& tag) { m_Tag = StringID::MakeStringID(tag); }
+		void SetVisibleInEditorHierarchy(bool visible) { m_VisibleInEditorHierarchy = visible; }
+		bool IsVisibleInEditorHierarchy() const { return m_VisibleInEditorHierarchy; }
 	private:
+		bool m_VisibleInEditorHierarchy = true;
 		StringID m_Name;
 		StringID m_Tag;
 		Layer m_Layer;
