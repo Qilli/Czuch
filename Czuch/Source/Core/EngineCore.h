@@ -1,10 +1,10 @@
 #pragma once
 #include <memory>
-#include <string>
 #include <type_traits>
 #include<functional>
 #include<deque>
 #include<assert.h>
+#include"Common.h"
 
 #ifdef CZUCH_PLATFORM_WINDOWS
 	#ifdef CZUCH_BUILD_DLL
@@ -25,21 +25,6 @@
 #endif
 
 #define NEW(x) new x
-
-
-typedef unsigned long U64;
-typedef unsigned int U32;
-typedef int I32;
-typedef float F32;
-typedef double F64;
-typedef unsigned short U16;
-typedef short I16;
-typedef unsigned char U8;
-typedef char I8;
-typedef int Guid;
-typedef std::string CzuchStr;
-
-const CzuchStr EMPTY_STRING = "";
 
 namespace Czuch
 {
@@ -71,6 +56,8 @@ namespace Czuch
     inline T& operator&= (T& a, T b) { return reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) &= static_cast<std::underlying_type<T>::type>(b) ); }   \
     inline T& operator^= (T& a, T b) { return reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) ^= static_cast<std::underlying_type<T>::type>(b) ); }
 
+
+#define HAS_FLAG(flags, flag) ((flags & flag) == flag)
 
 	struct DeletionQueue
 	{

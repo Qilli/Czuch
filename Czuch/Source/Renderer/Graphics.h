@@ -11,11 +11,13 @@ namespace Czuch
 	static const U8 s_max_vertex_streams = 16;
 	static const U8 s_max_vertex_attributes = 16;
 	static const U8 k_max_descriptor_set_layouts = 8;
+	static const U8 k_max_image_outputs = 8;
 
 	typedef I32 Handle;
-	#define INVALID_HANDLE(Type) Type() 
-	#define HANDLE_IS_VALID(h)(h.handle!=-1)
-	#define INVALIDATE_HANDLE(h)h.handle=-1;
+#define Invalid_Handle_Id -1
+#define INVALID_HANDLE(Type) Type() 
+#define HANDLE_IS_VALID(h)(h.handle!=-1)
+#define INVALIDATE_HANDLE(h)h.handle=-1; 
 	class GraphicsDevice;
 
 	struct SceneData
@@ -34,9 +36,16 @@ namespace Czuch
 		ResourceHandle() { handle = -1; }
 	};
 
-	struct PipelineHandle: public ResourceHandle
+	struct FrameGraphNodeHandle
+	{
+		Handle handle;
+	};
+
+
+	struct PipelineHandle : public ResourceHandle
 	{
 	};
+
 
 	struct RenderPassHandle : public ResourceHandle
 	{
@@ -93,7 +102,19 @@ namespace Czuch
 		Shadow,
 		PostProcess,
 		OffscreenTexture,
+		UI,
+		Final,
+		DepthPrePass,
 		Custom
+	};
+
+	enum AttachmentLoadOp
+	{
+		LOAD = 0,
+		CLEAR = 1,
+		DONT_CARE = 2,
+		NONE_KHR = 1000400000,
+		NONE_EXT = 1000400000,
 	};
 
 	enum CommandBufferUseFlag
@@ -221,9 +242,13 @@ namespace Czuch
 		NV12,				// video YUV420; SRV Luminance aspect: R8_UNORM, SRV Chrominance aspect: R8G8_UNORM
 	};
 
+	bool IsDepthFormat(Format format);
+	bool IsDepthFormatWithStencil(Format format);
+
+
 	enum class Usage
 	{
-		DEFAULT,	
+		DEFAULT,
 		MEMORY_USAGE_GPU_ONLY,	    // GPU local memory
 		MEMORY_USAGE_CPU_ONLY,	// CPU write, can be read by GPU but with performance hit
 		MEMORY_USAGE_CPU_TO_GPU, //CPU write, can be read by GPU and is faster than access from cpu(special small memory region on gpu)
@@ -241,7 +266,7 @@ namespace Czuch
 		DEPTH_STENCIL = 1 << 5,
 		UNORDERED_ACCESS = 1 << 6,
 		SHADING_RATE = 1 << 7,
-		UNIFORM_BUFFER= 1<<8,
+		UNIFORM_BUFFER = 1 << 8,
 	};
 
 	enum CZUCH_API DescriptorType
@@ -289,24 +314,24 @@ namespace Czuch
 		ONE,
 	};
 
-	enum class ShaderStage: U32
+	enum class ShaderStage : U32
 	{
-		MS= (1 << 0),		// Mesh Shader
-		AS= (1 << 1),		// Amplification Shader
-		VS=(1 << 2),		// Vertex Shader
+		MS = (1 << 0),		// Mesh Shader
+		AS = (1 << 1),		// Amplification Shader
+		VS = (1 << 2),		// Vertex Shader
 		HS = (1 << 3),		// Hull Shader
 		DS = (1 << 4),		// Domain Shader
 		GS = (1 << 5),		// Geometry Shader
 		PS = (1 << 6),		// Pixel Shader
-		CS= (1 << 7),		// Compute Shader
+		CS = (1 << 7),		// Compute Shader
 		LIB = (1 << 8),	// Shader Library
-		ALL=0xFF,
+		ALL = 0xFF,
 		Count,
 	};
 
 	ENUM_FLAG_OPERATORS(ShaderStage)
 
-	ShaderStage StringToShaderStage(const CzuchStr& stage);
+		ShaderStage StringToShaderStage(const CzuchStr& stage);
 
 
 	enum class ShaderFormat
@@ -452,7 +477,7 @@ namespace Czuch
 	{
 		BIND_POINT_GRAPHICS = 0,
 		BIND_POINT_COMPUTE = 1,
-		BIND_POINT_RAY_TRACING=2,
+		BIND_POINT_RAY_TRACING = 2,
 	};
 
 	CZUCH_API enum class RenderLayer
@@ -477,7 +502,7 @@ namespace Czuch
 	};
 
 	enum class ImageUsageFlag : U32
-	{	
+	{
 		TRANSFER_SRC = 1 << 0,
 		TRANSFER_DST = 1 << 1,
 		SAMPLED = 1 << 2,
@@ -490,7 +515,7 @@ namespace Czuch
 
 	ENUM_FLAG_OPERATORS(ImageUsageFlag)
 
-	enum class ImageAspectFlag : U32
+		enum class ImageAspectFlag : U32
 	{
 		COLOR = 1 << 0,
 		DEPTH = 1 << 1,
@@ -506,7 +531,7 @@ namespace Czuch
 
 	ENUM_FLAG_OPERATORS(ImageAspectFlag)
 
-	enum class ImageLayout
+		enum class ImageLayout
 	{
 		UNDEFINED,
 		GENERAL,
@@ -540,7 +565,7 @@ namespace Czuch
 	{
 		std::shared_ptr<void> m_InternalResourceState;
 		GraphicsDevice* device;
-		AssetHandle assetHandle = {.handle=-1};
+		AssetHandle assetHandle = { .handle = -1 };
 
 		inline bool IsValid() const { return m_InternalResourceState != nullptr; }
 		GraphicsDeviceResource() = default;
@@ -566,13 +591,32 @@ namespace Czuch
 
 	struct RenderPassDesc
 	{
-		RenderPassType type;
+		U16 attachmentsCount = 0;
 
-		RenderPassDesc()
+		struct RenderPassColorAttachment
 		{
-			type = RenderPassType::MainForward;
-		}
+			Format format = Format::UNKNOWN;
+			ImageLayout layout = ImageLayout::UNDEFINED;
+			AttachmentLoadOp loadOp = AttachmentLoadOp::LOAD;
+		};
+
+		RenderPassColorAttachment colorAttachments[k_max_image_outputs];
+
+		Format depthStencilFormat = Format::UNKNOWN;
+		ImageLayout depthStencilFinalLayout;
+		AttachmentLoadOp depthLoadOp = AttachmentLoadOp::DONT_CARE;
+		AttachmentLoadOp stencilLoadOp = AttachmentLoadOp::DONT_CARE;
+
+		const char* name = nullptr;
+
+		//RenderPassDesc& Reset();
+		RenderPassDesc& AddAttachment(Format format, ImageLayout layout, AttachmentLoadOp loadOp);
+		RenderPassDesc& SetDepthStencilTexture(Format format, ImageLayout layout);
+		RenderPassDesc& SetName(const char* rpName);
+		RenderPassDesc& SetDepthAndStencilLoadOp(AttachmentLoadOp depth, AttachmentLoadOp stencil);
+
 	};
+
 
 	struct ViewportDesc
 	{
@@ -597,6 +641,17 @@ namespace Czuch
 		RenderPassHandle renderPass;
 		U32 width;
 		U32 height;
+		U32 renderTargetsCount = 0;
+
+		TextureHandle renderTextures[k_max_image_outputs];
+		TextureHandle depthStencilTexture = { Invalid_Handle_Id };
+		const char* name = nullptr;
+
+		FrameBufferDesc& AddRenderTexture(TextureHandle texture);
+		FrameBufferDesc& SetDepthStencilTexture(TextureHandle texture);
+		FrameBufferDesc& SetRenderPass(RenderPassHandle rp) { renderPass = rp; return *this; }
+		FrameBufferDesc& SetWidthAndHeight(U32 w, U32 h) { width = w; height = h; return *this; }
+		FrameBufferDesc& SetName(const char* newName);
 	};
 
 	struct BufferDesc
@@ -636,7 +691,7 @@ namespace Czuch
 		}
 
 		DescriptorSetLayoutDesc& Reset();
-		DescriptorSetLayoutDesc& AddBinding(CzuchStr name,DescriptorType type, U32 bindingIndex, U32 count,U32 size,bool internalParam);
+		DescriptorSetLayoutDesc& AddBinding(CzuchStr name, DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool internalParam);
 	};
 
 
@@ -661,8 +716,8 @@ namespace Czuch
 		}
 
 		ShaderParamsSet& Reset();
-		ShaderParamsSet& AddBuffer(CzuchStr name,BufferHandle buffer,U16 binding);
-		ShaderParamsSet& AddSampler(CzuchStr name,TextureHandle color_texture, U16 binding);
+		ShaderParamsSet& AddBuffer(CzuchStr name, BufferHandle buffer, U16 binding);
+		ShaderParamsSet& AddSampler(CzuchStr name, TextureHandle color_texture, U16 binding);
 	};
 
 	union ClearValue
@@ -816,7 +871,7 @@ namespace Czuch
 		}
 
 
-		void SetParams(MaterialInstanceDesc& desc,MaterialInstanceParams& params);
+		void SetParams(MaterialInstanceDesc& desc, MaterialInstanceParams& params);
 
 
 		PipelineStateDesc() = default;
@@ -830,7 +885,7 @@ namespace Czuch
 		{
 			if (&other != this)
 			{
-				this->vs=std::move(other.vs);
+				this->vs = std::move(other.vs);
 				this->ps = std::move(other.ps);
 				this->bs = std::move(other.bs);
 				this->rs = std::move(other.rs);
@@ -857,7 +912,7 @@ namespace Czuch
 				this->ps = (other.ps);
 				this->bs = (other.bs);
 				this->rs = (other.rs);
-				this->dss =(other.dss);
+				this->dss = (other.dss);
 				this->il = (other.il);
 				this->pt = (other.pt);
 				this->layoutsCount = (other.layoutsCount);
@@ -943,7 +998,7 @@ namespace Czuch
 		MaterialInstanceDesc& Reset();
 		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, BufferHandle buffer);
 		MaterialInstanceDesc& AddSampler(const CzuchStr& name, TextureHandle color_texture);
-		void SetTransparent(bool value){isTransparent=value;}
+		void SetTransparent(bool value) { isTransparent = value; }
 	};
 
 	struct MaterialInstanceParams
@@ -956,8 +1011,8 @@ namespace Czuch
 		}
 
 		MaterialInstanceParams& Reset();
-		MaterialInstanceParams& AddBuffer(int set,CzuchStr& name, BufferHandle buffer, U16 binding);
-		MaterialInstanceParams& AddSampler(int set,CzuchStr& name, TextureHandle color_texture, U16 binding);
+		MaterialInstanceParams& AddBuffer(int set, CzuchStr& name, BufferHandle buffer, U16 binding);
+		MaterialInstanceParams& AddSampler(int set, CzuchStr& name, TextureHandle color_texture, U16 binding);
 	};
 
 	struct SamplerDesc
@@ -967,7 +1022,7 @@ namespace Czuch
 		TextureAddressMode addressModeW = TextureAddressMode::WRAP;
 		TextureFilter magFilter = TextureFilter::LINEAR;
 		TextureFilter minFilter = TextureFilter::LINEAR;
-		bool anisoEnabled=false;
+		bool anisoEnabled = false;
 	};
 
 	struct TextureDesc
@@ -991,7 +1046,7 @@ namespace Czuch
 		BindFlag bind_flags = BindFlag::NONE;
 		ClearValue clear = {};
 		ResourceState resourceType = ResourceState::SHADER_RESOURCE;
-		ImageUsageFlag usageFlags = ImageUsageFlag::SAMPLED|ImageUsageFlag::TRANSFER_DST;
+		ImageUsageFlag usageFlags = ImageUsageFlag::SAMPLED | ImageUsageFlag::TRANSFER_DST;
 		ImageLayout initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
 		ImageAspectFlag aspectFlags = ImageAspectFlag::COLOR;
 		Swizzle swizzle;
@@ -1047,14 +1102,14 @@ namespace Czuch
 		}
 	};
 
-	struct Mesh: GraphicsDeviceResource
+	struct Mesh : GraphicsDeviceResource
 	{
 		MeshData* data;
 
 		inline bool HasNormals() const { return data->normals.size() > 0; }
 		inline bool HasColors() const { return data->colors.size() > 0; }
 		inline bool HasUV0() const { return data->uvs0.size() > 0; }
-		
+
 		constexpr const MeshData& GetMeshData() const { return *data; }
 
 		BufferHandle positionsHandle;
@@ -1079,8 +1134,8 @@ namespace Czuch
 
 	enum class MaterialFlag
 	{
-		NONE =0,
-		USE_SCENE_DATA = 1<<0 
+		NONE = 0,
+		USE_SCENE_DATA = 1 << 0
 	};
 
 	struct Material : public GraphicsDeviceResource

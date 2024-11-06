@@ -162,6 +162,9 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="source\Renderer\FrameGraph\FrameGraph.h" />
+    <ClInclude Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.h" />
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.h" />
     <ClInclude Include="source\Subsystems\InputManager.h" />
     <ClInclude Include="source\Core\AccessContainer.h" />
     <ClInclude Include="source\Core\Common.h" />
@@ -248,6 +251,10 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClInclude Include="vendors\ImGuizmoCzuch\ImGuizmo.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Renderer\FrameGraph\FrameGraph.cpp" />
+    <ClCompile Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.cpp" />
+    <ClCompile Include="source\Renderer\RenderPassControl.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.cpp" />
     <ClCompile Include="source\Subsystems\InputManager.cpp" />
     <ClCompile Include="source\Core\AccessContainer.cpp" />
     <ClCompile Include="source\Core\GUID.cpp" />
@@ -334,6 +341,9 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ProjectReference Include="vendors\yaml-cpp\yaml-cpp.vcxproj">
       <Project>{88F1A057-74BE-FB62-9DD7-E90A890331F1}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Data\Shaders\DepthPrepass.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

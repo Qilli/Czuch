@@ -23,7 +23,7 @@ namespace Czuch
 
 		void OnUpdate(TimeDelta delta);
 		void OnFinishFrame();
-		void FillRenderContexts(Camera* cam,Renderer* renderer,int width,int height);
+		void FillRenderContexts(Camera* cam,Renderer* renderer,int width,int height,RenderContextFillParams& fillParams);
 		Entity CreateEntity(const CzuchStr& entityName, Entity parent = Entity());
 		void DestroyEntity(Entity entity);
 		void MarkEntityForDestroy(Entity entity);

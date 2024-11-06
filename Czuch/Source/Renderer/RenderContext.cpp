@@ -4,18 +4,25 @@
 
 namespace Czuch
 {
-    void RenderObjectInstance::UpdateSceneDataIfRequired(GraphicsDevice* device,BufferHandle buffer)
+    void RenderObjectInstance::UpdateSceneDataIfRequired(GraphicsDevice* device,BufferHandle buffer,RenderContextFillParams& fillParams)
     {
         if (IsValid())
         {
             MaterialInstance* m = nullptr;
-            if (HANDLE_IS_VALID(overrideMaterial))
-            {
-                m = device->AccessMaterialInstance(overrideMaterial);
-            }
+			if (fillParams.forceMaterialForAll)
+			{
+				m = device->AccessMaterialInstance(fillParams.forcedMaterial);
+			}
             else
             {
-                m = device->AccessMaterialInstance(device->AccessMesh(mesh)->materialHandle);
+                if (HANDLE_IS_VALID(overrideMaterial))
+                {
+                    m = device->AccessMaterialInstance(overrideMaterial);
+                }
+                else
+                {
+                    m = device->AccessMaterialInstance(device->AccessMesh(mesh)->materialHandle);
+                }
             }
 
             if (m != nullptr)

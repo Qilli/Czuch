@@ -11,7 +11,7 @@ namespace Czuch
 	{
 	public:
 		VulkanPipelineBuilder(VulkanDevice* deviceObj, Pipeline_Vulkan* pipelineObj,Pipeline* pipeline);
-		bool BuildPipeline(const VkRenderPass renderPass);
+		bool BuildPipeline(const RenderPass* renderPass);
 	private:
 		void CreateInputAssemblyInfo();
 		void CreateRasterizationStateInfo();

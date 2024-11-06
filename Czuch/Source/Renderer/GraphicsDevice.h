@@ -5,6 +5,7 @@ namespace Czuch
 {
 	class CommandBuffer;
 	struct RenderSettings;
+	struct FrameGraphBuilderHelper;
 
 	enum class RenderMode
 	{
@@ -34,10 +35,10 @@ namespace Czuch
 		virtual ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize) =0;
 		virtual RenderPassHandle CreateRenderPass(const RenderPassDesc* desc) = 0; 
 		virtual DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc) = 0;
-		virtual FrameBufferHandle CreateFrameBuffer(const FrameBufferDesc* desc)  = 0;
+		virtual FrameBufferHandle CreateFrameBuffer(const FrameBufferDesc* desc, bool resize = false, FrameBufferHandle handle = INVALID_HANDLE(FrameBufferHandle))  = 0;
 		virtual CommandBufferHandle CreateCommandBuffer(bool isPrimary,void* pool=nullptr)  = 0;
 		virtual BufferHandle CreateBuffer(const BufferDesc* desc) = 0;
-		virtual TextureHandle CreateTexture(const TextureDesc* desc)= 0;
+		virtual TextureHandle CreateTexture(const TextureDesc* desc,bool resize=false,TextureHandle handle= INVALID_HANDLE(TextureHandle))= 0;
 		virtual MeshHandle CreateMesh(MeshData& meshData) = 0;
 		virtual MaterialHandle CreateMaterial(MaterialDesc& materialData) = 0;
 		virtual MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) = 0;
@@ -66,6 +67,10 @@ namespace Czuch
 		virtual Mesh* AccessMesh(MeshHandle handle) = 0;
 		virtual Material* AccessMaterial(MaterialHandle handle) = 0;
 		virtual MaterialInstance* AccessMaterialInstance(MaterialInstanceHandle handle) = 0;
+
+		virtual void TransitionImageLayout(TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) = 0;
+		virtual void ResizeTexture(TextureHandle handle, U32 width, U32 height) = 0;
+		virtual void ResizeFrameBuffer(FrameBufferHandle handle, U32 width, U32 height) = 0;
 
 	};
 

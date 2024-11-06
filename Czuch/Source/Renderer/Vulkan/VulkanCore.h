@@ -669,12 +669,6 @@ namespace Czuch
 	};
 
 
-	struct VulkanFrameBufferDesc : public FrameBufferDesc
-	{
-		VkImageView color;
-		VkImageView depth;
-	};
-
 	struct BufferInternalSettings
 	{
 		//out
@@ -700,9 +694,15 @@ namespace Czuch
 		VkFramebufferCreateInfo createInfo;
 		~FrameBuffer_Vulkan()
 		{
+			Release();
+		}
+
+		void Release()
+		{
 			if (framebuffer)
 			{
 				vkDestroyFramebuffer(device, framebuffer, nullptr);
+				framebuffer = VK_NULL_HANDLE;
 			}
 		}
 	};
@@ -763,6 +763,11 @@ namespace Czuch
 		VkSampler sampler;
 		VmaAllocation allocation;
 		~Texture_Vulkan()
+		{
+			Release();
+		}
+
+		void Release()
 		{
 			if (image)
 			{

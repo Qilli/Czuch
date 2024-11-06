@@ -69,7 +69,7 @@ namespace Czuch
 
 	EditorControl::EditorControl() : m_Root(EngineRoot::GetPtr())
 	{
-		m_OffscreenPassAdded = false;
+		m_OffscreenPassInited = false;
 		m_SceneHierarchyPanel = nullptr;
 		m_EntityInspectorPanel = nullptr;
 		m_GizmoMode = GizmoMode::Translate;
@@ -262,7 +262,10 @@ namespace Czuch
 
 				auto diffMatrix = Mat4x4(1.0f);
 
-				ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), GetCurrentGizmoMode(), operationSpace, glm::value_ptr(selectedTransformMatrix), glm::value_ptr(diffMatrix), nullptr);
+				float matrixTranslation_[3], matrixRotation_[3], matrixScale_[3];
+				ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selectedTransformMatrix), matrixTranslation_, matrixRotation_, matrixScale_);
+
+				ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), GetCurrentGizmoMode(), operationSpace, glm::value_ptr(selectedTransformMatrix), nullptr, nullptr);
 
 				if (ImGuizmo::IsUsing())
 				{
@@ -270,18 +273,33 @@ namespace Czuch
 					float matrixTranslation[3], matrixRotation[3], matrixScale[3];
 					ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selectedTransformMatrix), matrixTranslation, matrixRotation, matrixScale);
 
-					Vec3 currentWorldPos = selectedTransform.GetWorldPosition();
-					Vec3 diff = Vec3(matrixTranslation[0], matrixTranslation[1], matrixTranslation[2]) - currentWorldPos;
+					Vec3 currentWorldPos = selectedTransform.GetLocalPosition();
+					Vec3 diff = Vec3(matrixTranslation[0]- matrixTranslation_[0], matrixTranslation[1]- matrixTranslation_[1], matrixTranslation[2]- matrixTranslation_[2]);
+					Vec3 diffScale = Vec3(matrixScale[0]/matrixScale_[0], matrixScale[1]/ matrixScale_[1], matrixScale[2]/ matrixScale_[2]);
 
-					selectedTransform.Translate(diffMatrix[3], operationSpace == ImGuizmo::MODE::WORLD? Czuch::TransformSpace::World:Czuch::TransformSpace::Local);
-
-					ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(diffMatrix), matrixTranslation, matrixRotation, matrixScale);
+					Mat4x4 localTransform = selectedTransform.TransformToLocalSpace(selectedTransformMatrix);
+					
 
 					if (GetCurrentGizmoMode() == ImGuizmo::OPERATION::ROTATE)
 					{
-						selectedTransform.Rotate(glm::radians(matrixRotation[0]), Vec3(1, 0, 0), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
-						selectedTransform.Rotate(glm::radians(matrixRotation[1]), Vec3(0, 1, 0), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
-						selectedTransform.Rotate(glm::radians(matrixRotation[2]), Vec3(0, 0, 1), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
+						Mat4x4 localTransform=selectedTransform.TransformToLocalSpace(selectedTransformMatrix);
+						Vec3 rot=glm::eulerAngles(glm::quat_cast(localTransform));
+
+						selectedTransform.Rotate(rot.x, operationSpace == ImGuizmo::MODE::WORLD?selectedTransform.GetRight():Vec3(1,0,0), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
+						selectedTransform.Rotate(rot.y, operationSpace == ImGuizmo::MODE::WORLD?selectedTransform.GetUp():Vec3(0,1,0), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
+						selectedTransform.Rotate(rot.z, operationSpace == ImGuizmo::MODE::WORLD?selectedTransform.GetForward():Vec3(0,0,1), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
+					}
+					else if (GetCurrentGizmoMode() == ImGuizmo::OPERATION::SCALE)
+					{
+						selectedTransform.Scale(diffScale);
+					}
+					else if (GetCurrentGizmoMode() == ImGuizmo::OPERATION::TRANSLATE)
+					{
+						if (operationSpace == ImGuizmo::MODE::LOCAL)
+						{
+							diff = selectedTransform.TransformPointToLocalSpace(diff);
+						}
+						selectedTransform.Translate(diff, operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
 					}
 
 					//selectedTransform.SetLocalEulerAngles(Vec3(matrixRotation[0], matrixRotation[1], matrixRotation[2]));
@@ -300,8 +318,6 @@ namespace Czuch
 
 					if (ImGuizmo::IsOver())
 					{
-						auto p = selectedTransform.GetWorldPosition();
-						LOG_BE_INFO("World positions is: {0} {1} {2}",p.x,p.y,p.z);
 						m_GizmoFrame.position = selectedTransform.GetLocalPosition();
 						m_GizmoFrame.rotation = selectedTransform.GetLocalEulerAngles();
 						m_GizmoFrame.scale = selectedTransform.GetLocalScale();
@@ -450,7 +466,7 @@ namespace Czuch
 
 	bool EditorControl::UpdateOffscreenPass(U32 width, U32 height)
 	{
-		if (m_OffscreenPassAdded)
+		if (m_OffscreenPassInited)
 		{
 			if (m_Width != width || m_Height != height)
 			{
@@ -461,8 +477,8 @@ namespace Czuch
 			}
 			return true;
 		}
-		m_OffscreenPassAdded = true;
-		m_Root->GetRenderer().AddOffscreenRenderPass(nullptr, width, height, false,&m_UpdateOffscreenPass);
+		m_OffscreenPassInited = true;
+		m_Root->GetRenderer().RegisterRenderPassResizeEventResponse(width, height, false,&m_UpdateOffscreenPass);
 		return false;
 	}
 

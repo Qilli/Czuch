@@ -11,9 +11,11 @@ namespace Czuch
     {
     }
 
-     bool VulkanPipelineBuilder::BuildPipeline(const VkRenderPass renderPass)
+     bool VulkanPipelineBuilder::BuildPipeline(const RenderPass* renderPass)
     {
+		 bool dynamicRendering = device->HasDynamicRenderingEnabled();
         pipeline->device = device->GetNativeDevice();
+        VkRenderPass vulkanRenderPass = (renderPass != nullptr&&!dynamicRendering) ? Internal_to_RenderPass(renderPass)->renderPass : VK_NULL_HANDLE;
 
         if (HANDLE_IS_VALID(pipelineDescPtr->vs))
         {
@@ -67,20 +69,37 @@ namespace Czuch
         pipelineInfo.pColorBlendState = &blendingInfo;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = pipeline->pipelineLayout;
-        pipelineInfo.renderPass = renderPass;
+        pipelineInfo.renderPass = vulkanRenderPass;
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
         pipelineInfo.pDepthStencilState = &depthStencilInfo;
 
         VkPipelineRenderingCreateInfoKHR pipeline_rendering_create_info{};
-        if (renderPass == VK_NULL_HANDLE)
+        if (dynamicRendering)
         {
             pipeline_rendering_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-            pipeline_rendering_create_info.colorAttachmentCount = 1;
-            pipeline_rendering_create_info.pColorAttachmentFormats = device->GetSwapchainFormat();
-            pipeline_rendering_create_info.depthAttachmentFormat = device->GetDepthFormat();
-            pipeline_rendering_create_info.stencilAttachmentFormat = device->GetDepthFormat();
+			if (renderPass != nullptr)
+			{
+                VkFormat colorAttachmentFormats[k_max_image_outputs];
+
+				for (int a = 0; a < renderPass->desc.attachmentsCount; ++a)
+				{
+                    colorAttachmentFormats[a] = ConvertFormat(renderPass->desc.colorAttachments[a].format);
+				}
+                auto depthStencilFormat = ConvertFormat(renderPass->desc.depthStencilFormat);
+                pipeline_rendering_create_info.colorAttachmentCount = renderPass->desc.attachmentsCount;
+                pipeline_rendering_create_info.pColorAttachmentFormats = colorAttachmentFormats;
+                pipeline_rendering_create_info.depthAttachmentFormat = depthStencilFormat;
+                pipeline_rendering_create_info.stencilAttachmentFormat = IsDepthFormatWithStencil(renderPass->desc.depthStencilFormat)?depthStencilFormat:VK_FORMAT_UNDEFINED;
+			}
+			else
+			{
+                pipeline_rendering_create_info.colorAttachmentCount = 1;
+                pipeline_rendering_create_info.pColorAttachmentFormats = device->GetSwapchainFormat();
+                pipeline_rendering_create_info.depthAttachmentFormat = device->GetDepthFormat();
+                pipeline_rendering_create_info.stencilAttachmentFormat = device->GetDepthFormat();
+			}
             pipelineInfo.pNext = &pipeline_rendering_create_info;
 		}
 

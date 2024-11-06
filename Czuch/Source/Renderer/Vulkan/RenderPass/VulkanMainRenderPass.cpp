@@ -10,8 +10,8 @@
 
 namespace Czuch
 {
-	VulkanMainRenderPass::VulkanMainRenderPass(RenderSettings* settings,VulkanRenderer* renderer, VulkanDevice* device) : RenderPassControl(settings,nullptr,0, 0, RenderPassType::MainForward,false),
-		m_Device(device), m_Renderer(renderer)
+	VulkanMainRenderPass::VulkanMainRenderPass(VulkanDevice* device) : RenderPassControl(nullptr,0, 0, RenderPassType::MainForward,false),
+		m_Device(device)
 	{
 		Init();
 		SetPriority(0);
@@ -22,18 +22,18 @@ namespace Czuch
 		Release();
 	}
 
-	void VulkanMainRenderPass::BeginRenderPass(CommandBuffer* cmd)
+	void VulkanMainRenderPass::PreDraw(CommandBuffer* cmd,Renderer* renderer)
 	{
+
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
 		int imageIndex = m_Device->GetCurrentImageIndex();
-		cmdBuffer->Begin();
 
 		m_Device->TransitionSwapChainImageLayoutPreDraw(cmdBuffer, imageIndex);
 
 		cmdBuffer->SetClearColor(0.0f, 1.0f, 0.0f, 1.0f);
 		cmdBuffer->SetDepthStencil(1.0f, 0);
 
-		if (m_Renderer->GetRenderSettings().dynamicRendering)
+		if (renderer->GetRenderSettings().dynamicRendering)
 		{
 			m_Device->StartDynamicRenderPass(cmdBuffer, imageIndex);
 		}
@@ -59,30 +59,27 @@ namespace Czuch
 		cmdBuffer->SetScrissors(scissors);
 	}
 
-	void VulkanMainRenderPass::EndRenderPass(CommandBuffer* cmd)
+	void VulkanMainRenderPass::PostDraw(CommandBuffer* cmd,Renderer* renderer)
 	{
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
 
-		if (m_Renderer->GetRenderSettings().dynamicRendering)
+		if (renderer->GetRenderSettings().dynamicRendering)
 		{
-			cmdBuffer->EndDynamicRenderPass();
+			cmdBuffer->EndDynamicRenderPassForMainPass();
 			m_Device->TransitionSwapChainImageLayoutPostDraw(cmdBuffer, m_Device->GetCurrentImageIndex());
 		}
 		else
 		{
 			cmdBuffer->EndCurrentRenderPass();
 		}
-		cmdBuffer->End();
 	}
 
 
 	void VulkanMainRenderPass::Execute(CommandBuffer* cmd)
 	{
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
-		if (m_Renderer->HasRenderPass(RenderPassType::OffscreenTexture)==false)
-		{
-			m_Renderer->DrawScene(cmdBuffer);
-		}
+
+		//TODO blit from offscreen to swapchain
 
 		m_Device->DrawUI(cmdBuffer);
 	}
@@ -91,6 +88,11 @@ namespace Czuch
 	{
 		Release();
 		Init();
+	}
+
+	void VulkanMainRenderPass::SetFinalTexture(Texture_Vulkan* texture)
+	{
+		m_FinalTexture = texture;
 	}
 
 	void VulkanMainRenderPass::Init()

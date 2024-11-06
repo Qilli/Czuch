@@ -89,7 +89,7 @@ namespace Czuch
 		}
 	}
 
-	void Scene::FillRenderContexts(Camera* cam, Renderer* renderer, int width, int height)
+	void Scene::FillRenderContexts(Camera* cam, Renderer* renderer, int width, int height, RenderContextFillParams& fillParams)
 	{
 		//get main camera
 		Camera* currentCamera = cam;
@@ -135,7 +135,7 @@ namespace Czuch
 
 			for (int a = 0; a < mesh.GetSubMeshesCount(); ++a)
 			{
-				RenderObjectInstance renderObjectInstance{ .mesh = mesh.GetMesh(a),.overrideMaterial = meshRenderer.GetOverrideMaterial(a), .localToWorldTransformation = Mat4x4(1.0f)/*transform.GetLocalToWorld()*/
+				RenderObjectInstance renderObjectInstance{ .mesh = mesh.GetMesh(a),.overrideMaterial = fillParams.forceMaterialForAll?fillParams.forcedMaterial:meshRenderer.GetOverrideMaterial(a), .localToWorldTransformation = Mat4x4(1.0f)/*transform.GetLocalToWorld()*/
 				, .localToClipSpaceTransformation = currentCamera->GetViewProjectionMatrix() * transform.GetLocalToWorld() };
 				m_GeneralRenderContext.AddToRenderList(renderObjectInstance);
 			}

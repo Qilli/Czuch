@@ -20,6 +20,7 @@ namespace Czuch
 	void VulkanCommandBuffer::Init(const GraphicsDevice* gpu)
 	{
 		m_Device = (VulkanDevice*)gpu;
+		m_ColorAttachmentsInfo.resize(8);
 	}
 
 	void VulkanCommandBuffer::Release()
@@ -58,7 +59,15 @@ namespace Czuch
 	{
 		if (HANDLE_IS_VALID(m_CurrentRenderPass) && m_isRecording)
 		{
-			vkCmdEndRenderPass(m_Cmd);
+			if (m_Device->HasDynamicRenderingEnabled())
+			{
+				vkCmdEndRendering(m_Cmd);
+			}
+			else
+			{
+				vkCmdEndRenderPass(m_Cmd);
+			}
+
 			m_CurrentRenderPass = INVALID_HANDLE(RenderPassHandle);
 		}
 	}
@@ -136,26 +145,102 @@ namespace Czuch
 			return;
 		}
 
+		auto fb = m_Device->AccessFrameBuffer(framebuffer);
+		auto render_pass = m_Device->AccessRenderPass(renderpass);
+
+		if (m_Device->HasDynamicRenderingEnabled())
+		{
+			auto& desc = fb->desc;
+			auto& renderPassDesc = render_pass->desc;
+			for (U32 a = 0; a < desc.renderTargetsCount; ++a) {
+				Texture* texture = m_Device->AccessTexture(desc.renderTextures[a]);
+				VkAttachmentLoadOp color_op;
+				switch (renderPassDesc.colorAttachments[a].loadOp) {
+				case AttachmentLoadOp::LOAD:
+					color_op = VK_ATTACHMENT_LOAD_OP_LOAD;
+					break;
+				case AttachmentLoadOp::CLEAR:
+					color_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
+					break;
+				default:
+					color_op = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+					break;
+				}
+
+				VkRenderingAttachmentInfoKHR& colorAttachmentInfo= m_ColorAttachmentsInfo[a];
+				colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+				colorAttachmentInfo.imageView = Internal_to_Texture(texture)->imageView;
+				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				colorAttachmentInfo.resolveMode = VK_RESOLVE_MODE_NONE;
+				colorAttachmentInfo.loadOp = color_op;
+				colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+				colorAttachmentInfo.clearValue = renderPassDesc.colorAttachments[a].loadOp == AttachmentLoadOp::CLEAR ? m_ClearValueColor : VkClearValue{};
+			}
+
+
+			VkRenderingAttachmentInfoKHR depthAttachmentInfo{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR };
+
+			bool hasDepthAttachment = HANDLE_IS_VALID(fb->desc.depthStencilTexture);
+
+			if (hasDepthAttachment) {
+				Texture* texture = m_Device->AccessTexture(fb->desc.depthStencilTexture);
+
+				VkAttachmentLoadOp depth_op;
+				switch (render_pass->desc.depthLoadOp) {
+				case AttachmentLoadOp::LOAD:
+					depth_op = VK_ATTACHMENT_LOAD_OP_LOAD;
+					break;
+				case AttachmentLoadOp::CLEAR:
+					depth_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
+					break;
+				default:
+					depth_op = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+					break;
+				}
+
+				depthAttachmentInfo.imageView = Internal_to_Texture(texture)->imageView;
+				depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+				depthAttachmentInfo.resolveMode = VK_RESOLVE_MODE_NONE;
+				depthAttachmentInfo.loadOp = depth_op;
+				depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+				depthAttachmentInfo.clearValue = render_pass->desc.depthLoadOp == AttachmentLoadOp::CLEAR ? m_ClearValueDepth : VkClearValue{ };
+			}
+			
+			VkRenderingInfoKHR renderingInfo{ VK_STRUCTURE_TYPE_RENDERING_INFO_KHR };
+			renderingInfo.flags =0;
+			renderingInfo.renderArea = { 0, 0,desc.width,desc.height };
+			renderingInfo.layerCount = 1;
+			renderingInfo.viewMask = 0;
+			renderingInfo.colorAttachmentCount = desc.renderTargetsCount;
+			renderingInfo.pColorAttachments = desc.renderTargetsCount > 0 ? &m_ColorAttachmentsInfo[0] : nullptr;
+			renderingInfo.pDepthAttachment = hasDepthAttachment ? &depthAttachmentInfo : nullptr;
+			renderingInfo.pStencilAttachment = nullptr;
+
+			vkCmdBeginRendering(m_Cmd, &renderingInfo);
+		}
+		else
+		{
+			auto fbNative = Internal_to_Framebuffer(fb);
+			VkExtent2D extent{};
+			extent.width = fbNative->createInfo.width;
+			extent.height = fbNative->createInfo.height;
+
+			VkClearValue clearValues[] = { m_ClearValueColor,m_ClearValueDepth };
+
+			VkRenderPassBeginInfo renderPassInfo{};
+			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			renderPassInfo.renderPass = Internal_to_RenderPass(m_Device->AccessRenderPass(renderpass))->renderPass;
+			renderPassInfo.framebuffer = fbNative->framebuffer;
+			renderPassInfo.renderArea.offset = { 0, 0 };
+			renderPassInfo.renderArea.extent = extent;
+			renderPassInfo.clearValueCount = 2;
+			renderPassInfo.pClearValues = clearValues;
+
+			vkCmdBeginRenderPass(m_Cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		}
 		m_CurrentFrameBuffer = framebuffer;
 		m_CurrentRenderPass = renderpass;
 
-		auto fb = Internal_to_Framebuffer(m_Device->AccessFrameBuffer(framebuffer));
-		VkExtent2D extent{};
-		extent.width = fb->createInfo.width;
-		extent.height = fb->createInfo.height;
-
-		VkClearValue clearValues[] = { m_ClearValueColor,m_ClearValueDepth };
-
-		VkRenderPassBeginInfo renderPassInfo{};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = Internal_to_RenderPass(m_Device->AccessRenderPass(renderpass))->renderPass;
-		renderPassInfo.framebuffer = fb->framebuffer;
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = extent;
-		renderPassInfo.clearValueCount = 2;
-		renderPassInfo.pClearValues = clearValues;
-
-		vkCmdBeginRenderPass(m_Cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	}
 
 	void VulkanCommandBuffer::BindPipeline(PipelineHandle pipeline)
@@ -233,7 +318,7 @@ namespace Czuch
 		vkCmdDrawIndexed(m_Cmd, indicesCount, instanceCount, firstIndex, vertexOffset, firstnstance);
 	}
 
-	void VulkanCommandBuffer::BeginDynamicRenderPass(VkImageView colorView, VkImageView depthView, U32 width, U32 height)
+	void VulkanCommandBuffer::BeginDynamicRenderPassForMainPass(VkImageView colorView, VkImageView depthView, U32 width, U32 height)
 	{
 		VkRenderingAttachmentInfoKHR colorAttachment{};
 		colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
@@ -264,7 +349,7 @@ namespace Czuch
 		vkCmdBeginRendering(m_Cmd, &render_info);
 	}
 
-	void VulkanCommandBuffer::EndDynamicRenderPass()
+	void VulkanCommandBuffer::EndDynamicRenderPassForMainPass()
 	{
 		vkCmdEndRendering(m_Cmd);
 	}

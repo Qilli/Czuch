@@ -53,7 +53,7 @@ namespace Czuch
 		std::string m_CurrentScenePath;
 		SceneHierarchyEditorPanel* m_SceneHierarchyPanel;
 		EntityInspectorEditorPanel* m_EntityInspectorPanel;
-		bool m_OffscreenPassAdded;
+		bool m_OffscreenPassInited;
 		U32 m_Width, m_Height;
 		std::function<void(U32, U32)> m_UpdateOffscreenPass;
 		EditorCommandsControl* m_CommandsControl;

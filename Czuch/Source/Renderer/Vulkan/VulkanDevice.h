@@ -42,10 +42,10 @@ namespace Czuch
 		ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize)override;
 		RenderPassHandle CreateRenderPass(const RenderPassDesc* desc) override;
 		DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc)  override;
-		FrameBufferHandle CreateFrameBuffer(const FrameBufferDesc* desc) override;
+		FrameBufferHandle CreateFrameBuffer(const FrameBufferDesc* desc, bool resize = false, FrameBufferHandle handle = INVALID_HANDLE(FrameBufferHandle)) override;
 		CommandBufferHandle CreateCommandBuffer(bool isPrimary,void* pool=nullptr) override;
 		BufferHandle CreateBuffer(const BufferDesc* desc) override;
-		TextureHandle CreateTexture(const TextureDesc* desc) override;
+		TextureHandle CreateTexture(const TextureDesc* desc, bool resize = false, TextureHandle handle = INVALID_HANDLE(TextureHandle)) override;
 		MeshHandle CreateMesh(MeshData& meshData) override;
 		MaterialHandle CreateMaterial(MaterialDesc& materialData) override;
 		MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) override;
@@ -81,13 +81,16 @@ namespace Czuch
 		Mesh* AccessMesh(MeshHandle handle) override;
 		Material* AccessMaterial(MaterialHandle handle) override;
 		MaterialInstance* AccessMaterialInstance(MaterialInstanceHandle handle) override;
+
+		void ResizeTexture(TextureHandle texture,U32 width, U32 height) override;
+		void ResizeFrameBuffer(FrameBufferHandle handle, U32 width, U32 height) override;
 	public:
 		void TransitionSwapChainImageLayoutPreDraw(VulkanCommandBuffer* cmd, uint32_t imageIndex);
 		void TransitionSwapChainImageLayoutPostDraw(VulkanCommandBuffer* cmd, uint32_t imageIndex);
 	public:
 		void* InitImGUI();
 		void ShutdownImGUI();
-		void TransitionImageLayout(TextureHandle handle,ImageLayout oldLayout,ImageLayout newLayout);
+		void TransitionImageLayout(TextureHandle handle,ImageLayout oldLayout,ImageLayout newLayout,U32 baseMipLevel, U32 mipCount, bool isDepth) override;
 	public:
 		VkDevice GetNativeDevice() const { return m_Device; }
 		VmaAllocator GetAllocator() const { return m_VmaAllocator; }
@@ -107,8 +110,7 @@ namespace Czuch
 		void BindSwapChainRenderPass(CommandBuffer* cmdBuffer, uint32_t imageIndex);
 	public:
 		void StartDynamicRenderPass(VulkanCommandBuffer* cmdBuffer, uint32_t imageIndex);
-		void BeginOffscreenPass(VulkanCommandBuffer* cmdBuffer, VkRenderPass renderPass, FrameBufferHandle framebuffer, U32 width, U32 height);
-		void EndOffscreenPass(VulkanCommandBuffer* cmdBuffer);
+		bool HasDynamicRenderingEnabled() const;
 	public:
 
 	private:
@@ -134,7 +136,6 @@ namespace Czuch
 
 			void Release(VkDevice device)
 			{
-
 				for (uint32_t i = 0; i < swapChainImageViews.size(); ++i)
 				{
 					vkDestroyImageView(device,swapChainImageViews[i],nullptr);
@@ -232,7 +233,7 @@ namespace Czuch
 		bool CreateBuffer_Internal(BufferInternalSettings& settings) const;
 		bool CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
 		void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, U32 w, U32 h) const;
-		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout) const;
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) const;
 		void DoImageMemoryBarrier(VkCommandBuffer cmdbuffer,
 			VkImage image,
 			VkAccessFlags srcAccessMask,

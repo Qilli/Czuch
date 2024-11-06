@@ -6,19 +6,25 @@ namespace Czuch
 {
 	class GraphicsDevice;
 
+	struct RenderContextFillParams
+	{
+		MaterialInstanceHandle forcedMaterial;
+		bool forceMaterialForAll;
+	};
+
 	struct CZUCH_API RenderObjectInstance
 	{
-		MeshHandle mesh;
-		MaterialInstanceHandle overrideMaterial;
 		Mat4x4 localToWorldTransformation;
 		Mat4x4 localToClipSpaceTransformation;
+		MeshHandle mesh;
+		MaterialInstanceHandle overrideMaterial;
 
 		bool IsValid() const
 		{
 			return HANDLE_IS_VALID(mesh);
 		}
 
-		void UpdateSceneDataIfRequired(GraphicsDevice* device,BufferHandle buffer);
+		void UpdateSceneDataIfRequired(GraphicsDevice* device,BufferHandle buffer,RenderContextFillParams& fillParams);
 	};
 
 	struct CZUCH_API RenderContextCreateInfo

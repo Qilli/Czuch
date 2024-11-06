@@ -150,6 +150,15 @@ namespace Czuch
 						NotifyOnSelectedEntityListeners();
 					}
 
+					if (ImGui::MenuItem(" Create Cube Mesh"))
+					{
+						auto command = NEW(CreateNewEntityWithCubeMeshCommand(m_ActiveScene, m_SelectedEntity));
+						EditorCommandsControl::Get().ExecuteCommand(command);
+
+						m_SelectedEntity = command->GetCreatedEntity();
+						NotifyOnSelectedEntityListeners();
+					}
+
 					if (ImGui::MenuItem(" Delete Entity "))
 					{
 						EditorCommandsControl::Get().ExecuteCommand(new RemoveNewEntityCommand(m_ActiveScene, m_SelectedEntity));

@@ -5,22 +5,21 @@
 namespace Czuch
 {
 	class VulkanRenderer;
-	class Texture_Vulkan;
-	class VulkanMainRenderPass : public RenderPassControl
+	class VulkanDefaultForwardLightingRenderPass : public RenderPassControl
 	{
 	public:
-		VulkanMainRenderPass(VulkanDevice* device);
-		~VulkanMainRenderPass();
-		void PreDraw(CommandBuffer* cmdBuffer,Renderer* renderer) override;
+		VulkanDefaultForwardLightingRenderPass(VulkanRenderer* renderer, VulkanDevice* device, U32 width, U32 height, bool handleWindowResize);
+		~VulkanDefaultForwardLightingRenderPass();
+		void PreDraw(CommandBuffer* cmdBuffer, Renderer* renderer) override;
 		void PostDraw(CommandBuffer* cmdBuffer, Renderer* renderer) override;
 		void Execute(CommandBuffer* cmdBuffer) override;
 		void Resize(int width, int height) override;
-		void SetFinalTexture(Texture_Vulkan* texture) { m_FinalTexture = texture; }
 	private:
 		void Init();
 		void Release();
 	private:
+		VulkanRenderer* m_Renderer;
 		VulkanDevice* m_Device;
-		Texture_Vulkan* m_FinalTexture;
+		RenderContextFillParams m_FillParams;
 	};
 }

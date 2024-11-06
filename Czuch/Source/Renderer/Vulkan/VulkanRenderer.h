@@ -3,10 +3,12 @@
 #include"VulkanBase.h"
 #include"Renderer/RenderContext.h"
 #include"Renderer/RenderPassControl.h"
+#include"Renderer/FrameGraph/FrameGraphBuilderHelper.h"
 #include<functional>
 
 namespace Czuch
 {
+	class VulkanMainRenderPass;
 	class VulkanDevice;
 	class VulkanCommandBuffer;
 	class Window;
@@ -39,9 +41,7 @@ namespace Czuch
 		void* GetRenderPassResult(RenderPassType type) override;
 		bool HasRenderPass(RenderPassType type) override;
 	public:
-		void AddRenderPass(RenderPassControl* renderPass) override;
-		void RemoveRenderPass(RenderPassType type) override;
-		void AddOffscreenRenderPass(Camera* cam, U32 width, U32 height, bool handleWindowResize,std::function<void(U32,U32)>* onResize) override;
+		void RegisterRenderPassResizeEventResponse(U32 width, U32 height, bool handleWindowResize,std::function<void(U32,U32)>* onResize) override;
 	private:
 		void CreateSyncObjects();
 		void ReleaseSyncObjects();
@@ -88,6 +88,7 @@ namespace Czuch
 		struct RenderPassResizeQuery
 		{
 			RenderPassType type;
+			bool allNotHandledByWindowSizeChanged;
 			U32 width;
 			U32 height;
 		};
@@ -97,12 +98,16 @@ namespace Czuch
 			return m_FramesData[m_CurrentFrame];
 		}
 
+	public:
+		void OnPreRenderUpdateContexts(Camera* cam, int width, int height,RenderContextFillParams* fillParams) override;
+		void OnPostRenderUpdateContexts(RenderContextFillParams* fillParams) override;
+	private: //frame graph control
+		void CreateFrameGraphs();
+		void ReleaseFrameGraphs();
+		FrameGraphBuilderHelper m_FrameGraphBuilder;
+		FrameGraph m_CurrentFrameGraph;
 	private:
-		void OnPreRenderUpdateContexts(Camera* cam, int width, int height);
-		void OnPostRenderUpdateContexts();
-
-	private:
-		std::vector<RenderPassControl*> m_RenderPasses;
+		VulkanMainRenderPass* m_FinalRenderPass;
 		std::vector<RenderPassResizeQuery> m_RenderPassResizeQueries;
 		RenderContextContainer m_MainRenderContexts;
 		FrameData m_FramesData[MAX_FRAMES_IN_FLIGHT];
@@ -111,6 +116,7 @@ namespace Czuch
 		VulkanDevice* m_Device;
 		uint32_t m_CurrentFrame = 0;
 		SceneDataContainer m_SceneData;
+		RenderContextFillParams m_DefaultContextFillParams;
 		Scene* m_ActiveScene;
 		int m_LastWidth = 0;
 		int m_LastHeight = 0;

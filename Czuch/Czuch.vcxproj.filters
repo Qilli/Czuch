@@ -316,6 +316,9 @@
       <Filter>vendors\ImGuizmoCzuch</Filter>
     </ClInclude>
     <ClInclude Include="source\Subsystems\InputManager.h" />
+    <ClInclude Include="source\Renderer\FrameGraph\FrameGraph.h" />
+    <ClInclude Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.h" />
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">
@@ -514,5 +517,12 @@
       <Filter>vendors\ImGuizmoCzuch</Filter>
     </ClCompile>
     <ClCompile Include="source\Subsystems\InputManager.cpp" />
+    <ClCompile Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.cpp" />
+    <ClCompile Include="source\Renderer\FrameGraph\FrameGraph.cpp" />
+    <ClCompile Include="source\Renderer\RenderPassControl.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Data\Shaders\DepthPrepass.vert" />
   </ItemGroup>
 </Project>

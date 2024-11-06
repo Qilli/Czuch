@@ -33,12 +33,12 @@ namespace Czuch
 		virtual void UnRegisterRenderContext(RenderContext* context) = 0;
 		virtual void SetActiveScene(Scene* scene) = 0;
 		virtual GraphicsDevice* GetDevice() = 0;
-		virtual void AddRenderPass(RenderPassControl* renderPass) = 0;
-		virtual void RemoveRenderPass(RenderPassType renderPassType) = 0;
-		virtual void AddOffscreenRenderPass(Camera* cam, U32 width, U32 height, bool handleWindowResize, std::function<void(U32, U32)>* onResize) = 0;
+		virtual void RegisterRenderPassResizeEventResponse(U32 width, U32 height, bool handleWindowResize, std::function<void(U32, U32)>* onResize) = 0;
 		const RenderSettings& GetRenderSettings() const { return *m_RenderSettings; }
 		virtual void* GetRenderPassResult(RenderPassType type) = 0;
 		virtual bool HasRenderPass(RenderPassType type) = 0;
+		virtual void OnPreRenderUpdateContexts(Camera* cam, int width, int height,RenderContextFillParams* fillParams)=0;
+		virtual void OnPostRenderUpdateContexts(RenderContextFillParams* fillParams)=0;
 	protected:
 		void OnEvent(Event& e) override;
 		virtual void OnWindowResize(uint32_t width, uint32_t height) = 0;

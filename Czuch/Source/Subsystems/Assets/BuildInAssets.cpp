@@ -69,6 +69,7 @@ namespace Czuch
 
 	void BuildInAssets::CreateDefaultMaterials()
 	{
+		//Simple material
 		auto handleVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/vertShader.vert", {});
 		auto handlePS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/fragShader.frag", {});
 
@@ -125,6 +126,9 @@ namespace Czuch
 		AssetHandle instanceAssetHandle=m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName,instanceCreateSettings);
 		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
 		DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
+
+	
+		CreateDepthPrePassMaterial();
 	}
 
 	std::vector<Vec3> GetCubeMeshPositions(float size) {
@@ -326,5 +330,49 @@ namespace Czuch
 
 			DefaultAssets::EDITOR_ICON_SCALE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("/Editor/Icons/Editor_ScaleIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
 		}
+	}
+	void BuildInAssets::CreateDepthPrePassMaterial()
+	{
+		//Depth prepass material
+		auto depthVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/DepthPrepassShader.vert", {});
+		auto depthPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/EmptyFragmentShader.frag", {});
+
+		PipelineStateDesc desc;
+		desc.vs = depthVS;
+		desc.ps = depthPS;
+		desc.pt = PrimitiveTopology::TRIANGLELIST;
+		desc.rs.cull_mode = CullMode::BACK;
+		desc.rs.fill_mode = PolygonMode::SOLID;
+		desc.dss.depth_enable = true;
+		desc.dss.depth_func = CompFunc::LESS_EQUAL;
+		desc.dss.depth_write_mask = DepthWriteMask::ZERO;
+		desc.dss.stencil_enable = false;
+		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
+
+		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
+
+		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
+
+
+		MaterialDesc matDesc;
+		matDesc.pipelineDesc = std::move(desc);
+		matDesc.materialName = "DepthPrePassMaterial";
+
+		MaterialCreateSettings createSettings;
+		createSettings.desc = std::move(matDesc);
+
+		DefaultAssets::DEPTH_PREPASS_MATERIAL_ASSET = m_AssetsMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createSettings.desc.materialName, createSettings);
+		auto materialAsset = m_AssetsMgr->GetAsset<MaterialAsset>(DefaultAssets::DEPTH_PREPASS_MATERIAL_ASSET);
+		materialAsset->SetPersistentStatus(true);
+		DefaultAssets::DEPTH_PREPASS_MATERIAL = materialAsset->GetMaterialResourceHandle();
+
+		MaterialInstanceCreateSettings instanceCreateSettings{};
+		instanceCreateSettings.materialInstanceName = "DepthPrePassMaterialInstance";
+		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEPTH_PREPASS_MATERIAL_ASSET;
+		instanceCreateSettings.desc.isTransparent = false;
+
+		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
+		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
+		DefaultAssets::DEPTH_PREPASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
 	}
 }

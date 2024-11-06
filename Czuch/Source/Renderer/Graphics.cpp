@@ -10,12 +10,39 @@ namespace Czuch
 		setIndex = 0;
 		return *this;
 	}
-	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(CzuchStr name,DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool internalParam)
+	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(CzuchStr name, DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool internalParam)
 	{
 		bindings[bindingsCount++] = { StringID::MakeStringID(name),type,size,(U16)bindingIndex, (U16)count,internalParam };
 		return *this;
 	}
 
+
+	bool IsDepthFormat(Format format)
+	{
+		switch (format)
+		{
+		case Format::D32_FLOAT:
+		case Format::D24_UNORM_S8_UINT:
+		case Format::D32_FLOAT_S8X24_UINT:
+		case Format::D16_UNORM:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+
+	bool IsDepthFormatWithStencil(Format format)
+	{
+		switch (format)
+		{
+		case Format::D24_UNORM_S8_UINT:
+		case Format::D32_FLOAT_S8X24_UINT:
+			return true;
+		default:
+			return false;
+		}
+	}
 
 	ShaderStage StringToShaderStage(const CzuchStr& stage)
 	{
@@ -57,13 +84,13 @@ namespace Czuch
 		return *this;
 	}
 
-	ShaderParamsSet& ShaderParamsSet::AddBuffer(CzuchStr name,BufferHandle buffer, U16 binding)
+	ShaderParamsSet& ShaderParamsSet::AddBuffer(CzuchStr name, BufferHandle buffer, U16 binding)
 	{
 		if (descriptorsCount >= s_max_descriptors_per_set)
 		{
 			return *this;
 		}
-		descriptors[descriptorsCount].paramName=StringID::MakeStringID(name);
+		descriptors[descriptorsCount].paramName = StringID::MakeStringID(name);
 		descriptors[descriptorsCount].binding = binding;
 		descriptors[descriptorsCount].resource = buffer.handle;
 		descriptors[descriptorsCount++].type = DescriptorType::UNIFORM_BUFFER;
@@ -72,7 +99,7 @@ namespace Czuch
 	}
 
 
-	ShaderParamsSet& ShaderParamsSet::AddSampler(CzuchStr name,TextureHandle color_texture, U16 binding)
+	ShaderParamsSet& ShaderParamsSet::AddSampler(CzuchStr name, TextureHandle color_texture, U16 binding)
 	{
 		if (descriptorsCount >= s_max_descriptors_per_set)
 		{
@@ -157,7 +184,7 @@ namespace Czuch
 	}
 	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name, BufferHandle buffer)
 	{
-		paramsDesc.push_back({ .name = name,.type=DescriptorType::UNIFORM_BUFFER,.resource = buffer.handle  });
+		paramsDesc.push_back({ .name = name,.type = DescriptorType::UNIFORM_BUFFER,.resource = buffer.handle });
 		return *this;
 	}
 	MaterialInstanceDesc& MaterialInstanceDesc::AddSampler(const CzuchStr& name, TextureHandle color_texture)
@@ -166,7 +193,7 @@ namespace Czuch
 		return *this;
 	}
 
-	void PipelineStateDesc::SetParams(MaterialInstanceDesc& desc,MaterialInstanceParams& params)
+	void PipelineStateDesc::SetParams(MaterialInstanceDesc& desc, MaterialInstanceParams& params)
 	{
 		for (int a = 0; a < desc.paramsDesc.size(); ++a)
 		{
@@ -183,7 +210,7 @@ namespace Czuch
 						if (param.type == DescriptorType::SAMPLER)
 						{
 							params.AddSampler(i, param.name, TextureHandle(param.resource), b);
-						 }
+						}
 						else if (param.type == DescriptorType::UNIFORM_BUFFER)
 						{
 							params.AddBuffer(i, param.name, BufferHandle(param.resource), b);
@@ -193,4 +220,56 @@ namespace Czuch
 			}
 		}
 	}
+
+	RenderPassDesc& RenderPassDesc::AddAttachment(Format format, ImageLayout layout, AttachmentLoadOp loadOp)
+	{
+		if (attachmentsCount < k_max_image_outputs)
+		{
+			colorAttachments[attachmentsCount++] = { format,layout,loadOp };
+			return *this;
+		}
+		LOG_BE_ERROR("[VulkanRenderPassDesc]Too many color attachments for render pass with name {0}",name);
+		return *this;
+	}
+
+	RenderPassDesc& RenderPassDesc::SetDepthStencilTexture(Format format, ImageLayout layout)
+	{
+		depthStencilFinalLayout = layout;
+		depthStencilFormat = format;
+		return *this;
+	}
+	RenderPassDesc& RenderPassDesc::SetName(const char* rpName)
+	{
+		name = rpName;
+		return *this;
+	}
+	RenderPassDesc& RenderPassDesc::SetDepthAndStencilLoadOp(AttachmentLoadOp depth, AttachmentLoadOp stencil)
+	{
+		depthLoadOp = depth;
+		stencilLoadOp = stencil;
+		return *this;
+	}
+	FrameBufferDesc& FrameBufferDesc::AddRenderTexture(TextureHandle texture)
+	{
+		if (renderTargetsCount < k_max_image_outputs)
+		{
+			renderTextures[renderTargetsCount++] = texture;
+			return *this;
+		}
+		LOG_BE_ERROR("[VulkanFrameBufferDesc]Too many render targets for frame buffer with name {0}", name);
+		return *this;
+	}
+
+	FrameBufferDesc& FrameBufferDesc::SetDepthStencilTexture(TextureHandle texture)
+	{
+		depthStencilTexture = texture;
+		return *this;
+	}
+
+	FrameBufferDesc& FrameBufferDesc::SetName(const char* newName)
+	{
+		name = newName;
+		return *this;
+	}
+
 }

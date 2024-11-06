@@ -30,8 +30,8 @@ namespace Czuch
 		void Draw(U32 vertexCount, U32 firstVertex=0, U32 instanceCount=1, U32 firstInstance=0) override;
 		void DrawIndexed(U32 indicesCount, U32 firstIndex=0, U32 instanceCount=1, U32 firstnstance=0, U32 vertexOffset=0) override;
 	public:
-		void BeginDynamicRenderPass(VkImageView colorVew, VkImageView depthView,U32 width,U32 height);
-		void EndDynamicRenderPass();
+		void BeginDynamicRenderPassForMainPass(VkImageView colorVew, VkImageView depthView,U32 width,U32 height);
+		void EndDynamicRenderPassForMainPass();
 	private:
 		VkCommandBuffer m_Cmd;
 		VulkanDevice* m_Device;
@@ -43,6 +43,7 @@ namespace Czuch
 		PipelineHandle m_CurrentPipeline;
 		ViewportDesc m_CurrentViewport;
 		ScissorsDesc m_CurrentScissors;
+		Array<VkRenderingAttachmentInfoKHR> m_ColorAttachmentsInfo;
 	};
 
 }
