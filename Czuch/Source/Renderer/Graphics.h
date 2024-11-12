@@ -1,7 +1,6 @@
 #pragma once
 #include"./Core/EngineCore.h"
 #include "Core/Math.h"
-#include<memory>
 #include"Subsystems/Assets/Asset/Asset.h"
 
 namespace Czuch
@@ -12,6 +11,7 @@ namespace Czuch
 	static const U8 s_max_vertex_attributes = 16;
 	static const U8 k_max_descriptor_set_layouts = 8;
 	static const U8 k_max_image_outputs = 8;
+	static const U8 k_max_render_passes = 4;
 
 	typedef I32 Handle;
 #define Invalid_Handle_Id -1
@@ -34,6 +34,18 @@ namespace Czuch
 		Handle handle;
 		ResourceHandle(int val) :handle(val) {}
 		ResourceHandle() { handle = -1; }
+	};
+
+	enum class CZUCH_API RenderPassType
+	{
+		MainForward = 0,
+		Shadow = 1,
+		PostProcess = 2,
+		OffscreenTexture = 3,
+		UI = 4,
+		Final = 5,
+		DepthPrePass = 6,
+		Custom = 7
 	};
 
 	struct FrameGraphNodeHandle
@@ -96,17 +108,6 @@ namespace Czuch
 
 	};
 
-	enum class CZUCH_API RenderPassType
-	{
-		MainForward,
-		Shadow,
-		PostProcess,
-		OffscreenTexture,
-		UI,
-		Final,
-		DepthPrePass,
-		Custom
-	};
 
 	enum AttachmentLoadOp
 	{
@@ -609,6 +610,8 @@ namespace Czuch
 
 		const char* name = nullptr;
 
+		RenderPassType type = RenderPassType::MainForward;
+
 		//RenderPassDesc& Reset();
 		RenderPassDesc& AddAttachment(Format format, ImageLayout layout, AttachmentLoadOp loadOp);
 		RenderPassDesc& SetDepthStencilTexture(Format format, ImageLayout layout);
@@ -841,9 +844,10 @@ namespace Czuch
 		void AddStream(const VertexStream& stream);
 	};
 
+
 	struct MaterialInstanceDesc;
 	struct MaterialInstanceParams;
-	struct PipelineStateDesc
+	struct MaterialPassDesc
 	{
 		AssetHandle vs;
 		AssetHandle ps;
@@ -855,33 +859,40 @@ namespace Czuch
 		DescriptorSetLayoutDesc layouts[k_max_descriptor_set_layouts];
 		U16 layoutsCount = 0;
 		BindPoint bindPoint;
+		RenderPassType passType = RenderPassType::MainForward;
 
 		bool IsTransparent() const
 		{
 			return bs.blendSettings.blendEnable;
 		}
 
-		void AddLayout(DescriptorSetLayoutDesc layout)
+		void AddLayout(DescriptorSetLayoutDesc& layout)
 		{
 			if (layoutsCount >= k_max_descriptor_set_layouts)
 			{
 				return;
 			}
-			layouts[layoutsCount++] = layout;
+			layouts[layoutsCount++] = std::move(layout);
 		}
 
 
 		void SetParams(MaterialInstanceDesc& desc, MaterialInstanceParams& params);
 
 
-		PipelineStateDesc() = default;
+		MaterialPassDesc() = default;
 
-		PipelineStateDesc(PipelineStateDesc& other) noexcept
+		MaterialPassDesc(MaterialPassDesc&& other) noexcept
 		{
 			*this = std::move(other);
 		}
 
-		PipelineStateDesc& operator=(PipelineStateDesc&& other) noexcept
+		MaterialPassDesc(const MaterialPassDesc& other) noexcept
+		{
+			*this = other;
+		}
+
+
+		MaterialPassDesc& operator=(MaterialPassDesc&& other) noexcept
 		{
 			if (&other != this)
 			{
@@ -893,6 +904,7 @@ namespace Czuch
 				this->il = std::move(other.il);
 				this->pt = std::move(other.pt);
 				this->layoutsCount = std::move(other.layoutsCount);
+				this->passType = std::move(other.passType);
 
 				for (int a = 0; a < this->layoutsCount; ++a)
 				{
@@ -904,7 +916,7 @@ namespace Czuch
 			return *this;
 		}
 
-		PipelineStateDesc& operator=(PipelineStateDesc& other) noexcept
+		MaterialPassDesc& operator=(const MaterialPassDesc& other) noexcept
 		{
 			if (&other != this)
 			{
@@ -916,6 +928,7 @@ namespace Czuch
 				this->il = (other.il);
 				this->pt = (other.pt);
 				this->layoutsCount = (other.layoutsCount);
+				this->passType = (other.passType);
 
 				for (int a = 0; a < this->layoutsCount; ++a)
 				{
@@ -930,51 +943,145 @@ namespace Czuch
 
 	};
 
-	struct  CZUCH_API MaterialDesc
+	struct CZUCH_API MaterialDefinitionPassesContainer
 	{
-		PipelineStateDesc pipelineDesc;
+		Array<MaterialPassDesc> states;
+
+		MaterialDefinitionPassesContainer() = default;
+
+		MaterialDefinitionPassesContainer& operator=(MaterialDefinitionPassesContainer&& other) noexcept
+		{
+			if (&other != this)
+			{
+				for (int a = 0; a < states.size(); ++a)
+				{
+					this->states[a] = std::move(other.states[a]);
+				}
+			}
+			return *this;
+		}
+
+		MaterialDefinitionPassesContainer& operator=(const MaterialDefinitionPassesContainer& other) noexcept
+		{
+			if (&other != this)
+			{
+				for (int a = 0; a < states.size(); ++a)
+				{
+					this->states[a] = other.states[a];
+				}
+			}
+			return *this;
+		}
+
+		bool IsTransparent() const
+		{
+			for (int a = 0; a < states.size(); ++a)
+			{
+				if (states[a].IsTransparent())
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		void EmplacePass(MaterialPassDesc& state)
+		{
+			states.emplace_back(std::move(state));
+		}
+
+		void AddLayout(RenderPassType type, DescriptorSetLayoutDesc layout)
+		{
+			for (auto& state : states)
+			{
+				if (state.passType == type)
+				{
+					state.AddLayout(layout);
+					return;
+				}
+			}
+		}
+
+		void AddLayout(int passIndex, DescriptorSetLayoutDesc layout)
+		{
+			if (passIndex < states.size())
+			{
+				states[passIndex].AddLayout(layout);
+			}
+		}
+	};
+
+	struct CZUCH_API MaterialDefinitionDesc
+	{
+		MaterialDefinitionPassesContainer passesContainer;
 		CzuchStr materialName;
 		int materialFlags;
 
-		MaterialDesc()
+		MaterialDefinitionDesc(U32 passesCount)
+		{
+			materialFlags = 0;
+			passesContainer.states.reserve(passesCount);
+		}
+
+		MaterialDefinitionDesc()
 		{
 			materialFlags = 0;
 		}
 
-		MaterialDesc(MaterialDesc& other) noexcept
+		MaterialDefinitionDesc(MaterialDefinitionDesc& other) noexcept
 		{
 			*this = std::move(other);
 		}
 
 		bool IsTransparent() const
 		{
-			return pipelineDesc.IsTransparent();
+			return passesContainer.IsTransparent();
 		}
 
-		MaterialDesc& operator=(MaterialDesc&& other) noexcept
+		MaterialDefinitionDesc& operator=(MaterialDefinitionDesc&& other) noexcept
 		{
 			if (&other != this)
 			{
 				this->materialName = std::move(other.materialName);
-				this->pipelineDesc = std::move(other.pipelineDesc);
+				this->passesContainer = std::move(other.passesContainer);
 				this->materialFlags = std::move(other.materialFlags);
 			}
 			return *this;
 		}
 
-		MaterialDesc& operator=(MaterialDesc& other) noexcept
+		MaterialDefinitionDesc& operator=(MaterialDefinitionDesc& other) noexcept
 		{
 			if (&other != this)
 			{
 				this->materialFlags = other.materialFlags;
-				this->pipelineDesc = other.pipelineDesc;
+				this->passesContainer = other.passesContainer;
 			}
 			return *this;
 		}
 
-		void AddLayout(DescriptorSetLayoutDesc layout)
+		void EmplacePass(MaterialPassDesc& state)
 		{
-			pipelineDesc.AddLayout(layout);
+			passesContainer.EmplacePass(state);
+		}
+
+		void AddLayout(RenderPassType type, DescriptorSetLayoutDesc layout)
+		{
+			passesContainer.AddLayout(type, layout);
+		}
+
+		void AddLayout(int passIndex, DescriptorSetLayoutDesc layout)
+		{
+			passesContainer.AddLayout(passIndex, layout);
+		}
+
+		U32 PassesCount() const
+		{
+			return passesContainer.states.size();
+		}
+
+		const MaterialPassDesc& GetMaterialPassDescAt(U32 index) const
+		{
+			return passesContainer.states[index];
 		}
 	};
 
@@ -989,7 +1096,7 @@ namespace Czuch
 
 		AssetHandle materialAsset;
 		bool isTransparent = false;
-		std::vector<ShaderParamDesc> paramsDesc;
+		Array<ShaderParamDesc> paramsDesc;
 		MaterialInstanceDesc()
 		{
 			Reset();
@@ -1060,11 +1167,11 @@ namespace Czuch
 
 	struct MeshData
 	{
-		std::vector<Vec3> positions;
-		std::vector<Vec3> normals;
-		std::vector<Vec4> colors;
-		std::vector<Vec4> uvs0;
-		std::vector<U32> indices;
+		Array<Vec3> positions;
+		Array<Vec3> normals;
+		Array<Vec4> colors;
+		Array<Vec4> uvs0;
+		Array<U32> indices;
 		MaterialInstanceHandle material;
 		CzuchStr meshName;
 
@@ -1140,17 +1247,18 @@ namespace Czuch
 
 	struct Material : public GraphicsDeviceResource
 	{
-		MaterialDesc desc{};
-		constexpr const MaterialDesc& GetDesc() const { return desc; }
+		MaterialDefinitionDesc desc{};
+		constexpr const MaterialDefinitionDesc& GetDesc() const { return desc; }
 
-		PipelineHandle pipeline;
+		Array<PipelineHandle> pipelines;
 
+		I32 GetRenderPassIndexForType(RenderPassType type) const;
 	};
 
 	struct MaterialInstance : public GraphicsDeviceResource
 	{
 		MaterialInstanceDesc desc{};
-		MaterialInstanceParams params;
+		MaterialInstanceParams params[k_max_render_passes];
 		MaterialHandle handle;
 		bool IsTransparent() const { return desc.isTransparent; }
 		constexpr const MaterialInstanceDesc& GetDesc() const { return desc; }
@@ -1158,8 +1266,8 @@ namespace Czuch
 
 	struct Pipeline : public GraphicsDeviceResource
 	{
-		PipelineStateDesc m_desc{};
-		constexpr const PipelineStateDesc& GetDesc() const { return m_desc; }
+		MaterialPassDesc m_desc{};
+		constexpr const MaterialPassDesc& GetDesc() const { return m_desc; }
 
 		ShaderHandle vs;
 		ShaderHandle ps;

@@ -101,12 +101,18 @@ namespace Czuch
 	public:
 		void OnPreRenderUpdateContexts(Camera* cam, int width, int height,RenderContextFillParams* fillParams) override;
 		void OnPostRenderUpdateContexts(RenderContextFillParams* fillParams) override;
+	public:
+		//render pass contorl helpers
+		RenderPassControl* RegisterRenderPassControl(RenderPassControl* control) override;
+		void UnRegisterRenderPassControl(RenderPassControl* control) override;
+		RenderPassHandle GetNativeRenderPassHandle(RenderPassType type) override;
 	private: //frame graph control
 		void CreateFrameGraphs();
 		void ReleaseFrameGraphs();
 		FrameGraphBuilderHelper m_FrameGraphBuilder;
 		FrameGraph m_CurrentFrameGraph;
 	private:
+		Array<RenderPassControl*> m_RenderPassControls;
 		VulkanMainRenderPass* m_FinalRenderPass;
 		std::vector<RenderPassResizeQuery> m_RenderPassResizeQueries;
 		RenderContextContainer m_MainRenderContexts;

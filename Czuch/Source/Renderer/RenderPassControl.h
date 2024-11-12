@@ -14,7 +14,7 @@ namespace Czuch
 	class RenderPassControl
 	{
 	public:
-		RenderPassControl(Camera* cam, int width, int height, RenderPassType type, bool handleWindowResize) : m_Width(width), m_Height(height), Type(type), m_HandleWindowResize(handleWindowResize), m_Camera(cam),m_Priority(10) {}
+		RenderPassControl(Camera* cam, int width, int height, RenderPassType type, bool handleWindowResize, bool uiTextureSource = false);
 		virtual ~RenderPassControl() = default;
 		virtual void PreDraw(CommandBuffer* cmd,Renderer* renderer);
 		virtual void PostDraw(CommandBuffer* cmd,Renderer* renderer) = 0;
@@ -22,6 +22,8 @@ namespace Czuch
 		virtual void* GetRenderPassResult() { return nullptr; }
 
 		virtual void Resize(int width, int height);
+		virtual void Release()=0;
+		virtual void SetAsTextureSource() = 0;
 
 		int GetWidth() const { return m_Width<=0?1:m_Width; }
 		int GetHeight() const { return m_Height<=0?1:m_Height; }
@@ -42,16 +44,22 @@ namespace Czuch
 		virtual Camera* GetCamera() const { return m_Camera; }
 		bool HandleWindowResize() const { return m_HandleWindowResize; }
 		float GetCurrentAspect() const { return m_Width / (float)m_Height; }
-		void SetFrameGraphData(FrameGraph* fgraph, FrameGraphNodeHandle node) { m_FrameGraph = fgraph; m_Node = node; }//todo it should be exectued when building framegraph
+		void SetFrameGraphData(FrameGraph* fgraph, FrameGraphNodeHandle node) { m_FrameGraph = fgraph; m_Node = node; }
+		FrameGraphNodeHandle GetNode() const { return m_Node; }
+		FrameGraph* GetFrameGraph() const { return m_FrameGraph; }
+		void SetNativeRenderPassHandle(RenderPassHandle handle) { m_NativeRenderPassHandle = handle; }
+		RenderPassHandle GetNativeRenderPassHandle() const { return m_NativeRenderPassHandle; }
 	protected:
+		RenderContextFillParams m_FillParams;
 		int m_Width, m_Height;
 		int m_LastWidth, m_LastHeight;
-
 		int m_Priority;
 		bool m_HandleWindowResize;
+		bool m_UITextureSource;
 		Camera* m_Camera;
 		Camera* m_LastCamera;
 		RenderPassType Type;
+		RenderPassHandle m_NativeRenderPassHandle;
 		FrameGraphNodeHandle m_Node;
 		FrameGraph* m_FrameGraph;
 	};

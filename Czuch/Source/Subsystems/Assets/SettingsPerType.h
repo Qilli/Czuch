@@ -68,7 +68,7 @@ namespace Czuch
 
 	struct CZUCH_API MaterialCreateSettings : BaseCreateSettings
 	{
-		MaterialDesc desc;
+		MaterialDefinitionDesc desc;
 	};
 
 	struct MaterialLoadSettings : BaseLoadSettings

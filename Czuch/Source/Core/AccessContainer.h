@@ -20,15 +20,15 @@ namespace Czuch
 		inline std::vector<T*>::reverse_iterator Rbegin() { return m_Elements.rbegin(); }
 		inline std::vector<T*>::reverse_iterator Rend() { return m_Elements.rend(); }
 
-		inline std::vector<T*>::iterator Begin_const() const { return m_Elements.begin(); }
-		inline std::vector<T*>::iterator End_const() const { return m_Elements.end(); }
+		inline std::vector<T*>::const_iterator Begin_const() const { return m_Elements.begin(); }
+		inline std::vector<T*>::const_iterator End_const() const { return m_Elements.end(); }
 		inline std::vector<T*>::reverse_iterator Rbegin_const() const { return m_Elements.rbegin(); }
 		inline std::vector<T*>::reverse_iterator Rend_const() const { return m_Elements.rend(); }
 
 	private:
 		std::vector<T*> m_Elements;
 		std::list<U32> m_FreeSpots;
-		int m_MaxCapacity;
+		U32 m_MaxCapacity;
 	};
 
 	template<class T>

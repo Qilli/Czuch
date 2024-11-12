@@ -144,6 +144,7 @@ project "Playground"
 		"Czuch/vendors/glm",
 		"Czuch/vendors/entt",
 		"Czuch/source",
+		"%{IncludeDir.YamlCpp}",
 	}
 
 	links

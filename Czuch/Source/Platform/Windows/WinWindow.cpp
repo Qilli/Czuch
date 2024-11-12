@@ -157,7 +157,7 @@ namespace Czuch
 
 		glfwSetScrollCallback(m_Window, [](GLFWwindow* wnd, double xOffset,double yOffset) {
 
-			MouseScrolledEvent::CreateAndDispatch(xOffset, yOffset);
+			MouseScrolledEvent::CreateAndDispatch((float)xOffset, (float)yOffset);
 
 			});
 

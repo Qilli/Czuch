@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 #include <type_traits>
 #include<functional>
 #include<deque>
@@ -7,13 +6,13 @@
 #include"Common.h"
 
 #ifdef CZUCH_PLATFORM_WINDOWS
-	#ifdef CZUCH_BUILD_DLL
-		#define CZUCH_API __declspec(dllexport)
-	#else
-		#define CZUCH_API __declspec(dllimport)
-	#endif
+#ifdef CZUCH_BUILD_DLL
+#define CZUCH_API __declspec(dllexport)
 #else
-	#error Czuch do not support this platform
+#define CZUCH_API __declspec(dllimport)
+#endif
+#else
+#error Czuch do not support this platform
 #endif
 
 #ifdef CZUCH_ENABLE_ASSERTS
@@ -40,7 +39,7 @@ namespace Czuch
 	template<typename T>
 	using Ref = std::shared_ptr<T>;
 
-	template<typename T,typename ... Args>
+	template<typename T, typename ... Args>
 	constexpr Ref<T> CreateRef(Args&& ... args)
 	{
 		return std::make_shared<T>(std::forward<Args>(args)...);
@@ -101,10 +100,13 @@ namespace Czuch
 	struct RenderSettings
 	{
 		bool dynamicRendering = false;
-		bool offscreenRendering = false;
-		bool mainRenderPassActive = true;
 		ValidationMode validationMode = ValidationMode::Disabled;
 		EngineMode engineMode = EngineMode::Runtime;
+
+		bool RenderingTargetSizeExternallySet() const
+		{
+			return EngineMode::Editor == engineMode;
+		}
 	};
 
 }

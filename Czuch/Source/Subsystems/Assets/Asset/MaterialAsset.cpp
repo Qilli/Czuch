@@ -77,7 +77,7 @@ namespace Czuch
 		return true;
 	}
 
-	void MaterialAsset::CopyMaterialDescTo(MaterialDesc& desc)
+	void MaterialAsset::CopyMaterialDescTo(MaterialDefinitionDesc& desc)
 	{
 		desc = this->m_MaterialCreateSettings.desc;
 	}

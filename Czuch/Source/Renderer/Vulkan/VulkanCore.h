@@ -501,6 +501,46 @@ namespace Czuch
 		return VK_FORMAT_UNDEFINED;
 	}
 
+	constexpr Format ConvertVkFormat(VkFormat value)
+	{
+		switch (value)
+		{
+		case VK_FORMAT_UNDEFINED:
+			return Format::UNKNOWN;
+		case VK_FORMAT_R32G32B32A32_SFLOAT:
+			return Format::R32G32B32A32_FLOAT;
+		case VK_FORMAT_R32G32B32A32_UINT:
+			return Format::R32G32B32A32_UINT;
+		case VK_FORMAT_R32G32B32A32_SINT:
+			return Format::R32G32B32A32_SINT;
+		case VK_FORMAT_R32G32B32_SFLOAT:
+			return Format::R32G32B32_FLOAT;
+		case VK_FORMAT_R32G32B32_UINT:
+			return Format::R32G32B32_UINT;
+		case VK_FORMAT_R32G32B32_SINT:
+			return Format::R32G32B32_SINT;
+		case VK_FORMAT_R16G16B16A16_SFLOAT:
+			return Format::R16G16B16A16_FLOAT;
+		case VK_FORMAT_R16G16B16A16_UNORM:
+			return Format::R16G16B16A16_UNORM;
+		case VK_FORMAT_R16G16B16A16_UINT:
+			return Format::R16G16B16A16_UINT;
+		case VK_FORMAT_R16G16B16A16_SNORM:
+			return Format::R16G16B16A16_SNORM;
+		case VK_FORMAT_R16G16B16A16_SINT:
+			return Format::R16G16B16A16_SINT;
+		case VK_FORMAT_R32G32_SFLOAT:
+			return Format::R32G32_FLOAT;
+		case VK_FORMAT_R32G32_UINT:
+			return Format::R32G32_UINT;
+		case VK_FORMAT_R32G32_SINT:
+			return Format::R32G32_SINT;
+		case VK_FORMAT_D32_SFLOAT_S8_UINT:
+			return Format::D32_FLOAT_S8X24_UINT;
+		default:
+			return Format::UNKNOWN;
+		}
+	}
 
 	constexpr VkSampleCountFlagBits ConvertSamplesCount(U32 count)
 	{

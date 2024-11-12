@@ -9,6 +9,7 @@ namespace Czuch
 	struct RenderContextFillParams
 	{
 		MaterialInstanceHandle forcedMaterial;
+		RenderPassType renderPassType;
 		bool forceMaterialForAll;
 	};
 
@@ -18,6 +19,7 @@ namespace Czuch
 		Mat4x4 localToClipSpaceTransformation;
 		MeshHandle mesh;
 		MaterialInstanceHandle overrideMaterial;
+		int passIndex;
 
 		bool IsValid() const
 		{
@@ -67,7 +69,7 @@ namespace Czuch
 		void Add(RenderContext* ctx) { m_RenderContexts.push_back(ctx); Sort(); }
 		void Remove(RenderContext* ctx) {
 			int index = -1;
-			for (size_t i = 0; i < m_RenderContexts.size(); i++)
+			for (int i = 0; i < m_RenderContexts.size(); i++)
 			{
 				if (m_RenderContexts[i] == ctx) {
 					index = i;

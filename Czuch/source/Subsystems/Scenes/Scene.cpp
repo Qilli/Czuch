@@ -11,6 +11,7 @@
 #include"Subsystems/Scenes/Components/CameraComponent.h"
 #include"Subsystems/Scenes/NativeBehaviours/NativeFree3DCameraController.h"
 #include"Renderer/Renderer.h"
+#include"Renderer/GraphicsDevice.h"
 
 
 namespace Czuch
@@ -135,15 +136,29 @@ namespace Czuch
 
 			for (int a = 0; a < mesh.GetSubMeshesCount(); ++a)
 			{
-				RenderObjectInstance renderObjectInstance{ .mesh = mesh.GetMesh(a),.overrideMaterial = fillParams.forceMaterialForAll?fillParams.forcedMaterial:meshRenderer.GetOverrideMaterial(a), .localToWorldTransformation = Mat4x4(1.0f)/*transform.GetLocalToWorld()*/
-				, .localToClipSpaceTransformation = currentCamera->GetViewProjectionMatrix() * transform.GetLocalToWorld() };
+				auto material = fillParams.forceMaterialForAll ? fillParams.forcedMaterial : meshRenderer.GetOverrideMaterial(a);
+				auto materialInstance = renderer->GetDevice()->AccessMaterialInstance(material);
+				if (!materialInstance)
+				{
+					LOG_BE_ERROR("Material instance is null");
+					continue;
+				}
+
+				I32 index = renderer->GetDevice()->AccessMaterial(materialInstance->handle)->GetRenderPassIndexForType(fillParams.renderPassType);
+				if (index < 0)
+				{
+					continue;
+				}
+				RenderObjectInstance renderObjectInstance{ .localToWorldTransformation = Mat4x4(1.0f),
+				 .localToClipSpaceTransformation = currentCamera->GetViewProjectionMatrix() * transform.GetLocalToWorld(),.mesh = mesh.GetMesh(a),.overrideMaterial =material,.passIndex=index };
 				m_GeneralRenderContext.AddToRenderList(renderObjectInstance);
 			}
 		}
+
 		//find all opaque and transparent entities
 		//sort them by layer and sorting order
 		//fill render contexts
-
+		
 		//fill ui
 	}
 
@@ -161,7 +176,7 @@ namespace Czuch
 		entity.AddComponent<TransformComponent>();
 		entity.AddComponent<ActiveComponent>();
 		entity.AddComponent<GUIDComponent>(GUID());
-		
+
 
 		if (parent.IsValid())
 		{
@@ -243,7 +258,7 @@ namespace Czuch
 		}
 	}
 
-	void ForEachChildEntity(TransformComponent* transform, std::function<void(Entity)> func,Czuch::IScene* scene)
+	void ForEachChildEntity(TransformComponent* transform, std::function<void(Entity)> func, Czuch::IScene* scene)
 	{
 		for (auto child : transform->GetChildren())
 		{
@@ -252,7 +267,7 @@ namespace Czuch
 				continue;
 			}
 			func(child);
-			ForEachChildEntity(&child.GetComponent<TransformComponent>(), func,scene);
+			ForEachChildEntity(&child.GetComponent<TransformComponent>(), func, scene);
 		}
 	}
 
@@ -260,7 +275,7 @@ namespace Czuch
 	{
 		TransformComponent* rootTransform = &m_RootEntity.GetComponent<TransformComponent>();
 		func(m_RootEntity);
-		ForEachChildEntity(rootTransform, func,this);
+		ForEachChildEntity(rootTransform, func, this);
 	}
 
 	entt::entity Scene::GetEntityWithGUID(GUID guid)
@@ -378,10 +393,10 @@ namespace Czuch
 			{
 				if (entity.IsValid())
 				{
-					bool result=entity.Serialize(out, binary);
+					bool result = entity.Serialize(out, binary);
 					if (result == false)
 					{
-						LOG_BE_ERROR("[Scene][Save]Failed to save scene {0} to the file. Entity {1} serialization failed.", GetSceneName(),entity.GetComponent<HeaderComponent>().GetHeader());
+						LOG_BE_ERROR("[Scene][Save]Failed to save scene {0} to the file. Entity {1} serialization failed.", GetSceneName(), entity.GetComponent<HeaderComponent>().GetHeader());
 						return false;
 					}
 				}
@@ -427,10 +442,10 @@ namespace Czuch
 							newEntity = CreateEntity(headerNode["Name"].as<CzuchStr>(), m_RootEntity);
 						}
 					}
-					
+
 					if (newEntity.IsValid())
 					{
-						bool result=newEntity.Deserialize(entity, binary);
+						bool result = newEntity.Deserialize(entity, binary);
 						if (result == false)
 						{
 							LOG_BE_ERROR("[Scene][Load]Failed to load scene. Entity deserialization failed.");

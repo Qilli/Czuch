@@ -46,7 +46,7 @@ namespace Czuch
 	void VulkanDevice::DrawUI(CommandBuffer* commandBuffer)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		io.DisplaySize = ImVec2(WindowInfo::Width, WindowInfo::Height);
+		io.DisplaySize = ImVec2((float)WindowInfo::Width, (float)WindowInfo::Height);
 
 		ImGui::Render();
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), static_cast<VulkanCommandBuffer*>(commandBuffer)->GetNativeBuffer());
@@ -73,20 +73,20 @@ namespace Czuch
 		return set;
 	}
 
-	PipelineHandle VulkanDevice::CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass, bool dynamicRendering)
+	PipelineHandle VulkanDevice::CreatePipelineState(const MaterialPassDesc* desc, RenderPass* rpass, bool dynamicRendering)
 	{
 		CZUCH_BE_ASSERT(desc, "CreatePipelineState NULL desc input");
 
 		RenderPass* rp = nullptr;
 		if (!dynamicRendering)
 		{
-			if (!HANDLE_IS_VALID(rpass))
+			if (rpass==nullptr)
 			{
 				rp = AccessRenderPass(m_SwapChainRenderPass);
 			}
 			else
 			{
-				m_ResContainer.renderPasses.Get(rpass.handle, &rp);
+				rp = rpass;
 			}
 		}
 
@@ -296,7 +296,7 @@ namespace Czuch
 		bool mainPass = desc == nullptr;
 		const VulkanRenderPassDesc* m_RpDesc = !mainPass ? static_cast<const VulkanRenderPassDesc*>(desc) : nullptr;
 
-		if (m_RpDesc == nullptr || m_RpDesc->mainRenderPass)
+		if (m_RpDesc != nullptr && m_RpDesc->mainRenderPass)
 		{
 			VkAttachmentDescription colorAttachment{};
 			colorAttachment.format = m_SwapChainData.swapChainImageFormat;
@@ -394,17 +394,7 @@ namespace Czuch
 		RenderPassHandle h;
 		h.handle = m_ResContainer.renderPasses.Add(rp);
 
-		/*	if (desc != nullptr)
-			{
-				if (desc->type == RenderPassType::OffscreenTexture)
-				{
-					m_OffscreenRenderPassHandle = h;
-				}
-			}*/
-
 		return h;
-
-
 	}
 
 	VkDescriptorSetLayoutBinding CreateBinding(const DescriptorSetLayoutDesc::Binding& binding, U32 stages)
@@ -734,11 +724,17 @@ namespace Czuch
 		return h;
 	}
 
-	MaterialHandle VulkanDevice::CreateMaterial(MaterialDesc& materialData)
+	MaterialHandle VulkanDevice::CreateMaterial(MaterialDefinitionDesc& materialData)
 	{
+		U32 passesCount = materialData.PassesCount();
 		Material* material = new Material();
 		material->desc = std::move(materialData);
-		material->pipeline = CreatePipelineState(&material->desc.pipelineDesc, GetRenderPassHandleOfType(RenderPassType::OffscreenTexture), m_RenderSettings->dynamicRendering);
+		material->pipelines.reserve(passesCount);
+		for (U32 a = 0; a < passesCount; a++)
+		{
+			auto& passDesc = material->desc.GetMaterialPassDescAt(a);
+			material->pipelines[a] = CreatePipelineState(&passDesc, GetRenderPassOfType(passDesc.passType), m_RenderSettings->dynamicRendering);
+		}
 
 		MaterialHandle h;
 		h.handle = m_ResContainer.materials.Add(material);
@@ -755,8 +751,10 @@ namespace Czuch
 
 		auto material = AccessMaterial(matInstance->handle);
 		auto& matDesc = material->desc;
-
-		matDesc.pipelineDesc.SetParams(matInstance->desc, matInstance->params);
+		for (int a = 0; a < material->pipelines.size(); a++)
+		{
+			matDesc.passesContainer.states[a].SetParams(matInstance->desc, matInstance->params[a]);
+		}
 
 		MaterialInstanceHandle h;
 		h.handle = m_ResContainer.materialInstances.Add(matInstance);
@@ -2207,7 +2205,12 @@ namespace Czuch
 		//create swap chain render pass
 		if (createRenderPass == true)
 		{
-			m_SwapChainRenderPass = CreateRenderPass(nullptr);
+			VulkanRenderPassDesc renderPassDesc;
+			renderPassDesc.AddAttachment(ConvertVkFormat(m_SwapChainData.swapChainImageFormat), ImageLayout::PRESENT_SRC_KHR,AttachmentLoadOp::CLEAR);
+			renderPassDesc.SetDepthStencilTexture(ConvertVkFormat(m_DepthImage.depthFormat), ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+			renderPassDesc.type = RenderPassType::Final;
+			renderPassDesc.mainRenderPass = true;
+			m_SwapChainRenderPass = CreateRenderPass(&renderPassDesc);
 		}
 
 		RenderPass_Vulkan* rpass = Internal_to_RenderPass(AccessRenderPass(m_SwapChainRenderPass));
@@ -2562,14 +2565,20 @@ namespace Czuch
 		return nullptr;
 	}
 
-	RenderPassHandle VulkanDevice::GetRenderPassHandleOfType(RenderPassType type)
+	RenderPass* VulkanDevice::GetRenderPassOfType(RenderPassType type)
 	{
-		if (m_RenderSettings->offscreenRendering == true && HANDLE_IS_VALID(m_OffscreenRenderPassHandle) == true && type == RenderPassType::OffscreenTexture)
+		auto& renderPasses = m_ResContainer.renderPasses;
+		for (auto it=renderPasses.Begin_const();it!=renderPasses.End_const();it++)
 		{
-			return m_OffscreenRenderPassHandle;
+			RenderPass* renderPass =*it;
+			if (renderPass->desc.type == type)
+			{
+				return *it;
+			}
 		}
-
-		return INVALID_HANDLE(RenderPassHandle);
+		LOG_BE_ERROR("{0} GetRenderPassHandleOfType with invalid type.", Tag);
+		return nullptr;
+		
 	}
 
 	FrameBuffer* VulkanDevice::AccessFrameBuffer(FrameBufferHandle handle)

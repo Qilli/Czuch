@@ -44,6 +44,8 @@ namespace Czuch
 		void CreateDefaultModels();
 		void LoadUIAssets();
 	private:
+		void CreateDepthPrePassMaterial();
+	private:
 		GraphicsDevice* m_Device;
 		AssetsManager* m_AssetsMgr;
 		EngineMode m_Mode;

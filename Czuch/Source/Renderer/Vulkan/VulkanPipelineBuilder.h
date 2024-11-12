@@ -24,7 +24,7 @@ namespace Czuch
 	private:
 		Pipeline_Vulkan* pipeline;
 		VulkanDevice* device;
-		const PipelineStateDesc* pipelineDescPtr;
+		const MaterialPassDesc* pipelineDescPtr;
 		Pipeline* pipelineHolder;
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 		VkVertexInputBindingDescription bindingDescription[s_max_vertex_streams];

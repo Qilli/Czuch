@@ -18,6 +18,7 @@ namespace Czuch
 	class RenderPassControl;
 	class Scene;
 	class Camera;
+	struct RenderContextFillParams;
 	enum class RenderPassType;
 
 	class CZUCH_API Renderer : public Czuch::IEventsListener
@@ -37,6 +38,9 @@ namespace Czuch
 		const RenderSettings& GetRenderSettings() const { return *m_RenderSettings; }
 		virtual void* GetRenderPassResult(RenderPassType type) = 0;
 		virtual bool HasRenderPass(RenderPassType type) = 0;
+		virtual RenderPassHandle GetNativeRenderPassHandle(RenderPassType type) = 0;
+		virtual RenderPassControl* RegisterRenderPassControl(RenderPassControl* control) = 0;
+		virtual void UnRegisterRenderPassControl(RenderPassControl* control) = 0;
 		virtual void OnPreRenderUpdateContexts(Camera* cam, int width, int height,RenderContextFillParams* fillParams)=0;
 		virtual void OnPostRenderUpdateContexts(RenderContextFillParams* fillParams)=0;
 	protected:
@@ -44,5 +48,6 @@ namespace Czuch
 		virtual void OnWindowResize(uint32_t width, uint32_t height) = 0;
 	protected:
 		RenderSettings* m_RenderSettings;
+
 	};
 }

@@ -2,6 +2,7 @@
 #include"FrameGraphBuilderHelper.h"
 #include"../Graphics.h"
 #include"../GraphicsDevice.h"
+#include"../RenderPassControl.h"
 #include<stack>
 
 namespace Czuch
@@ -180,12 +181,28 @@ namespace Czuch
 			if (!HANDLE_IS_VALID((node->renderPass)))
 			{
 				CreateRenderPass(node);
+				node->renderPassControl->SetNativeRenderPassHandle(node->renderPass);
 			}
 
 			if (!HANDLE_IS_VALID(node->frameBuffer)) {
 				CreateFrameBuffer(node);
 			}
 		}
+
+		//init render pass controls
+		for (U32 i = 0; i < m_SortedNodes.size(); ++i) {
+			FrameGraphNode* node = &m_FrameGraph.GetNode(m_SortedNodes[i]);
+			if (node->renderPassControl != nullptr)
+			{
+				node->renderPassControl->SetFrameGraphData(&m_FrameGraph, m_SortedNodes[i]);
+			}
+
+			if (i == m_SortedNodes.size() - 1)
+			{
+				node->renderPassControl->SetAsTextureSource();
+			}
+		}
+
 
 	}
 
@@ -335,6 +352,7 @@ namespace Czuch
 			}
 		}
 
+		renderPassDesc.type = node->renderPassControl->GetType();
 		node->renderPass=m_Device->CreateRenderPass(&renderPassDesc);
 	}
 

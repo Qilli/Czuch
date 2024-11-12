@@ -193,7 +193,7 @@ namespace Czuch
 		return *this;
 	}
 
-	void PipelineStateDesc::SetParams(MaterialInstanceDesc& desc, MaterialInstanceParams& params)
+	void MaterialPassDesc::SetParams(MaterialInstanceDesc& desc, MaterialInstanceParams& params)
 	{
 		for (int a = 0; a < desc.paramsDesc.size(); ++a)
 		{
@@ -270,6 +270,19 @@ namespace Czuch
 	{
 		name = newName;
 		return *this;
+	}
+
+
+	I32 Material::GetRenderPassIndexForType(RenderPassType type) const
+	{
+		for (int a = 0; a < desc.PassesCount(); ++a)
+		{
+			if (desc.GetMaterialPassDescAt(a).passType == type)
+			{
+				return a;
+			}
+		}
+		return -1;
 	}
 
 }

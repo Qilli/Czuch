@@ -15,10 +15,11 @@
 #include"Core/Math.h"
 
 #include"RenderPass/VulkanMainRenderPass.h"
-#include"RenderPass/VulkanOffscreenRenderPass.h"
 #include"Subsystems/Scenes/Components/CameraComponent.h"
 
 #include"RenderPass/VulkanDepthPrepassRenderPass.h"
+#include"RenderPass/VulkanDefaultForwardLightingRenderPass.h"
+
 
 namespace Czuch
 {
@@ -44,6 +45,7 @@ namespace Czuch
 
 		ReleaseFrameGraphs();
 
+		UnRegisterRenderPassControl(m_FinalRenderPass);
 		delete m_FinalRenderPass;
 
 		m_ImmediateSubmitData.Release(m_Device);
@@ -412,6 +414,33 @@ namespace Czuch
 		}
 	}
 
+	RenderPassControl* VulkanRenderer::RegisterRenderPassControl(RenderPassControl* control)
+	{
+		m_RenderPassControls.push_back(control);
+		return control;
+	}
+
+	void VulkanRenderer::UnRegisterRenderPassControl(RenderPassControl* control)
+	{
+		auto it = std::find(m_RenderPassControls.begin(), m_RenderPassControls.end(), control);
+		if (it != m_RenderPassControls.end())
+		{
+			m_RenderPassControls.erase(it);
+		}
+	}
+
+	RenderPassHandle VulkanRenderer::GetNativeRenderPassHandle(RenderPassType type)
+	{
+		for (auto control : m_RenderPassControls)
+		{
+			if (control->GetType() == type)
+			{
+				return control->GetNativeRenderPassHandle();
+			}
+		}
+		return INVALID_HANDLE(RenderPassHandle);
+	}
+
 	void VulkanRenderer::CreateFrameGraphs()
 	{
 		//here we will use frame graph builder to create frame graphs
@@ -558,28 +587,9 @@ namespace Czuch
 
 		m_FrameGraphBuilder.Build(m_CurrentFrameGraph);*/
 
-		bool handleWindowResize = m_RenderSettings->offscreenRendering;
+		bool handleWindowResize = !m_RenderSettings->RenderingTargetSizeExternallySet();
 		U32 startWidth = m_Device->GetSwapchainWidth();
 		U32 startHeight = m_Device->GetSwapchainHeight();
-
-		FrameGraphResourceOutputCreation mainRenderPassOutput;
-		mainRenderPassOutput.name = "Final";
-		mainRenderPassOutput.type = FrameGraphResourceType::Attachment;
-		mainRenderPassOutput.resource_info.texture.format = Format::R8G8B8A8_UNORM;
-		mainRenderPassOutput.resource_info.texture.width = m_Device->GetSwapchainWidth();
-		mainRenderPassOutput.resource_info.texture.height = m_Device->GetSwapchainHeight();
-		mainRenderPassOutput.resource_info.texture.depth = 1;
-		mainRenderPassOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
-
-		FrameGraphResourceInputCreation lightingInput;
-		lightingInput.name = "Lighting";
-		lightingInput.type = FrameGraphResourceType::Texture;
-
-		m_FrameGraphBuilder.BeginNewNode("Final");
-		m_FrameGraphBuilder.AddInput(lightingInput);
-		m_FrameGraphBuilder.SetRenderPassControl(new VulkanOffscreenRenderPass(nullptr, this, m_Device, startWidth, startHeight, handleWindowResize));
-		m_FrameGraphBuilder.AddOutput(mainRenderPassOutput);
-		m_FrameGraphBuilder.EndNode();
 
 		///////////////Depth node
 		FrameGraphResourceOutputCreation depthPrepassOutput;
@@ -593,7 +603,7 @@ namespace Czuch
 
 		m_FrameGraphBuilder.BeginNewNode("DepthPrepass");
 		m_FrameGraphBuilder.AddOutput(depthPrepassOutput);
-		m_FrameGraphBuilder.SetRenderPassControl(new VulkanDepthPrepassRenderPass(this,m_Device,startWidth,startHeight,handleWindowResize));
+		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(new VulkanDepthPrepassRenderPass(this,m_Device,startWidth,startHeight,handleWindowResize)));
 		m_FrameGraphBuilder.EndNode();
 		//////////////////////////
 
@@ -615,11 +625,16 @@ namespace Czuch
 		m_FrameGraphBuilder.BeginNewNode("LightingPass");
 		m_FrameGraphBuilder.AddInput(depthInput);
 		m_FrameGraphBuilder.AddOutput(lightingOutput);
-		m_FrameGraphBuilder.SetRenderPassControl(nullptr);
+		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(new VulkanDefaultForwardLightingRenderPass(this,m_Device,startWidth,startHeight,handleWindowResize)));
 		m_FrameGraphBuilder.EndNode();
 		//////////////////////////
 
 		m_FrameGraphBuilder.Build(m_CurrentFrameGraph);
+
+		//create main render pass control
+		m_FinalRenderPass = new VulkanMainRenderPass(m_Device, this);
+		m_FinalRenderPass->SetNativeRenderPassHandle(m_Device->GetSwapChainRenderPass());
+		RegisterRenderPassControl(m_FinalRenderPass);
 	}
 
 	void VulkanRenderer::ReleaseFrameGraphs()

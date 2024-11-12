@@ -162,10 +162,6 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="source\Renderer\FrameGraph\FrameGraph.h" />
-    <ClInclude Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.h" />
-    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.h" />
-    <ClInclude Include="source\Subsystems\InputManager.h" />
     <ClInclude Include="source\Core\AccessContainer.h" />
     <ClInclude Include="source\Core\Common.h" />
     <ClInclude Include="source\Core\EngineCore.h" />
@@ -191,6 +187,8 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClInclude Include="source\Platform\Windows\WinUtils.h" />
     <ClInclude Include="source\Platform\Windows\WinWindow.h" />
     <ClInclude Include="source\Renderer\CommandBuffer.h" />
+    <ClInclude Include="source\Renderer\FrameGraph\FrameGraph.h" />
+    <ClInclude Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.h" />
     <ClInclude Include="source\Renderer\Graphics.h" />
     <ClInclude Include="source\Renderer\GraphicsDevice.h" />
     <ClInclude Include="source\Renderer\GraphicsResourceAccessContainer.h" />
@@ -199,8 +197,11 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClInclude Include="source\Renderer\Renderer.h" />
     <ClInclude Include="source\Renderer\Vulkan\DescriptorAllocator.h" />
     <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h" />
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\UITextureSource.h" />
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDefaultForwardLightingRenderPass.h" />
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.h" />
     <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.h" />
-    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.h" />
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanRenderPassControlBase.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanBase.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanCommandBuffer.h" />
     <ClInclude Include="source\Renderer\Vulkan\VulkanCore.h" />
@@ -227,6 +228,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClInclude Include="source\Subsystems\Assets\SettingsPerType.h" />
     <ClInclude Include="source\Subsystems\BaseSubsystem.h" />
     <ClInclude Include="source\Subsystems\EventsManager.h" />
+    <ClInclude Include="source\Subsystems\InputManager.h" />
     <ClInclude Include="source\Subsystems\Logging.h" />
     <ClInclude Include="source\Subsystems\Scenes\Components\CameraComponent.h" />
     <ClInclude Include="source\Subsystems\Scenes\Components\Component.h" />
@@ -251,11 +253,6 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClInclude Include="vendors\ImGuizmoCzuch\ImGuizmo.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\Renderer\FrameGraph\FrameGraph.cpp" />
-    <ClCompile Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.cpp" />
-    <ClCompile Include="source\Renderer\RenderPassControl.cpp" />
-    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.cpp" />
-    <ClCompile Include="source\Subsystems\InputManager.cpp" />
     <ClCompile Include="source\Core\AccessContainer.cpp" />
     <ClCompile Include="source\Core\GUID.cpp" />
     <ClCompile Include="source\Core\StringID.cpp" />
@@ -270,14 +267,20 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClCompile Include="source\Events\EventsTypes\MouseEvents.cpp" />
     <ClCompile Include="source\Platform\Windows\WinUtils.cpp" />
     <ClCompile Include="source\Platform\Windows\WinWindow.cpp" />
+    <ClCompile Include="source\Renderer\FrameGraph\FrameGraph.cpp" />
+    <ClCompile Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.cpp" />
     <ClCompile Include="source\Renderer\Graphics.cpp" />
     <ClCompile Include="source\Renderer\GraphicsResourceAccessContainer.cpp" />
     <ClCompile Include="source\Renderer\RenderContext.cpp" />
+    <ClCompile Include="source\Renderer\RenderPassControl.cpp" />
     <ClCompile Include="source\Renderer\Renderer.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\DescriptorAllocator.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\UITextureSource.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDefaultForwardLightingRenderPass.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.cpp" />
-    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanRenderPassControlBase.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanCommandBuffer.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanCore.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\VulkanDevice.cpp" />
@@ -301,6 +304,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClCompile Include="source\Subsystems\Assets\AssetsManager.cpp" />
     <ClCompile Include="source\Subsystems\Assets\BuildInAssets.cpp" />
     <ClCompile Include="source\Subsystems\EventsManager.cpp" />
+    <ClCompile Include="source\Subsystems\InputManager.cpp" />
     <ClCompile Include="source\Subsystems\Logging.cpp" />
     <ClCompile Include="source\Subsystems\Scenes\Components\CameraComponent.cpp" />
     <ClCompile Include="source\Subsystems\Scenes\Components\Component.cpp" />
@@ -341,9 +345,6 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ProjectReference Include="vendors\yaml-cpp\yaml-cpp.vcxproj">
       <Project>{88F1A057-74BE-FB62-9DD7-E90A890331F1}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Data\Shaders\DepthPrepass.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -79,15 +79,18 @@ namespace Czuch
 		Mesh* meshInstance = m_Device->AccessMesh(renderElement.mesh);
 		if (meshInstance != nullptr)
 		{
+			U32 passIndex = renderElement.passIndex;
 			MaterialInstance* materialInstance = m_Device->AccessMaterialInstance(HANDLE_IS_VALID(renderElement.overrideMaterial)? renderElement.overrideMaterial:meshInstance->materialHandle);
 			Material* material = m_Device->AccessMaterial(materialInstance->handle);
-			auto& paramsDesc = materialInstance->params.shaderParamsDesc;
-			BindPipeline(material->pipeline);
+			auto& paramsDesc = materialInstance->params[passIndex].shaderParamsDesc;
+			auto pipeline=material->pipelines[passIndex];
+			auto& pipelineDesc = material->desc.passesContainer.states[passIndex];
+			BindPipeline(pipeline);
 
-			auto pipelinePtr = m_Device->AccessPipeline(material->pipeline);
+			auto pipelinePtr = m_Device->AccessPipeline(pipeline);
 			DescriptorWriter writer;
 
-			for (int a = 0; a < material->desc.pipelineDesc.layoutsCount; a++)
+			for (int a = 0; a < pipelineDesc.layoutsCount; a++)
 			{
 				writer.Clear();
 				auto descriptorLayout = pipelinePtr->layouts[a];

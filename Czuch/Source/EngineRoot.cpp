@@ -25,10 +25,9 @@ namespace Czuch
 		m_ShouldStopLoop = false;
 		m_UpdateMode = UpdateMode::Unlocked;
 
-		m_RenderSettings.dynamicRendering = false;
-		m_RenderSettings.offscreenRendering = true;
+		m_RenderSettings.dynamicRendering = true;
 		m_RenderSettings.validationMode = ValidationMode::Enabled;
-		m_RenderSettings.engineMode = EngineMode::Editor;
+		m_RenderSettings.engineMode = control!=nullptr?EngineMode::Editor:EngineMode::Runtime;
 
 		//create subsystems
 		m_Logging = new Logging();

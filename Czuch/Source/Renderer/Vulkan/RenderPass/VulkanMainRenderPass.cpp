@@ -6,20 +6,14 @@
 #include"Renderer/Vulkan/VulkanCore.h"
 #include"backends/imgui_impl_vulkan.h"
 #include"Subsystems/Scenes/Components/CameraComponent.h"
+#include"../VulkanDevice.h"
 
 
 namespace Czuch
 {
-	VulkanMainRenderPass::VulkanMainRenderPass(VulkanDevice* device) : RenderPassControl(nullptr,0, 0, RenderPassType::MainForward,false),
-		m_Device(device)
+	VulkanMainRenderPass::VulkanMainRenderPass(VulkanDevice* device, VulkanRenderer* renderer) : VulkanRenderPassControlBase(device,renderer,nullptr,0, 0, RenderPassType::MainForward,true)
 	{
-		Init();
 		SetPriority(0);
-	}
-
-	VulkanMainRenderPass::~VulkanMainRenderPass()
-	{
-		Release();
 	}
 
 	void VulkanMainRenderPass::PreDraw(CommandBuffer* cmd,Renderer* renderer)
@@ -47,15 +41,15 @@ namespace Czuch
 		vpdesc.y = 0;
 		vpdesc.minDepth = 0.0f;
 		vpdesc.maxDepth = 1.0f;
-		vpdesc.width = m_Device->GetSwapchainWidth();
-		vpdesc.height = m_Device->GetSwapchainHeight();
+		vpdesc.width = (U32)m_Device->GetSwapchainWidth();
+		vpdesc.height = (U32)m_Device->GetSwapchainHeight();
 		cmdBuffer->SetViewport(vpdesc);
 
 		ScissorsDesc scissors{};
 		scissors.offsetX = 0;
 		scissors.offsetY = 0;
-		scissors.width = m_Device->GetSwapchainWidth();
-		scissors.height = m_Device->GetSwapchainHeight();
+		scissors.width = (U32)m_Device->GetSwapchainWidth();
+		scissors.height = (U32)m_Device->GetSwapchainHeight();
 		cmdBuffer->SetScrissors(scissors);
 	}
 
@@ -87,7 +81,6 @@ namespace Czuch
 	void VulkanMainRenderPass::Resize(int width, int height)
 	{
 		Release();
-		Init();
 	}
 
 	void VulkanMainRenderPass::SetFinalTexture(Texture_Vulkan* texture)
@@ -95,12 +88,4 @@ namespace Czuch
 		m_FinalTexture = texture;
 	}
 
-	void VulkanMainRenderPass::Init()
-	{
-
-	}
-
-	void VulkanMainRenderPass::Release()
-	{
-	}
 }	

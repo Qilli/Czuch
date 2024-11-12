@@ -1,26 +1,24 @@
 #pragma once
-#include"Renderer/RenderPassControl.h"
-#include"Renderer/Vulkan/VulkanDevice.h"
+#include"VulkanRenderPassControlBase.h"
 
 namespace Czuch
 {
 	class VulkanRenderer;
 	class Texture_Vulkan;
-	class VulkanMainRenderPass : public RenderPassControl
+	class VulkanDevice;
+	class CommandBuffer;
+	class Camera;
+	class VulkanMainRenderPass : public VulkanRenderPassControlBase
 	{
 	public:
-		VulkanMainRenderPass(VulkanDevice* device);
-		~VulkanMainRenderPass();
+		VulkanMainRenderPass(VulkanDevice* device,VulkanRenderer* renderer);
+		virtual ~VulkanMainRenderPass() = default;
 		void PreDraw(CommandBuffer* cmdBuffer,Renderer* renderer) override;
 		void PostDraw(CommandBuffer* cmdBuffer, Renderer* renderer) override;
 		void Execute(CommandBuffer* cmdBuffer) override;
 		void Resize(int width, int height) override;
-		void SetFinalTexture(Texture_Vulkan* texture) { m_FinalTexture = texture; }
+		void SetFinalTexture(Texture_Vulkan* texture);
 	private:
-		void Init();
-		void Release();
-	private:
-		VulkanDevice* m_Device;
 		Texture_Vulkan* m_FinalTexture;
 	};
 }

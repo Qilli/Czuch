@@ -60,6 +60,7 @@ namespace Czuch
 		CzuchStr name;
 	};
 
+	struct FrameGraph;
 	struct FrameGraphNode
 	{
 		RenderPassHandle renderPass;

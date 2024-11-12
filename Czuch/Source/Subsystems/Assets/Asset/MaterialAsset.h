@@ -5,6 +5,7 @@
 namespace Czuch
 {
     class GraphicsDevice;
+    class Renderer;
 
 	class CZUCH_API MaterialAsset: public Asset
 	{
@@ -16,7 +17,7 @@ namespace Czuch
         bool UnloadAsset() override;
         bool CreateFromData() override;
         inline MaterialHandle GetMaterialResourceHandle() const { return m_MaterialResource; }
-        void CopyMaterialDescTo(MaterialDesc& desc);
+        void CopyMaterialDescTo(MaterialDefinitionDesc& desc);
         bool IsTransparent() const { return m_MaterialCreateSettings.desc.IsTransparent(); }
     private:
         GraphicsDevice* m_Device;

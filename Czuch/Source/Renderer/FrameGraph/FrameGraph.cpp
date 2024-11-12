@@ -249,7 +249,7 @@ namespace Czuch
 		//go through outputs and find first color attachment
 		for (int i = 0; i < outputs.size(); i++)
 		{
-			auto& outputHandle = outputs[i];
+			auto outputHandle = outputs[i];
 			//get resource using out handle 
 			auto& output = fgraph->GetResource(outputHandle);
 			if (output.type == FrameGraphResourceType::Attachment)

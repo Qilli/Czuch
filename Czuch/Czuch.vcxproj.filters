@@ -22,6 +22,9 @@
     <Filter Include="source\Renderer">
       <UniqueIdentifier>{DC077457-4893-E11B-51A4-6410BDAE3D1C}</UniqueIdentifier>
     </Filter>
+    <Filter Include="source\Renderer\FrameGraph">
+      <UniqueIdentifier>{28B854B2-14C8-0083-7D81-65A169B0EF1B}</UniqueIdentifier>
+    </Filter>
     <Filter Include="source\Renderer\Vulkan">
       <UniqueIdentifier>{DC2568B5-C81F-9107-B18C-27189D25F773}</UniqueIdentifier>
     </Filter>
@@ -141,6 +144,12 @@
     <ClInclude Include="source\Renderer\CommandBuffer.h">
       <Filter>source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="source\Renderer\FrameGraph\FrameGraph.h">
+      <Filter>source\Renderer\FrameGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.h">
+      <Filter>source\Renderer\FrameGraph</Filter>
+    </ClInclude>
     <ClInclude Include="source\Renderer\Graphics.h">
       <Filter>source\Renderer</Filter>
     </ClInclude>
@@ -165,10 +174,19 @@
     <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h">
       <Filter>source\Renderer\Vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\UITextureSource.h">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDefaultForwardLightingRenderPass.h">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.h">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClInclude>
     <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.h">
       <Filter>source\Renderer\Vulkan\RenderPass</Filter>
     </ClInclude>
-    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.h">
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanRenderPassControlBase.h">
       <Filter>source\Renderer\Vulkan\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="source\Renderer\Vulkan\VulkanBase.h">
@@ -249,6 +267,9 @@
     <ClInclude Include="source\Subsystems\EventsManager.h">
       <Filter>source\Subsystems</Filter>
     </ClInclude>
+    <ClInclude Include="source\Subsystems\InputManager.h">
+      <Filter>source\Subsystems</Filter>
+    </ClInclude>
     <ClInclude Include="source\Subsystems\Logging.h">
       <Filter>source\Subsystems</Filter>
     </ClInclude>
@@ -315,10 +336,6 @@
     <ClInclude Include="vendors\ImGuizmoCzuch\ImGuizmo.h">
       <Filter>vendors\ImGuizmoCzuch</Filter>
     </ClInclude>
-    <ClInclude Include="source\Subsystems\InputManager.h" />
-    <ClInclude Include="source\Renderer\FrameGraph\FrameGraph.h" />
-    <ClInclude Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.h" />
-    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">
@@ -363,6 +380,12 @@
     <ClCompile Include="source\Platform\Windows\WinWindow.cpp">
       <Filter>source\Platform\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="source\Renderer\FrameGraph\FrameGraph.cpp">
+      <Filter>source\Renderer\FrameGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.cpp">
+      <Filter>source\Renderer\FrameGraph</Filter>
+    </ClCompile>
     <ClCompile Include="source\Renderer\Graphics.cpp">
       <Filter>source\Renderer</Filter>
     </ClCompile>
@@ -370,6 +393,9 @@
       <Filter>source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="source\Renderer\RenderContext.cpp">
+      <Filter>source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\RenderPassControl.cpp">
       <Filter>source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="source\Renderer\Renderer.cpp">
@@ -381,10 +407,19 @@
     <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp">
       <Filter>source\Renderer\Vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\UITextureSource.cpp">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDefaultForwardLightingRenderPass.cpp">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.cpp">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClCompile>
     <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.cpp">
       <Filter>source\Renderer\Vulkan\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanOffscreenRenderPass.cpp">
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanRenderPassControlBase.cpp">
       <Filter>source\Renderer\Vulkan\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="source\Renderer\Vulkan\VulkanCommandBuffer.cpp">
@@ -456,6 +491,9 @@
     <ClCompile Include="source\Subsystems\EventsManager.cpp">
       <Filter>source\Subsystems</Filter>
     </ClCompile>
+    <ClCompile Include="source\Subsystems\InputManager.cpp">
+      <Filter>source\Subsystems</Filter>
+    </ClCompile>
     <ClCompile Include="source\Subsystems\Logging.cpp">
       <Filter>source\Subsystems</Filter>
     </ClCompile>
@@ -513,16 +551,6 @@
     <ClCompile Include="source\czpch.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="vendors\ImGuizmoCzuch\ImGuizmo.cpp">
-      <Filter>vendors\ImGuizmoCzuch</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Subsystems\InputManager.cpp" />
-    <ClCompile Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.cpp" />
-    <ClCompile Include="source\Renderer\FrameGraph\FrameGraph.cpp" />
-    <ClCompile Include="source\Renderer\RenderPassControl.cpp" />
-    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Data\Shaders\DepthPrepass.vert" />
+    <ClCompile Include="vendors\ImGuizmoCzuch\ImGuizmo.cpp" />
   </ItemGroup>
 </Project>

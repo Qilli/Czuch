@@ -27,7 +27,7 @@ namespace Czuch
 
             if (m != nullptr)
             {
-                m->params.shaderParamsDesc[0].descriptors[0].resource = buffer.handle;
+                m->params[passIndex].shaderParamsDesc[0].descriptors[0].resource = buffer.handle;
             }
           
         }

@@ -31,7 +31,7 @@ namespace Czuch
 		virtual RenderMode GetRenderMode() const { return m_RenderMode; }
 		virtual void* CreatePointerForUITexture(TextureHandle tex) = 0;
 
-		virtual PipelineHandle CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass, bool dynamicRendering = false) = 0;
+		virtual PipelineHandle CreatePipelineState(const MaterialPassDesc* desc,RenderPass* rpass, bool dynamicRendering = false) = 0;
 		virtual ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize) =0;
 		virtual RenderPassHandle CreateRenderPass(const RenderPassDesc* desc) = 0; 
 		virtual DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc) = 0;
@@ -40,7 +40,7 @@ namespace Czuch
 		virtual BufferHandle CreateBuffer(const BufferDesc* desc) = 0;
 		virtual TextureHandle CreateTexture(const TextureDesc* desc,bool resize=false,TextureHandle handle= INVALID_HANDLE(TextureHandle))= 0;
 		virtual MeshHandle CreateMesh(MeshData& meshData) = 0;
-		virtual MaterialHandle CreateMaterial(MaterialDesc& materialData) = 0;
+		virtual MaterialHandle CreateMaterial(MaterialDefinitionDesc& materialData) = 0;
 		virtual MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) = 0;
 
 		virtual bool Release(PipelineHandle& pipeline) = 0;
@@ -57,7 +57,7 @@ namespace Czuch
 
 		virtual Pipeline* AccessPipeline(PipelineHandle handle)= 0;
 		virtual RenderPass* AccessRenderPass(RenderPassHandle handle) = 0;
-		virtual RenderPassHandle GetRenderPassHandleOfType(RenderPassType type) = 0;
+		virtual RenderPass* GetRenderPassOfType(RenderPassType type) = 0;
 		virtual Shader* AccessShader(ShaderHandle handle)= 0;
 		virtual DescriptorSetLayout* AccessDescriptorSetLayout(DescriptorSetLayoutHandle handle) = 0;
 		virtual FrameBuffer* AccessFrameBuffer(FrameBufferHandle handle)= 0;

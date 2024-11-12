@@ -38,7 +38,7 @@ namespace Czuch
 		void PreDrawFrame();
 		void* CreatePointerForUITexture(TextureHandle tex) override;
 
-		PipelineHandle CreatePipelineState(PipelineStateDesc* desc, const RenderPassHandle rpass, bool dynamicRendering = false) override;
+		PipelineHandle CreatePipelineState(const MaterialPassDesc* desc,RenderPass* rpass, bool dynamicRendering = false) override;
 		ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize)override;
 		RenderPassHandle CreateRenderPass(const RenderPassDesc* desc) override;
 		DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc)  override;
@@ -47,7 +47,7 @@ namespace Czuch
 		BufferHandle CreateBuffer(const BufferDesc* desc) override;
 		TextureHandle CreateTexture(const TextureDesc* desc, bool resize = false, TextureHandle handle = INVALID_HANDLE(TextureHandle)) override;
 		MeshHandle CreateMesh(MeshData& meshData) override;
-		MaterialHandle CreateMaterial(MaterialDesc& materialData) override;
+		MaterialHandle CreateMaterial(MaterialDefinitionDesc& materialData) override;
 		MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) override;
 
 
@@ -71,7 +71,7 @@ namespace Czuch
 
 		Pipeline* AccessPipeline(PipelineHandle handle) override;
 		RenderPass* AccessRenderPass(RenderPassHandle handle) override;
-		RenderPassHandle GetRenderPassHandleOfType(RenderPassType type) override;
+		RenderPass* GetRenderPassOfType(RenderPassType type) override;
 		Shader* AccessShader(ShaderHandle handle)  override;
 		DescriptorSetLayout* AccessDescriptorSetLayout(DescriptorSetLayoutHandle handle) override;
 		FrameBuffer* AccessFrameBuffer(FrameBufferHandle handle) override;
@@ -111,6 +111,7 @@ namespace Czuch
 	public:
 		void StartDynamicRenderPass(VulkanCommandBuffer* cmdBuffer, uint32_t imageIndex);
 		bool HasDynamicRenderingEnabled() const;
+		RenderPassHandle GetSwapChainRenderPass() const { return m_SwapChainRenderPass; }
 	public:
 
 	private:
@@ -184,8 +185,6 @@ namespace Czuch
 
 	private:
 		ResourcesContainer m_ResContainer;
-	private:
-		RenderPassHandle m_OffscreenRenderPassHandle;
 	private:
 		Window* m_AttachedWindow;
 		int m_CurrentImageIndex;
