@@ -38,6 +38,7 @@ namespace Czuch
 	public:
 		void ImmediateSubmitWithCommandBuffer(std::function<void(CommandBuffer* cmd)>&& processor);
 		void DrawScene(VulkanCommandBuffer* cmdBuffer);
+		void DrawFullScreenQuad(VulkanCommandBuffer* cmdBuffer, MaterialInstanceHandle material);
 		void* GetRenderPassResult(RenderPassType type) override;
 		bool HasRenderPass(RenderPassType type) override;
 	public:

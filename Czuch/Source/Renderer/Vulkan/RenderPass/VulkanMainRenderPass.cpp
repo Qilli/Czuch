@@ -14,6 +14,7 @@ namespace Czuch
 	VulkanMainRenderPass::VulkanMainRenderPass(VulkanDevice* device, VulkanRenderer* renderer) : VulkanRenderPassControlBase(device,renderer,nullptr,0, 0, RenderPassType::MainForward,true)
 	{
 		SetPriority(0);
+		INVALIDATE_HANDLE(m_FinalTexture);
 	}
 
 	void VulkanMainRenderPass::PreDraw(CommandBuffer* cmd,Renderer* renderer)
@@ -23,9 +24,9 @@ namespace Czuch
 		int imageIndex = m_Device->GetCurrentImageIndex();
 
 		m_Device->TransitionSwapChainImageLayoutPreDraw(cmdBuffer, imageIndex);
-
-		cmdBuffer->SetClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+		cmdBuffer->SetClearColor(0.0f, 1.0f, 1.0f, 1.0f);
 		cmdBuffer->SetDepthStencil(1.0f, 0);
+
 
 		if (renderer->GetRenderSettings().dynamicRendering)
 		{
@@ -51,6 +52,8 @@ namespace Czuch
 		scissors.width = (U32)m_Device->GetSwapchainWidth();
 		scissors.height = (U32)m_Device->GetSwapchainHeight();
 		cmdBuffer->SetScrissors(scissors);
+
+		m_Renderer->OnPreRenderUpdateContexts(nullptr, m_Device->GetSwapchainWidth(), m_Device->GetSwapchainHeight(), &m_FillParams);
 	}
 
 	void VulkanMainRenderPass::PostDraw(CommandBuffer* cmd,Renderer* renderer)
@@ -66,16 +69,16 @@ namespace Czuch
 		{
 			cmdBuffer->EndCurrentRenderPass();
 		}
+
+		m_Renderer->OnPostRenderUpdateContexts(&m_FillParams);
 	}
 
 
 	void VulkanMainRenderPass::Execute(CommandBuffer* cmd)
 	{
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
-
-		//TODO blit from offscreen to swapchain
-
-		m_Device->DrawUI(cmdBuffer);
+		m_Renderer->DrawFullScreenQuad((VulkanCommandBuffer*)cmdBuffer, DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);
+		//m_Device->DrawUI(cmdBuffer);
 	}
 
 	void VulkanMainRenderPass::Resize(int width, int height)
@@ -83,9 +86,16 @@ namespace Czuch
 		Release();
 	}
 
-	void VulkanMainRenderPass::SetFinalTexture(Texture_Vulkan* texture)
+	void VulkanMainRenderPass::SetFinalTexture(TextureHandle texture)
 	{
+		bool setForMaterial =!HANDLE_IS_VALID(m_FinalTexture);
 		m_FinalTexture = texture;
+		m_Device->TransitionImageLayout(m_FinalTexture, ImageLayout::COLOR_ATTACHMENT_OPTIMAL, ImageLayout::SHADER_READ_ONLY_OPTIMAL, 0, 1, false);
+		if (setForMaterial)
+		{
+			MaterialInstance* mat = m_Device->AccessMaterialInstance(DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);
+			mat->params[0].SetSampler(0,texture);
+		}
 	}
 
 }	

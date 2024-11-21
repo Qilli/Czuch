@@ -26,6 +26,10 @@ namespace Czuch
 	MaterialInstanceHandle DefaultAssets::DEPTH_PREPASS_MATERIAL_INSTANCE;
 	AssetHandle DefaultAssets::DEPTH_PREPASS_MATERIAL_ASSET;
 
+	MaterialHandle DefaultAssets::FINAL_PASS_MATERIAL;
+	MaterialInstanceHandle DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE;
+	AssetHandle DefaultAssets::FINAL_PASS_MATERIAL_ASSET;
+
 	TextureHandle DefaultAssets::WHITE_TEXTURE;
 	AssetHandle DefaultAssets::WHITE_TEXTURE_ASSET;
 	AssetHandle DefaultAssets::EDITOR_ICON_TRANSLATE;
@@ -89,7 +93,7 @@ namespace Czuch
 		desc.dss.depth_write_mask = DepthWriteMask::ZERO;
 		desc.dss.stencil_enable = false;
 		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
-		desc.passType = RenderPassType::MainForward;
+		desc.passType = RenderPassType::ForwardLighting;
 
 		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
@@ -136,6 +140,7 @@ namespace Czuch
 
 	
 		CreateDepthPrePassMaterial();
+		CreateFinalPassMaterial();
 	}
 
 	std::vector<Vec3> GetCubeMeshPositions(float size) {
@@ -383,4 +388,58 @@ namespace Czuch
 		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
 		DefaultAssets::DEPTH_PREPASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
 	}
+
+    void BuildInAssets::CreateFinalPassMaterial()
+    {
+        // Final pass material
+        auto finalVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/VertexFinalPassShader.vert", {});
+        auto finalPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/FragmentFinalPassShader.frag", {});
+
+        MaterialPassDesc desc;
+        desc.vs = finalVS;
+        desc.ps = finalPS;
+        desc.pt = PrimitiveTopology::TRIANGLELIST;
+        desc.rs.cull_mode = CullMode::BACK;
+        desc.rs.fill_mode = PolygonMode::SOLID;
+        desc.dss.depth_enable = true;
+        desc.dss.depth_func = CompFunc::ALWAYS;
+        desc.dss.depth_write_mask = DepthWriteMask::ZERO;
+        desc.dss.stencil_enable = false;
+        desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
+        desc.passType = RenderPassType::Final;
+
+     /*desc.il.AddStream({.binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA});
+		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
+
+        desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
+		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32A32_FLOAT });*/
+
+		DescriptorSetLayoutDesc desc_tex{};
+		desc_tex.shaderStage = (U32)ShaderStage::PS;
+		desc_tex.AddBinding("MainTexture", DescriptorType::SAMPLER, 0, 1, 0, false);
+
+		desc.AddLayout(desc_tex);
+
+        MaterialDefinitionDesc matDesc(1);
+        matDesc.EmplacePass(desc);
+        matDesc.materialName = "FinalPassMaterial";
+
+        MaterialCreateSettings createSettings;
+        createSettings.desc = std::move(matDesc);
+
+        DefaultAssets::FINAL_PASS_MATERIAL_ASSET = m_AssetsMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createSettings.desc.materialName, createSettings);
+        auto materialAsset = m_AssetsMgr->GetAsset<MaterialAsset>(DefaultAssets::FINAL_PASS_MATERIAL_ASSET);
+        materialAsset->SetPersistentStatus(true);
+        DefaultAssets::FINAL_PASS_MATERIAL = materialAsset->GetMaterialResourceHandle();
+
+        MaterialInstanceCreateSettings instanceCreateSettings{};
+        instanceCreateSettings.materialInstanceName = "FinalPassMaterialInstance";
+		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE);
+        instanceCreateSettings.desc.materialAsset = DefaultAssets::FINAL_PASS_MATERIAL_ASSET;
+        instanceCreateSettings.desc.isTransparent = false;
+
+        AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
+        MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
+        DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
+    }
 }

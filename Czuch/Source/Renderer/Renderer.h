@@ -19,7 +19,7 @@ namespace Czuch
 	class Scene;
 	class Camera;
 	struct RenderContextFillParams;
-	enum class RenderPassType;
+	enum class RenderPassType:U32;
 
 	class CZUCH_API Renderer : public Czuch::IEventsListener
 	{

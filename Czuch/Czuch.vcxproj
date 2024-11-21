@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DEBUG;CZUCH_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;vendors\yaml-cpp\include;vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;C:\VulkanSDK\1.3.296.0\Include;vendors\yaml-cpp\include;vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -109,7 +109,7 @@ IF EXIST ..\bin\Debug-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;vendors\yaml-cpp\include;vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;C:\VulkanSDK\1.3.296.0\Include;vendors\yaml-cpp\include;vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -138,7 +138,7 @@ IF EXIST ..\bin\Release-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bi
       <PrecompiledHeaderFile>czpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_BUILD_DLL;GLFW_INCLUDE_NONE;CZUCH_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;F:\VulkanSDK\Include;vendors\yaml-cpp\include;vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;vendors\spdlog\include;vendors\glm;vendors\vma;vendors\stb;vendors\entt;vendors\GLFW\include;vendors\Glad\include;vendors\ImGui;C:\VulkanSDK\1.3.296.0\Include;vendors\yaml-cpp\include;vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>

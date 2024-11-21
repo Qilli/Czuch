@@ -32,7 +32,6 @@ namespace Czuch
 
 	void FrameGraph::Execute(GraphicsDevice* device, CommandBuffer* cmd)
 	{
-		cmd->Begin();
 		for (U32 i = 0; i < m_Nodes.m_Nodes.size(); i++)
 		{
 			auto& node = m_Nodes.m_Nodes[i];
@@ -52,7 +51,8 @@ namespace Czuch
 				}
 				else if (input.type == FrameGraphResourceType::Attachment)
 				{
-					auto texture = device->AccessTexture(input.info.texture.texture);
+					auto res=GetResource(input.output_target);
+					auto texture = device->AccessTexture(res.info.texture.texture);
 					width = texture->desc.width;
 					height = texture->desc.height;
 				}
@@ -68,7 +68,8 @@ namespace Czuch
 					width = texture->desc.width;
 					height = texture->desc.height;
 					bool isDepth = IsDepthFormat(output.info.texture.format);
-					device->TransitionImageLayout(output.info.texture.texture, ImageLayout::UNDEFINED, isDepth ? ImageLayout::DEPTH_ATTACHMENT_OPTIMAL : ImageLayout::COLOR_ATTACHMENT_OPTIMAL, 0, 1, isDepth);
+					bool isDepthStencil = IsDepthFormatWithStencil(output.info.texture.format);
+					device->TransitionImageLayout(output.info.texture.texture, ImageLayout::UNDEFINED, isDepth ? (isDepthStencil?ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL:ImageLayout::DEPTH_ATTACHMENT_OPTIMAL) : ImageLayout::COLOR_ATTACHMENT_OPTIMAL, 0, 1, isDepth);
 				}
 			}
 
@@ -97,7 +98,6 @@ namespace Czuch
 
 			cmd->EndCurrentRenderPass();
 		}
-		cmd->End();
 	}
 
 	void FrameGraph::ResizeNode(FrameGraphNode node, U32 width, U32 height)
@@ -180,9 +180,9 @@ namespace Czuch
 		return node.GetFirstColorAttachment(this);
 	}
 
-	void FrameGraphNodesContainer::Init(GraphicsDevice* device)
+	void FrameGraphNodesContainer::Init(GraphicsDevice* dev)
 	{
-		device = device;
+		device = dev;
 		m_Nodes.reserve(20);
 	}
 
@@ -235,7 +235,6 @@ namespace Czuch
 		{
 			delete renderPassControl;
 		}
-		device->Release(renderPass);
 		device->Release(frameBuffer);
 	}
 

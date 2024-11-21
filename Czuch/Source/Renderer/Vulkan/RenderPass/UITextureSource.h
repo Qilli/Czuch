@@ -9,7 +9,6 @@ namespace Czuch
 	struct FrameGraph;
 	struct UITextureSource
 	{
-		UITextureSource() = default;
 		UITextureSource(VulkanDevice* device, FrameGraph* fgraph, FrameGraphNode* node);
 		void Init();
 		void* GetTargetTextureDescriptor() { return (void*)m_Descriptor; }

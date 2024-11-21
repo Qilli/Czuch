@@ -14,7 +14,7 @@ IncludeDir = {}
 IncludeDir["GLFW"] = "Czuch/vendors/GLFW/include"
 IncludeDir["Glad"] = "Czuch/vendors/Glad/include"
 IncludeDir["ImGui"] = "Czuch/vendors/ImGui"
-IncludeDir["Vulkan"] = "F:/VulkanSDK/Include"
+IncludeDir["Vulkan"] = "C:/VulkanSDK/1.3.296.0/Include"
 IncludeDir["YamlCpp"] = "Czuch/vendors/yaml-cpp/include"
 IncludeDir["ImGuizmoCzuch"]= "Czuch/vendors/ImGuizmoCzuch"
 

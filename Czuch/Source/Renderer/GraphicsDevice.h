@@ -40,7 +40,7 @@ namespace Czuch
 		virtual BufferHandle CreateBuffer(const BufferDesc* desc) = 0;
 		virtual TextureHandle CreateTexture(const TextureDesc* desc,bool resize=false,TextureHandle handle= INVALID_HANDLE(TextureHandle))= 0;
 		virtual MeshHandle CreateMesh(MeshData& meshData) = 0;
-		virtual MaterialHandle CreateMaterial(MaterialDefinitionDesc& materialData) = 0;
+		virtual MaterialHandle CreateMaterial(MaterialDefinitionDesc* materialData) = 0;
 		virtual MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) = 0;
 
 		virtual bool Release(PipelineHandle& pipeline) = 0;

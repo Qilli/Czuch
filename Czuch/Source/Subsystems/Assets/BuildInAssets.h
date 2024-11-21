@@ -24,6 +24,11 @@ namespace Czuch
 		static AssetHandle DEPTH_PREPASS_MATERIAL_ASSET;
 		static MaterialInstanceHandle DEPTH_PREPASS_MATERIAL_INSTANCE;
 
+		//material for final pass
+		static MaterialHandle FINAL_PASS_MATERIAL;
+		static AssetHandle FINAL_PASS_MATERIAL_ASSET;
+		static MaterialInstanceHandle FINAL_PASS_MATERIAL_INSTANCE;
+
 		static TextureHandle WHITE_TEXTURE;
 		static AssetHandle WHITE_TEXTURE_ASSET;
 
@@ -45,6 +50,7 @@ namespace Czuch
 		void LoadUIAssets();
 	private:
 		void CreateDepthPrePassMaterial();
+		void CreateFinalPassMaterial();
 	private:
 		GraphicsDevice* m_Device;
 		AssetsManager* m_AssetsMgr;

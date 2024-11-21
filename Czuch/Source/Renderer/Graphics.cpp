@@ -114,6 +114,14 @@ namespace Czuch
 		return *this;
 	}
 
+	void ShaderParamsSet::SetSampler(int descriptor, TextureHandle color_texture)
+	{
+		if (descriptor < descriptorsCount && descriptors[descriptor].type == DescriptorType::SAMPLER)
+		{
+			descriptors[descriptor].resource = color_texture.handle;
+		}
+	}
+
 
 	Mesh::~Mesh()
 	{
@@ -174,6 +182,15 @@ namespace Czuch
 
 		shaderParamsDesc[set].AddSampler(name, color_texture, binding);
 		return *this;
+	}
+
+	void MaterialInstanceParams::SetSampler(int set, TextureHandle color_texture)
+	{
+		if (set >= k_max_descriptor_set_layouts)
+		{
+			return;
+		}
+		shaderParamsDesc[set].SetSampler(0, color_texture);
 	}
 
 	MaterialInstanceDesc& MaterialInstanceDesc::Reset()
@@ -275,9 +292,9 @@ namespace Czuch
 
 	I32 Material::GetRenderPassIndexForType(RenderPassType type) const
 	{
-		for (int a = 0; a < desc.PassesCount(); ++a)
+		for (int a = 0; a < desc->PassesCount(); ++a)
 		{
-			if (desc.GetMaterialPassDescAt(a).passType == type)
+			if (desc->GetMaterialPassDescAt(a).passType == type)
 			{
 				return a;
 			}

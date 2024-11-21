@@ -12,6 +12,7 @@ namespace Czuch
 	void Camera::Recalculate()
 	{
 		m_ProjectionMatrix =glm::perspective(glm::radians(m_VerticalFov),m_AspectRatio,m_NearPlane,m_FarPlane);
+		//m_ProjectionMatrix[1][1] *= -1;
 	}
 
 	Camera::Camera(float fov, float aspect, float nearPlane, float farPlane) :m_VerticalFov(fov), m_AspectRatio(aspect), m_NearPlane(nearPlane), m_FarPlane(farPlane)

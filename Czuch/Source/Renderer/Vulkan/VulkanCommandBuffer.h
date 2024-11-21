@@ -18,6 +18,7 @@ namespace Czuch
 		void End() override;
 		void EndCurrentRenderPass() override;
 		void DrawMesh(const RenderObjectInstance& renderElement, DescriptorAllocator* allocator) override;
+		void DrawFullScreenQuad(MaterialInstanceHandle material, DescriptorAllocator* allocator) override;
 		void BindPass(RenderPassHandle renderpass, FrameBufferHandle framebuffer) override;
 		void BindPipeline(PipelineHandle pipeline) override;
 		void BindVertexBuffer(BufferHandle buffer, U32 binding, U32 offset) override;
@@ -32,6 +33,8 @@ namespace Czuch
 	public:
 		void BeginDynamicRenderPassForMainPass(VkImageView colorVew, VkImageView depthView,U32 width,U32 height);
 		void EndDynamicRenderPassForMainPass();
+	private:
+		void DrawQuadInternal();
 	private:
 		VkCommandBuffer m_Cmd;
 		VulkanDevice* m_Device;

@@ -551,6 +551,8 @@
     <ClCompile Include="source\czpch.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="vendors\ImGuizmoCzuch\ImGuizmo.cpp" />
+    <ClCompile Include="vendors\ImGuizmoCzuch\ImGuizmo.cpp">
+      <Filter>vendors\ImGuizmoCzuch</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

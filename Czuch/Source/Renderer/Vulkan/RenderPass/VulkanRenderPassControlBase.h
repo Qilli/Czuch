@@ -24,6 +24,6 @@ namespace Czuch
 	protected:
 		VulkanRenderer* m_Renderer;
 		VulkanDevice* m_Device;
-		UITextureSource m_TextureSource;
+		UITextureSource* m_TextureSource;
 	};
 }

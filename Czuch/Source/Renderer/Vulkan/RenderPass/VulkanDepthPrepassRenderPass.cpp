@@ -10,6 +10,6 @@ namespace Czuch
 {
 	VulkanDepthPrepassRenderPass::VulkanDepthPrepassRenderPass(VulkanRenderer* renderer, VulkanDevice* device, U32 width, U32 height, bool handleWindowResize) :VulkanRenderPassControlBase(device,renderer,nullptr,width,height,RenderPassType::DepthPrePass,handleWindowResize)
 	{
-		m_FillParams = { .forcedMaterial = DefaultAssets::DEPTH_PREPASS_MATERIAL_INSTANCE,.forceMaterialForAll = true };
+		
 	}
 }

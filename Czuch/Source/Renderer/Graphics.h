@@ -6,7 +6,7 @@
 namespace Czuch
 {
 
-	static const U8 s_max_descriptors_per_set = 32;
+	static const U8 s_max_descriptors_per_set = 8;
 	static const U8 s_max_vertex_streams = 16;
 	static const U8 s_max_vertex_attributes = 16;
 	static const U8 k_max_descriptor_set_layouts = 8;
@@ -36,17 +36,19 @@ namespace Czuch
 		ResourceHandle() { handle = -1; }
 	};
 
-	enum class CZUCH_API RenderPassType
+	enum class CZUCH_API RenderPassType : U32
 	{
 		MainForward = 0,
 		Shadow = 1,
-		PostProcess = 2,
-		OffscreenTexture = 3,
-		UI = 4,
-		Final = 5,
-		DepthPrePass = 6,
-		Custom = 7
+		PostProcess = 1<<1,
+		OffscreenTexture = 1<<2,
+		UI = 1<<3,
+		Final = 1<<4,
+		DepthPrePass = 1<<5,
+		ForwardLighting = 1<<7,
+		Custom = 1<<8
 	};
+
 
 	struct FrameGraphNodeHandle
 	{
@@ -592,6 +594,7 @@ namespace Czuch
 
 	struct RenderPassDesc
 	{
+		virtual ~RenderPassDesc() = default;
 		U16 attachmentsCount = 0;
 
 		struct RenderPassColorAttachment
@@ -721,6 +724,7 @@ namespace Czuch
 		ShaderParamsSet& Reset();
 		ShaderParamsSet& AddBuffer(CzuchStr name, BufferHandle buffer, U16 binding);
 		ShaderParamsSet& AddSampler(CzuchStr name, TextureHandle color_texture, U16 binding);
+		void SetSampler(int descriptor, TextureHandle color_texture);
 	};
 
 	union ClearValue
@@ -939,8 +943,6 @@ namespace Czuch
 			}
 			return *this;
 		}
-
-
 	};
 
 	struct CZUCH_API MaterialDefinitionPassesContainer
@@ -953,10 +955,7 @@ namespace Czuch
 		{
 			if (&other != this)
 			{
-				for (int a = 0; a < states.size(); ++a)
-				{
-					this->states[a] = std::move(other.states[a]);
-				}
+				this->states = std::move(other.states);
 			}
 			return *this;
 		}
@@ -1120,6 +1119,7 @@ namespace Czuch
 		MaterialInstanceParams& Reset();
 		MaterialInstanceParams& AddBuffer(int set, CzuchStr& name, BufferHandle buffer, U16 binding);
 		MaterialInstanceParams& AddSampler(int set, CzuchStr& name, TextureHandle color_texture, U16 binding);
+		void SetSampler(int set,TextureHandle color_texture);
 	};
 
 	struct SamplerDesc
@@ -1247,8 +1247,8 @@ namespace Czuch
 
 	struct Material : public GraphicsDeviceResource
 	{
-		MaterialDefinitionDesc desc{};
-		constexpr const MaterialDefinitionDesc& GetDesc() const { return desc; }
+		MaterialDefinitionDesc* desc;
+		constexpr const MaterialDefinitionDesc& GetDesc() const { return *desc; }
 
 		Array<PipelineHandle> pipelines;
 

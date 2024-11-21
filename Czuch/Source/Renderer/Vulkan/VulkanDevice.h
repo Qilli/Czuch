@@ -47,7 +47,7 @@ namespace Czuch
 		BufferHandle CreateBuffer(const BufferDesc* desc) override;
 		TextureHandle CreateTexture(const TextureDesc* desc, bool resize = false, TextureHandle handle = INVALID_HANDLE(TextureHandle)) override;
 		MeshHandle CreateMesh(MeshData& meshData) override;
-		MaterialHandle CreateMaterial(MaterialDefinitionDesc& materialData) override;
+		MaterialHandle CreateMaterial(MaterialDefinitionDesc* materialData) override;
 		MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) override;
 
 

@@ -70,7 +70,7 @@ namespace Czuch
 			return true;
 		}
 
-		m_MaterialResource = m_Device->CreateMaterial(m_MaterialCreateSettings.desc);
+		m_MaterialResource = m_Device->CreateMaterial(&m_MaterialCreateSettings.desc);
 		auto mat = m_Device->AccessMaterial(m_MaterialResource);
 		mat->assetHandle = this->GetHandle();
 		m_State = AssetInnerState::LOADED;

@@ -112,16 +112,17 @@ namespace Czuch
 		vkResetFences(device, 1, &GetCurrentFrame().inFlightFence);
 
 		auto cmdBuffer = m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer);
+		cmdBuffer->Begin();
 		//render passes from frame graph
 		m_CurrentFrameGraph.Execute(m_Device, cmdBuffer);
 
 		auto finalTexture = m_CurrentFrameGraph.GetFinalTexture();
-		auto texture = m_Device->AccessTexture(finalTexture);
-		auto vulkanTexture = Internal_to_Texture(texture);
-		m_FinalRenderPass->SetFinalTexture(vulkanTexture);
-		m_FinalRenderPass->PreDraw(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer), this);
-		m_FinalRenderPass->Execute(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
-		m_FinalRenderPass->PostDraw(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer), this);
+		m_FinalRenderPass->SetFinalTexture(finalTexture);
+		m_FinalRenderPass->PreDraw(cmdBuffer, this);
+		m_FinalRenderPass->Execute(cmdBuffer);
+		m_FinalRenderPass->PostDraw(cmdBuffer, this);
+
+		cmdBuffer->End();
 
 		/*	for (auto it = m_RenderPasses.begin(); it != m_RenderPasses.end(); ++it)
 			{
@@ -236,6 +237,11 @@ namespace Czuch
 				cmdBuffer->DrawMesh(renderItem, GetCurrentFrame().descriptorAllocator);
 			}
 		}
+	}
+
+	void VulkanRenderer::DrawFullScreenQuad(VulkanCommandBuffer* cmdBuffer, MaterialInstanceHandle material)
+	{
+		cmdBuffer->DrawFullScreenQuad(material, GetCurrentFrame().descriptorAllocator);
 	}
 
 	void* VulkanRenderer::GetRenderPassResult(RenderPassType type)
@@ -595,11 +601,12 @@ namespace Czuch
 		FrameGraphResourceOutputCreation depthPrepassOutput;
 		depthPrepassOutput.name = "Depth";
 		depthPrepassOutput.type = FrameGraphResourceType::Attachment;
-		depthPrepassOutput.resource_info.texture.format = Format::D24_UNORM_S8_UINT;
+		depthPrepassOutput.resource_info.texture.format = ConvertVkFormat(m_Device->GetDepthFormat());
 		depthPrepassOutput.resource_info.texture.width = m_Device->GetSwapchainWidth();
 		depthPrepassOutput.resource_info.texture.height = m_Device->GetSwapchainHeight();
 		depthPrepassOutput.resource_info.texture.depth = 1;
 		depthPrepassOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
+		depthPrepassOutput.resource_info.texture.usage = ImageUsageFlag::DEPTH_STENCIL_ATTACHMENT;
 
 		m_FrameGraphBuilder.BeginNewNode("DepthPrepass");
 		m_FrameGraphBuilder.AddOutput(depthPrepassOutput);
@@ -621,6 +628,7 @@ namespace Czuch
 		lightingOutput.resource_info.texture.height = m_Device->GetSwapchainHeight();
 		lightingOutput.resource_info.texture.depth = 1;
 		lightingOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
+		lightingOutput.resource_info.texture.usage = ImageUsageFlag::COLOR_ATTACHMENT;
 
 		m_FrameGraphBuilder.BeginNewNode("LightingPass");
 		m_FrameGraphBuilder.AddInput(depthInput);

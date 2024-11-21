@@ -46,7 +46,7 @@ namespace Czuch
 		m_NodesData.push_back(m_CurrentNodeData);
 	}
 
-	void TopologicalDFS(FrameGraph frameGraph, FrameGraphNodeHandle handle, Array<I8>& visited, Array<FrameGraphNodeHandle>& m_SortedNodes)
+	void TopologicalDFS(FrameGraph& frameGraph, FrameGraphNodeHandle handle, Array<I8>& visited, Array<FrameGraphNodeHandle>& m_SortedNodes)
 	{
 		visited[handle.handle] = 1;
 		auto& node = frameGraph.GetNode(handle);
@@ -150,6 +150,8 @@ namespace Czuch
 					texDesc.samplerDesc = samplerDesc;
 					texDesc.sample_count = 1;
 					texDesc.initialLayout = ImageLayout::UNDEFINED;
+					texDesc.mip_levels = 1;
+					
 
 					if (HAS_FLAG(resource->info.texture.usage, ImageUsageFlag::DEPTH_STENCIL_ATTACHMENT))
 					{
@@ -176,8 +178,8 @@ namespace Czuch
 		}
 
 		//create render passes and framebuffers
-		for (U32 i = 0; i < m_SortedNodes.size(); ++i) {
-			FrameGraphNode* node = &m_FrameGraph.GetNode(m_SortedNodes[i]);
+		for (U32 i = 0; i < m_FrameGraph.m_SortedNodes.size(); ++i) {
+			FrameGraphNode* node = &m_FrameGraph.GetNode(m_FrameGraph.m_SortedNodes[i]);
 			if (!HANDLE_IS_VALID((node->renderPass)))
 			{
 				CreateRenderPass(node);
@@ -190,20 +192,20 @@ namespace Czuch
 		}
 
 		//init render pass controls
-		for (U32 i = 0; i < m_SortedNodes.size(); ++i) {
-			FrameGraphNode* node = &m_FrameGraph.GetNode(m_SortedNodes[i]);
+		for (U32 i = 0; i < m_FrameGraph.m_SortedNodes.size(); ++i) {
+			FrameGraphNode* node = &m_FrameGraph.GetNode(m_FrameGraph.m_SortedNodes[i]);
 			if (node->renderPassControl != nullptr)
 			{
-				node->renderPassControl->SetFrameGraphData(&m_FrameGraph, m_SortedNodes[i]);
+				node->renderPassControl->SetFrameGraphData(&m_FrameGraph, m_FrameGraph.m_SortedNodes[i]);
 			}
 
-			if (i == m_SortedNodes.size() - 1)
+			if (i == m_FrameGraph.m_SortedNodes.size() - 1)
 			{
 				node->renderPassControl->SetAsTextureSource();
 			}
 		}
 
-
+		graph = std::move(m_FrameGraph);
 	}
 
 	FrameGraphNodeHandle FrameGraphBuilderHelper::CreateNode(FrameGraphNodeCreateData data)
@@ -219,6 +221,7 @@ namespace Czuch
 		node->outputs.reserve(data.outputs.size());
 		node->frameBuffer = FrameBufferHandle{ Invalid_Handle_Id };
 		node->renderPass = RenderPassHandle{ Invalid_Handle_Id };
+		node->renderPassControl = data.control;
 
 		for (size_t i = 0; i < data.outputs.size(); ++i) {
 			const FrameGraphResourceOutputCreation& output_creation = data.outputs[i];
@@ -272,7 +275,6 @@ namespace Czuch
 	{
 		FrameGraphResourceHandle resourceHandle{ Invalid_Handle_Id };
 		resourceHandle = m_FrameGraph.CreateNewResource();
-
 
 		FrameGraphResource* resource = &m_FrameGraph.GetResource(resourceHandle);
 		resource->name = input.name;
@@ -400,7 +402,7 @@ namespace Czuch
 
 			FrameGraphResource* resource = &m_FrameGraph.GetResource(input_resource->output_target);
 
-			FrameGraphResourceInfo& info = input_resource->info;
+			FrameGraphResourceInfo& info = resource->info;
 
 			if (width == 0 || height == 0)
 			{

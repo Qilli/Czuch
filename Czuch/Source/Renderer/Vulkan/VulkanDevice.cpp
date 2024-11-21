@@ -77,16 +77,12 @@ namespace Czuch
 	{
 		CZUCH_BE_ASSERT(desc, "CreatePipelineState NULL desc input");
 
-		RenderPass* rp = nullptr;
+		RenderPass* rp = rpass;
 		if (!dynamicRendering)
 		{
 			if (rpass==nullptr)
 			{
 				rp = AccessRenderPass(m_SwapChainRenderPass);
-			}
-			else
-			{
-				rp = rpass;
 			}
 		}
 
@@ -156,11 +152,15 @@ namespace Czuch
 		return h;
 	}
 
+	VkAttachmentDescription colorAttachments[8] = {};
+	VkAttachmentReference colorAttachmentsRef[8] = {};
+	VkAttachmentDescription depthAttachment{};
+	VkAttachmentReference depthAttachmentRef{};
+	VkSubpassDescription subpass = {};
+	VkAttachmentDescription attachments[k_max_image_outputs + 1]{};
+
 	void FillRenderPassInfo(VkRenderPassCreateInfo& info, const RenderPassDesc& desc)
 	{
-		VkAttachmentDescription colorAttachments[8] = {};
-		VkAttachmentReference colorAttachmentsRef[8] = {};
-
 		VkAttachmentLoadOp depthOp, stencilOp;
 		VkImageLayout depthStart;
 
@@ -223,6 +223,7 @@ namespace Czuch
 			color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 			color_attachment.initialLayout = colorInitial;
 			color_attachment.finalLayout = ConvertImageLayout(desc.colorAttachments[c].layout);
+			color_attachment.flags = 0;
 
 			VkAttachmentReference& color_attachment_ref = colorAttachmentsRef[c];
 			color_attachment_ref.attachment = c;
@@ -230,9 +231,6 @@ namespace Czuch
 		}
 
 		// Depth attachment
-		VkAttachmentDescription depthAttachment{};
-		VkAttachmentReference depthAttachmentRef{};
-
 		if (IsDepthFormat(desc.depthStencilFormat)) {
 
 			depthAttachment.format = ConvertFormat(desc.depthStencilFormat);
@@ -243,21 +241,19 @@ namespace Czuch
 			depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 			depthAttachment.initialLayout = depthStart;
 			depthAttachment.finalLayout = ConvertImageLayout(desc.depthStencilFinalLayout);
+			depthAttachment.flags = 0;
 
 			depthAttachmentRef.attachment = desc.attachmentsCount;
 			depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		}
 
-		VkSubpassDescription subpass = {};
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-		VkAttachmentDescription attachments[k_max_image_outputs + 1]{};
 
 		for (U32 activeAttachments = 0; activeAttachments < desc.attachmentsCount; ++activeAttachments) {
 			attachments[activeAttachments] = colorAttachments[activeAttachments];
 		}
 		subpass.colorAttachmentCount = desc.attachmentsCount;
-		subpass.pColorAttachments = colorAttachmentsRef;
+		subpass.pColorAttachments = desc.attachmentsCount==0?nullptr:colorAttachmentsRef;
 
 		subpass.pDepthStencilAttachment = nullptr;
 
@@ -292,9 +288,8 @@ namespace Czuch
 			return h;
 		}
 
-
 		bool mainPass = desc == nullptr;
-		const VulkanRenderPassDesc* m_RpDesc = !mainPass ? static_cast<const VulkanRenderPassDesc*>(desc) : nullptr;
+		const VulkanRenderPassDesc* m_RpDesc = !mainPass ? dynamic_cast<const VulkanRenderPassDesc*>(desc) : nullptr;
 
 		if (m_RpDesc != nullptr && m_RpDesc->mainRenderPass)
 		{
@@ -724,15 +719,15 @@ namespace Czuch
 		return h;
 	}
 
-	MaterialHandle VulkanDevice::CreateMaterial(MaterialDefinitionDesc& materialData)
+	MaterialHandle VulkanDevice::CreateMaterial(MaterialDefinitionDesc* materialData)
 	{
-		U32 passesCount = materialData.PassesCount();
+		U32 passesCount = materialData->PassesCount();
 		Material* material = new Material();
-		material->desc = std::move(materialData);
-		material->pipelines.reserve(passesCount);
+		material->desc =materialData;
+		material->pipelines.resize(passesCount);
 		for (U32 a = 0; a < passesCount; a++)
 		{
-			auto& passDesc = material->desc.GetMaterialPassDescAt(a);
+			auto& passDesc = material->GetDesc().GetMaterialPassDescAt(a);
 			material->pipelines[a] = CreatePipelineState(&passDesc, GetRenderPassOfType(passDesc.passType), m_RenderSettings->dynamicRendering);
 		}
 
@@ -750,10 +745,10 @@ namespace Czuch
 		matInstance->desc.isTransparent = asset->IsTransparent();
 
 		auto material = AccessMaterial(matInstance->handle);
-		auto& matDesc = material->desc;
+		auto* matDesc = material->desc;
 		for (int a = 0; a < material->pipelines.size(); a++)
 		{
-			matDesc.passesContainer.states[a].SetParams(matInstance->desc, matInstance->params[a]);
+			matDesc->passesContainer.states[a].SetParams(matInstance->desc, matInstance->params[a]);
 		}
 
 		MaterialInstanceHandle h;
@@ -939,6 +934,14 @@ namespace Czuch
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 		}
+		else if (currentLayout == VK_IMAGE_LAYOUT_UNDEFINED && targetLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)
+		{
+			barrier.srcAccessMask = 0;
+			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		}
 		else if (currentLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && targetLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		{
 			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -981,6 +984,7 @@ namespace Czuch
 		}
 		else {
 			LOG_BE_ERROR("{0} Failed to find proper source and destinations settings for image transition layer.", Tag);
+			EndSingleTimeCommands(cmd);
 			return;
 		}
 
@@ -2418,13 +2422,14 @@ namespace Czuch
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
 
+		bool isDepthStencil = IsDepthFormatWithStencil(ConvertVkFormat(m_DepthImage.depthFormat));
 		DoImageMemoryBarrier(
 			cmd->GetNativeBuffer(),
 			m_DepthImage.depthImage,
 			0,
 			VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
 			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+			isDepthStencil? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL :VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
 			VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
 			VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
 			VkImageSubresourceRange{ VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 });
@@ -2500,6 +2505,7 @@ namespace Czuch
 		init_info.UseDynamicRendering = false;
 		init_info.CheckVkResultFn = check_vk_result;
 		init_info.RenderPass = Internal_to_RenderPass(AccessRenderPass(m_SwapChainRenderPass))->renderPass;
+		init_info.UseDynamicRendering = HasDynamicRenderingEnabled();
 
 		init_info.PipelineRenderingCreateInfo = { .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
 		init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
@@ -2568,9 +2574,15 @@ namespace Czuch
 	RenderPass* VulkanDevice::GetRenderPassOfType(RenderPassType type)
 	{
 		auto& renderPasses = m_ResContainer.renderPasses;
-		for (auto it=renderPasses.Begin_const();it!=renderPasses.End_const();it++)
+		for (auto it=renderPasses.Rbegin_const();it!=renderPasses.Rend_const();it++)
 		{
 			RenderPass* renderPass =*it;
+
+			if (renderPass == nullptr)
+			{
+				continue;
+			}
+
 			if (renderPass->desc.type == type)
 			{
 				return *it;

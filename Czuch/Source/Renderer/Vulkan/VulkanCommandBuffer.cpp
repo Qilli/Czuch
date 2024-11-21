@@ -8,7 +8,7 @@ namespace Czuch
 {
 	const CzuchStr Tag = "[VulkanCommandBuffer]";
 
-	VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer cmdBuffer):m_Device(nullptr),m_Cmd(cmdBuffer),m_isRecording(false)
+	VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer cmdBuffer) :m_Device(nullptr), m_Cmd(cmdBuffer), m_isRecording(false)
 	{
 		m_ClearValueColor.color = { 0,0,0,1 };
 		m_ClearValueColor.depthStencil = { 1.0f,255 };
@@ -80,11 +80,11 @@ namespace Czuch
 		if (meshInstance != nullptr)
 		{
 			U32 passIndex = renderElement.passIndex;
-			MaterialInstance* materialInstance = m_Device->AccessMaterialInstance(HANDLE_IS_VALID(renderElement.overrideMaterial)? renderElement.overrideMaterial:meshInstance->materialHandle);
+			MaterialInstance* materialInstance = m_Device->AccessMaterialInstance(HANDLE_IS_VALID(renderElement.overrideMaterial) ? renderElement.overrideMaterial : meshInstance->materialHandle);
 			Material* material = m_Device->AccessMaterial(materialInstance->handle);
 			auto& paramsDesc = materialInstance->params[passIndex].shaderParamsDesc;
-			auto pipeline=material->pipelines[passIndex];
-			auto& pipelineDesc = material->desc.passesContainer.states[passIndex];
+			auto pipeline = material->pipelines[passIndex];
+			auto& pipelineDesc = material->GetDesc().passesContainer.states[passIndex];
 			BindPipeline(pipeline);
 
 			auto pipelinePtr = m_Device->AccessPipeline(pipeline);
@@ -95,7 +95,7 @@ namespace Czuch
 				writer.Clear();
 				auto descriptorLayout = pipelinePtr->layouts[a];
 				auto layout = m_Device->AccessDescriptorSetLayout(descriptorLayout);
-				auto descriptor = allocator->Allocate(paramsDesc[a],layout);
+				auto descriptor = allocator->Allocate(paramsDesc[a], layout);
 
 				for (int b = 0; b < layout->desc.bindingsCount; b++)
 				{
@@ -130,12 +130,56 @@ namespace Czuch
 				BindVertexBuffer(meshInstance->normalsHandle, 3, 0);
 			}
 
-			auto vulkanPipeline= Internal_To_Pipeline(pipelinePtr);
-			vkCmdPushConstants(m_Cmd, vulkanPipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4x4), (void*) & renderElement.localToClipSpaceTransformation);
+			auto vulkanPipeline = Internal_To_Pipeline(pipelinePtr);
+			vkCmdPushConstants(m_Cmd, vulkanPipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4x4), (void*)&renderElement.localToClipSpaceTransformation);
 
 			BindIndexBuffer(meshInstance->indicesHandle, 0);
 			DrawIndexed(m_Device->AccessBuffer(meshInstance->indicesHandle)->desc.elementsCount);
 		}
+	}
+
+	void VulkanCommandBuffer::DrawFullScreenQuad(MaterialInstanceHandle mat, DescriptorAllocator* allocator)
+	{
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(mat), "Material instance passed to command buffer is invalid");
+
+		U32 passIndex = 0;
+		MaterialInstance* materialInstance = m_Device->AccessMaterialInstance(mat);
+		Material* material = m_Device->AccessMaterial(materialInstance->handle);
+
+		auto& paramsDesc = materialInstance->params[passIndex].shaderParamsDesc;
+		auto pipeline = material->pipelines[passIndex];
+		auto& pipelineDesc = material->GetDesc().passesContainer.states[passIndex];
+
+		BindPipeline(pipeline);
+
+		auto pipelinePtr = m_Device->AccessPipeline(pipeline);
+		DescriptorWriter writer;
+
+		for (int a = 0; a < pipelineDesc.layoutsCount; a++)
+		{
+			writer.Clear();
+			auto descriptorLayout = pipelinePtr->layouts[a];
+			auto layout = m_Device->AccessDescriptorSetLayout(descriptorLayout);
+			auto descriptor = allocator->Allocate(paramsDesc[a], layout);
+
+			for (int b = 0; b < layout->desc.bindingsCount; b++)
+			{
+				auto binding = layout->desc.bindings[b];
+				if (binding.type == DescriptorType::UNIFORM_BUFFER)
+				{
+					writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
+				}
+				else if (binding.type == DescriptorType::SAMPLER)
+				{
+					writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(paramsDesc[a].descriptors[b].resource)), DescriptorType::SAMPLER);
+				}
+				writer.UpdateSet(m_Device, descriptor);
+			}
+
+			BindDescriptorSet(descriptor, a, 1, nullptr, 0);
+		}
+
+		DrawQuadInternal();
 	}
 
 	void VulkanCommandBuffer::BindPass(RenderPassHandle renderpass, FrameBufferHandle framebuffer)
@@ -170,7 +214,7 @@ namespace Czuch
 					break;
 				}
 
-				VkRenderingAttachmentInfoKHR& colorAttachmentInfo= m_ColorAttachmentsInfo[a];
+				VkRenderingAttachmentInfoKHR& colorAttachmentInfo = m_ColorAttachmentsInfo[a];
 				colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 				colorAttachmentInfo.imageView = Internal_to_Texture(texture)->imageView;
 				colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -208,9 +252,9 @@ namespace Czuch
 				depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				depthAttachmentInfo.clearValue = render_pass->desc.depthLoadOp == AttachmentLoadOp::CLEAR ? m_ClearValueDepth : VkClearValue{ };
 			}
-			
+
 			VkRenderingInfoKHR renderingInfo{ VK_STRUCTURE_TYPE_RENDERING_INFO_KHR };
-			renderingInfo.flags =0;
+			renderingInfo.flags = 0;
 			renderingInfo.renderArea = { 0, 0,desc.width,desc.height };
 			renderingInfo.layerCount = 1;
 			renderingInfo.viewMask = 0;
@@ -252,23 +296,24 @@ namespace Czuch
 		{
 			return;
 		}
-		vkCmdBindPipeline(m_Cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Internal_To_Pipeline(m_Device->AccessPipeline(pipeline))->pipeline);
+		auto pp = m_Device->AccessPipeline(pipeline);
+		vkCmdBindPipeline(m_Cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Internal_To_Pipeline(pp)->pipeline);
 		m_CurrentPipeline = pipeline;
 	}
 
-	void VulkanCommandBuffer::BindVertexBuffer(BufferHandle buffer, U32 binding=0, U32 offset=0)
+	void VulkanCommandBuffer::BindVertexBuffer(BufferHandle buffer, U32 binding = 0, U32 offset = 0)
 	{
 		VkBuffer vertexBuffers[] = { Internal_to_Buffer(m_Device->AccessBuffer(buffer))->buffer };
 		VkDeviceSize offsets[] = { offset };
 		vkCmdBindVertexBuffers(m_Cmd, binding, 1, vertexBuffers, offsets);
 	}
 
-	void VulkanCommandBuffer::BindIndexBuffer(BufferHandle buffer, U32 offset=0)
+	void VulkanCommandBuffer::BindIndexBuffer(BufferHandle buffer, U32 offset = 0)
 	{
 		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(m_Device->AccessBuffer(buffer))->buffer, offset, VK_INDEX_TYPE_UINT32);
 	}
 
-	void VulkanCommandBuffer::BindDescriptorSet(DescriptorSet* descriptor,U16 setIndex, U32 num, U32* offsets, U32 num_offsets)
+	void VulkanCommandBuffer::BindDescriptorSet(DescriptorSet* descriptor, U16 setIndex, U32 num, U32* offsets, U32 num_offsets)
 	{
 		auto pp = m_Device->AccessPipeline(m_CurrentPipeline);
 		if (pp == nullptr)
@@ -277,12 +322,12 @@ namespace Czuch
 			return;
 		}
 		auto vulkanPipeline = Internal_To_Pipeline(pp);
-		vkCmdBindDescriptorSets(m_Cmd, ConvertBindPoint(pp->m_desc.bindPoint), vulkanPipeline->pipelineLayout, setIndex, num,&descriptor->descriptorSet,num_offsets,offsets);
+		vkCmdBindDescriptorSets(m_Cmd, ConvertBindPoint(pp->m_desc.bindPoint), vulkanPipeline->pipelineLayout, setIndex, num, &descriptor->descriptorSet, num_offsets, offsets);
 	}
 
 	void VulkanCommandBuffer::SetClearColor(float r, float g, float b, float a)
 	{
-		m_ClearValueColor.color = VkClearColorValue{r,g,b,a};
+		m_ClearValueColor.color = VkClearColorValue{ r,g,b,a };
 	}
 
 	void VulkanCommandBuffer::SetDepthStencil(float depth, U8 stencil)
@@ -296,7 +341,7 @@ namespace Czuch
 		viewportVk.x = 0.0f;
 		viewportVk.y = viewport.height;
 		viewportVk.width = viewport.width;
-		viewportVk.height = -viewport.height;
+		viewportVk.height = -viewport.height;//[Vulkan] Y axis is inverted
 		viewportVk.minDepth = viewport.minDepth;
 		viewportVk.maxDepth = viewport.maxDepth;
 		vkCmdSetViewport(m_Cmd, 0, 1, &viewportVk);
@@ -306,7 +351,7 @@ namespace Czuch
 	{
 		VkRect2D scissorVk{};
 		scissorVk.offset = { scissors.offsetX, scissors.offsetY };
-		scissorVk.extent.width=scissors.width;
+		scissorVk.extent.width = scissors.width;
 		scissorVk.extent.height = scissors.height;
 		vkCmdSetScissor(m_Cmd, 0, 1, &scissorVk);
 	}
@@ -316,7 +361,7 @@ namespace Czuch
 		vkCmdDraw(m_Cmd, vertexCount, instanceCount, firstVertex, firstInstance);
 	}
 
-	void VulkanCommandBuffer::DrawIndexed(U32 indicesCount, U32 firstIndex, U32 instanceCount, U32 firstnstance,U32 vertexOffset)
+	void VulkanCommandBuffer::DrawIndexed(U32 indicesCount, U32 firstIndex, U32 instanceCount, U32 firstnstance, U32 vertexOffset)
 	{
 		vkCmdDrawIndexed(m_Cmd, indicesCount, instanceCount, firstIndex, vertexOffset, firstnstance);
 	}
@@ -329,7 +374,7 @@ namespace Czuch
 		colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachment.clearValue.color = { 0.0f,0.0f,0.0f,0.0f };
+		colorAttachment.clearValue.color = m_ClearValueColor.color;
 
 		VkRenderingAttachmentInfoKHR depthStencilAttachment{};
 		depthStencilAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
@@ -337,7 +382,7 @@ namespace Czuch
 		depthStencilAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		depthStencilAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depthStencilAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		depthStencilAttachment.clearValue.depthStencil = { 1.0f,  0 };
+		depthStencilAttachment.clearValue.depthStencil = m_ClearValueDepth.depthStencil;
 
 		auto render_area = VkRect2D{ VkOffset2D{}, VkExtent2D{width, height} };
 		VkRenderingInfoKHR  render_info = {};
@@ -355,6 +400,11 @@ namespace Czuch
 	void VulkanCommandBuffer::EndDynamicRenderPassForMainPass()
 	{
 		vkCmdEndRendering(m_Cmd);
+	}
+
+	void VulkanCommandBuffer::DrawQuadInternal()
+	{
+		vkCmdDraw(m_Cmd, 6, 1, 0, 0);
 	}
 
 }

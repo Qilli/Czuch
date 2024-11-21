@@ -8,6 +8,8 @@ namespace Czuch
 	VulkanRenderPassControlBase::VulkanRenderPassControlBase(VulkanDevice* device, VulkanRenderer* renderer, Camera* cam, U32 width, U32 height, RenderPassType type, bool handleWindowResize) :RenderPassControl(cam, width, height, type, handleWindowResize, false), m_Renderer(renderer), m_Device(device)
 	{
 		m_FillParams.renderPassType = type;
+		m_FillParams.forceMaterialForAll = false;
+		m_TextureSource = nullptr;
 	}
 	VulkanRenderPassControlBase::~VulkanRenderPassControlBase()
 	{
@@ -27,7 +29,8 @@ namespace Czuch
 	}
 	void* VulkanRenderPassControlBase::GetRenderPassResult()
 	{
-		return m_TextureSource.GetTargetTextureDescriptor();
+		CZUCH_BE_ASSERT(m_UITextureSource, "This render pass is not a texture source, pointer is null");
+		return m_TextureSource->GetTargetTextureDescriptor();
 	}
 
 	void VulkanRenderPassControlBase::SetAsTextureSource()
@@ -37,8 +40,7 @@ namespace Czuch
 			return;
 		}
 		m_UITextureSource = true;
-		m_TextureSource.Init();
-
+		m_TextureSource = new UITextureSource(m_Device, m_FrameGraph,&m_FrameGraph->GetNode(m_Node));
 	}
 
 
@@ -49,6 +51,12 @@ namespace Czuch
 			m_Device->Release(m_NativeRenderPassHandle);
 		}
 		m_Renderer->UnRegisterRenderPassControl(this);
+
+		if (m_TextureSource)
+		{
+			delete m_TextureSource;
+			m_TextureSource = nullptr;
+		}
 	}
 
 }
