@@ -9,7 +9,7 @@ namespace Czuch
 		U32 Width;
 		U32 Height;
 
-		WindowParams(const CzuchStr& title = "Czuch Engine", U32 width = 1600, U32 height = 900):
+		WindowParams(const CzuchStr& title = "Czuch Engine", U32 width = 1000, U32 height = 333):
 			Title(title),Width(width),Height(height)
 		{
 

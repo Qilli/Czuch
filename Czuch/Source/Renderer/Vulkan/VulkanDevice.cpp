@@ -2162,6 +2162,8 @@ namespace Czuch
 			m_SwapChainData.swapChainImageViews[i] = CreateImageView(m_SwapChainData.swapChainImages[i], m_SwapChainData.swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 		}
 
+		LOG_BE_INFO("{0} Swap chain created with size {1}x{2}", Tag,m_SwapChainData.swapChainExtent.width,m_SwapChainData.swapChainExtent.height);
+
 		return true;
 	}
 
@@ -2387,6 +2389,7 @@ namespace Czuch
 
 		tex->desc.width = width;
 		tex->desc.height = height;
+		LOG_BE_INFO("{0} Resizing texture {1} to {2}x{3}", Tag, texture.handle, width, height);
 		CreateTexture(&tex->desc,true,texture);
 	}
 
@@ -2405,6 +2408,7 @@ namespace Czuch
 			return;
 		}
 
+		LOG_BE_INFO("{0} Resizing framebuffer {1} to {2}x{3}", Tag, handle.handle, width, height);
 		fbuffer->desc.SetWidthAndHeight(width,height);
 		CreateFrameBuffer(&fbuffer->desc, true,handle);	
 	}

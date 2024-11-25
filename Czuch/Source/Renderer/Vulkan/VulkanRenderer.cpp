@@ -20,6 +20,8 @@
 #include"RenderPass/VulkanDepthPrepassRenderPass.h"
 #include"RenderPass/VulkanDefaultForwardLightingRenderPass.h"
 
+#include"Events/EventsTypes/ApplicationEvents.h"
+
 
 namespace Czuch
 {
@@ -41,6 +43,7 @@ namespace Czuch
 
 	VulkanRenderer::~VulkanRenderer()
 	{
+		EventsManager::Get().RemoveListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
 		m_Device->AwaitDevice();
 
 		ReleaseFrameGraphs();
@@ -90,6 +93,7 @@ namespace Czuch
 		InitImmediateSubmitData();
 
 		CreateFrameGraphs();
+		EventsManager::Get().AddListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
 	}
 
 	void VulkanRenderer::DrawFrame()

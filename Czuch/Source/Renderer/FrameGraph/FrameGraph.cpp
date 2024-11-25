@@ -241,6 +241,10 @@ namespace Czuch
 	void FrameGraphNode::Resize(GraphicsDevice* device, U32 width, U32 height)
 	{
 		device->ResizeFrameBuffer(frameBuffer, width, height);
+		if (renderPassControl)
+		{
+			renderPassControl->Resize(width, height);
+		}
 	}
 
 	TextureHandle FrameGraphNode::GetFirstColorAttachment(FrameGraph* fgraph)

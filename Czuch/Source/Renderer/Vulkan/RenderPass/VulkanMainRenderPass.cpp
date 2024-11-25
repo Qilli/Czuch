@@ -11,7 +11,7 @@
 
 namespace Czuch
 {
-	VulkanMainRenderPass::VulkanMainRenderPass(VulkanDevice* device, VulkanRenderer* renderer) : VulkanRenderPassControlBase(device,renderer,nullptr,0, 0, RenderPassType::MainForward,true)
+	VulkanMainRenderPass::VulkanMainRenderPass(VulkanDevice* device, VulkanRenderer* renderer) : VulkanRenderPassControlBase(device,renderer,nullptr,0, 0, RenderPassType::Final,true)
 	{
 		SetPriority(0);
 		INVALIDATE_HANDLE(m_FinalTexture);
@@ -78,12 +78,13 @@ namespace Czuch
 	{
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
 		m_Renderer->DrawFullScreenQuad((VulkanCommandBuffer*)cmdBuffer, DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);
+		//m_Renderer->DrawScene((VulkanCommandBuffer*)cmdBuffer);
 		//m_Device->DrawUI(cmdBuffer);
 	}
 
 	void VulkanMainRenderPass::Resize(int width, int height)
 	{
-		Release();
+		
 	}
 
 	void VulkanMainRenderPass::SetFinalTexture(TextureHandle texture)
