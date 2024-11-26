@@ -28,6 +28,8 @@ namespace Czuch
 		m_RenderSettings.dynamicRendering = true;
 		m_RenderSettings.validationMode = ValidationMode::Enabled;
 		m_RenderSettings.engineMode = control!=nullptr?EngineMode::Editor:EngineMode::Runtime;
+		m_RenderSettings.targetWidth = 800;
+		m_RenderSettings.targetHeight = 600;
 
 		//create subsystems
 		m_Logging = new Logging();

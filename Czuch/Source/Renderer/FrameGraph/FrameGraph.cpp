@@ -6,7 +6,7 @@
 
 namespace Czuch
 {
-	void FrameGraph::Init(GraphicsDevice* device,Renderer* renderer)
+	void FrameGraph::Init(GraphicsDevice* device,Renderer* renderer )
 	{
 		m_Device = device;
 		m_Renderer= renderer;
@@ -35,7 +35,7 @@ namespace Czuch
 		for (U32 i = 0; i < m_Nodes.m_Nodes.size(); i++)
 		{
 			auto& node = m_Nodes.m_Nodes[i];
-			cmd->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			cmd->SetClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 			cmd->SetDepthStencil(1.0f, 0);
 
 			U32 width = 0;
@@ -127,6 +127,11 @@ namespace Czuch
 		return nullptr;
 	}
 
+	void* FrameGraph::GetFinalRenderPassResult()
+	{
+		return m_Nodes.m_Nodes.back().renderPassControl->GetRenderPassResult();
+	}
+
 	RenderPassControl* FrameGraph::GetRenderPassControlByType(RenderPassType type)
 	{
 		for (int i = 0; i < m_Nodes.m_Nodes.size(); i++)
@@ -209,6 +214,7 @@ namespace Czuch
 
 	void FrameGraphResourcesContainer::Init(GraphicsDevice* device)
 	{
+
 	}
 
 	void FrameGraphResourcesContainer::Release()

@@ -105,6 +105,7 @@ namespace Czuch
 		void Execute(GraphicsDevice* device,CommandBuffer* cmd);
 		void ResizeNode(FrameGraphNode node, U32 width, U32 height);
 		void* GetRenderPassResult(RenderPassType type);
+		void* GetFinalRenderPassResult();
 		RenderPassControl* GetRenderPassControlByType(RenderPassType type);
 		bool HasRenderPass(RenderPassType type);
 		void ResizeRenderPasses(U32 width, U32 height, bool windowSizeChanged = true);
@@ -112,8 +113,6 @@ namespace Czuch
 		bool HasUI() { return m_HasUI; }
 		void AddUI() { m_HasUI = true; }
 		//[TODO] we need to add option to init offscreen node with size from UI
-	private:
-
 	private:
 		FrameGraphNodesContainer m_Nodes;
 		FrameGraphResourcesContainer m_Resources;

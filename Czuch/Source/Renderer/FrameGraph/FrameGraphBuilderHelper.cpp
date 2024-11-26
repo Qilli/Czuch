@@ -12,7 +12,7 @@ namespace Czuch
 		m_Inited = true;
 		m_Device = device;
 		m_NodesData.reserve(20);
-		m_FrameGraph.Init(device,renderer);
+		m_FrameGraph = nullptr;
 	}
 
 	void FrameGraphBuilderHelper::Release()
@@ -60,8 +60,9 @@ namespace Czuch
 		m_SortedNodes.push_back(handle);
 	}
 
-	void FrameGraphBuilderHelper::Build(FrameGraph& graph)
+	void FrameGraphBuilderHelper::Build(FrameGraph* graph)
 	{
+		m_FrameGraph = graph;
 		tempNodes.reserve(m_NodesData.size());
 		for (auto& nodeData : m_NodesData)
 		{
@@ -70,7 +71,7 @@ namespace Czuch
 
 		//compute edges
 		for (U32 i = 0; i < tempNodes.size(); ++i) {
-			FrameGraphNode* node = &m_FrameGraph.GetNode(tempNodes[i]);
+			FrameGraphNode* node = &m_FrameGraph->GetNode(tempNodes[i]);
 			ComputeEdgesFor(node, i);
 		}
 
@@ -82,34 +83,34 @@ namespace Czuch
 		{
 			if (visited[i] == 0)
 			{
-				TopologicalDFS(m_FrameGraph, tempNodes[i], visited, m_SortedNodes);
+				TopologicalDFS(*m_FrameGraph, tempNodes[i], visited, m_SortedNodes);
 			}
 		}
-		m_FrameGraph.m_SortedNodes = std::move(m_SortedNodes);
+		m_FrameGraph->m_SortedNodes = std::move(m_SortedNodes);
 
 		//revert sorted nodes
-		std::reverse(m_FrameGraph.m_SortedNodes.begin(), m_FrameGraph.m_SortedNodes.end());
+		std::reverse(m_FrameGraph->m_SortedNodes.begin(), m_FrameGraph->m_SortedNodes.end());
 
 		//compute references
 		for (U32 i = 0; i < tempNodes.size(); ++i) {
-			FrameGraphNode* node = &m_FrameGraph.GetNode(tempNodes[i]);
+			FrameGraphNode* node = &m_FrameGraph->GetNode(tempNodes[i]);
 			for (U32 r = 0; r < node->inputs.size(); ++r) {
-				FrameGraphResource* resource = &m_FrameGraph.GetResource(node->inputs[r]);
-				FrameGraphResource* output_resource = &m_FrameGraph.GetResource(resource->output_target);
+				FrameGraphResource* resource = &m_FrameGraph->GetResource(node->inputs[r]);
+				FrameGraphResource* output_resource = &m_FrameGraph->GetResource(resource->output_target);
 				output_resource->refCount++;
 			}
 		}
 
 		//[TODO] HERE IS THE PLACE TO ADD SUPPORT FOR ALIASING RESOURCES(SHARING RESOURCES USING VMA AIASING) FOR OPTIMIZATION
-		/*U32 resourceCount = m_FrameGraph.resources.resources.size();
+		/*U32 resourceCount = m_FrameGraph->resources.resources.size();
 		Array<FrameGraphNodeHandle> allocations(resourceCount,{Invalid_Handle_Id});
 		Array<FrameGraphNodeHandle> deallocations(resourceCount,{Invalid_Handle_Id});
 		Array<TextureHandle> texturesFreeToUse(resourceCount*0.5f);
 
-		for (U32 i = 0; i < m_FrameGraph.sortedNodes.size(); ++i) {
-			FrameGraphNode* node = &m_FrameGraph.GetNode(m_FrameGraph.sortedNodes[i]);
+		for (U32 i = 0; i < m_FrameGraph->sortedNodes.size(); ++i) {
+			FrameGraphNode* node = &m_FrameGraph->GetNode(m_FrameGraph->sortedNodes[i]);
 			for (U32 r = 0; r < node->outputs.size(); ++r) {
-				FrameGraphResource* resource = &m_FrameGraph.GetResource(node->outputs[r]);
+				FrameGraphResource* resource = &m_FrameGraph->GetResource(node->outputs[r]);
 				if (resource->type == FrameGraphResourceType::Reference) {
 					continue;
 				}
@@ -123,10 +124,10 @@ namespace Czuch
 			}
 		}*/
 
-		for (U32 i = 0; i < m_FrameGraph.m_SortedNodes.size(); ++i) {
-			FrameGraphNode* node = &m_FrameGraph.GetNode(m_FrameGraph.m_SortedNodes[i]);
+		for (U32 i = 0; i < m_FrameGraph->m_SortedNodes.size(); ++i) {
+			FrameGraphNode* node = &m_FrameGraph->GetNode(m_FrameGraph->m_SortedNodes[i]);
 			for (U32 r = 0; r < node->outputs.size(); ++r) {
-				FrameGraphResource* resource = &m_FrameGraph.GetResource(node->outputs[r]);
+				FrameGraphResource* resource = &m_FrameGraph->GetResource(node->outputs[r]);
 				if (resource->type == FrameGraphResourceType::Reference) {
 					continue;
 				}
@@ -178,8 +179,8 @@ namespace Czuch
 		}
 
 		//create render passes and framebuffers
-		for (U32 i = 0; i < m_FrameGraph.m_SortedNodes.size(); ++i) {
-			FrameGraphNode* node = &m_FrameGraph.GetNode(m_FrameGraph.m_SortedNodes[i]);
+		for (U32 i = 0; i < m_FrameGraph->m_SortedNodes.size(); ++i) {
+			FrameGraphNode* node = &m_FrameGraph->GetNode(m_FrameGraph->m_SortedNodes[i]);
 			if (!HANDLE_IS_VALID((node->renderPass)))
 			{
 				CreateRenderPass(node);
@@ -192,28 +193,26 @@ namespace Czuch
 		}
 
 		//init render pass controls
-		for (U32 i = 0; i < m_FrameGraph.m_SortedNodes.size(); ++i) {
-			FrameGraphNode* node = &m_FrameGraph.GetNode(m_FrameGraph.m_SortedNodes[i]);
+		for (U32 i = 0; i < m_FrameGraph->m_SortedNodes.size(); ++i) {
+			FrameGraphNode* node = &m_FrameGraph->GetNode(m_FrameGraph->m_SortedNodes[i]);
 			if (node->renderPassControl != nullptr)
 			{
-				node->renderPassControl->SetFrameGraphData(&m_FrameGraph, m_FrameGraph.m_SortedNodes[i]);
+				node->renderPassControl->SetFrameGraphData(m_FrameGraph, m_FrameGraph->m_SortedNodes[i]);
 			}
 
-			if (i == m_FrameGraph.m_SortedNodes.size() - 1)
+			if (i == m_FrameGraph->m_SortedNodes.size() - 1)
 			{
 				node->renderPassControl->SetAsTextureSource();
 			}
 		}
-
-		graph = std::move(m_FrameGraph);
 	}
 
 	FrameGraphNodeHandle FrameGraphBuilderHelper::CreateNode(FrameGraphNodeCreateData data)
 	{
 		FrameGraphNodeHandle nodeHandle{ Invalid_Handle_Id };
-		nodeHandle = m_FrameGraph.CreateNewNode();
+		nodeHandle = m_FrameGraph->CreateNewNode();
 
-		FrameGraphNode* node = &m_FrameGraph.GetNode(nodeHandle);
+		FrameGraphNode* node = &m_FrameGraph->GetNode(nodeHandle);
 
 		node->name = data.name;
 		node->edges.reserve(data.outputs.size());
@@ -242,10 +241,10 @@ namespace Czuch
 	FrameGraphResourceHandle FrameGraphBuilderHelper::CreateOutputResource(const FrameGraphResourceOutputCreation& output, FrameGraphNodeHandle node)
 	{
 		FrameGraphResourceHandle resourceHandle{ Invalid_Handle_Id };
-		resourceHandle = m_FrameGraph.CreateNewResource();
+		resourceHandle = m_FrameGraph->CreateNewResource();
 
 
-		FrameGraphResource* resource = &m_FrameGraph.GetResource(resourceHandle);
+		FrameGraphResource* resource = &m_FrameGraph->GetResource(resourceHandle);
 		resource->name = output.name;
 		resource->type = output.type;
 
@@ -254,18 +253,18 @@ namespace Czuch
 			resource->output_target = resourceHandle;
 			resource->producer = node;
 			resource->refCount = 0;
-			m_FrameGraph.m_Resources.resourceMap[Hash(resource->name)].producerHandle = resourceHandle;
+			m_FrameGraph->m_Resources.resourceMap[Hash(resource->name)].producerHandle = resourceHandle;
 		}
 		else {
-			auto result = m_FrameGraph.m_Resources.resourceMap.find(Hash(output.name));
-			if (result != m_FrameGraph.m_Resources.resourceMap.end()) {
+			auto result = m_FrameGraph->m_Resources.resourceMap.find(Hash(output.name));
+			if (result != m_FrameGraph->m_Resources.resourceMap.end()) {
 				result->second.childProcessors.emplace_back(node);
 			}
 			else
 			{
 				FrameGraphProducerResourceInfo info;
 				info.childProcessors.emplace_back(node);
-				m_FrameGraph.m_Resources.resourceMap[Hash(output.name)] = std::move(info);
+				m_FrameGraph->m_Resources.resourceMap[Hash(output.name)] = std::move(info);
 			}
 		}
 
@@ -274,9 +273,9 @@ namespace Czuch
 	FrameGraphResourceHandle FrameGraphBuilderHelper::CreateInputResource(const FrameGraphResourceInputCreation& input, FrameGraphNodeHandle node)
 	{
 		FrameGraphResourceHandle resourceHandle{ Invalid_Handle_Id };
-		resourceHandle = m_FrameGraph.CreateNewResource();
+		resourceHandle = m_FrameGraph->CreateNewResource();
 
-		FrameGraphResource* resource = &m_FrameGraph.GetResource(resourceHandle);
+		FrameGraphResource* resource = &m_FrameGraph->GetResource(resourceHandle);
 		resource->name = input.name;
 		resource->type = input.type;
 
@@ -286,15 +285,15 @@ namespace Czuch
 	void FrameGraphBuilderHelper::ComputeEdgesFor(FrameGraphNode* node, Handle nodeIndex)
 	{
 		for (U32 r = 0; r < node->inputs.size(); ++r) {
-			FrameGraphResource* resource = &m_FrameGraph.GetResource(node->inputs[r]);
+			FrameGraphResource* resource = &m_FrameGraph->GetResource(node->inputs[r]);
 
-			auto result = m_FrameGraph.m_Resources.resourceMap.find(Hash(resource->name));
+			auto result = m_FrameGraph->m_Resources.resourceMap.find(Hash(resource->name));
 
-			if (result == m_FrameGraph.m_Resources.resourceMap.end()) {
+			if (result == m_FrameGraph->m_Resources.resourceMap.end()) {
 				continue;
 			}
 
-			FrameGraphResource* output_resource = &m_FrameGraph.GetResource(result->second.producerHandle);
+			FrameGraphResource* output_resource = &m_FrameGraph->GetResource(result->second.producerHandle);
 			resource->producer = output_resource->producer;
 			resource->info = output_resource->info;
 			resource->output_target = output_resource->output_target;
@@ -305,7 +304,7 @@ namespace Czuch
 				{
 					for (auto& processor : result->second.childProcessors)
 					{
-						FrameGraphNode* parent_node = &m_FrameGraph.GetNode(processor);
+						FrameGraphNode* parent_node = &m_FrameGraph->GetNode(processor);
 						parent_node->edges.push_back(FrameGraphNodeHandle{ nodeIndex });
 					}
 					continue; //if our input resource is a reference or texture we want to connect it to other references(we want to use it only after it was modified by all other nodes)
@@ -313,7 +312,7 @@ namespace Czuch
 
 			}
 
-			FrameGraphNode* parent_node = &m_FrameGraph.GetNode(resource->producer);
+			FrameGraphNode* parent_node = &m_FrameGraph->GetNode(resource->producer);
 			parent_node->edges.push_back(FrameGraphNodeHandle{ nodeIndex });
 
 		}
@@ -323,7 +322,7 @@ namespace Czuch
 	{
 		RenderPassDesc renderPassDesc;
 		for (U32 i = 0; i < node->outputs.size(); ++i) {
-			FrameGraphResource* output_resource = &m_FrameGraph.GetResource(node->outputs[i]);
+			FrameGraphResource* output_resource = &m_FrameGraph->GetResource(node->outputs[i]);
 
 			FrameGraphResourceInfo& info = output_resource->info;
 
@@ -339,7 +338,7 @@ namespace Czuch
 		}
 
 		for (U32 i = 0; i < node->inputs.size(); ++i) {
-			FrameGraphResource* input_resource = &m_FrameGraph.GetResource(node->inputs[i]);
+			FrameGraphResource* input_resource = &m_FrameGraph->GetResource(node->inputs[i]);
 
 			FrameGraphResourceInfo& info = input_resource->info;
 
@@ -366,7 +365,7 @@ namespace Czuch
 		U32 height = 0;
 
 		for (U32 i = 0; i < node->outputs.size(); ++i) {
-			FrameGraphResource* output_resource = &m_FrameGraph.GetResource(node->outputs[i]);
+			FrameGraphResource* output_resource = &m_FrameGraph->GetResource(node->outputs[i]);
 
 			FrameGraphResourceInfo& info = output_resource->info;
 
@@ -393,14 +392,14 @@ namespace Czuch
 		}
 
 		for (U32 i = 0; i < node->inputs.size(); ++i) {
-			FrameGraphResource* input_resource = &m_FrameGraph.GetResource(node->inputs[i]);
+			FrameGraphResource* input_resource = &m_FrameGraph->GetResource(node->inputs[i]);
 
 			if (input_resource->type != FrameGraphResourceType::Attachment)
 			{
 				continue;
 			}
 
-			FrameGraphResource* resource = &m_FrameGraph.GetResource(input_resource->output_target);
+			FrameGraphResource* resource = &m_FrameGraph->GetResource(input_resource->output_target);
 
 			FrameGraphResourceInfo& info = resource->info;
 

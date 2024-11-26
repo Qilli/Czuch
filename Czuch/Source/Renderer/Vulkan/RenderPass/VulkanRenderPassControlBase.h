@@ -21,6 +21,7 @@ namespace Czuch
 		void* GetRenderPassResult() override;
 		void SetAsTextureSource() override;
 		void Release() override;
+		void Resize(int width, int height) override;
 	protected:
 		VulkanRenderer* m_Renderer;
 		VulkanDevice* m_Device;

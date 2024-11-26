@@ -77,15 +77,17 @@ namespace Czuch
 	void VulkanMainRenderPass::Execute(CommandBuffer* cmd)
 	{
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
-		m_Renderer->DrawFullScreenQuad((VulkanCommandBuffer*)cmdBuffer, DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);
-		//m_Renderer->DrawScene((VulkanCommandBuffer*)cmdBuffer);
-		//m_Device->DrawUI(cmdBuffer);
+		if (m_Renderer->GetRenderSettings().engineMode == EngineMode::Editor)
+		{
+			//m_Renderer->DrawScene((VulkanCommandBuffer*)cmdBuffer);
+			m_Device->DrawUI(cmdBuffer);
+		}
+		else
+		{
+			m_Renderer->DrawFullScreenQuad((VulkanCommandBuffer*)cmdBuffer, DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);
+		}
 	}
 
-	void VulkanMainRenderPass::Resize(int width, int height)
-	{
-		
-	}
 
 	void VulkanMainRenderPass::SetFinalTexture(TextureHandle texture)
 	{
@@ -97,6 +99,13 @@ namespace Czuch
 			MaterialInstance* mat = m_Device->AccessMaterialInstance(DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);
 			mat->params[0].SetSampler(0,texture);
 		}
+	}
+
+	void* VulkanMainRenderPass::GetFinalTexture()
+	{
+		auto texture = m_Device->AccessTexture(m_FinalTexture);
+		auto vulkanTexture = Internal_to_Texture(texture);
+		return vulkanTexture->imageView;
 	}
 
 }	

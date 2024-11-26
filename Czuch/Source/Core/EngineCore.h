@@ -3,6 +3,7 @@
 #include<functional>
 #include<deque>
 #include<assert.h>
+#include<memory>
 #include"Common.h"
 
 #ifdef CZUCH_PLATFORM_WINDOWS
@@ -102,6 +103,8 @@ namespace Czuch
 		bool dynamicRendering = false;
 		ValidationMode validationMode = ValidationMode::Disabled;
 		EngineMode engineMode = EngineMode::Runtime;
+		U32 targetWidth = 0;//only for dynamic size rendering
+		U32 targetHeight = 0;
 
 		bool RenderingTargetSizeExternallySet() const
 		{

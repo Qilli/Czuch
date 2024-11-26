@@ -42,7 +42,7 @@ namespace Czuch
 		void* GetRenderPassResult(RenderPassType type) override;
 		bool HasRenderPass(RenderPassType type) override;
 	public:
-		void RegisterRenderPassResizeEventResponse(U32 width, U32 height, bool handleWindowResize,std::function<void(U32,U32)>* onResize) override;
+		void RegisterRenderPassResizeEventResponse(U32 width, U32 height, bool handleAll,std::function<void(U32,U32)>* onResize) override;
 	private:
 		void CreateSyncObjects();
 		void ReleaseSyncObjects();
@@ -107,6 +107,7 @@ namespace Czuch
 		RenderPassControl* RegisterRenderPassControl(RenderPassControl* control) override;
 		void UnRegisterRenderPassControl(RenderPassControl* control) override;
 		RenderPassHandle GetNativeRenderPassHandle(RenderPassType type) override;
+		void* GetFrameGraphFinalResult() override;
 	private: //frame graph control
 		void CreateFrameGraphs();
 		void ReleaseFrameGraphs();

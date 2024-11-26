@@ -16,8 +16,8 @@ namespace Czuch
 		void PreDraw(CommandBuffer* cmdBuffer,Renderer* renderer) override;
 		void PostDraw(CommandBuffer* cmdBuffer, Renderer* renderer) override;
 		void Execute(CommandBuffer* cmdBuffer) override;
-		void Resize(int width, int height) override;
 		void SetFinalTexture(TextureHandle texture);
+		void* GetFinalTexture();
 	private:
 		TextureHandle m_FinalTexture;
 	};

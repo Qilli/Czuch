@@ -80,12 +80,12 @@ namespace Czuch
 		delete m_SceneHierarchyPanel;
 		delete m_EntityInspectorPanel;
 	}
-	void EditorControl::Init(void* context)
+	void EditorControl::Init(void* context, RenderSettings* renderSettings)
 	{
 		ImGui::SetCurrentContext((ImGuiContext*)context);
 		SetLightGreyStyle();
 		m_CommandsControl = new EditorCommandsControl();
-		UpdateOffscreenPass((U32)800, (U32)600);
+		UpdateOffscreenPass(renderSettings->targetWidth, renderSettings->targetHeight);
 	}
 
 	void EditorControl::Shutdown()
@@ -127,9 +127,21 @@ namespace Czuch
 		m_Root->GetUIBaseManager().SetBlockEvents(!isFocused || !isHovered);
 
 		auto targetViewportSize = ImGui::GetContentRegionAvail();
+
+		if (targetViewportSize.x == 0)
+		{
+			targetViewportSize.x = 1;
+		}
+
+		if (targetViewportSize.y == 0)
+		{
+			targetViewportSize.y = 1;
+		}
+
+
 		if (UpdateOffscreenPass((U32)targetViewportSize.x, (U32)targetViewportSize.y))
 		{
-			ImGui::Image(m_Root->GetRenderer().GetRenderPassResult(RenderPassType::OffscreenTexture), ImGui::GetContentRegionAvail());
+			ImGui::Image(m_Root->GetRenderer().GetFrameGraphFinalResult(), ImGui::GetContentRegionAvail());
 		}
 
 		//Handle gizmos
@@ -470,6 +482,10 @@ namespace Czuch
 		{
 			if (m_Width != width || m_Height != height)
 			{
+				if (width == 0 || height == 0)
+				{
+					return false;
+				}
 				m_Width = width;
 				m_Height = height;
 				m_UpdateOffscreenPass(width, height);
@@ -478,7 +494,7 @@ namespace Czuch
 			return true;
 		}
 		m_OffscreenPassInited = true;
-		m_Root->GetRenderer().RegisterRenderPassResizeEventResponse(width, height, false,&m_UpdateOffscreenPass);
+		m_Root->GetRenderer().RegisterRenderPassResizeEventResponse(width, height, true,&m_UpdateOffscreenPass);
 		return false;
 	}
 

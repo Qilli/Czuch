@@ -30,6 +30,7 @@ namespace Czuch
 	void* VulkanRenderPassControlBase::GetRenderPassResult()
 	{
 		CZUCH_BE_ASSERT(m_UITextureSource, "This render pass is not a texture source, pointer is null");
+		m_TextureSource->Init();
 		return m_TextureSource->GetTargetTextureDescriptor();
 	}
 
@@ -54,8 +55,19 @@ namespace Czuch
 
 		if (m_TextureSource)
 		{
+			m_TextureSource->Release();
 			delete m_TextureSource;
 			m_TextureSource = nullptr;
+		}
+	}
+
+	void VulkanRenderPassControlBase::Resize(int width, int height)
+	{
+		m_Width = width;
+		m_Height = height;
+		if (m_TextureSource)
+		{
+			m_TextureSource->Release();
 		}
 	}
 

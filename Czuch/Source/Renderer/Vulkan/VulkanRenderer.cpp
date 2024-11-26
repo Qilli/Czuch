@@ -259,12 +259,12 @@ namespace Czuch
 	}
 
 
-	void VulkanRenderer::RegisterRenderPassResizeEventResponse(U32 width, U32 height, bool handleWindowResize, std::function<void(U32, U32)>* onResize)
+	void VulkanRenderer::RegisterRenderPassResizeEventResponse(U32 width, U32 height, bool handleAll, std::function<void(U32, U32)>* onResize)
 	{
 		if (onResize != nullptr)
 		{
-			(*onResize) = [this](U32 width, U32 height) {
-				m_RenderPassResizeQueries.push_back({ RenderPassType::OffscreenTexture,false,width,height });
+			(*onResize) = [this, handleAll ](U32 width, U32 height) {
+				m_RenderPassResizeQueries.push_back({ RenderPassType::OffscreenTexture,handleAll,width,height });
 				};
 		}
 	}
@@ -451,6 +451,11 @@ namespace Czuch
 		return INVALID_HANDLE(RenderPassHandle);
 	}
 
+	void* VulkanRenderer::GetFrameGraphFinalResult()
+	{
+		return m_CurrentFrameGraph.GetFinalRenderPassResult();
+	}
+
 	void VulkanRenderer::CreateFrameGraphs()
 	{
 		//here we will use frame graph builder to create frame graphs
@@ -598,16 +603,16 @@ namespace Czuch
 		m_FrameGraphBuilder.Build(m_CurrentFrameGraph);*/
 
 		bool handleWindowResize = !m_RenderSettings->RenderingTargetSizeExternallySet();
-		U32 startWidth = m_Device->GetSwapchainWidth();
-		U32 startHeight = m_Device->GetSwapchainHeight();
+		U32 startWidth = handleWindowResize?m_Device->GetSwapchainWidth():m_RenderSettings->targetWidth;
+		U32 startHeight = handleWindowResize?m_Device->GetSwapchainHeight():m_RenderSettings->targetHeight;
 
 		///////////////Depth node
 		FrameGraphResourceOutputCreation depthPrepassOutput;
 		depthPrepassOutput.name = "Depth";
 		depthPrepassOutput.type = FrameGraphResourceType::Attachment;
 		depthPrepassOutput.resource_info.texture.format = ConvertVkFormat(m_Device->GetDepthFormat());
-		depthPrepassOutput.resource_info.texture.width = m_Device->GetSwapchainWidth();
-		depthPrepassOutput.resource_info.texture.height = m_Device->GetSwapchainHeight();
+		depthPrepassOutput.resource_info.texture.width = startWidth;
+		depthPrepassOutput.resource_info.texture.height = startHeight;
 		depthPrepassOutput.resource_info.texture.depth = 1;
 		depthPrepassOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
 		depthPrepassOutput.resource_info.texture.usage = ImageUsageFlag::DEPTH_STENCIL_ATTACHMENT;
@@ -628,8 +633,8 @@ namespace Czuch
 		lightingOutput.name = "Lighting";
 		lightingOutput.type = FrameGraphResourceType::Attachment;
 		lightingOutput.resource_info.texture.format = Format::R8G8B8A8_UNORM;
-		lightingOutput.resource_info.texture.width = m_Device->GetSwapchainWidth();
-		lightingOutput.resource_info.texture.height = m_Device->GetSwapchainHeight();
+		lightingOutput.resource_info.texture.width = startWidth;
+		lightingOutput.resource_info.texture.height = startHeight;
 		lightingOutput.resource_info.texture.depth = 1;
 		lightingOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
 		lightingOutput.resource_info.texture.usage = ImageUsageFlag::COLOR_ATTACHMENT;
@@ -641,7 +646,8 @@ namespace Czuch
 		m_FrameGraphBuilder.EndNode();
 		//////////////////////////
 
-		m_FrameGraphBuilder.Build(m_CurrentFrameGraph);
+		m_CurrentFrameGraph.Init(m_Device,this);
+		m_FrameGraphBuilder.Build(&m_CurrentFrameGraph);
 
 		//create main render pass control
 		m_FinalRenderPass = new VulkanMainRenderPass(m_Device, this);

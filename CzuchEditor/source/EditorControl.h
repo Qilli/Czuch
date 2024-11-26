@@ -33,7 +33,7 @@ namespace Czuch
 	public:
 		EditorControl();
 		virtual ~EditorControl();
-		virtual void Init(void* context) override;
+		virtual void Init(void* context, RenderSettings* renderSettings) override;
 		virtual void Shutdown() override;
 		virtual void Update(TimeDelta timeDelta) override;
 		virtual void FillUI(void* sceneViewportTexture);

@@ -43,6 +43,7 @@ namespace Czuch
 		virtual void UnRegisterRenderPassControl(RenderPassControl* control) = 0;
 		virtual void OnPreRenderUpdateContexts(Camera* cam, int width, int height,RenderContextFillParams* fillParams)=0;
 		virtual void OnPostRenderUpdateContexts(RenderContextFillParams* fillParams)=0;
+		virtual void* GetFrameGraphFinalResult() = 0;
 	protected:
 		void OnEvent(Event& e) override;
 		virtual void OnWindowResize(uint32_t width, uint32_t height) = 0;

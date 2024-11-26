@@ -48,7 +48,7 @@ namespace Czuch
 		void AddOutput(FrameGraphResourceOutputCreation output);
 		void SetRenderPassControl(RenderPassControl* control);
 		void EndNode();
-		void Build(FrameGraph& graph);
+		void Build(FrameGraph* graph);
 	private:
 		FrameGraphNodeHandle CreateNode(FrameGraphNodeCreateData data);
 		FrameGraphResourceHandle CreateOutputResource(const FrameGraphResourceOutputCreation& output, FrameGraphNodeHandle node);
@@ -63,6 +63,6 @@ namespace Czuch
 		Array<FrameGraphNodeHandle> tempNodes;
 		bool m_Inited = false;
 		GraphicsDevice* m_Device;
-		FrameGraph m_FrameGraph;
+		FrameGraph *m_FrameGraph;
 	};
 }

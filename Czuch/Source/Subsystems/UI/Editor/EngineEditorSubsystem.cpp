@@ -17,7 +17,7 @@ namespace Czuch
 		BaseSubsystem::Init(settings);
 		if (m_EditorControl != nullptr)
 		{
-			m_EditorControl->Init(m_Root->GetUIBaseManager().GetUIContext());
+			m_EditorControl->Init(m_Root->GetUIBaseManager().GetUIContext(),settings);
 		}
 	}
 

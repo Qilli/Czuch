@@ -11,6 +11,7 @@ namespace Czuch
 	{
 		UITextureSource(VulkanDevice* device, FrameGraph* fgraph, FrameGraphNode* node);
 		void Init();
+		void Release();
 		void* GetTargetTextureDescriptor() { return (void*)m_Descriptor; }
 		FrameGraphNode* m_Node;
 		FrameGraph* m_FrameGraph;
