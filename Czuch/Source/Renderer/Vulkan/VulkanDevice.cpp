@@ -86,6 +86,12 @@ namespace Czuch
 			}
 		}
 
+		if (rp == nullptr)
+		{
+			LOG_BE_ERROR("[{0}] Failed to create new pipeline state, render pass is null", Tag);
+			return INVALID_HANDLE(PipelineHandle);
+		}
+
 
 		Pipeline* ps = new Pipeline();
 		ps->m_InternalResourceState = std::make_shared<Pipeline_Vulkan>();
@@ -578,7 +584,7 @@ namespace Czuch
 
 			if (!CreateBuffer_Internal(settingsStageBuffer))
 			{
-				LOG_BE_ERROR("{0} Failed to create staging buffer for texture copy.", Tag);
+				LOG_BE_ERROR("{0} Failed to create staging buffer for texture copy with name: {1}.", Tag, desc->name);
 				return INVALID_HANDLE(TextureHandle);
 			}
 
@@ -593,7 +599,7 @@ namespace Czuch
 
 			if (imageWithAlloc.allocation == nullptr || imageWithAlloc.image == nullptr)
 			{
-				LOG_BE_ERROR("{0} Failed to create new vulkan Texture", Tag);
+				LOG_BE_ERROR("{0} Failed to create new vulkan Texture with name: {1}", Tag, desc->name);
 				return INVALID_HANDLE(TextureHandle);
 			}
 
@@ -601,13 +607,13 @@ namespace Czuch
 			vulkanTexture->allocation = imageWithAlloc.allocation;
 
 			//transition
-			TransitionImageLayout(vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,0,1,IsDepthFormat(desc->format));
+			TransitionImageLayout(nullptr,vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,0,1,IsDepthFormat(desc->format));
 
 			//copy staging buffe to target image
 			CopyBufferToImage(settingsStageBuffer.outBuffer, vulkanTexture->image, desc->width, desc->height);
 
 			//transition for read in ps
-			TransitionImageLayout(vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, ConvertImageLayout(desc->initialLayout),0,1, IsDepthFormat(desc->format));
+			TransitionImageLayout(nullptr,vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, ConvertImageLayout(ImageLayout::SHADER_READ_ONLY_OPTIMAL),0,1, IsDepthFormat(desc->format));
 
 			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
 		}
@@ -615,11 +621,11 @@ namespace Czuch
 		{
 			VkFormat targetFormat = ConvertFormat(desc->format);
 			auto imageWithAlloc = CreateImage(desc->type, desc->width, desc->height, desc->mip_levels, ConvertSamplesCount(desc->sample_count), targetFormat,
-				VK_IMAGE_TILING_OPTIMAL, ConvertImageUsageFlags((U32)desc->usageFlags), ConvertImageLayout(desc->initialLayout), VK_SHARING_MODE_EXCLUSIVE);
+				VK_IMAGE_TILING_OPTIMAL, ConvertImageUsageFlags((U32)desc->usageFlags), VK_IMAGE_LAYOUT_UNDEFINED, VK_SHARING_MODE_EXCLUSIVE);
 
 			if (imageWithAlloc.allocation == nullptr || imageWithAlloc.image == nullptr)
 			{
-				LOG_BE_ERROR("{0} Failed to create new vulkan Texture", Tag);
+				LOG_BE_ERROR("{0} Failed to create new vulkan Texture with name: {1}", Tag, desc->name);
 				return INVALID_HANDLE(TextureHandle);
 			}
 
@@ -628,7 +634,7 @@ namespace Czuch
 
 			if (desc->resourceType == ResourceState::SHADER_RESOURCE)
 			{
-				TransitionImageLayout(vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,0,1,IsDepthFormat(desc->format));
+				TransitionImageLayout(nullptr,vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,0,1,IsDepthFormat(desc->format));
 			}
 		}
 
@@ -644,6 +650,7 @@ namespace Czuch
 
 		TextureHandle h;
 		h.handle = m_ResContainer.textures.Add(color_texture);
+		LOG_BE_INFO("{0} Texture created with name: {1} with id: {2}",Tag,desc->name, h.handle);
 		return h;
 	}
 
@@ -743,7 +750,7 @@ namespace Czuch
 		auto asset = AssetsManager::GetPtr()->GetAsset<MaterialAsset>(matInstance->desc.materialAsset);
 		matInstance->handle = asset->GetMaterialResourceHandle();
 		matInstance->desc.isTransparent = asset->IsTransparent();
-
+		matInstance->passesCount = asset->GetPassesCount();
 		auto material = AccessMaterial(matInstance->handle);
 		auto* matDesc = material->desc;
 		for (int a = 0; a < material->pipelines.size(); a++)
@@ -846,6 +853,35 @@ namespace Czuch
 			}
 			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
 		}
+		else if (HasFlag(desc->bind_flags, BindFlag::UNIFORM_BUFFER) && desc->createMapped==false && desc->initData!=nullptr)
+		{
+			BufferInternalSettings settingsStageBuffer{};
+			settingsStageBuffer.inSize = bufferVulkan->size;
+			settingsStageBuffer.inFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+			settingsStageBuffer.inStagingBuffer = true;
+			settingsStageBuffer.inCreateMapped = false;
+			settingsStageBuffer.inUsage = Usage::MEMORY_USAGE_CPU_ONLY;
+
+			if (!CreateBuffer_Internal(settingsStageBuffer))
+			{
+				LOG_BE_ERROR("{0} Failed to create new vulkan staging buffer for uniform buffer transfer", Tag);
+				return INVALID_HANDLE(BufferHandle);
+			}
+
+			//map memory
+			void* data = nullptr;
+			vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
+			memcpy(data, desc->initData, desc->size);
+			vmaUnmapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc);
+
+			if (!CopyBuffer(settingsStageBuffer.outBuffer, bufferVulkan->buffer, settingsStageBuffer.inSize))
+			{
+				LOG_BE_ERROR("{0} Failed to copy data from staging buffer to uniform buffer", Tag);
+				vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
+				return INVALID_HANDLE(BufferHandle);
+			}
+			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
+		}
 
 		BufferHandle h;
 		h.handle = m_ResContainer.buffers.Add(buffer);
@@ -881,9 +917,14 @@ namespace Czuch
 		return true;
 	}
 
-	void VulkanDevice::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout,U32 baseMipLevel,U32 mipCount,bool isDepth)const
+	void VulkanDevice::TransitionImageLayout(VkCommandBuffer cmd ,VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout,U32 baseMipLevel,U32 mipCount,bool isDepth)const
 	{
-		VkCommandBuffer cmd = BeginSingleTimeCommands();
+		bool singleTime = false;
+		if (cmd == nullptr)
+		{
+			cmd = BeginSingleTimeCommands();
+			singleTime = true;
+		}
 
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -929,7 +970,7 @@ namespace Czuch
 		}
 		else if (currentLayout == VK_IMAGE_LAYOUT_UNDEFINED && targetLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
 			barrier.srcAccessMask = 0;
-			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
@@ -937,7 +978,7 @@ namespace Czuch
 		else if (currentLayout == VK_IMAGE_LAYOUT_UNDEFINED && targetLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)
 		{
 			barrier.srcAccessMask = 0;
-			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			barrier.dstAccessMask =  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
@@ -982,9 +1023,52 @@ namespace Czuch
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		}
+		else if (currentLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && targetLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		{
+			barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		}
+		else if (currentLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL && targetLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		{
+			barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		}
+		else if (currentLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && targetLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+		{
+			barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		}
+		else if (currentLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && targetLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)
+		{
+			barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		}
+		else if (currentLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && targetLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+		{
+			barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+			barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		}
 		else {
-			LOG_BE_ERROR("{0} Failed to find proper source and destinations settings for image transition layer.", Tag);
-			EndSingleTimeCommands(cmd);
+			LOG_BE_ERROR("{0} Failed to find proper source and destinations settings for image transition layer. From {1} to {2}", Tag, currentLayout,targetLayout);
+			if (singleTime)
+			{
+				EndSingleTimeCommands(cmd);
+			}
 			return;
 		}
 
@@ -998,7 +1082,10 @@ namespace Czuch
 			1, &barrier
 		);
 
-		EndSingleTimeCommands(cmd);
+		if (singleTime)
+		{
+			EndSingleTimeCommands(cmd);
+		}
 	}
 
 	void VulkanDevice::DoImageMemoryBarrier(VkCommandBuffer cmdbuffer, VkImage image, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImageSubresourceRange subresourceRange) const
@@ -2095,7 +2182,7 @@ namespace Czuch
 		m_DepthImage.depthImageView = CreateImageView(m_DepthImage.depthImage, depthStencilFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 		m_DepthImage.depthFormat = depthStencilFormat;
 
-		TransitionImageLayout(m_DepthImage.depthImage, depthStencilFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,0,1,true);
+		TransitionImageLayout(nullptr,m_DepthImage.depthImage, depthStencilFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,0,1,true);
 		return true;
 	}
 
@@ -2390,6 +2477,8 @@ namespace Czuch
 		tex->desc.width = width;
 		tex->desc.height = height;
 		LOG_BE_INFO("{0} Resizing texture {1} to {2}x{3}", Tag, texture.handle, width, height);
+		tex->desc.layoutInfo.currentFormat = ImageLayout::UNDEFINED;
+		tex->desc.layoutInfo.lastFormat = ImageLayout::UNDEFINED;
 		CreateTexture(&tex->desc,true,texture);
 	}
 
@@ -2533,17 +2622,48 @@ namespace Czuch
 		vkDestroyDescriptorPool(m_Device, m_ImguiPool, nullptr);
 	}
 
-	void VulkanDevice::TransitionImageLayout(TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout,U32 baseMipLevel, U32 mipCount, bool isDepth)
+	void VulkanDevice::TransitionImageLayoutImmediate(TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout,U32 baseMipLevel, U32 mipCount, bool isDepth)
+	{
+		auto texture = AccessTexture(handle);
+		if (texture == nullptr)
+		{
+			LOG_BE_ERROR("TransitionImageLayoutImmediate with invalid handle.");
+			CZUCH_BE_ASSERT(false,"TransitionImageLayoutImmediate with invalid handle.");
+			return;
+		}
+		VkFormat format = ConvertFormat(texture->desc.format);
+		auto textureVulkan = Internal_to_Texture(texture);
+		TransitionImageLayout(nullptr,textureVulkan->image, format, ConvertImageLayout(oldLayout), ConvertImageLayout(newLayout),baseMipLevel,mipCount,isDepth);
+	}
+
+	void VulkanDevice::TransitionImageLayout(CommandBuffer* cmd, TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount, bool isDepth)
 	{
 		auto texture = AccessTexture(handle);
 		if (texture == nullptr)
 		{
 			LOG_BE_ERROR("TransitionImageLayout with invalid handle.");
+			CZUCH_BE_ASSERT(false, "TransitionImageLayout with invalid handle.");
 			return;
 		}
 		VkFormat format = ConvertFormat(texture->desc.format);
 		auto textureVulkan = Internal_to_Texture(texture);
-		TransitionImageLayout(textureVulkan->image, format, ConvertImageLayout(oldLayout), ConvertImageLayout(newLayout),baseMipLevel,mipCount,isDepth);
+		VulkanCommandBuffer* vcmd = (VulkanCommandBuffer*)cmd;
+		TransitionImageLayout(vcmd->GetNativeBuffer(), textureVulkan->image, format, ConvertImageLayout(oldLayout), ConvertImageLayout(newLayout), baseMipLevel, mipCount, isDepth);
+	}
+
+	bool VulkanDevice::TryTransitionImageLayout(CommandBuffer* cmd, TextureHandle textureHandle, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount)
+	{
+		auto texture = AccessTexture(textureHandle);
+		CZUCH_BE_ASSERT(texture != nullptr, "TryTransitionImageLayout with invalid handle.");
+
+		bool isDepth = IsDepthFormat(texture->desc.format);
+		auto targetLayout = newLayout;
+		if (texture->desc.layoutInfo.TryToTransitionTo(targetLayout))
+		{
+			TransitionImageLayout(cmd,textureHandle, texture->desc.layoutInfo.lastFormat, targetLayout, baseMipLevel, mipCount, isDepth);
+			return true;
+		}
+		return false;
 	}
 
 	Pipeline* VulkanDevice::AccessPipeline(PipelineHandle handle)

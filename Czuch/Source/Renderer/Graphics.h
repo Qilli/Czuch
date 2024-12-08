@@ -46,6 +46,7 @@ namespace Czuch
 		Final = 1<<4,
 		DepthPrePass = 1<<5,
 		ForwardLighting = 1<<7,
+		DepthLinearPrePass = 1 << 8,
 		Custom = 1<<8
 	};
 
@@ -563,6 +564,42 @@ namespace Czuch
 	struct Texture;
 	struct RenderPass;
 
+	struct ImageLayouInfo
+	{
+		ImageLayout currentFormat = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+		ImageLayout lastFormat = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+		ImageLayout initFormat = ImageLayout::UNDEFINED;
+	
+		bool TryToTransitionTo(ImageLayout newLayout)
+		{
+			if (currentFormat == newLayout)
+			{
+				return false;
+			}
+			lastFormat = currentFormat;
+			currentFormat = newLayout;
+			return true;
+		}
+
+		void SetTo(ImageLayout newLayout)
+		{
+			lastFormat = currentFormat;
+			currentFormat = newLayout;
+		}
+
+		void SetInitLayout(ImageLayout newLayout)
+		{
+			initFormat = newLayout;
+		}
+
+		void SetAllTo(ImageLayout newLayout)
+		{
+			lastFormat = newLayout;
+			currentFormat = newLayout;
+			initFormat = newLayout;
+		}
+	};
+
 
 	struct GraphicsDeviceResource
 	{
@@ -725,6 +762,8 @@ namespace Czuch
 		ShaderParamsSet& AddBuffer(CzuchStr name, BufferHandle buffer, U16 binding);
 		ShaderParamsSet& AddSampler(CzuchStr name, TextureHandle color_texture, U16 binding);
 		void SetSampler(int descriptor, TextureHandle color_texture);
+		bool TrySetSampler(StringID& name, TextureHandle texture);
+		bool TrySetBuffer(StringID& name, BufferHandle buffer);
 	};
 
 	union ClearValue
@@ -846,6 +885,12 @@ namespace Czuch
 		void Reset();
 		void AddAttribute(const VertexAttribute& attribute);
 		void AddStream(const VertexStream& stream);
+	};
+
+	struct CameraPlanesData
+	{
+		float nearPlane = 0.1f;
+		float farPlane = 1000.0f;
 	};
 
 
@@ -1120,6 +1165,8 @@ namespace Czuch
 		MaterialInstanceParams& AddBuffer(int set, CzuchStr& name, BufferHandle buffer, U16 binding);
 		MaterialInstanceParams& AddSampler(int set, CzuchStr& name, TextureHandle color_texture, U16 binding);
 		void SetSampler(int set,TextureHandle color_texture);
+		void SetSampler(StringID& name, TextureHandle texture);
+		void SetUniformBuffer(StringID& name, BufferHandle buffer);
 	};
 
 	struct SamplerDesc
@@ -1135,6 +1182,7 @@ namespace Czuch
 	struct TextureDesc
 	{
 		SamplerDesc samplerDesc;
+		ImageLayouInfo layoutInfo;
 		enum class Type
 		{
 			TEXTURE_1D,
@@ -1154,10 +1202,10 @@ namespace Czuch
 		ClearValue clear = {};
 		ResourceState resourceType = ResourceState::SHADER_RESOURCE;
 		ImageUsageFlag usageFlags = ImageUsageFlag::SAMPLED | ImageUsageFlag::TRANSFER_DST;
-		ImageLayout initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
 		ImageAspectFlag aspectFlags = ImageAspectFlag::COLOR;
 		Swizzle swizzle;
 		U8* texData;
+		const char* name = nullptr;
 
 		inline U32 GetSize() const
 		{
@@ -1260,8 +1308,11 @@ namespace Czuch
 		MaterialInstanceDesc desc{};
 		MaterialInstanceParams params[k_max_render_passes];
 		MaterialHandle handle;
+		U32 passesCount = 0;
 		bool IsTransparent() const { return desc.isTransparent; }
 		constexpr const MaterialInstanceDesc& GetDesc() const { return desc; }
+		void SetSampler(StringID &name, TextureHandle texture);
+		void SetUniformBuffer(StringID& name, BufferHandle buffer);
 	};
 
 	struct Pipeline : public GraphicsDeviceResource

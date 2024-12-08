@@ -47,13 +47,13 @@ namespace Czuch
 
 		TextureCreateSettings(TextureCreateSettings&& other) noexcept
 		{
-			std::cout << "In constructor(MemoryBlock&&). length = " << "." << std::endl;
+			LOG_BE_INFO("TextureCreateSettings: Constructing create texture settings with move constructor");
 			*this = std::move(other);
 		}
 
 		TextureCreateSettings& operator=(TextureCreateSettings&& other) noexcept
 		{
-			std::cout << "In operator=(MemoryBlock&&). length = " << "." << std::endl;
+			LOG_BE_INFO("TextureCreateSettings: Operator = create texture settings with move option");
 			if (&other != this)
 			{
 				this->channels = other.channels;

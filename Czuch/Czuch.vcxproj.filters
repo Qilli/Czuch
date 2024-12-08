@@ -336,6 +336,7 @@
     <ClInclude Include="vendors\ImGuizmoCzuch\ImGuizmo.h">
       <Filter>vendors\ImGuizmoCzuch</Filter>
     </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDepthLinearPrepassRenderPass.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Core\AccessContainer.cpp">
@@ -554,5 +555,9 @@
     <ClCompile Include="vendors\ImGuizmoCzuch\ImGuizmo.cpp">
       <Filter>vendors\ImGuizmoCzuch</Filter>
     </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDepthLinearPrepassRenderPass.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Data\Shaders\DepthLinearPrepass.frag" />
   </ItemGroup>
 </Project>

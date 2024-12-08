@@ -19,6 +19,7 @@
 
 #include"RenderPass/VulkanDepthPrepassRenderPass.h"
 #include"RenderPass/VulkanDefaultForwardLightingRenderPass.h"
+#include"RenderPass/VulkanDepthLinearPrepassRenderPass.h"
 
 #include"Events/EventsTypes/ApplicationEvents.h"
 
@@ -92,14 +93,30 @@ namespace Czuch
 		InitSceneData();
 		InitImmediateSubmitData();
 
-		CreateFrameGraphs();
 		EventsManager::Get().AddListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
+	}
+
+	void VulkanRenderer::AfterSystemInit()
+	{
+		m_CurrentFrameGraph.AfterSystemInit();
+	}
+
+	void VulkanRenderer::CreateRenderGraph()
+	{
+		CreateFrameGraphs();
 	}
 
 	void VulkanRenderer::DrawFrame()
 	{
 		VkDevice device = m_Device->GetNativeDevice();
-		vkWaitForFences(device, 1, &GetCurrentFrame().inFlightFence, VK_TRUE, UINT64_MAX);
+		auto result=vkWaitForFences(device, 1, &GetCurrentFrame().inFlightFence, VK_TRUE, UINT64_MAX);
+
+		if (result != VK_SUCCESS)
+		{
+			LOG_BE_ERROR("[Vulkan]Failed to wait for fence." + std::to_string(result));
+			return;
+		}
+
 		GetCurrentFrame().Reset();
 		GetCurrentFrame().frameDeletionQueue.Flush();
 
@@ -109,6 +126,8 @@ namespace Czuch
 		uint32_t imageIndex = m_Device->AcquireNextSwapChainImage(GetCurrentFrame().imageAvailableSemaphore, failedToAcquire);
 		if (failedToAcquire)
 		{
+			CZUCH_BE_ASSERT(false, "Failed to aquire next swap chain image.");
+			LOG_BE_ERROR("[Vulkan]Failed to acquire next swap chain image.");
 			return;
 		}
 
@@ -121,7 +140,7 @@ namespace Czuch
 		m_CurrentFrameGraph.Execute(m_Device, cmdBuffer);
 
 		auto finalTexture = m_CurrentFrameGraph.GetFinalTexture();
-		m_FinalRenderPass->SetFinalTexture(finalTexture);
+		m_FinalRenderPass->SetFinalTexture(cmdBuffer,finalTexture);
 		m_FinalRenderPass->PreDraw(cmdBuffer, this);
 		m_FinalRenderPass->Execute(cmdBuffer);
 		m_FinalRenderPass->PostDraw(cmdBuffer, this);
@@ -173,6 +192,11 @@ namespace Czuch
 	void VulkanRenderer::AwaitDeviceIdle()
 	{
 		m_Device->AwaitDevice();
+	}
+
+	void VulkanRenderer::ReleaseDependencies()
+	{
+		m_CurrentFrameGraph.ReleaseDependencies();
 	}
 
 	GraphicsDevice* VulkanRenderer::GetDevice()
@@ -366,10 +390,12 @@ namespace Czuch
 
 	void VulkanRenderer::CheckForResizeQueries()
 	{
+		bool resize = false;
 		for (auto it = m_RenderPassResizeQueries.begin(); it != m_RenderPassResizeQueries.end(); ++it)
 		{
 			if (it->allNotHandledByWindowSizeChanged)
 			{
+				m_Device->AwaitDevice();
 				m_CurrentFrameGraph.ResizeRenderPasses(it->width, it->height, false);
 			}
 			else
@@ -620,8 +646,34 @@ namespace Czuch
 		m_FrameGraphBuilder.BeginNewNode("DepthPrepass");
 		m_FrameGraphBuilder.AddOutput(depthPrepassOutput);
 		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(new VulkanDepthPrepassRenderPass(this,m_Device,startWidth,startHeight,handleWindowResize)));
+		m_FrameGraphBuilder.SetClearColor(Vec3(0.0f));
 		m_FrameGraphBuilder.EndNode();
 		//////////////////////////
+
+		///////////////Depth to linear pass
+
+		FrameGraphResourceInputCreation depthAsTextureInput;
+		depthAsTextureInput.type = FrameGraphResourceType::Texture;
+		depthAsTextureInput.name = "Depth";
+
+		FrameGraphResourceOutputCreation depthLinearPrepassOutput;
+		depthLinearPrepassOutput.name = "DepthLinear";
+		depthLinearPrepassOutput.type = FrameGraphResourceType::Attachment;
+		depthLinearPrepassOutput.resource_info.texture.format = Format::R8G8B8A8_UNORM;
+		depthLinearPrepassOutput.resource_info.texture.width = startWidth;
+		depthLinearPrepassOutput.resource_info.texture.height = startHeight;
+		depthLinearPrepassOutput.resource_info.texture.depth = 1;
+		depthLinearPrepassOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
+		depthLinearPrepassOutput.resource_info.texture.usage = ImageUsageFlag::COLOR_ATTACHMENT;
+
+		m_FrameGraphBuilder.BeginNewNode("DepthLinearPrepass");
+		m_FrameGraphBuilder.AddInput(depthAsTextureInput);
+		m_FrameGraphBuilder.SetClearColor(Vec3(0.0f,0.0f,1.0f));
+		m_FrameGraphBuilder.AddOutput(depthLinearPrepassOutput);
+		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(new VulkanDepthLinearPrepassRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize)));
+		m_FrameGraphBuilder.EndNode();
+		/////////////////////////////
+
 
 		///////////////Lighting pass
 
@@ -642,6 +694,7 @@ namespace Czuch
 		m_FrameGraphBuilder.BeginNewNode("LightingPass");
 		m_FrameGraphBuilder.AddInput(depthInput);
 		m_FrameGraphBuilder.AddOutput(lightingOutput);
+		m_FrameGraphBuilder.SetClearColor(Vec3(0.0f,0.0f,0.0f));
 		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(new VulkanDefaultForwardLightingRenderPass(this,m_Device,startWidth,startHeight,handleWindowResize)));
 		m_FrameGraphBuilder.EndNode();
 		//////////////////////////

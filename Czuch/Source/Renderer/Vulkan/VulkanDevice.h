@@ -90,7 +90,9 @@ namespace Czuch
 	public:
 		void* InitImGUI();
 		void ShutdownImGUI();
-		void TransitionImageLayout(TextureHandle handle,ImageLayout oldLayout,ImageLayout newLayout,U32 baseMipLevel, U32 mipCount, bool isDepth) override;
+		void TransitionImageLayoutImmediate(TextureHandle handle,ImageLayout oldLayout,ImageLayout newLayout,U32 baseMipLevel, U32 mipCount, bool isDepth) override;
+		void TransitionImageLayout(CommandBuffer* cmd,TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) override;
+		bool TryTransitionImageLayout(CommandBuffer* cmd, TextureHandle texture, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount) override;
 	public:
 		VkDevice GetNativeDevice() const { return m_Device; }
 		VmaAllocator GetAllocator() const { return m_VmaAllocator; }
@@ -232,7 +234,7 @@ namespace Czuch
 		bool CreateBuffer_Internal(BufferInternalSettings& settings) const;
 		bool CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
 		void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, U32 w, U32 h) const;
-		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) const;
+		void TransitionImageLayout(VkCommandBuffer cmd ,VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) const;
 		void DoImageMemoryBarrier(VkCommandBuffer cmdbuffer,
 			VkImage image,
 			VkAccessFlags srcAccessMask,

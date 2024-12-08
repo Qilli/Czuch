@@ -39,7 +39,14 @@ namespace Czuch
 			else
 			{
 				Texture* tex = (Texture*)device->AccessTexture(TextureHandle(current.resource));
-				writer.WriteTexture(current.binding, tex, current.type);
+				if (tex != nullptr)
+				{
+					writer.WriteTexture(current.binding, tex, current.type);
+				}
+				else
+				{
+					LOG_BE_ERROR("[DescriptorAllocator] Failed to access texture for descriptor set with id: {0}", current.resource);
+				}
 			}
 		}
 
@@ -188,6 +195,12 @@ namespace Czuch
 
 	void DescriptorWriter::WriteTexture(int binding, Texture* color_texture, DescriptorType type)
 	{
+		if (color_texture == nullptr)
+		{
+			LOG_BE_ERROR("[DescriptorWriter] Failed to write texture to descriptor set");
+			return;
+		}
+
 		auto vulkanTex = Internal_to_Texture(color_texture);
 		VkDescriptorImageInfo& imageInfo = imageInfos.emplace_back(VkDescriptorImageInfo {
 			.sampler = vulkanTex->sampler,

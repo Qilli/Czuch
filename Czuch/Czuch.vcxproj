@@ -199,6 +199,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h" />
     <ClInclude Include="source\Renderer\Vulkan\RenderPass\UITextureSource.h" />
     <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDefaultForwardLightingRenderPass.h" />
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDepthLinearPrepassRenderPass.h" />
     <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.h" />
     <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.h" />
     <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanRenderPassControlBase.h" />
@@ -278,6 +279,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\RenderPass\UITextureSource.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDefaultForwardLightingRenderPass.cpp" />
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDepthLinearPrepassRenderPass.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.cpp" />
     <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanRenderPassControlBase.cpp" />
@@ -345,6 +347,9 @@ IF EXIST ..\bin\Dist-windows-x86_64\Czuch\Czuch.dll\ (xcopy /Q /E /Y /I ..\bin\D
     <ProjectReference Include="vendors\yaml-cpp\yaml-cpp.vcxproj">
       <Project>{88F1A057-74BE-FB62-9DD7-E90A890331F1}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Data\Shaders\DepthLinearPrepass.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

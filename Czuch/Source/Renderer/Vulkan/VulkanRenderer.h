@@ -28,8 +28,11 @@ namespace Czuch
 		~VulkanRenderer() override;
 
 		void Init() override;
+		void AfterSystemInit() override;
+		void CreateRenderGraph() override;
 		void DrawFrame() override;
 		void AwaitDeviceIdle() override;
+		void ReleaseDependencies() override;
 		GraphicsDevice* GetDevice() override;
 	public:
 		bool RegisterRenderContext(RenderContext* context) override;
@@ -43,6 +46,7 @@ namespace Czuch
 		bool HasRenderPass(RenderPassType type) override;
 	public:
 		void RegisterRenderPassResizeEventResponse(U32 width, U32 height, bool handleAll,std::function<void(U32,U32)>* onResize) override;
+		inline FrameGraph* GetFrameGraph() override { return &m_CurrentFrameGraph; }
 	private:
 		void CreateSyncObjects();
 		void ReleaseSyncObjects();

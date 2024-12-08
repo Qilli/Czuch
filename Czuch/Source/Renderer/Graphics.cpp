@@ -122,6 +122,32 @@ namespace Czuch
 		}
 	}
 
+	bool ShaderParamsSet::TrySetSampler(StringID& name, TextureHandle texture)
+	{
+		for (int a = 0; a < descriptorsCount; ++a)
+		{
+			if (descriptors[a].paramName.Compare(name)==0)
+			{
+				descriptors[a].resource = texture.handle;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool ShaderParamsSet::TrySetBuffer(StringID& name, BufferHandle buffer)
+	{
+		for (int a = 0; a < descriptorsCount; ++a)
+		{
+			if (descriptors[a].paramName.Compare(name) == 0)
+			{
+				descriptors[a].resource = buffer.handle;
+				return true;
+			}
+		}
+		return false;
+	}
+
 
 	Mesh::~Mesh()
 	{
@@ -166,7 +192,7 @@ namespace Czuch
 		{
 			return *this;
 		}
-		setsCount = std::max(set, this->setsCount);
+		setsCount = std::max(set+1, this->setsCount);
 
 		shaderParamsDesc[set].AddBuffer(name, buffer, binding);
 		return *this;
@@ -178,7 +204,7 @@ namespace Czuch
 		{
 			return *this;
 		}
-		setsCount = std::max(set, this->setsCount);
+		setsCount = std::max(set+1, this->setsCount);
 
 		shaderParamsDesc[set].AddSampler(name, color_texture, binding);
 		return *this;
@@ -191,6 +217,28 @@ namespace Czuch
 			return;
 		}
 		shaderParamsDesc[set].SetSampler(0, color_texture);
+	}
+
+	void MaterialInstanceParams::SetSampler(StringID& name, TextureHandle texture)
+	{
+		for (int a = 0; a < setsCount; ++a)
+		{
+			if (shaderParamsDesc[a].TrySetSampler(name, texture) == true)
+			{
+				return;
+			}
+		}
+	}
+
+	void MaterialInstanceParams::SetUniformBuffer(StringID& name, BufferHandle buffer)
+	{
+		for (int a = 0; a < setsCount; ++a)
+		{
+			if (shaderParamsDesc[a].TrySetBuffer(name, buffer))
+			{
+				return;
+			}
+		}
 	}
 
 	MaterialInstanceDesc& MaterialInstanceDesc::Reset()
@@ -300,6 +348,23 @@ namespace Czuch
 			}
 		}
 		return -1;
+	}
+
+
+	void MaterialInstance::SetSampler(StringID& name, TextureHandle texture)
+	{
+		for (int a = 0; a < passesCount; ++a)
+		{
+			params[a].SetSampler(name, texture);
+		}
+	}
+
+	void MaterialInstance::SetUniformBuffer(StringID& name, BufferHandle buffer)
+	{
+		for (int a = 0; a < passesCount; ++a)
+		{
+			params[a].SetUniformBuffer(name, buffer);
+		}
 	}
 
 }

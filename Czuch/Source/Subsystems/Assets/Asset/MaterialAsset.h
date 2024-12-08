@@ -19,6 +19,7 @@ namespace Czuch
         inline MaterialHandle GetMaterialResourceHandle() const { return m_MaterialResource; }
         void CopyMaterialDescTo(MaterialDefinitionDesc& desc);
         bool IsTransparent() const { return m_MaterialCreateSettings.desc.IsTransparent(); }
+        U32 GetPassesCount() const { return m_MaterialCreateSettings.desc.PassesCount(); }
     private:
         GraphicsDevice* m_Device;
         MaterialHandle m_MaterialResource;

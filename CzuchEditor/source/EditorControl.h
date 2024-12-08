@@ -27,6 +27,7 @@ namespace Czuch
 		Vec3 scale;
 	};
 
+	class RenderGraphEditorWindow;
 
 	class EditorControl : public EngineEditorControl
 	{
@@ -45,6 +46,7 @@ namespace Czuch
 		void ShowMenuFile();
 		bool ShowSaveMenu();
 		void ShowCommandsStackPopup();
+		void ShowConsoleLogPanel();
 		bool CheckCurrentSceneForSave();
 		bool UpdateOffscreenPass(U32 width, U32 height);
 		ImGuizmo::OPERATION GetCurrentGizmoMode();
@@ -59,6 +61,9 @@ namespace Czuch
 		EditorCommandsControl* m_CommandsControl;
 
 		bool m_ShowCommandsStackPopup;
+		bool m_ShowConsoleLogPanel;
+	private: //windows
+		RenderGraphEditorWindow* m_RenderGraphEditorWindow;
 	private: //gizmo
 		GizmoMode m_GizmoMode;
 		bool m_IsGizmoActive;

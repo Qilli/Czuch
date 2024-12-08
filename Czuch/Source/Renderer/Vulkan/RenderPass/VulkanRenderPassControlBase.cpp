@@ -23,6 +23,25 @@ namespace Czuch
 	{
 		m_Renderer->OnPostRenderUpdateContexts(&m_FillParams);
 	}
+
+	void VulkanRenderPassControlBase::BindInputTextures(GraphicsDevice* device, FrameGraphNode* node)
+	{
+		if (m_MaterialsForInputBinding.m_Materials.empty())
+		{
+			return;
+		}
+		for (auto resourceHandle : node->inputs)
+		{
+			auto& resource = m_FrameGraph->GetResource(resourceHandle);
+			if (resource.type == FrameGraphResourceType::Texture)
+			{
+				auto &res = m_FrameGraph->GetResource(resource.output_target);
+				TextureHandle texture = res.info.texture.texture;
+				m_MaterialsForInputBinding.BindTextureForMaterials(device,resource.nameID, texture);
+			}
+		}
+	}
+
 	void VulkanRenderPassControlBase::Execute(CommandBuffer* cmdBuffer)
 	{
 		m_Renderer->DrawScene((VulkanCommandBuffer*)cmdBuffer);
@@ -31,11 +50,25 @@ namespace Czuch
 	{
 		CZUCH_BE_ASSERT(m_UITextureSource, "This render pass is not a texture source, pointer is null");
 		m_TextureSource->Init();
+		
 		return m_TextureSource->GetTargetTextureDescriptor();
+	}
+
+	void VulkanRenderPassControlBase::TransitionResultsToShaderReadOnly(CommandBuffer* cmd)
+	{
+		if (m_TextureSource)
+		{
+			m_TextureSource->TransitionToShaderReadOnly(cmd);
+		}
 	}
 
 	void VulkanRenderPassControlBase::SetAsTextureSource()
 	{
+		if (m_Renderer->GetRenderSettings().engineMode == EngineMode::Runtime)
+		{
+			return;
+		}
+
 		if (m_UITextureSource)
 		{
 			return;
@@ -53,7 +86,17 @@ namespace Czuch
 		}
 		m_Renderer->UnRegisterRenderPassControl(this);
 
-		if (m_TextureSource)
+		if (m_TextureSource!=nullptr)
+		{
+			m_TextureSource->Release();
+			delete m_TextureSource;
+			m_TextureSource = nullptr;
+		}
+	}
+
+	void VulkanRenderPassControlBase::ReleaseDependencies()
+	{
+		if (m_TextureSource != nullptr)
 		{
 			m_TextureSource->Release();
 			delete m_TextureSource;
@@ -69,6 +112,10 @@ namespace Czuch
 		{
 			m_TextureSource->Release();
 		}
+	}
+
+	void VulkanRenderPassControlBase::Init()
+	{
 	}
 
 }

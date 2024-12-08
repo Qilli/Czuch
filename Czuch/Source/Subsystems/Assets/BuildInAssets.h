@@ -29,6 +29,11 @@ namespace Czuch
 		static AssetHandle FINAL_PASS_MATERIAL_ASSET;
 		static MaterialInstanceHandle FINAL_PASS_MATERIAL_INSTANCE;
 
+		//material for depth linear prepass
+		static MaterialHandle DEPTH_LINEAR_PREPASS_MATERIAL;
+		static AssetHandle DEPTH_LINEAR_PREPASS_MATERIAL_ASSET;
+		static MaterialInstanceHandle DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE;
+
 		static TextureHandle WHITE_TEXTURE;
 		static AssetHandle WHITE_TEXTURE_ASSET;
 
@@ -51,6 +56,7 @@ namespace Czuch
 	private:
 		void CreateDepthPrePassMaterial();
 		void CreateFinalPassMaterial();
+		void CreateDepthLinearPrePassMaterial();
 	private:
 		GraphicsDevice* m_Device;
 		AssetsManager* m_AssetsMgr;

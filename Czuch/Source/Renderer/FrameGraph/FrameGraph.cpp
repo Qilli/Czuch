@@ -30,12 +30,21 @@ namespace Czuch
 		return m_Resources.CreateNewResource();
 	}
 
+	void FrameGraph::AfterSystemInit()
+	{
+		for (U32 i = 0; i < m_Nodes.m_Nodes.size(); i++)
+		{
+			auto& node = m_Nodes.m_Nodes[i];
+			node.renderPassControl->Init();
+		}
+	}
+
 	void FrameGraph::Execute(GraphicsDevice* device, CommandBuffer* cmd)
 	{
 		for (U32 i = 0; i < m_Nodes.m_Nodes.size(); i++)
 		{
 			auto& node = m_Nodes.m_Nodes[i];
-			cmd->SetClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+			cmd->SetClearColor(node.clearColor.r, node.clearColor.g, node.clearColor.b, 1.0f);
 			cmd->SetDepthStencil(1.0f, 0);
 
 			U32 width = 0;
@@ -47,14 +56,23 @@ namespace Czuch
 
 				if (input.type == FrameGraphResourceType::Texture)
 				{
-					device->TransitionImageLayout(input.info.texture.texture, ImageLayout::COLOR_ATTACHMENT_OPTIMAL, ImageLayout::SHADER_READ_ONLY_OPTIMAL, 0, 1, IsDepthFormat(input.info.texture.format));
+					auto &res = GetResource(input.output_target);
+					auto texture = device->AccessTexture(res.info.texture.texture);
+					bool isDepth = IsDepthFormat(res.info.texture.format);
+					auto targetLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+					device->TryTransitionImageLayout(cmd, res.info.texture.texture, targetLayout, 0, 1);
 				}
 				else if (input.type == FrameGraphResourceType::Attachment)
 				{
-					auto res=GetResource(input.output_target);
+					auto& res = GetResource(input.output_target);
 					auto texture = device->AccessTexture(res.info.texture.texture);
 					width = texture->desc.width;
 					height = texture->desc.height;
+
+					bool isDepth = IsDepthFormat(res.info.texture.format);
+					bool isDepthStencil = IsDepthFormatWithStencil(res.info.texture.format);
+					auto targetLayout = isDepthStencil ? ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL : (isDepth ? ImageLayout::DEPTH_ATTACHMENT_OPTIMAL : ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
+					device->TryTransitionImageLayout(cmd, res.info.texture.texture, targetLayout, 0, 1);
 				}
 			}
 
@@ -63,13 +81,14 @@ namespace Czuch
 				auto& output = m_Resources.GetResource(node.outputs[a]);
 
 				if (output.type == FrameGraphResourceType::Attachment)
-				{
+				{ 
 					auto texture = device->AccessTexture(output.info.texture.texture);
 					width = texture->desc.width;
 					height = texture->desc.height;
 					bool isDepth = IsDepthFormat(output.info.texture.format);
 					bool isDepthStencil = IsDepthFormatWithStencil(output.info.texture.format);
-					device->TransitionImageLayout(output.info.texture.texture, ImageLayout::UNDEFINED, isDepth ? (isDepthStencil?ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL:ImageLayout::DEPTH_ATTACHMENT_OPTIMAL) : ImageLayout::COLOR_ATTACHMENT_OPTIMAL, 0, 1, isDepth);
+					auto targetLayout = isDepthStencil ? ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL : (isDepth ? ImageLayout::DEPTH_ATTACHMENT_OPTIMAL : ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
+					device->TryTransitionImageLayout(cmd, output.info.texture.texture, targetLayout, 0, 1);
 				}
 			}
 
@@ -88,15 +107,25 @@ namespace Czuch
 
 			auto renderPassControl = node.renderPassControl;
 
-			renderPassControl->PreDraw(cmd,m_Renderer);
+			renderPassControl->PreDraw(cmd, m_Renderer);
 
 			cmd->BindPass(node.renderPass, node.frameBuffer);
+			renderPassControl->BindInputTextures(device, &node);
 
 			renderPassControl->Execute(cmd);
 
-			renderPassControl->PostDraw(cmd,m_Renderer);
+			renderPassControl->PostDraw(cmd, m_Renderer);
 
 			cmd->EndCurrentRenderPass();
+		}
+
+		//transition results to shader read only
+		for (U32 i = 0; i < m_Nodes.m_Nodes.size(); i++)
+		{
+			auto& node = m_Nodes.m_Nodes[i];
+			auto renderPassControl = node.renderPassControl;
+
+			renderPassControl->TransitionResultsToShaderReadOnly(cmd);
 		}
 	}
 
@@ -185,6 +214,18 @@ namespace Czuch
 		return node.GetFirstColorAttachment(this);
 	}
 
+	void FrameGraph::ReleaseDependencies()
+	{
+		m_Nodes.ReleaseDependencies();
+	}
+
+	void* FrameGraph::GetRenderPassResultAt(U32 renderPassIndex)
+	{
+		CZUCH_BE_ASSERT(renderPassIndex < m_Nodes.m_Nodes.size(), "Render pass index out of range");
+		auto& node = m_Nodes.m_Nodes[renderPassIndex];
+		return node.renderPassControl->GetRenderPassResult();
+	}
+
 	void FrameGraphNodesContainer::Init(GraphicsDevice* dev)
 	{
 		device = dev;
@@ -198,6 +239,14 @@ namespace Czuch
 			m_Nodes[i].Release(device);
 		}
 		m_Nodes.clear();
+	}
+
+	void FrameGraphNodesContainer::ReleaseDependencies()
+	{
+		for (U32 i = 0; i < m_Nodes.size(); i++)
+		{
+			m_Nodes[i].renderPassControl->ReleaseDependencies();
+		}
 	}
 
 	FrameGraphNode& FrameGraphNodesContainer::GetNode(FrameGraphNodeHandle handle)
@@ -265,6 +314,26 @@ namespace Czuch
 			{
 				//check if it has color format
 				if (!IsDepthFormat(output.info.texture.format))
+				{
+					return output.info.texture.texture;
+				}
+			}
+		}
+		return TextureHandle{ Invalid_Handle_Id };
+	}
+
+	TextureHandle FrameGraphNode::GetDepthAttachment(FrameGraph* fgraph)
+	{
+		//go through outputs and find first depth attachment
+		for (int i = 0; i < outputs.size(); i++)
+		{
+			auto outputHandle = outputs[i];
+			//get resource using out handle 
+			auto& output = fgraph->GetResource(outputHandle);
+			if (output.type == FrameGraphResourceType::Attachment)
+			{
+				//check if it has depth format
+				if (IsDepthFormat(output.info.texture.format))
 				{
 					return output.info.texture.texture;
 				}

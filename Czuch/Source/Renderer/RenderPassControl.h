@@ -10,16 +10,29 @@ namespace Czuch
 	class Camera;
 	class CommandBuffer; 
 	struct FrameGraph;
+	struct FrameGraphNode;
+
+	struct MaterialsForInputBinding
+	{
+		Array<MaterialInstanceHandle> m_Materials;
+		void AddMaterial(MaterialInstanceHandle material) { m_Materials.push_back(material); }
+		void Clear() { m_Materials.clear(); }
+		void BindTextureForMaterials(GraphicsDevice* device,StringID& texName,TextureHandle texture);
+	};
 
 	class RenderPassControl
 	{
 	public:
 		RenderPassControl(Camera* cam, int width, int height, RenderPassType type, bool handleWindowResize, bool uiTextureSource = false);
 		virtual ~RenderPassControl() = default;
+		virtual void Init() = 0;
+		virtual void BindInputTextures(GraphicsDevice* device, FrameGraphNode* node) = 0;
 		virtual void PreDraw(CommandBuffer* cmd,Renderer* renderer);
 		virtual void PostDraw(CommandBuffer* cmd,Renderer* renderer) = 0;
 		virtual void Execute(CommandBuffer* cmd) = 0;
 		virtual void* GetRenderPassResult() { return nullptr; }
+		virtual void ReleaseDependencies() = 0;
+		virtual void TransitionResultsToShaderReadOnly(CommandBuffer* cmd) = 0;
 
 		virtual void Resize(int width, int height);
 		virtual void Release()=0;
@@ -49,7 +62,9 @@ namespace Czuch
 		FrameGraph* GetFrameGraph() const { return m_FrameGraph; }
 		void SetNativeRenderPassHandle(RenderPassHandle handle) { m_NativeRenderPassHandle = handle; }
 		RenderPassHandle GetNativeRenderPassHandle() const { return m_NativeRenderPassHandle; }
+		void AddMaterialForInputBinding(MaterialInstanceHandle material);
 	protected:
+		MaterialsForInputBinding m_MaterialsForInputBinding;
 		RenderContextFillParams m_FillParams;
 		int m_Width, m_Height;
 		int m_LastWidth, m_LastHeight;

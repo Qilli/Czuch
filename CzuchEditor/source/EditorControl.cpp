@@ -6,6 +6,7 @@
 #include"ImGuizmo.h"
 #include"Subsystems/Scenes/Components/CameraComponent.h"
 #include"Commands/CommandTypes/ChangeTransformCommand.h"
+#include"EditorWindows/RenderGraphEditorWindow.h"
 
 namespace Czuch
 {
@@ -70,12 +71,15 @@ namespace Czuch
 	EditorControl::EditorControl() : m_Root(EngineRoot::GetPtr())
 	{
 		m_OffscreenPassInited = false;
+		m_ShowConsoleLogPanel = true;
 		m_SceneHierarchyPanel = nullptr;
 		m_EntityInspectorPanel = nullptr;
 		m_GizmoMode = GizmoMode::Translate;
+		m_RenderGraphEditorWindow = new RenderGraphEditorWindow("Render Graph Preview");
 	}
 	EditorControl::~EditorControl()
 	{
+		delete m_RenderGraphEditorWindow;
 		delete m_CommandsControl;
 		delete m_SceneHierarchyPanel;
 		delete m_EntityInspectorPanel;
@@ -146,7 +150,6 @@ namespace Czuch
 
 		//Handle gizmos
 		Entity currentSelectedEntity = m_SceneHierarchyPanel->GetSelectedEntity();
-
 		HandelGizmoTransforms(currentSelectedEntity);
 
 		ImGui::End();
@@ -155,6 +158,14 @@ namespace Czuch
 		m_SceneHierarchyPanel->FillUI();
 		//inspector panel
 		m_EntityInspectorPanel->FillUI();
+
+		//render graph editor
+		m_RenderGraphEditorWindow->DrawWindow(m_Root);
+
+		if (m_ShowConsoleLogPanel)
+		{
+			ShowConsoleLogPanel();
+		}
 
 		if (m_ShowCommandsStackPopup)
 		{
@@ -339,7 +350,6 @@ namespace Czuch
 		}
 	}
 
-
 	void EditorControl::FillMainMenubar()
 	{
 		if (ImGui::BeginMainMenuBar())
@@ -370,6 +380,14 @@ namespace Czuch
 			{
 				if (ImGui::MenuItem("Show Commands Stack", "CTRL+P")) {
 					m_ShowCommandsStackPopup = true;
+				}
+
+				if (ImGui::MenuItem("Show Console Log", "CTRL+L")) {
+					m_ShowConsoleLogPanel = true;
+				}
+
+				if (ImGui::MenuItem("Render Graph Editor", "CTRL+R")) {
+					m_RenderGraphEditorWindow->SetWindowVisible(true);
 				}
 				ImGui::EndMenu();
 			}
@@ -438,7 +456,7 @@ namespace Czuch
 		}
 		return false;
 	}
-
+	
 	void EditorControl::ShowCommandsStackPopup()
 	{
 		if (ImGui::Begin("Commands Stack", &m_ShowCommandsStackPopup, ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_AlwaysVerticalScrollbar))
@@ -458,8 +476,26 @@ namespace Czuch
 			{
 				ImGui::Text((*it)->ToString().c_str());
 			}
-			ImGui::End();
 		}	
+		ImGui::End();
+	}
+
+	void EditorControl::ShowConsoleLogPanel()
+	{
+		if (m_ShowConsoleLogPanel)
+		{
+			if (ImGui::Begin("Console Log", &m_ShowConsoleLogPanel, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar))
+			{
+				auto logger=Czuch::Logging::GetPtr();
+				auto &logs = logger->GetLogMessages();
+				for (auto& log : logs)
+				{
+					ImGui::Text(log.c_str());
+				}
+
+			}
+			ImGui::End();
+		}
 	}
 
 	bool EditorControl::CheckCurrentSceneForSave()

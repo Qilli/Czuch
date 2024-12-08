@@ -12,4 +12,13 @@ namespace Czuch
 	{
 		
 	}
+	void* VulkanDepthPrepassRenderPass::GetRenderPassResult()
+	{
+		return nullptr;
+	}
+	void VulkanDepthPrepassRenderPass::Init()
+	{
+		m_FillParams.forcedMaterial = DefaultAssets::DEPTH_PREPASS_MATERIAL_INSTANCE;
+		m_FillParams.forceMaterialForAll = true;
+	}
 }

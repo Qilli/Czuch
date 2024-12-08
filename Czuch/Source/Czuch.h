@@ -22,4 +22,6 @@
 #include"./Subsystems/EventsManager.h"
 #include"./Events/EventsTypes/ApplicationEvents.h"
 #include"Renderer/RenderPassControl.h"
+#include"Renderer/FrameGraph/FrameGraph.h"
+#include"EngineRoot.h"
 

@@ -36,7 +36,11 @@ namespace Czuch
 			beginInfo.flags = ConvertCommandBufferUsageFlags(flags); // Optional
 			beginInfo.pInheritanceInfo = nullptr; // Optional
 
-			vkResetCommandBuffer(m_Cmd, 0);
+			if (vkResetCommandBuffer(m_Cmd, 0) != VK_SUCCESS)
+			{
+				LOG_BE_ERROR("{0} Failed to reset command buffer.", Tag);
+				return;
+			}
 
 			if (vkBeginCommandBuffer(m_Cmd, &beginInfo) != VK_SUCCESS) {
 				LOG_BE_ERROR("{0} Failed to begin recording of command buffer.", Tag);

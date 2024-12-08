@@ -3,6 +3,7 @@
 #include "FrameGraph/FrameGraph.h"
 #include"Subsystems/Scenes/Components/CameraComponent.h"
 #include "Renderer.h"
+#include"GraphicsDevice.h"
 
 namespace Czuch
 {
@@ -12,6 +13,7 @@ namespace Czuch
 		m_LastHeight = m_Height;
 		m_LastCamera = m_Camera;
 	}
+
 
 	void RenderPassControl::PreDraw(CommandBuffer* cmd,Renderer* renderer)
 	{
@@ -34,5 +36,19 @@ namespace Czuch
 		m_Width = width; m_Height = height;
 	}
 
+	void RenderPassControl::AddMaterialForInputBinding(MaterialInstanceHandle material)
+	{
+		m_MaterialsForInputBinding.AddMaterial(material);
+	}
+
+
+	void MaterialsForInputBinding::BindTextureForMaterials(GraphicsDevice* device, StringID& texName, TextureHandle texture)
+	{
+		for (auto& mat : m_Materials)
+		{
+			MaterialInstance* matInstance = device->AccessMaterialInstance(mat);
+			matInstance->SetSampler(texName, texture);
+		}
+	}
 
 }

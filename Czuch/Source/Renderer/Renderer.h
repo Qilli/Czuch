@@ -19,6 +19,7 @@ namespace Czuch
 	class Scene;
 	class Camera;
 	struct RenderContextFillParams;
+	struct FrameGraph;
 	enum class RenderPassType:U32;
 
 	class CZUCH_API Renderer : public Czuch::IEventsListener
@@ -29,6 +30,9 @@ namespace Czuch
 		virtual ~Renderer() = default;
 		virtual void DrawFrame() = 0;
 		virtual void Init() = 0;
+		virtual void CreateRenderGraph() = 0;
+		virtual void AfterSystemInit() = 0;
+		virtual void ReleaseDependencies() = 0;
 		virtual void AwaitDeviceIdle() = 0;
 		virtual bool RegisterRenderContext(RenderContext* context) = 0;
 		virtual void UnRegisterRenderContext(RenderContext* context) = 0;
@@ -44,6 +48,7 @@ namespace Czuch
 		virtual void OnPreRenderUpdateContexts(Camera* cam, int width, int height,RenderContextFillParams* fillParams)=0;
 		virtual void OnPostRenderUpdateContexts(RenderContextFillParams* fillParams)=0;
 		virtual void* GetFrameGraphFinalResult() = 0;
+		virtual FrameGraph* GetFrameGraph() = 0;
 	protected:
 		void OnEvent(Event& e) override;
 		virtual void OnWindowResize(uint32_t width, uint32_t height) = 0;

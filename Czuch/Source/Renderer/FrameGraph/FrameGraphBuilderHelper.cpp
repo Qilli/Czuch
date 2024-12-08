@@ -23,7 +23,7 @@ namespace Czuch
 	void FrameGraphBuilderHelper::BeginNewNode(const CzuchStr& name)
 	{
 		m_CurrentNodeData.Clear();
-		m_CurrentNodeData.name = name.c_str();
+		m_CurrentNodeData.name = std::move(name);
 	}
 
 	void FrameGraphBuilderHelper::AddInput(FrameGraphResourceInputCreation input)
@@ -34,6 +34,11 @@ namespace Czuch
 	void FrameGraphBuilderHelper::AddOutput(FrameGraphResourceOutputCreation output)
 	{
 		m_CurrentNodeData.outputs.push_back(output);
+	}
+
+	void FrameGraphBuilderHelper::SetClearColor(const Vec3& color)
+	{
+		m_CurrentNodeData.clearColor = color;
 	}
 
 	void FrameGraphBuilderHelper::SetRenderPassControl(RenderPassControl* control)
@@ -150,8 +155,9 @@ namespace Czuch
 					texDesc.format = resource->info.texture.format;
 					texDesc.samplerDesc = samplerDesc;
 					texDesc.sample_count = 1;
-					texDesc.initialLayout = ImageLayout::UNDEFINED;
+					texDesc.layoutInfo.SetAllTo(ImageLayout::UNDEFINED);
 					texDesc.mip_levels = 1;
+					texDesc.name = resource->name.c_str();
 					
 
 					if (HAS_FLAG(resource->info.texture.usage, ImageUsageFlag::DEPTH_STENCIL_ATTACHMENT))
@@ -199,11 +205,7 @@ namespace Czuch
 			{
 				node->renderPassControl->SetFrameGraphData(m_FrameGraph, m_FrameGraph->m_SortedNodes[i]);
 			}
-
-			if (i == m_FrameGraph->m_SortedNodes.size() - 1)
-			{
-				node->renderPassControl->SetAsTextureSource();
-			}
+			node->renderPassControl->SetAsTextureSource();
 		}
 	}
 
@@ -214,13 +216,14 @@ namespace Czuch
 
 		FrameGraphNode* node = &m_FrameGraph->GetNode(nodeHandle);
 
-		node->name = data.name;
+		node->name = std::move(data.name);
 		node->edges.reserve(data.outputs.size());
 		node->inputs.reserve(data.inputs.size());
 		node->outputs.reserve(data.outputs.size());
 		node->frameBuffer = FrameBufferHandle{ Invalid_Handle_Id };
 		node->renderPass = RenderPassHandle{ Invalid_Handle_Id };
 		node->renderPassControl = data.control;
+		node->clearColor = data.clearColor;
 
 		for (size_t i = 0; i < data.outputs.size(); ++i) {
 			const FrameGraphResourceOutputCreation& output_creation = data.outputs[i];
@@ -246,6 +249,7 @@ namespace Czuch
 
 		FrameGraphResource* resource = &m_FrameGraph->GetResource(resourceHandle);
 		resource->name = output.name;
+		resource->nameID = std::move(StringID::MakeStringID(output.name));
 		resource->type = output.type;
 
 		if (output.type != FrameGraphResourceType::Reference) {
@@ -277,6 +281,7 @@ namespace Czuch
 
 		FrameGraphResource* resource = &m_FrameGraph->GetResource(resourceHandle);
 		resource->name = input.name;
+		resource->nameID = std::move(StringID::MakeStringID(input.name));
 		resource->type = input.type;
 
 		return resourceHandle;
@@ -345,10 +350,10 @@ namespace Czuch
 			if (input_resource->type == FrameGraphResourceType::Attachment) {
 				if (IsDepthFormat(info.texture.format)) {
 					renderPassDesc.SetDepthStencilTexture(info.texture.format,ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-					renderPassDesc.SetDepthAndStencilLoadOp(info.texture.loadOp, info.texture.loadOp);
+					renderPassDesc.SetDepthAndStencilLoadOp(AttachmentLoadOp::LOAD, AttachmentLoadOp::LOAD);
 				}
 				else {
-					renderPassDesc.AddAttachment(info.texture.format, ImageLayout::COLOR_ATTACHMENT_OPTIMAL, info.texture.loadOp);
+					renderPassDesc.AddAttachment(info.texture.format, ImageLayout::COLOR_ATTACHMENT_OPTIMAL, AttachmentLoadOp::LOAD);
 				}
 			}
 		}

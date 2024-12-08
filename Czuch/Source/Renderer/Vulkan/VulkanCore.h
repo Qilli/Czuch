@@ -715,7 +715,7 @@ namespace Czuch
 			outFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
 		}
 
-		if ((aspectsFlags & (U32)ImageAspectFlag::STENCIL) == (U32)ImageAspectFlag::STENCIL)
+		else if ((aspectsFlags & (U32)ImageAspectFlag::STENCIL) == (U32)ImageAspectFlag::STENCIL)
 		{
 			outFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
 		}

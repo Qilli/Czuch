@@ -30,6 +30,10 @@ namespace Czuch
 	MaterialInstanceHandle DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE;
 	AssetHandle DefaultAssets::FINAL_PASS_MATERIAL_ASSET;
 
+	MaterialHandle DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL;
+	MaterialInstanceHandle DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE;
+	AssetHandle DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_ASSET;
+
 	TextureHandle DefaultAssets::WHITE_TEXTURE;
 	AssetHandle DefaultAssets::WHITE_TEXTURE_ASSET;
 	AssetHandle DefaultAssets::EDITOR_ICON_TRANSLATE;
@@ -141,6 +145,7 @@ namespace Czuch
 	
 		CreateDepthPrePassMaterial();
 		CreateFinalPassMaterial();
+		CreateDepthLinearPrePassMaterial();
 	}
 
 	std::vector<Vec3> GetCubeMeshPositions(float size) {
@@ -408,12 +413,6 @@ namespace Czuch
         desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
         desc.passType = RenderPassType::Final;
 
-     /*desc.il.AddStream({.binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA});
-		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
-
-        desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32A32_FLOAT });*/
-
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
 		desc_tex.AddBinding("MainTexture", DescriptorType::SAMPLER, 0, 1, 0, false);
@@ -442,4 +441,54 @@ namespace Czuch
         MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
         DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
     }
+
+	void BuildInAssets::CreateDepthLinearPrePassMaterial()
+	{
+		// Final pass material
+		auto fullscreenVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/VertexFinalPassShader.vert", {});
+		auto depthLinearPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/DepthLinearPrepassShader.frag", {});
+
+		MaterialPassDesc desc;
+		desc.vs = fullscreenVS;
+		desc.ps = depthLinearPS;
+		desc.pt = PrimitiveTopology::TRIANGLELIST;
+		desc.rs.cull_mode = CullMode::BACK;
+		desc.rs.fill_mode = PolygonMode::SOLID;
+		desc.dss.depth_enable = true;
+		desc.dss.depth_func = CompFunc::ALWAYS;
+		desc.dss.depth_write_mask = DepthWriteMask::ZERO;
+		desc.dss.stencil_enable = false;
+		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
+		desc.passType = RenderPassType::DepthLinearPrePass;
+
+		DescriptorSetLayoutDesc desc_layout{};
+		desc_layout.shaderStage = (U32)ShaderStage::PS;
+		desc_layout.AddBinding("Depth", DescriptorType::SAMPLER, 0, 1, 0, false);
+		desc_layout.AddBinding("CameraPlanesData", DescriptorType::UNIFORM_BUFFER, 1, 1, sizeof(CameraPlanesData), true);
+
+		desc.AddLayout(desc_layout);
+
+		MaterialDefinitionDesc matDesc(1);
+		matDesc.EmplacePass(desc);
+		matDesc.materialName = "DepthLinearMaterial";
+
+		MaterialCreateSettings createSettings;
+		createSettings.desc = std::move(matDesc);
+
+		DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_ASSET = m_AssetsMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createSettings.desc.materialName, createSettings);
+		auto materialAsset = m_AssetsMgr->GetAsset<MaterialAsset>(DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_ASSET);
+		materialAsset->SetPersistentStatus(true);
+		DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL = materialAsset->GetMaterialResourceHandle();
+
+		MaterialInstanceCreateSettings instanceCreateSettings{};
+		instanceCreateSettings.materialInstanceName = "DepthLinearPrePassMaterialInstance";
+		instanceCreateSettings.desc.AddSampler("Depth", DefaultAssets::WHITE_TEXTURE);
+		instanceCreateSettings.desc.AddBuffer("CameraPlanesData", BufferHandle{Invalid_Handle_Id});
+		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_ASSET;
+		instanceCreateSettings.desc.isTransparent = false;
+
+		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
+		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
+		DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
+	}
 }

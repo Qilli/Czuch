@@ -29,13 +29,14 @@ namespace Czuch
 		Array<FrameGraphResourceInputCreation> inputs;
 		Array<FrameGraphResourceOutputCreation> outputs;
 		RenderPassControl* control;
-		const char* name;
+		CzuchStr name;
+		Vec3 clearColor;
 		void Clear()
 		{
 			inputs.clear();
 			outputs.clear();
-			name = nullptr;
 			control = nullptr;
+			clearColor = Vec3(0.0f);
 		}
 	};
 
@@ -46,6 +47,7 @@ namespace Czuch
 		void BeginNewNode(const CzuchStr& name);
 		void AddInput(FrameGraphResourceInputCreation input);
 		void AddOutput(FrameGraphResourceOutputCreation output);
+		void SetClearColor(const Vec3& color);
 		void SetRenderPassControl(RenderPassControl* control);
 		void EndNode();
 		void Build(FrameGraph* graph);

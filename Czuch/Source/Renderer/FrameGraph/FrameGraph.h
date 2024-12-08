@@ -17,7 +17,7 @@ namespace Czuch
 		FrameGraphResourceHandle producerHandle;
 		Array<FrameGraphNodeHandle> childProcessors;
 
-		FrameGraphProducerResourceInfo() : producerHandle({ 0 }), childProcessors(10) {}
+		FrameGraphProducerResourceInfo() : producerHandle({ 0 }), childProcessors() {}
 		bool HasAnyChildProcessor() const { return childProcessors.size() > 0; }
 	};
 
@@ -29,23 +29,30 @@ namespace Czuch
 		Reference = 3
 	};
 
+	struct FrameGrapBufferResource
+	{
+		BufferHandle buffer;
+		size_t size;
+		Usage flags;
+	};
+
+	struct FrameGraphTextureResource {
+		AttachmentLoadOp loadOp;
+		U32 width, height, depth;
+		ImageUsageFlag usage;
+		Format format;
+		TextureHandle texture;
+
+		FrameGraphTextureResource() : loadOp(AttachmentLoadOp::CLEAR), width(0), height(0), depth(0), usage(ImageUsageFlag::COLOR_ATTACHMENT), format(Format::R8G8B8A8_UNORM), texture({ InvalidID })
+		{
+			
+		}
+	};
+
 	struct FrameGraphResourceInfo {
 		bool external = false;
-		union {
-			struct {
-				BufferHandle buffer;
-				size_t size;
-				Usage flags;
-			} buffer;
-
-			struct {
-				AttachmentLoadOp loadOp;
-				U32 width, height, depth;
-				ImageUsageFlag usage;
-				Format format;
-				TextureHandle texture;
-			} texture;
-		};
+		FrameGrapBufferResource buffer;
+		FrameGraphTextureResource texture;
 
 		FrameGraphResourceInfo() : external(false) {}
 	};
@@ -58,6 +65,7 @@ namespace Czuch
 		FrameGraphResourceHandle output_target;
 		U32 refCount = 0;
 		CzuchStr name;
+		StringID nameID;
 	};
 
 	struct FrameGraph;
@@ -69,16 +77,19 @@ namespace Czuch
 		Array<FrameGraphResourceHandle> inputs;
 		Array<FrameGraphResourceHandle> outputs;
 		Array<FrameGraphNodeHandle> edges;
+		Vec3 clearColor=Vec3(0,0,0);
 		CzuchStr name;
 
 		void Release(GraphicsDevice* device);
 		void Resize(GraphicsDevice* device, U32 width, U32 height);
 		TextureHandle GetFirstColorAttachment(FrameGraph* fgraph);
+		TextureHandle GetDepthAttachment(FrameGraph* fgraph);
 	};
 
 	struct FrameGraphNodesContainer {
 		void Init(GraphicsDevice* device);
 		void Release();
+		void ReleaseDependencies();
 		FrameGraphNode& GetNode(FrameGraphNodeHandle handle);
 		FrameGraphNodeHandle CreateNewNode();
 		Array<FrameGraphNode> m_Nodes;
@@ -94,7 +105,7 @@ namespace Czuch
 		std::unordered_map<U32, FrameGraphProducerResourceInfo> resourceMap;
 	};
 
-	struct FrameGraph
+	struct CZUCH_API FrameGraph
 	{
 		void Init(GraphicsDevice* device,Renderer* renderer);
 		void Release();
@@ -102,6 +113,7 @@ namespace Czuch
 		FrameGraphResource& GetResource(FrameGraphResourceHandle handle) { return m_Resources.GetResource(handle); }
 		FrameGraphNodeHandle CreateNewNode();
 		FrameGraphResourceHandle CreateNewResource();
+		void AfterSystemInit();
 		void Execute(GraphicsDevice* device,CommandBuffer* cmd);
 		void ResizeNode(FrameGraphNode node, U32 width, U32 height);
 		void* GetRenderPassResult(RenderPassType type);
@@ -112,6 +124,12 @@ namespace Czuch
 		TextureHandle GetFinalTexture();
 		bool HasUI() { return m_HasUI; }
 		void AddUI() { m_HasUI = true; }
+		void ReleaseDependencies();
+		U32 GetNodesCount() { return m_Nodes.m_Nodes.size(); }
+		U32 GetResourceCount() { return m_Resources.resources.size(); }
+		void* GetRenderPassResultAt(U32 renderPassIndex);
+		CzuchStr& GetNodeName(FrameGraphNodeHandle handle) { return m_Nodes.GetNode(handle).name; }
+		CzuchStr& GetNodeNameAt(U32 index) { return m_Nodes.m_Nodes[index].name; }
 		//[TODO] we need to add option to init offscreen node with size from UI
 	private:
 		FrameGraphNodesContainer m_Nodes;

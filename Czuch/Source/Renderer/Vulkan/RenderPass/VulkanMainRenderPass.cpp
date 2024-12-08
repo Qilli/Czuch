@@ -89,11 +89,11 @@ namespace Czuch
 	}
 
 
-	void VulkanMainRenderPass::SetFinalTexture(TextureHandle texture)
+	void VulkanMainRenderPass::SetFinalTexture(CommandBuffer* cmd,TextureHandle texture)
 	{
 		bool setForMaterial =!HANDLE_IS_VALID(m_FinalTexture);
 		m_FinalTexture = texture;
-		m_Device->TransitionImageLayout(m_FinalTexture, ImageLayout::COLOR_ATTACHMENT_OPTIMAL, ImageLayout::SHADER_READ_ONLY_OPTIMAL, 0, 1, false);
+		m_Device->TryTransitionImageLayout(cmd,m_FinalTexture, ImageLayout::SHADER_READ_ONLY_OPTIMAL, 0, 1);
 		if (setForMaterial)
 		{
 			MaterialInstance* mat = m_Device->AccessMaterialInstance(DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);

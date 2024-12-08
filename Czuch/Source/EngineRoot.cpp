@@ -50,6 +50,7 @@ namespace Czuch
 		//create renderer
 		m_Renderer = new VulkanRenderer(m_Window.get(), &m_RenderSettings);
 		m_Renderer->Init();
+		m_Renderer->CreateRenderGraph();
 
 		//create input manager
 		m_InputMgr = new InputManager();
@@ -83,6 +84,9 @@ namespace Czuch
 		m_ScenesMgr = new ScenesManager(m_Renderer, m_ResourcesMgr);
 		m_ScenesMgr->Init(&m_RenderSettings);
 
+		//after system init renderer
+		m_Renderer->AfterSystemInit();
+
 		//for editor mode add dockspace with editor ui
 		m_UIBaseMgr->EnableEditorMode(m_RenderSettings.engineMode == EngineMode::Editor);
 	}
@@ -93,6 +97,7 @@ namespace Czuch
 		delete m_ScenesMgr;
 		delete m_DefaultAssets;
 
+		m_Renderer->ReleaseDependencies();
 		m_EditorSubsystem->Shutdown();
 		m_UIBaseMgr->Shutdown();
 
