@@ -78,7 +78,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;..\Czuch\vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;..\Czuch\vendors\Assimp\include;..\Czuch\vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -99,7 +99,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;..\Czuch\vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;..\Czuch\vendors\Assimp\include;..\Czuch\vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -120,7 +120,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>CZUCH_PLATFORM_WINDOWS;CZUCH_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;..\Czuch\vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Czuch\vendors\spdlog\include;..\Czuch\vendors\glm;..\Czuch\vendors\entt;..\Czuch\source;..\Czuch\vendors\ImGui;..\Czuch\vendors\yaml-cpp\include;..\Czuch\vendors\Assimp\include;..\Czuch\vendors\ImGuizmoCzuch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -138,7 +138,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Czuch\vendors\ImGuizmoCzuch\ImGuizmo.h" />
-    <ClInclude Include="source\EditorWindows\RenderGraphEditorWindow.h" />
+    <ClInclude Include="source\EditorCommon.h" />
     <ClInclude Include="source\Commands\CommandTypes\ChangeTransformCommand.h" />
     <ClInclude Include="source\Commands\CommandTypes\CreateDefaultMeshesCommands.h" />
     <ClInclude Include="source\Commands\CommandTypes\CreateNewEntityCommand.h" />
@@ -147,18 +147,24 @@
     <ClInclude Include="source\Commands\EditorCommandsControl.h" />
     <ClInclude Include="source\Commands\IEditorCommand.h" />
     <ClInclude Include="source\EditorControl.h" />
+    <ClInclude Include="source\EditorWindows\AssetsEditorWindow.h" />
+    <ClInclude Include="source\EditorWindows\AssetsInfoEditorWindow.h" />
     <ClInclude Include="source\EditorWindows\BaseEditorWindow.h" />
+    <ClInclude Include="source\EditorWindows\RenderGraphEditorWindow.h" />
     <ClInclude Include="source\Panels\BaseEditorPanel.h" />
     <ClInclude Include="source\Panels\EntityInspectorEditorPanel.h" />
     <ClInclude Include="source\Panels\SceneHierarchyEditorPanel.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Czuch\vendors\ImGuizmoCzuch\ImGuizmo.cpp" />
-    <ClCompile Include="source\EditorWindows\RenderGraphEditorWindow.cpp" />
+    <ClCompile Include="source\EditorCommon.cpp" />
     <ClCompile Include="source\App\CzuchEditorApplication.cpp" />
     <ClCompile Include="source\Commands\EditorCommandsControl.cpp" />
     <ClCompile Include="source\EditorControl.cpp" />
+    <ClCompile Include="source\EditorWindows\AssetsEditorWindow.cpp" />
+    <ClCompile Include="source\EditorWindows\AssetsInfoEditorWindow.cpp" />
     <ClCompile Include="source\EditorWindows\BaseEditorWindow.cpp" />
+    <ClCompile Include="source\EditorWindows\RenderGraphEditorWindow.cpp" />
     <ClCompile Include="source\ImGuiCompiler.cpp" />
     <ClCompile Include="source\Panels\BaseEditorPanel.cpp" />
     <ClCompile Include="source\Panels\EntityInspectorEditorPanel.cpp" />

@@ -1,14 +1,20 @@
 #pragma once
 #include"Core/EngineCore.h"
 #include"Core/StringID.h"
+#include<filesystem>
 
 namespace Czuch
 {
 	class AssetsManager;
-	struct AssetHandle
+
+	enum CZUCH_API AssetType : uint8_t
 	{
-		Guid handle;
-		bool IsValid() { return handle != InvalidID; }
+		TEXTURE = 0,
+		MATERIAL = 1,
+		MATERIAL_INSTANCE = 2,
+		MESH = 3,
+		SHADER = 4,
+		ALL = 5
 	};
 
 	enum AssetInnerState
@@ -18,10 +24,36 @@ namespace Czuch
 		UNLOADED
 	};
 
-	enum AssetType
+	enum AssetModeType
 	{
 		LOADED_TYPE,
 		CREATED_TYPE
+	};
+
+	struct AssetHandle
+	{
+		Guid handle;
+		bool IsValid() { return handle != Invalid_Handle_Id; }
+
+		AssetHandle()
+		{
+			handle = Invalid_Handle_Id;
+		}
+
+		AssetHandle(Guid guid)
+		{
+			handle = guid;
+		}
+
+		bool operator==(const AssetHandle& other) const
+		{
+			return handle == other.handle;
+		}
+
+		static AssetHandle ToHandle(int handle)
+		{
+			return { handle };
+		}
 	};
 
 	inline AssetHandle PathToHandle(const CzuchStr& path)
@@ -29,6 +61,7 @@ namespace Czuch
 		StringID id = sID(path);
 		return {id.GetGuid()};
 	}
+
 	struct AssetRefCounter
 	{
 		int counter = 0;
@@ -46,6 +79,20 @@ namespace Czuch
 			}
 			return counter > 0;
 		}
+
+		const CzuchStr GetCountString() const
+		{
+			return std::to_string(counter);
+		}
+	};
+
+	struct CZUCH_API ShortAssetInfo
+	{
+		const CzuchStr* name=nullptr;
+		AssetType type= AssetType::ALL;
+		AssetHandle asset;
+		I32 resource=Invalid_Handle_Id;
+		ShortAssetInfo* next=nullptr;
 	};
 
 	class CZUCH_API Asset
@@ -57,6 +104,7 @@ namespace Czuch
 
 		void SetPersistentStatus(bool isPersistent);
 
+		const std::filesystem::path& GetRelativePath() const { return m_RelativePath; }
 		const CzuchStr& AssetPath() const { return m_AssetPath; }
 		const CzuchStr& AssetName() const { return m_AssetName; }
 		const Guid GetGuid() const { return m_GUID.GetGuid(); }
@@ -67,22 +115,36 @@ namespace Czuch
 		static CzuchStr GetNameFromPath(const CzuchStr& inStr);
 		static CzuchStr GetTypeFromPath(const CzuchStr& inStr);
 
-		virtual bool LoadAsset() = 0;
+		virtual bool LoadAsset() {
+			if (m_State == AssetInnerState::LOADED)
+			{
+				return true;
+			}
+			return false;
+		}
 		virtual bool UnloadAsset() = 0;
 		virtual bool CreateFromData() = 0;
+		virtual CzuchStr GetAssetLoadInfo() const = 0;
+		virtual ShortAssetInfo* GetShortAssetInfo() = 0;
+
+		inline void ForceUnload() { m_ForceUnload = true; }
+		inline void IncrementRefCounter() { m_RefCounter.Up(); }
 	protected:
 		bool ShouldUnload();
 	protected:
 		AssetInnerState m_State;
-		AssetType m_AssetType;
+		AssetModeType m_AssetType;
 		AssetRefCounter m_RefCounter;
-		bool m_ForceUnload;
-		bool m_Persistent;
+		ShortAssetInfo m_ShortInfo;
 		AssetsManager* m_AssetsMgr;
 	private:
+		std::filesystem::path m_RelativePath;
 		CzuchStr m_AssetPath;
 		CzuchStr m_AssetName;
 		StringID m_GUID;
+	protected:
+		bool m_ForceUnload;
+		bool m_Persistent;
 	};
 
 }

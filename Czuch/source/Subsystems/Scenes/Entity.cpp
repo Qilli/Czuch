@@ -14,9 +14,9 @@ namespace Czuch
 	{
 	}
 
-	void Entity::AddRenderable(MeshHandle meshHandle, MaterialInstanceHandle overrideMaterial)
+	void Entity::AddRenderable(AssetHandle model,MeshHandle meshHandle, AssetHandle overrideMaterial)
 	{
-		AddComponent<MeshComponent>(meshHandle);
+		AddComponent<MeshComponent>(model,meshHandle);
 		AddComponent<MeshRendererComponent>(overrideMaterial);
 	}
 

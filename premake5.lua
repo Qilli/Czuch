@@ -16,12 +16,14 @@ IncludeDir["Glad"] = "Czuch/vendors/Glad/include"
 IncludeDir["ImGui"] = "Czuch/vendors/ImGui"
 IncludeDir["Vulkan"] = "C:/VulkanSDK/1.3.296.0/Include"
 IncludeDir["YamlCpp"] = "Czuch/vendors/yaml-cpp/include"
+IncludeDir['Assimp'] = "Czuch/vendors/Assimp/include"
 IncludeDir["ImGuizmoCzuch"]= "Czuch/vendors/ImGuizmoCzuch"
 
 include "premake-glfw.lua"
 include "premake-imgui.lua"
 include "premake-yaml-cpp.lua"
 include "Czuch/vendors/Glad/premake-glad.lua"
+
 
 
 project "Czuch"
@@ -62,6 +64,7 @@ project "Czuch"
 		"%{IncludeDir.Vulkan}",
 		"%{IncludeDir.YamlCpp}",
 		"%{IncludeDir.ImGuizmoCzuch}",
+		"%{IncludeDir.Assimp}",
 	}
 
 	links
@@ -70,6 +73,7 @@ project "Czuch"
 		"Glad",
 		"ImGui",
 		"yaml-cpp",
+		"Czuch/vendors/Assimp/Libs/assimp-vc143-mtd.lib",
 		"$(VULKAN_SDK)/lib/vulkan-1.lib"
 	}
 
@@ -215,6 +219,7 @@ project "CzuchEditor"
 			"Czuch/source",
 			"%{IncludeDir.ImGui}",
 			"%{IncludeDir.YamlCpp}",
+			"%{IncludeDir.Assimp}",
 			"%{IncludeDir.ImGuizmoCzuch}",
 		}
 	

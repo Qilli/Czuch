@@ -1,9 +1,10 @@
 #include "czpch.h"
 #include "AssetManager.h"
+#include "AssetsManager.h"
 
 namespace Czuch
 {
-	AssetManager::AssetManager()
+	AssetManager::AssetManager() : m_DefaultAsset(nullptr)
 	{
 	}
 
@@ -23,7 +24,7 @@ namespace Czuch
 	{
 		StringID strId = StringID::MakeStringID(path);
 
-		Asset* existingRes = LoadAsset({ .handle = strId.GetGuid() });
+		Asset* existingRes = LoadAsset({ strId.GetGuid()});
 
 		if (existingRes != nullptr)
 		{
@@ -42,9 +43,24 @@ namespace Czuch
 		return createdRes;
 	}
 
+	void AssetManager::TryCreateAssetWithUnloadState(const CzuchStr& path, BaseLoadSettings& settings)
+	{
+		StringID strId = StringID::MakeStringID(path);
+
+		Asset* res = GetAsset({strId.GetGuid()});
+
+		if (res != nullptr)
+		{
+			return;
+		}
+
+		Asset* createdRes = CreateAsset(path, settings);
+		RegisterAsset(strId, createdRes);
+	}
+
 	Asset* AssetManager::LoadAsset(AssetHandle handle)
 	{
-		Asset* res = GetAsset({ .handle = handle.handle });
+		Asset* res = GetAsset({handle.handle});
 
 		if (res != nullptr)
 		{
@@ -63,15 +79,27 @@ namespace Czuch
 		Asset* res = GetAsset(handle);
 		if (res != nullptr)
 		{
+			if (res->UnloadAsset())
+			{
+				LOG_BE_INFO("Asset with name {0} was unloaded", res->AssetName());
+			}
+		}
+	}
+
+	void AssetManager::RemoveAsset(AssetHandle handle)
+	{
+		Asset* res = GetAsset(handle);
+		if (res != nullptr)
+		{
 			res->UnloadAsset();
-			//UnRegisterAsset(handle);
+			UnRegisterAsset(handle);
 		}
 	}
 
 	void AssetManager::UnloadAsset(const CzuchStr& path)
 	{
 		StringID strId = StringID::MakeStringID(path);
-		UnloadAsset({ .handle = strId.GetGuid() });
+		UnloadAsset(strId.GetGuid());
 	}
 
 	void AssetManager::UnloadAll()
@@ -80,21 +108,24 @@ namespace Czuch
 		{
 			if (value != nullptr)
 			{
-				value->UnloadAsset();
+				value->ForceUnload();
+				if (value->UnloadAsset())
+				{
+					LOG_BE_INFO("Asset with name {0} was unloaded on unload all", value->AssetName());
+				}
 			}
 		}
-		m_Assets.clear();
 	}
 
 	AssetHandle AssetManager::GetHandleForResource(const CzuchStr& path)
 	{
 		StringID strId = StringID::MakeStringID(path);
-		Asset* res = GetAsset({ .handle = strId.GetGuid() });
+		Asset* res = GetAsset( {strId.GetGuid()});
 		if (res != nullptr)
 		{
-			return { .handle = res->GetGuid() };
+			return {res->GetGuid()};
 		}
-		return { .handle = InvalidID };
+		return {InvalidID};
 	}
 
 	Asset* AssetManager::GetAsset(AssetHandle handle)
@@ -102,9 +133,27 @@ namespace Czuch
 		auto result = m_Assets.find(handle.handle);
 		if (result != m_Assets.end())
 		{
-			return result->second;
+			auto res = result->second;
+
+			if (res != nullptr)
+			{
+				if (!res->IsLoaded())
+				{
+					res->LoadAsset();
+				}
+				return res;
+			}
 		}
 		return nullptr;
+	}
+
+	void AssetManager::IncrementAssetRef(AssetHandle handle)
+	{
+		Asset* res = GetAsset(handle);
+		if (res != nullptr)
+		{
+			res->IncrementRefCounter();
+		}
 	}
 
 	void AssetManager::RegisterAsset(StringID& strId, Asset* createdRes)

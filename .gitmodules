@@ -19,3 +19,6 @@
 [submodule "Czuch/vendors/ImGuizmoCzuch"]
 	path = Czuch/vendors/ImGuizmoCzuch
 	url = https://github.com/Qilli/ImGuizmoCzuch.git
+[submodule "Czuch/vendors/Assimp"]
+	path = Czuch/vendors/Assimp
+	url = https://github.com/assimp/assimp.git

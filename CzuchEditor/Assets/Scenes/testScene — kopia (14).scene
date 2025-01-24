@@ -1,0 +1,72 @@
+Scene: MainScene
+Entities:
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default1
+      Name: Cube4
+    TransformComponent:
+      IsEnabled: 1
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default2
+      Name: Cube3
+    TransformComponent:
+      IsEnabled: 1
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default3
+      Name: Cube2
+    TransformComponent:
+      IsEnabled: 1
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default4
+      Name: Cube1
+    TransformComponent:
+      IsEnabled: 1
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default6
+      Name: EditorCamera
+    TransformComponent:
+      IsEnabled: 1
+      Position: [0, 0, 3]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Default7
+      Name: MainCamera
+    TransformComponent:
+      IsEnabled: 1
+      Position: [0, 0, 3]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: GUID:8979879
+    HeaderComponent:
+      IsEnabled: 1
+      Tag: Root
+      Name: MainScene9
+    TransformComponent:
+      IsEnabled: 1
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]

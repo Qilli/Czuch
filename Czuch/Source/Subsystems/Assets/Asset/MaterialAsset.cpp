@@ -8,14 +8,13 @@ namespace Czuch
 {
 	MaterialAsset::MaterialAsset(const CzuchStr& path, GraphicsDevice* device, MaterialLoadSettings& loadSettings, AssetsManager* assetsManager) : Asset(path, GetNameFromPath(path),assetsManager), m_Device(device)
 	{
-		m_AssetType = AssetType::LOADED_TYPE;
+		m_AssetType = AssetModeType::LOADED_TYPE;
 		m_MaterialLoadSettings = std::move(loadSettings);
-		LoadAsset();
 	}
 
 	MaterialAsset::MaterialAsset(const CzuchStr& path, GraphicsDevice* device, MaterialCreateSettings& settings, AssetsManager* assetsManager) : Asset(path, GetNameFromPath(path),assetsManager), m_Device(device)
 	{
-		m_AssetType = AssetType::CREATED_TYPE;
+		m_AssetType = AssetModeType::CREATED_TYPE;
 		m_MaterialCreateSettings = std::move(settings);
 		CreateFromData();
 	}
@@ -28,9 +27,8 @@ namespace Czuch
 
 	bool MaterialAsset::LoadAsset()
 	{
-		if (m_State == AssetInnerState::LOADED)
+		if (Asset::LoadAsset())
 		{
-			m_RefCounter.Up();
 			return true;
 		}
 
@@ -74,7 +72,26 @@ namespace Czuch
 		auto mat = m_Device->AccessMaterial(m_MaterialResource);
 		mat->assetHandle = this->GetHandle();
 		m_State = AssetInnerState::LOADED;
+		m_RefCounter.Up();
 		return true;
+	}
+
+	CzuchStr MaterialAsset::GetAssetLoadInfo() const
+	{
+		return "MaterialAsset: " +AssetName() + "Ref count: "+m_RefCounter.GetCountString()+" State: "+ (m_State==AssetInnerState::LOADED? " Loaded" : "Unloaded");
+	}
+
+	ShortAssetInfo* MaterialAsset::GetShortAssetInfo()
+	{
+		if (m_ShortInfo.name == nullptr || m_ShortInfo.name->empty())
+		{
+			m_ShortInfo.name = &AssetName();
+			m_ShortInfo.type = AssetType::MATERIAL;
+			m_ShortInfo.asset = GetHandle();
+			m_ShortInfo.resource = m_MaterialResource.handle;
+		}
+
+		return &m_ShortInfo;
 	}
 
 	void MaterialAsset::CopyMaterialDescTo(MaterialDefinitionDesc& desc)

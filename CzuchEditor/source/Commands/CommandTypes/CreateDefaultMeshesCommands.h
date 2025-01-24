@@ -14,7 +14,7 @@ namespace Czuch
 		void Execute() override
 		{
 			m_Entity = m_Scene->CreateEntity("Plane Entity", m_Parent);
-			m_Entity.AddRenderable(Czuch::DefaultAssets::PLANE_HANDLE, Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE);
+			m_Entity.AddRenderable(DefaultAssets::PLANE_ASSET,DefaultAssets::PLANE_HANDLE, Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET);
 		}
 		void Undo() override
 		{
@@ -51,7 +51,7 @@ namespace Czuch
 		void Execute() override
 		{
 			m_Entity = m_Scene->CreateEntity("Cube Entity", m_Parent);
-			m_Entity.AddRenderable(Czuch::DefaultAssets::CUBE_HANDLE, Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE);
+			m_Entity.AddRenderable(Czuch::DefaultAssets::CUBE_ASSET,Czuch::DefaultAssets::CUBE_HANDLE, DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET);
 		}
 		void Undo() override
 		{

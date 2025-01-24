@@ -9,22 +9,15 @@ namespace Czuch
 
 	TextureAsset::TextureAsset(const CzuchStr& path, TextureLoadSettings& loadSettings, GraphicsDevice* device, AssetsManager* assetsManager):Asset(path, GetNameFromPath(path),assetsManager),m_Device(device)
 	{
-		stbi_set_flip_vertically_on_load(true);
-		m_AssetType = AssetType::LOADED_TYPE;
+		//stbi_set_flip_vertically_on_load(true);
+		m_AssetType = AssetModeType::LOADED_TYPE;
 		m_CurrentLoadSettings = std::move(loadSettings);
-		if (LoadAsset())
-		{
-			LOG_BE_INFO("Loaded new texture with path: {0}", AssetPath());
-		}
-		else
-		{
-			LOG_BE_ERROR("Failed to load new texture with path: {0}", AssetPath());
-		}
+		LOG_BE_INFO("Created new texture asset with unloaded state at path: {0}", AssetPath());
 	}
 
 	TextureAsset::TextureAsset(const CzuchStr& path, TextureCreateSettings& settings, GraphicsDevice* device, AssetsManager* assetsManager) :Asset(path,path,assetsManager), m_Device(device)
 	{
-		m_AssetType = AssetType::CREATED_TYPE;
+		m_AssetType = AssetModeType::CREATED_TYPE;
 		m_CreateSettings = std::move(settings);
 		if (CreateFromData())
 		{
@@ -45,13 +38,12 @@ namespace Czuch
 
 	bool TextureAsset::LoadAsset()
 	{
-		if (m_State == AssetInnerState::LOADED)
+		if (Asset::LoadAsset())
 		{
-			m_RefCounter.Up();
 			return true;
 		}
 
-		if (m_AssetType == AssetType::CREATED_TYPE)
+		if (m_AssetType == AssetModeType::CREATED_TYPE)
 		{
 			return false;
 		}
@@ -74,14 +66,22 @@ namespace Czuch
 		{
 			desc.format = Format::R8G8B8A8_UNORM_SRGB;
 		}
+		else
+		{
+			//TODO: Implement other texture types
+			m_CurrentLoadSettings.type = TextureDesc::Type::TEXTURE_2D;
+			desc.format = Format::R8G8B8A8_UNORM_SRGB;
+		}
 
-		m_TextureResource = m_Device->CreateTexture(&desc);
+		m_TextureResource = m_Device->CreateTexture(&desc,false);
 		stbi_image_free(pixels);
 
 		if (!HANDLE_IS_VALID(m_TextureResource))
 		{
 			return false;
 		}
+
+		m_TextureResource.assetHandle = GetHandle();
 
 		m_State = AssetInnerState::LOADED;
 
@@ -91,6 +91,8 @@ namespace Czuch
 		}
 
 		m_RefCounter.Up();
+
+		LOG_BE_INFO("Loaded new texture with path: {0}", AssetPath());
 		
 		return true;
 	}
@@ -114,7 +116,7 @@ namespace Czuch
 			return true;
 		}
 
-		if (m_AssetType == AssetType::LOADED_TYPE)
+		if (m_AssetType == AssetModeType::LOADED_TYPE)
 		{
 			return false;
 		}
@@ -139,12 +141,14 @@ namespace Czuch
 			desc.format = Format::R8G8B8A8_UNORM_SRGB;
 		}
 
-		m_TextureResource = m_Device->CreateTexture(&desc);
+		m_TextureResource = m_Device->CreateTexture(&desc,false);
 
 		if (!HANDLE_IS_VALID(m_TextureResource))
 		{
 			return false;
 		}
+
+		m_TextureResource.assetHandle = GetHandle();
 
 		m_State = AssetInnerState::LOADED;
 
@@ -152,8 +156,27 @@ namespace Czuch
 		{
 			InitUITexturePtr();
 		}
+		m_RefCounter.Up();
 
 		return true;
+	}
+
+	ShortAssetInfo* TextureAsset::GetShortAssetInfo()
+	{
+		if (m_ShortInfo.name == nullptr || m_ShortInfo.name->empty())
+		{
+			m_ShortInfo.name = &AssetName();
+			m_ShortInfo.type = AssetType::TEXTURE;
+			m_ShortInfo.asset = GetHandle();
+			m_ShortInfo.resource = m_TextureResource.handle;
+		}
+
+		return &m_ShortInfo;
+	}
+
+	CzuchStr TextureAsset::GetAssetLoadInfo() const
+	{
+		return "TextureAsset: " + AssetName() + " Ref count: " + m_RefCounter.GetCountString() + " State: " + (m_State == AssetInnerState::LOADED ? " Loaded" : "Unloaded");
 	}
 	void TextureAsset::InitUITexturePtr()
 	{

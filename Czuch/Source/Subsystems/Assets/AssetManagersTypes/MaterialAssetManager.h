@@ -8,6 +8,10 @@ namespace Czuch
 	{
 	public:
 		MaterialAssetManager(GraphicsDevice* device);
+		bool IsFormatSupported(const char* format)const override { return strcmp(format, ".matdef") == 0; }
+		int GetAssetType() const override { return (int)AssetType::MATERIAL; }
+	public:
+		void Init() override;
 	protected:
 		Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) override;
 		Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settings) override;
@@ -18,6 +22,7 @@ namespace Czuch
 	inline MaterialAssetManager::MaterialAssetManager(GraphicsDevice* device) :m_Device(device)
 	{
 	}
+	
 
 	inline Asset* MaterialAssetManager::CreateAsset(const CzuchStr& path, BaseCreateSettings& settings)
 	{

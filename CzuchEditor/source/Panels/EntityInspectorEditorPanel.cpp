@@ -5,12 +5,19 @@
 #include"Subsystems/Scenes/Components/HeaderComponent.h"
 #include"Subsystems/Scenes/Components/TransformComponent.h"
 #include"Subsystems/Scenes/Components/CameraComponent.h"
+#include"Subsystems/Scenes/Components/MeshComponent.h"
+#include"Subsystems/Scenes/Components/MeshRendererComponent.h"
+#include"Subsystems/Assets/AssetsManager.h"
+#include"Subsystems/Assets/Asset/ModelAsset.h"
 #include"../Commands/CommandTypes/ChangeTransformCommand.h"
 #include"../Commands/EditorCommandsControl.h"
+#include"../EditorCommon.h"
 
 namespace Czuch
 {
 
+	bool CustomDrawers::m_ResetShowAssetModal = false;
+	char CustomDrawers::tempName[15] = { 0 };
 
 	void Czuch::EntityInspectorEditorPanel::FillUI()
 	{
@@ -31,6 +38,7 @@ namespace Czuch
 			m_HeaderDrawer.DrawComponent(m_SelectedEntity);
 			m_TransformDrawer.DrawComponent(m_SelectedEntity);
 			m_CameraDrawer.DrawComponent(m_SelectedEntity);
+			m_MeshDrawer.DrawComponent(m_SelectedEntity);
 			ImGui::Separator();
 			AddComponentMenu();
 
@@ -44,11 +52,18 @@ namespace Czuch
 			m_HeaderDrawer.DrawModalWindow();
 			m_TransformDrawer.DrawModalWindow();
 			m_CameraDrawer.DrawModalWindow();
+			m_MeshDrawer.DrawModalWindow();
 
 			if (m_CameraDrawer.removeComponent)
 			{
 				m_SelectedEntity.RemoveComponent<CameraComponent>();
 				m_CameraDrawer.removeComponent = false;
+			}
+
+			if (m_MeshDrawer.removeComponent)
+			{
+				m_SelectedEntity.RemoveComponent<MeshComponent>();
+				m_MeshDrawer.removeComponent = false;
 			}
 		}
 		else
@@ -81,6 +96,19 @@ namespace Czuch
 				m_SelectedEntity.AddComponent<CameraComponent>();
 				ImGui::CloseCurrentPopup();
 			}
+
+			if (ImGui::MenuItem(" Mesh Component "))
+			{
+				m_SelectedEntity.AddComponent<MeshComponent>();
+				ImGui::CloseCurrentPopup();
+			}
+
+			if (ImGui::MenuItem(" Mesh Renderer Component "))
+			{
+				m_SelectedEntity.AddComponent<MeshRendererComponent>();
+				ImGui::CloseCurrentPopup();
+			}
+
 			ImGui::Dummy(ImVec2(0.0f, 3.0f));
 			ImGui::EndPopup();
 		}
@@ -347,6 +375,186 @@ namespace Czuch
 			ImGui::EndPopup();
 		}
 	}
+
+
+
+	const ShortAssetInfo* CustomDrawers::ShowAssetSelectorPopup(const char* popupId, AssetType filterSearchType,bool changeTypeActive)
+	{
+		static char searchBuffer[128] = "";
+		static const char* assetTypes[] = {
+			"Texture", "Material", "MaterialInstance", "Mesh", "Shader","All"
+		};
+
+		static AssetType selectedType = filterSearchType;
+		static const Array<ShortAssetInfo*>* filteredAssets;
+		static const ShortAssetInfo* selected;
+
+		if (m_ResetShowAssetModal)
+		{
+			m_ResetShowAssetModal = false;
+			memset(searchBuffer, 0, sizeof(searchBuffer));
+			selectedType = filterSearchType;
+			filteredAssets = &AssetsManager::GetPtr()->GetAssetsOfTypes(filterSearchType);
+			selected = nullptr;
+		}
+
+		ImGui::SetNextWindowSize(ImVec2(600, 500), ImGuiCond_Appearing);
+
+		if (ImGui::BeginPopupModal(popupId, nullptr))
+		{
+			// Search Bar
+			ImGui::InputTextWithHint("##Search", "Search...", searchBuffer, IM_ARRAYSIZE(searchBuffer));
+
+			ImGui::SameLine();
+			ImGui::Text("Type:");
+			ImGui::SameLine();
+
+			// Dropdown for type selection
+			if (!changeTypeActive)
+			{
+				ImGui::BeginDisabled(!changeTypeActive);
+			}
+
+			if (ImGui::BeginCombo("##Type", assetTypes[selectedType])) {
+					for (int i = 0; i < IM_ARRAYSIZE(assetTypes); i++) {
+						if (ImGui::Selectable(assetTypes[i], selectedType == i)) {
+							selectedType = (AssetType)i;
+							// Update the filtered assets based on the new type
+							filteredAssets = &AssetsManager::GetPtr()->GetAssetsOfTypes(selectedType);
+						}
+					}
+				ImGui::EndCombo();
+			}
+
+			if (!changeTypeActive)
+			{
+				ImGui::EndDisabled();
+			}
+
+			ImGui::Separator();
+			bool closePopup = false;
+
+			// Begin a child region to make the table scrollable
+			if (ImGui::BeginChild("AssetsList", ImVec2(0, -ImGui::GetFrameHeightWithSpacing() - 10), true, ImGuiWindowFlags_AlwaysVerticalScrollbar))
+			{
+				const float thumbnailSize = 80;
+				const float padding = 20;
+				const float cellSize = 100; // Adjusted for better alignment
+				const float windowWidth = ImGui::GetContentRegionAvail().x;
+				int columns = static_cast<int>(windowWidth / cellSize);
+				if (columns < 1) columns = 1;
+
+				auto assetsRef = *filteredAssets;
+
+				if (ImGui::BeginTable("AssetsList", columns, ImGuiTableFlags_BordersInner | ImGuiTableFlags_ScrollX))
+				{
+					int columnIndex = 0;
+					U32 i = 0;
+					for (const auto asset : assetsRef) {
+						if (columnIndex == 0) {
+							ImGui::TableNextRow();
+						}
+
+						ImGui::TableNextColumn();
+
+						// Center the thumbnail and name
+						ImGui::BeginGroup();
+
+						// Display the thumbnail
+						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (cellSize - thumbnailSize) / 2);
+						std::string buttonID = "##Thumbnail" + std::to_string(i++);
+
+
+						bool isSelected = (selected == asset);
+
+						if (isSelected) {
+							// Push a different style for the selected button
+							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.9f, 1.0f)); // Blue background
+							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 1.0f, 1.0f)); // Lighter blue when hovered
+							ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.6f, 0.9f, 1.0f)); // Same blue when active
+						}
+
+
+						if(ImGui::ImageButton(buttonID.c_str(), (ImTextureID)EditorAssets::GetIconForType(asset->type), ImVec2(thumbnailSize, thumbnailSize)))
+						{
+							if (isSelected)
+							{
+								closePopup = true;
+							}
+							selected = asset;
+						}
+
+						if (isSelected) {
+							ImGui::PopStyleColor(3);
+						}
+
+						FormatAssetName(asset);
+
+						// Display the name
+						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (cellSize - thumbnailSize) / 2);
+						ImGui::TextWrapped("%s", tempName);
+
+						ImGui::EndGroup();
+
+						columnIndex = (columnIndex + 1) % columns;
+					}
+					ImGui::EndTable();
+				}
+
+				// If no results
+				if (filteredAssets->empty()) {
+					ImGui::Text("No assets found.");
+				}
+
+				ImGui::EndChild(); // End scrollable asset list
+			}
+
+
+			ImGui::Separator();
+
+			//Select button
+			if (ImGui::Button("Select") || closePopup) {
+				if (selected != nullptr)
+				{
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
+			ImGui::SameLine();
+
+			// Cancel Button
+			if (ImGui::Button("Cancel")) {
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine();
+
+			if (selected != nullptr)
+			{
+				ImGui::Text("Selected: %s", selected->name->c_str());
+			}
+
+			ImGui::EndPopup();
+		}
+		return selected;
+	}
+
+	void CustomDrawers::FormatAssetName(Czuch::ShortAssetInfo* const asset)
+	{
+		if (asset->name->length() > 14) {
+			strncpy(tempName, asset->name->c_str(), 12);
+			tempName[12] = '.';
+			tempName[13] = '.';
+		}
+		else {
+			strncpy(tempName, asset->name->c_str(), asset->name->length());
+			tempName[asset->name->length()] = '\0';
+		}
+
+		tempName[14] = '\0';
+	}
+
+
 #pragma endregion
 
 	bool ComponentDrawer::DrawComponentHeader(const char* name, Entity entity)
@@ -383,4 +591,56 @@ namespace Czuch
 			CustomDrawers::ShowModalWindow(m_ModalData.title.c_str(), m_ModalData.text.c_str(), m_ModalData.show);
 		}
 	}
+
+
+#pragma region MeshComponent
+	void MeshInspectorDrawer::DrawComponent(Entity entity)
+	{
+		if (entity.HasComponent<MeshComponent>())
+		{
+			auto& meshComponent = entity.GetComponent<MeshComponent>();
+			bool open = DrawComponentHeader("Mesh Component", entity);
+			if (open)
+			{
+				float buttonHeight = ImGui::GetFrameHeight();
+				float textHeight = ImGui::GetTextLineHeight();
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (buttonHeight - textHeight) * 0.5f);
+				ImGui::Text("  Mesh:");
+				ImGui::SameLine();
+				if (meshComponent.HasMesh())
+				{
+					auto mesh = meshComponent.GetMesh();
+					auto modelAsset = AssetsManager::GetPtr()->GetAsset<ModelAsset>(meshComponent.GetModel());
+					auto name = modelAsset->GetMeshName(mesh);
+					ImGui::Text("%s", name != nullptr ? name->c_str() : "Missing");
+				}
+				else
+				{
+					ImGui::Text("None");
+				}
+				ImGui::SameLine();
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - (buttonHeight - textHeight) * 0.5f);
+				if (ImGui::Button("Select")) {
+					ImGui::OpenPopup("MeshSelectorPopup");
+					CustomDrawers::m_ResetShowAssetModal = true;
+				}
+
+				auto selected=CustomDrawers::ShowAssetSelectorPopup("MeshSelectorPopup", AssetType::MESH,false);
+
+				if (selected != nullptr && !ImGui::IsPopupOpen("MeshSelectorPopup"))
+				{
+					meshComponent.SetMesh(selected->asset, MeshHandle(selected->resource));
+				}
+			}
+		}
+	}
+	void MeshInspectorDrawer::OnSelectionChanged(Entity entity)
+	{
+
+	}
+	void MeshInspectorDrawer::OnRemoveComponent(Entity entity)
+	{
+		removeComponent = true;
+	}
+#pragma endregion
 }

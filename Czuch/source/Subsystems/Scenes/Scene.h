@@ -53,9 +53,11 @@ namespace Czuch
 	private:
 		void CreateRenderContexts();
 		void DestroyMarkedEntities();
+		void GetCurrentActiveCamera();
 	private:
 		friend class Entity;
 		friend class SceneSerializer;
+		Camera* m_CurrentFrameCamera;
 		entt::registry m_Registry;
 		Entity m_RootEntity;
 		CzuchStr m_SceneName;

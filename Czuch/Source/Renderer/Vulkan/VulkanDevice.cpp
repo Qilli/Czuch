@@ -13,6 +13,7 @@
 #include"./Subsystems/Assets/AssetsManager.h"
 #include"./Subsystems/Assets/Asset/ShaderAsset.h"
 #include"./Subsystems/Assets/Asset/MaterialAsset.h"
+#include"./Subsystems/Assets/Asset/MaterialInstanceAsset.h"
 #include "imgui.h"
 #include"backends/imgui_impl_glfw.h"
 #include"backends/imgui_impl_vulkan.h"
@@ -660,7 +661,8 @@ namespace Czuch
 		Mesh* mesh = new Mesh();
 		mesh->data = &meshData;
 		mesh->device = this;
-		mesh->materialHandle = meshData.material;
+		MaterialInstanceHandle matInstanceHandle = AssetsManager::GetPtr()->GetAsset<MaterialInstanceAsset>(meshData.materialInstanceAssetHandle)->GetMaterialInstanceResourceHandle();
+		mesh->materialHandle = matInstanceHandle;
 
 		BufferDesc vbDesc;
 		vbDesc.elementsCount = mesh->data->positions.size();

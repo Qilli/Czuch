@@ -24,5 +24,5 @@ namespace Czuch
 	};
 
 #define sID(name)StringID::MakeStringID(name)
-#define InvalidID 0
+
 }

@@ -17,30 +17,50 @@ namespace Czuch
 
 		static MaterialHandle DEFAULT_SIMPLE_MATERIAL;
 		static AssetHandle DEFAULT_SIMPLE_MATERIAL_ASSET;
+		static AssetHandle DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET;
 		static MaterialInstanceHandle DEFAULT_SIMPLE_MATERIAL_INSTANCE;
 
 		//material for depth prepass
 		static MaterialHandle DEPTH_PREPASS_MATERIAL;
 		static AssetHandle DEPTH_PREPASS_MATERIAL_ASSET;
+		static AssetHandle DEPTH_PREPASS_MATERIAL_INSTANCE_ASSET;
 		static MaterialInstanceHandle DEPTH_PREPASS_MATERIAL_INSTANCE;
 
 		//material for final pass
 		static MaterialHandle FINAL_PASS_MATERIAL;
 		static AssetHandle FINAL_PASS_MATERIAL_ASSET;
+		static AssetHandle FINAL_PASS_MATERIAL_INSTANCE_ASSET;
 		static MaterialInstanceHandle FINAL_PASS_MATERIAL_INSTANCE;
 
 		//material for depth linear prepass
 		static MaterialHandle DEPTH_LINEAR_PREPASS_MATERIAL;
 		static AssetHandle DEPTH_LINEAR_PREPASS_MATERIAL_ASSET;
+		static AssetHandle DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE_ASSET;
 		static MaterialInstanceHandle DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE;
 
 		static TextureHandle WHITE_TEXTURE;
 		static AssetHandle WHITE_TEXTURE_ASSET;
 
+		static TextureHandle PINK_TEXTURE;
+		static AssetHandle PINK_TEXTURE_ASSET;
+
 		//editor assets
 		static AssetHandle EDITOR_ICON_TRANSLATE;
 		static AssetHandle EDITOR_ICON_ROTATE;
 		static AssetHandle EDITOR_ICON_SCALE;
+		static AssetHandle EDITOR_ICON_FILE;
+		static AssetHandle EDITOR_ICON_FOLDER;
+		static AssetHandle EDITOR_ICON_MODEL;
+		static AssetHandle EDITOR_ICON_MATERIAL;
+		static AssetHandle EDITOR_ICON_TEXTURE;
+		static AssetHandle EDITOR_ICON_SHADER;
+		static AssetHandle EDITOR_ICON_MATERIAL_INSTANCE;
+
+
+
+		//shader assets
+		static AssetHandle DEFAULT_VS_SHADER_ASSET;
+		static AssetHandle DEFAULT_PS_SHADER_ASSET;
 	};
 
 	class BuildInAssets

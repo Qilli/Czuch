@@ -3,6 +3,7 @@
 #include"Panels/SceneHierarchyEditorPanel.h"
 #include"Panels/EntityInspectorEditorPanel.h"
 #include"Commands/EditorCommandsControl.h"
+#include"EditorCommon.h"
 
 namespace ImGuizmo
 {
@@ -28,6 +29,9 @@ namespace Czuch
 	};
 
 	class RenderGraphEditorWindow;
+	class AssetsEditorWindow;
+	class AssetsInfoEditorWindow;
+
 
 	class EditorControl : public EngineEditorControl
 	{
@@ -35,12 +39,14 @@ namespace Czuch
 		EditorControl();
 		virtual ~EditorControl();
 		virtual void Init(void* context, RenderSettings* renderSettings) override;
+		virtual void AfterSystemInit() override;
 		virtual void Shutdown() override;
 		virtual void Update(TimeDelta timeDelta) override;
 		virtual void FillUI(void* sceneViewportTexture);
 		void HandleTopBar();
 		void HandelGizmoTransforms(Czuch::Entity& currentSelectedEntity);
 		float GetSnapValue();
+
 	protected:
 		virtual void FillMainMenubar();
 		void ShowMenuFile();
@@ -64,6 +70,10 @@ namespace Czuch
 		bool m_ShowConsoleLogPanel;
 	private: //windows
 		RenderGraphEditorWindow* m_RenderGraphEditorWindow;
+		AssetsEditorWindow* m_AssetsEditorWindow;
+		AssetsInfoEditorWindow* m_AssetsInfoEditorWindow;
+
+
 	private: //gizmo
 		GizmoMode m_GizmoMode;
 		bool m_IsGizmoActive;

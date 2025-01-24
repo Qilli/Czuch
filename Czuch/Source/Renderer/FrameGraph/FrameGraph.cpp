@@ -41,6 +41,7 @@ namespace Czuch
 
 	void FrameGraph::Execute(GraphicsDevice* device, CommandBuffer* cmd)
 	{
+
 		for (U32 i = 0; i < m_Nodes.m_Nodes.size(); i++)
 		{
 			auto& node = m_Nodes.m_Nodes[i];
@@ -319,7 +320,7 @@ namespace Czuch
 				}
 			}
 		}
-		return TextureHandle{ Invalid_Handle_Id };
+		return TextureHandle(Invalid_Handle_Id);
 	}
 
 	TextureHandle FrameGraphNode::GetDepthAttachment(FrameGraph* fgraph)

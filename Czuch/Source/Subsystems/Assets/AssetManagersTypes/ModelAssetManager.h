@@ -8,6 +8,9 @@ namespace Czuch
 	{
 	public:
 		ModelAssetManager(GraphicsDevice* device);
+		bool IsFormatSupported(const char* format)const override { return strcmp(format, ".obj") == 0 || strcmp(format, ".gltf") == 0; }
+		void Init() override;
+		int GetAssetType() const override { return (int)AssetType::MESH; }
 	protected:
 		Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) override;
 		Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settings) override;

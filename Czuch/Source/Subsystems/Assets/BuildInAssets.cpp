@@ -20,25 +20,43 @@ namespace Czuch
 
 	MaterialHandle DefaultAssets::DEFAULT_SIMPLE_MATERIAL;
 	MaterialInstanceHandle DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE;
+	AssetHandle DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET;
 	AssetHandle DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
 
 	MaterialHandle DefaultAssets::DEPTH_PREPASS_MATERIAL;
 	MaterialInstanceHandle DefaultAssets::DEPTH_PREPASS_MATERIAL_INSTANCE;
+	AssetHandle DefaultAssets::DEPTH_PREPASS_MATERIAL_INSTANCE_ASSET;
 	AssetHandle DefaultAssets::DEPTH_PREPASS_MATERIAL_ASSET;
 
 	MaterialHandle DefaultAssets::FINAL_PASS_MATERIAL;
 	MaterialInstanceHandle DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE;
+	AssetHandle DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE_ASSET;
 	AssetHandle DefaultAssets::FINAL_PASS_MATERIAL_ASSET;
 
 	MaterialHandle DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL;
 	MaterialInstanceHandle DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE;
+	AssetHandle DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE_ASSET;
 	AssetHandle DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_ASSET;
 
 	TextureHandle DefaultAssets::WHITE_TEXTURE;
 	AssetHandle DefaultAssets::WHITE_TEXTURE_ASSET;
+
+	TextureHandle DefaultAssets::PINK_TEXTURE;
+	AssetHandle DefaultAssets::PINK_TEXTURE_ASSET;
+
 	AssetHandle DefaultAssets::EDITOR_ICON_TRANSLATE;
 	AssetHandle DefaultAssets::EDITOR_ICON_ROTATE;
 	AssetHandle DefaultAssets::EDITOR_ICON_SCALE;
+	AssetHandle DefaultAssets::EDITOR_ICON_FILE;
+	AssetHandle DefaultAssets::EDITOR_ICON_FOLDER;
+	AssetHandle DefaultAssets::EDITOR_ICON_MODEL;
+	AssetHandle DefaultAssets::EDITOR_ICON_MATERIAL;
+	AssetHandle DefaultAssets::EDITOR_ICON_TEXTURE;
+	AssetHandle DefaultAssets::EDITOR_ICON_SHADER;
+	AssetHandle DefaultAssets::EDITOR_ICON_MATERIAL_INSTANCE;
+
+	AssetHandle DefaultAssets::DEFAULT_VS_SHADER_ASSET;
+	AssetHandle DefaultAssets::DEFAULT_PS_SHADER_ASSET;
 
 	BuildInAssets::BuildInAssets(GraphicsDevice* device, AssetsManager* mgr,EngineMode mode) :m_Device(device), m_AssetsMgr(mgr)
 	{
@@ -56,6 +74,7 @@ namespace Czuch
 
 	void BuildInAssets::CreateDefaultTextures()
 	{
+		//White texture
 		std::vector<U8> colors1;
 		colors1.reserve(128 * 128 * 4);
 
@@ -78,13 +97,42 @@ namespace Czuch
 
 		DefaultAssets::WHITE_TEXTURE_ASSET = (m_AssetsMgr->CreateAsset<TextureAsset, TextureCreateSettings>("White", createTexSet));
 		DefaultAssets::WHITE_TEXTURE = m_AssetsMgr->GetAsset<TextureAsset>(DefaultAssets::WHITE_TEXTURE_ASSET)->GetTextureResourceHandle();
+		DefaultAssets::WHITE_TEXTURE.assetHandle = DefaultAssets::WHITE_TEXTURE_ASSET;
+
+		//Pink texture
+		std::vector<U8> colorsP;
+		colors1.reserve(128 * 128 * 4);
+
+		for (size_t i = 0; i < 128; i++)
+		{
+			for (size_t j = 0; j < 128; j++)
+			{
+				colorsP.push_back(255);
+				colorsP.push_back(0);
+				colorsP.push_back(255);
+				colorsP.push_back(255);
+			}
+		}
+
+		TextureCreateSettings createTexSetP;
+		createTexSetP.channels = 4;
+		createTexSetP.height = 128;
+		createTexSetP.width = 128;
+		createTexSetP.colors = colorsP;
+
+		DefaultAssets::PINK_TEXTURE_ASSET = (m_AssetsMgr->CreateAsset<TextureAsset, TextureCreateSettings>("Pink", createTexSetP));
+		DefaultAssets::PINK_TEXTURE = m_AssetsMgr->GetAsset<TextureAsset>(DefaultAssets::PINK_TEXTURE_ASSET)->GetTextureResourceHandle();
+		DefaultAssets::PINK_TEXTURE.assetHandle = DefaultAssets::PINK_TEXTURE_ASSET;
 	}
 
 	void BuildInAssets::CreateDefaultMaterials()
 	{
 		//Simple material
-		auto handleVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/vertShader.vert", {});
-		auto handlePS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/fragShader.frag", {});
+		auto handleVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\vertShader.vert", {});
+		auto handlePS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\fragShader.frag", {});
+
+		DefaultAssets::DEFAULT_VS_SHADER_ASSET = handleVS;
+		DefaultAssets::DEFAULT_PS_SHADER_ASSET = handlePS;
 
 		MaterialPassDesc desc;
 		desc.vs = handleVS;
@@ -139,6 +187,7 @@ namespace Czuch
 		instanceCreateSettings.desc.isTransparent = false;
 
 		AssetHandle instanceAssetHandle=m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName,instanceCreateSettings);
+		DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET = instanceAssetHandle;
 		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
 		DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
 
@@ -301,7 +350,7 @@ namespace Czuch
 		planeData.normals = std::move(normals);
 		planeData.uvs0 = std::move(uvs);
 		planeData.meshName = "PlaneMeshSimple";
-		planeData.material = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE;
+		planeData.materialInstanceAssetHandle = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET;
 
 		ModelCreateSettings createSettings{};
 		createSettings.modelName = "PlaneModel";
@@ -321,7 +370,7 @@ namespace Czuch
 		cubeData.normals = std::move(GetCubeMeshNormals());
 		cubeData.uvs0 = std::move(GetCubeMeshUvs());
 		cubeData.meshName = "CubeMeshSimple";
-		cubeData.material = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE;
+		cubeData.materialInstanceAssetHandle = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET;
 		
 
 		ModelCreateSettings createSettingsCube{};
@@ -334,6 +383,11 @@ namespace Czuch
 		auto cubeModel = m_AssetsMgr->GetAsset<ModelAsset>(DefaultAssets::CUBE_ASSET);
 		DefaultAssets::CUBE_HANDLE = cubeModel->GetMeshHandle(0);
 
+		ModelLoadSettings loadSettings;
+		loadSettings.permamentAsset = true;
+
+		auto assetModel=m_AssetsMgr->LoadAsset<ModelAsset>("Models\\backpack.obj", loadSettings);
+
 	}
 
 	void BuildInAssets::LoadUIAssets()
@@ -341,18 +395,23 @@ namespace Czuch
 		if (m_Mode == EngineMode::Editor)
 		{
 			//Transform icons for editor
-			DefaultAssets::EDITOR_ICON_TRANSLATE =m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("/Editor/Icons/Editor_TranslateIcon.png",{.type=TextureDesc::Type::TEXTURE_2D,.isUITexture=true});
-
-			DefaultAssets::EDITOR_ICON_ROTATE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("/Editor/Icons/Editor_RotateIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
-
-			DefaultAssets::EDITOR_ICON_SCALE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("/Editor/Icons/Editor_ScaleIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_TRANSLATE =m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_TranslateIcon.png",{.type=TextureDesc::Type::TEXTURE_2D,.isUITexture=true});
+			DefaultAssets::EDITOR_ICON_ROTATE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_RotateIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_SCALE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_ScaleIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_FILE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_FileIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_FOLDER = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_FolderIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_MODEL = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_ModelIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_MATERIAL = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_MaterialIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_TEXTURE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_TextureIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_SHADER = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_ShaderIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_MATERIAL_INSTANCE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_MaterialInstanceIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
 		}
 	}
 	void BuildInAssets::CreateDepthPrePassMaterial()
 	{
 		//Depth prepass material
-		auto depthVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/DepthPrepassShader.vert", {});
-		auto depthPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/EmptyFragmentShader.frag", {});
+		auto depthVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DepthPrepassShader.vert", {});
+		auto depthPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\EmptyFragmentShader.frag", {});
 
 		MaterialPassDesc desc;
 		desc.vs = depthVS;
@@ -390,6 +449,7 @@ namespace Czuch
 		instanceCreateSettings.desc.isTransparent = false;
 
 		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
+		DefaultAssets::DEPTH_PREPASS_MATERIAL_INSTANCE_ASSET = instanceAssetHandle;
 		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
 		DefaultAssets::DEPTH_PREPASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
 	}
@@ -397,8 +457,8 @@ namespace Czuch
     void BuildInAssets::CreateFinalPassMaterial()
     {
         // Final pass material
-        auto finalVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/VertexFinalPassShader.vert", {});
-        auto finalPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/FragmentFinalPassShader.frag", {});
+        auto finalVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\VertexFinalPassShader.vert", {});
+        auto finalPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\FragmentFinalPassShader.frag", {});
 
         MaterialPassDesc desc;
         desc.vs = finalVS;
@@ -438,6 +498,7 @@ namespace Czuch
         instanceCreateSettings.desc.isTransparent = false;
 
         AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
+		DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE_ASSET = instanceAssetHandle;
         MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
         DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
     }
@@ -445,8 +506,8 @@ namespace Czuch
 	void BuildInAssets::CreateDepthLinearPrePassMaterial()
 	{
 		// Final pass material
-		auto fullscreenVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/VertexFinalPassShader.vert", {});
-		auto depthLinearPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("/Shaders/DepthLinearPrepassShader.frag", {});
+		auto fullscreenVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\VertexFinalPassShader.vert", {});
+		auto depthLinearPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DepthLinearPrepassShader.frag", {});
 
 		MaterialPassDesc desc;
 		desc.vs = fullscreenVS;
@@ -488,6 +549,7 @@ namespace Czuch
 		instanceCreateSettings.desc.isTransparent = false;
 
 		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
+		DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE_ASSET = instanceAssetHandle;
 		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
 		DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
 	}

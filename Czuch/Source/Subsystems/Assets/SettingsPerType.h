@@ -1,8 +1,10 @@
 #pragma once
 #include "./Renderer/Graphics.h"
+#include"./Core/TreeNode.h"
 
 namespace Czuch
 {
+
 	struct BaseSettings
 	{
 		bool permamentAsset;
@@ -15,7 +17,7 @@ namespace Czuch
 
 	struct BaseLoadSettings: public BaseSettings
 	{
-
+		bool dontLoad = false;
 	};
 
 	struct BaseCreateSettings: public BaseSettings
@@ -128,9 +130,59 @@ namespace Czuch
 
 	};
 
+	struct SingleMeshData
+	{
+		MeshData meshData;
+		MeshHandle meshHandle;
+		MaterialInstanceHandle materialInstanceHandle;
+	};
+
+	struct MeshDataContainer
+	{
+		Array<SingleMeshData> meshesData;
+		TreeNode<Array<I32>> meshesHierarchy;
+		bool inited = false;
+
+		MeshHandle GetMeshHandleAt(U32 index) const
+		{
+			return meshesData[index].meshHandle;
+		}
+
+		U32 GetMeshesCount() const
+		{
+			return meshesData.size();
+		}
+
+		U32 AddMeshData(SingleMeshData&& meshData,TreeNode<Array<I32>>* node)
+		{
+			meshesData.push_back(std::move(meshData));
+			U32 index = meshesData.size() - 1;
+			if(node!=nullptr)
+			{
+				node->GetData().push_back(index);
+			}
+			else
+			{
+				meshesHierarchy.GetData().push_back(index);
+			}
+			return index;
+		}
+
+		void Reserve(U32 size)
+		{
+			meshesData.reserve(size);
+		}
+
+		void Clear()
+		{
+			meshesData.clear();
+		}
+
+	};
+
 	struct ModelCreateSettings : BaseCreateSettings
 	{
-		std::vector<MeshData> meshesData;
+		Array<MeshData> meshesData;
 		CzuchStr modelName;
 	};
 

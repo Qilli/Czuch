@@ -105,6 +105,7 @@ namespace Czuch
 		std::unordered_map<U32, FrameGraphProducerResourceInfo> resourceMap;
 	};
 
+
 	struct CZUCH_API FrameGraph
 	{
 		void Init(GraphicsDevice* device,Renderer* renderer);

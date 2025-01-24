@@ -110,7 +110,7 @@ namespace Czuch
 					}
 					else if (binding.type == DescriptorType::SAMPLER)
 					{
-						writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(paramsDesc[a].descriptors[b].resource)), DescriptorType::SAMPLER);
+						writer.WriteTexture(binding.index, m_Device->AccessTexture({ paramsDesc[a].descriptors[b].resource,AssetHandle()}), DescriptorType::SAMPLER);
 					}
 					writer.UpdateSet(m_Device, descriptor);
 				}
@@ -119,19 +119,20 @@ namespace Czuch
 			}
 
 			BindVertexBuffer(meshInstance->positionsHandle, 0, 0);
+			int bindIndex = 1;
 			if (meshInstance->HasColors())
 			{
-				BindVertexBuffer(meshInstance->colorsHandle, 1, 0);
+				BindVertexBuffer(meshInstance->colorsHandle, bindIndex++, 0);
 			}
 
 			if (meshInstance->HasUV0())
 			{
-				BindVertexBuffer(meshInstance->uvs0Handle, 2, 0);
+				BindVertexBuffer(meshInstance->uvs0Handle, bindIndex++, 0);
 			}
 
 			if (meshInstance->HasNormals())
 			{
-				BindVertexBuffer(meshInstance->normalsHandle, 3, 0);
+				BindVertexBuffer(meshInstance->normalsHandle, bindIndex++, 0);
 			}
 
 			auto vulkanPipeline = Internal_To_Pipeline(pipelinePtr);
@@ -175,7 +176,7 @@ namespace Czuch
 				}
 				else if (binding.type == DescriptorType::SAMPLER)
 				{
-					writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(paramsDesc[a].descriptors[b].resource)), DescriptorType::SAMPLER);
+					writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(paramsDesc[a].descriptors[b].resource,AssetHandle())), DescriptorType::SAMPLER);
 				}
 				writer.UpdateSet(m_Device, descriptor);
 			}

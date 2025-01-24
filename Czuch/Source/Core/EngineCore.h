@@ -6,6 +6,7 @@
 #include<memory>
 #include"Common.h"
 
+
 #ifdef CZUCH_PLATFORM_WINDOWS
 #ifdef CZUCH_BUILD_DLL
 #define CZUCH_API __declspec(dllexport)
@@ -28,6 +29,10 @@
 
 namespace Czuch
 {
+
+	#define Invalid_Handle_Id -1
+	#define InvalidID 0
+
 	template<typename T>
 	using Scope = std::unique_ptr<T>;
 
@@ -105,6 +110,12 @@ namespace Czuch
 		EngineMode engineMode = EngineMode::Runtime;
 		U32 targetWidth = 0;//only for dynamic size rendering
 		U32 targetHeight = 0;
+		std::string startPath = "Czuch";
+
+		const CzuchStr& GetStartPath() const
+		{
+			return startPath;
+		}
 
 		bool RenderingTargetSizeExternallySet() const
 		{

@@ -14,6 +14,7 @@
 #include "Subsystems/UI/ImGUIManager.h"
 #include "Subsystems/UI/Editor/EngineEditorSubsystem.h"
 #include "Subsystems/Scenes/Components/CameraComponent.h"
+#include<filesystem>
 
 namespace Czuch
 {
@@ -30,6 +31,7 @@ namespace Czuch
 		m_RenderSettings.engineMode = control!=nullptr?EngineMode::Editor:EngineMode::Runtime;
 		m_RenderSettings.targetWidth = 800;
 		m_RenderSettings.targetHeight = 600;
+		m_RenderSettings.startPath = std::filesystem::current_path().string() + "\\Assets\\";
 
 		//create subsystems
 		m_Logging = new Logging();
@@ -80,6 +82,9 @@ namespace Czuch
 		m_DefaultAssets = new BuildInAssets(m_Renderer->GetDevice(), m_ResourcesMgr, m_RenderSettings.engineMode);
 		m_DefaultAssets->BuildAndLoad();
 
+		//init all resources managers
+		m_ResourcesMgr->InitManagers();
+
 		//init scenes manager
 		m_ScenesMgr = new ScenesManager(m_Renderer, m_ResourcesMgr);
 		m_ScenesMgr->Init(&m_RenderSettings);
@@ -89,6 +94,7 @@ namespace Czuch
 
 		//for editor mode add dockspace with editor ui
 		m_UIBaseMgr->EnableEditorMode(m_RenderSettings.engineMode == EngineMode::Editor);
+		m_EditorSubsystem->AfterSystemInit();
 	}
 
 	void EngineRoot::Shutdown()
@@ -128,6 +134,7 @@ namespace Czuch
 		{
 			//Update events
 			auto deltaTime = UpdateDeltaTime(counter);
+			Time::m_TimeFromStart += deltaTime.GetDeltaTimeInMilliseconds();
 			m_EventsMgr->Update(deltaTime);
 			m_Window->Update();
 			m_ScenesMgr->Update(deltaTime);
@@ -139,6 +146,7 @@ namespace Czuch
 		}
 		m_Renderer->AwaitDeviceIdle();
 	}
+
 	TimeDelta EngineRoot::UpdateDeltaTime(Czuch::TimeDiffCounter& counter)
 	{
 		//Update game engine dt

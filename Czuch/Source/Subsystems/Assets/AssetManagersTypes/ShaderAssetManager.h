@@ -8,6 +8,9 @@ namespace Czuch
 	{
 	public:
 		ShaderAssetManager(GraphicsDevice* device);
+		bool IsFormatSupported(const char* format)const override { return strcmp(format, ".vert") == 0 || strcmp(format, ".frag") == 0; }
+		void Init() override;
+		int GetAssetType() const override { return (int)AssetType::SHADER; }
 	protected:
 		Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) override;
 		Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settings) override;

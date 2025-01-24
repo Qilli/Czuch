@@ -1,5 +1,6 @@
 #include "czpch.h"
 #include "Asset.h"
+#include "../AssetsManager.h"
 
 namespace Czuch
 {
@@ -9,7 +10,8 @@ namespace Czuch
 		m_AssetsMgr = assetsManager;
 		m_GUID = StringID::MakeStringID(assetPath);
 		m_AssetName = assetName;
-		m_AssetPath = assetPath;
+		m_AssetPath = AssetsManager::GetStartPath() + assetPath;
+		m_RelativePath = assetPath;
 		m_State = AssetInnerState::CREATED;
 		m_ForceUnload = false;
 	}
@@ -40,7 +42,7 @@ namespace Czuch
 
 	bool Asset::ShouldUnload()
 	{
-		return (m_State == AssetInnerState::LOADED && ((!m_RefCounter.Down() && m_Persistent) || m_ForceUnload));
+		return (m_State == AssetInnerState::LOADED && ((!m_RefCounter.Down() && !m_Persistent) || m_ForceUnload));
 	}
 
 }

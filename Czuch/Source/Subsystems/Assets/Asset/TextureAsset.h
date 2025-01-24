@@ -1,6 +1,7 @@
 #pragma once
 #include "Asset.h"
 #include "./Subsystems/Assets/SettingsPerType.h"
+#include "./Subsystems/Assets/AssetsManager.h"
 
 namespace Czuch
 {
@@ -17,7 +18,10 @@ namespace Czuch
         bool UnloadAsset() override;
         bool CreateFromData() override;
         inline TextureHandle GetTextureResourceHandle() const { return m_TextureResource; }
-		inline void* GetUITextureIDPtr() const { return m_UITextureIDPtr; }
+    public:
+        ShortAssetInfo* GetShortAssetInfo() override;
+        inline void* GetUITextureIDPtr() const { return m_UITextureIDPtr; }
+        CzuchStr GetAssetLoadInfo() const override;
     private:
         void InitUITexturePtr();
     private:

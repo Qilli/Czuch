@@ -2,6 +2,7 @@
 #include"Asset.h"
 #include"Renderer/Graphics.h"
 #include"Subsystems/Assets/SettingsPerType.h"
+#include"Subsystems/Assets/AssetsManager.h"
 #include<vector>
 
 
@@ -9,7 +10,6 @@ namespace Czuch
 {
     class Shader;
     class GraphicsDevice;
-    struct ShaderCreateSettings;
 
     class ShaderAsset :public Asset
     {
@@ -21,6 +21,9 @@ namespace Czuch
         bool UnloadAsset() override;
         bool CreateFromData() override;
         inline ShaderHandle GetShaderAssetHandle() const { return m_ShaderAsset; }
+    public:
+		CzuchStr GetAssetLoadInfo() const override;
+        ShortAssetInfo* GetShortAssetInfo() override;
     private:
         GraphicsDevice* m_Device;
         ShaderHandle m_ShaderAsset;

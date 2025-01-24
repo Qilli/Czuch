@@ -20,6 +20,9 @@ namespace Czuch
         void CopyMaterialDescTo(MaterialDefinitionDesc& desc);
         bool IsTransparent() const { return m_MaterialCreateSettings.desc.IsTransparent(); }
         U32 GetPassesCount() const { return m_MaterialCreateSettings.desc.PassesCount(); }
+    public:
+        CzuchStr GetAssetLoadInfo() const override;
+        ShortAssetInfo* GetShortAssetInfo() override;
     private:
         GraphicsDevice* m_Device;
         MaterialHandle m_MaterialResource;

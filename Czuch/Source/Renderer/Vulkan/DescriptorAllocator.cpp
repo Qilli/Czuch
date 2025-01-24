@@ -38,7 +38,7 @@ namespace Czuch
 			}
 			else
 			{
-				Texture* tex = (Texture*)device->AccessTexture(TextureHandle(current.resource));
+				Texture* tex = (Texture*)device->AccessTexture({current.resource,AssetHandle()});
 				if (tex != nullptr)
 				{
 					writer.WriteTexture(current.binding, tex, current.type);

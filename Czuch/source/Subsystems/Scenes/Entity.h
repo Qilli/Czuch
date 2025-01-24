@@ -17,7 +17,7 @@ namespace Czuch
 		Entity(entt::entity handle, IScene* scene);
 		~Entity() = default;
 
-		void AddRenderable(MeshHandle meshHandle,MaterialInstanceHandle overrideMaterial);
+		void AddRenderable(AssetHandle model,MeshHandle meshHandle,AssetHandle overrideMaterial);
 		void RemoveRenderable();
 
 		bool IsRenderable();

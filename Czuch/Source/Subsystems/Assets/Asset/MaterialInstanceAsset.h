@@ -16,12 +16,20 @@ namespace Czuch
         bool UnloadAsset() override;
         bool CreateFromData() override;
         inline MaterialInstanceHandle GetMaterialInstanceResourceHandle() const { return m_MaterialInstanceResource; }
+    public:
+        ShortAssetInfo* GetShortAssetInfo() override;
+        CzuchStr GetAssetLoadInfo() const override;
+    private:
+		void LoadDependencies();
+		void UnloadDependencies();
     private:
         GraphicsDevice* m_Device;
+		MaterialInstanceDesc m_MaterialInstanceDesc;
         MaterialInstanceHandle m_MaterialInstanceResource;
         MaterialInstanceCreateSettings m_MaterialCreateSettings;
         MaterialInstanceLoadSettings m_MaterialLoadSettings;
-        std::vector<char> m_MaterialInstanceBuffer;
+        Array<char> m_MaterialInstanceBuffer;
+		Array<TextureHandle> m_Dependencies;
 	};
 }
 

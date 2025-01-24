@@ -7,14 +7,13 @@ namespace Czuch
 {
 	ShaderAsset::ShaderAsset(const CzuchStr& path, GraphicsDevice* device, ShaderLoadSettings& loadSettings, AssetsManager* assetsManager): Asset(path,GetNameFromPath(path),assetsManager),m_Device(device)
 	{
-		m_AssetType = AssetType::LOADED_TYPE;
+		m_AssetType = AssetModeType::LOADED_TYPE;
 		m_ShaderLoadSettings = std::move(loadSettings);
-		LoadAsset();
 	}
 
 	ShaderAsset::ShaderAsset(const CzuchStr& path, GraphicsDevice* device, ShaderCreateSettings& settings, AssetsManager* assetsManager) : Asset(path, GetNameFromPath(path),assetsManager), m_Device(device)
 	{
-		m_AssetType = AssetType::CREATED_TYPE;
+		m_AssetType = AssetModeType::CREATED_TYPE;
 		m_ShaderCreateSettings = std::move(settings);
 		CreateFromData();
 	}
@@ -27,9 +26,8 @@ namespace Czuch
 
 	bool ShaderAsset::LoadAsset()
 	{
-		if (m_State == AssetInnerState::LOADED)
+		if (Asset::LoadAsset())
 		{
-			m_RefCounter.Up();
 			return true;
 		}
 
@@ -46,6 +44,10 @@ namespace Czuch
 		if (!HANDLE_IS_VALID(m_ShaderAsset))
 		{
 			return false;
+		}
+		else
+		{
+			LOG_BE_INFO("Loaded new shader with path: {0}", AssetPath());
 		}
 		m_RefCounter.Up();
 		m_State = AssetInnerState::LOADED;
@@ -85,8 +87,24 @@ namespace Czuch
 		}
 
 		m_State = AssetInnerState::LOADED;
+		m_RefCounter.Up();
 		return true;
-		
-		return true;
+	}
+	CzuchStr ShaderAsset::GetAssetLoadInfo() const
+	{
+		return "ShaderAsset: " + AssetName() + " Ref count: " + m_RefCounter.GetCountString() + " State: " + (m_State == AssetInnerState::LOADED ? " Loaded" : "Unloaded");
+	}
+
+	ShortAssetInfo* ShaderAsset::GetShortAssetInfo()
+	{
+		if (m_ShortInfo.name == nullptr || m_ShortInfo.name->empty())
+		{
+			m_ShortInfo.name = &AssetName();
+			m_ShortInfo.type = AssetType::SHADER;
+			m_ShortInfo.asset = GetHandle();
+			m_ShortInfo.resource = m_ShaderAsset.handle;
+		}
+
+		return &m_ShortInfo;
 	}
 }

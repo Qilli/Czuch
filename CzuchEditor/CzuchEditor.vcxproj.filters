@@ -22,6 +22,9 @@
     <Filter Include="source\Commands\CommandTypes">
       <UniqueIdentifier>{BA28EA92-A6E3-D93E-4F9B-52893B3524CF}</UniqueIdentifier>
     </Filter>
+    <Filter Include="source\EditorWindows">
+      <UniqueIdentifier>{57EF7F2C-437E-09F6-EC9C-1DF1D80A1A9C}</UniqueIdentifier>
+    </Filter>
     <Filter Include="source\Panels">
       <UniqueIdentifier>{086F0534-742F-816A-3D6A-CAE7A9E9C546}</UniqueIdentifier>
     </Filter>
@@ -54,6 +57,12 @@
     <ClInclude Include="source\EditorControl.h">
       <Filter>source</Filter>
     </ClInclude>
+    <ClInclude Include="source\EditorWindows\BaseEditorWindow.h">
+      <Filter>source\EditorWindows</Filter>
+    </ClInclude>
+    <ClInclude Include="source\EditorWindows\RenderGraphEditorWindow.h">
+      <Filter>source\EditorWindows</Filter>
+    </ClInclude>
     <ClInclude Include="source\Panels\BaseEditorPanel.h">
       <Filter>source\Panels</Filter>
     </ClInclude>
@@ -63,8 +72,9 @@
     <ClInclude Include="source\Panels\SceneHierarchyEditorPanel.h">
       <Filter>source\Panels</Filter>
     </ClInclude>
-    <ClInclude Include="source\EditorWindows\BaseEditorWindow.h" />
-    <ClInclude Include="source\EditorWindows\RenderGraphEditorWindow.h" />
+    <ClInclude Include="source\EditorWindows\AssetsEditorWindow.h" />
+    <ClInclude Include="source\EditorWindows\AssetsInfoEditorWindow.h" />
+    <ClInclude Include="source\EditorCommon.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Czuch\vendors\ImGuizmoCzuch\ImGuizmo.cpp">
@@ -79,6 +89,12 @@
     <ClCompile Include="source\EditorControl.cpp">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="source\EditorWindows\BaseEditorWindow.cpp">
+      <Filter>source\EditorWindows</Filter>
+    </ClCompile>
+    <ClCompile Include="source\EditorWindows\RenderGraphEditorWindow.cpp">
+      <Filter>source\EditorWindows</Filter>
+    </ClCompile>
     <ClCompile Include="source\ImGuiCompiler.cpp">
       <Filter>source</Filter>
     </ClCompile>
@@ -91,7 +107,8 @@
     <ClCompile Include="source\Panels\SceneHierarchyEditorPanel.cpp">
       <Filter>source\Panels</Filter>
     </ClCompile>
-    <ClCompile Include="source\EditorWindows\BaseEditorWindow.cpp" />
-    <ClCompile Include="source\EditorWindows\RenderGraphEditorWindow.cpp" />
+    <ClCompile Include="source\EditorWindows\AssetsEditorWindow.cpp" />
+    <ClCompile Include="source\EditorWindows\AssetsInfoEditorWindow.cpp" />
+    <ClCompile Include="source\EditorCommon.cpp" />
   </ItemGroup>
 </Project>

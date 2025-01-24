@@ -3,7 +3,6 @@
 
 namespace Czuch
 {
-	class Renderer;
     class RenderGraphEditorWindow :
         public BaseEditorWindow
     {
@@ -12,8 +11,6 @@ namespace Czuch
 		virtual ~RenderGraphEditorWindow();
 		virtual void FillUI() override;
 		virtual void Init(EngineRoot* root) override;
-	private:
-		Renderer* m_Renderer;
     };
 
 }

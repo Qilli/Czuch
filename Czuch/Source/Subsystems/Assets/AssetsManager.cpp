@@ -9,18 +9,28 @@
 
 namespace Czuch
 {
+	std::string AssetsManager::m_StartPath;
 
 	void AssetsManager::Init(RenderSettings* settings)
 	{
 		BaseSubsystem::Init(settings);
+		m_StartPath = settings->GetStartPath();
+		m_AssetsInfoTemp.reserve(100);
 	}
 
 	void AssetsManager::Shutdown()
 	{
+		m_isDuringShutdown = true;
+		for (const auto& [key, value] : m_AssetsMgrs)
+		{
+			value->UnloadAll();
+		}
+
 		for (const auto& [key, value] : m_AssetsMgrs)
 		{
 			delete value;
 		}
+
 		m_AssetsMgrs.clear();
 	}
 
@@ -33,8 +43,93 @@ namespace Czuch
 		m_AssetsMgrs.insert({type,newMgr});
 	}
 
+	void AssetsManager::UnloadAndRemoveAsset(const CzuchStr& path)
+	{
+		StringID strId = StringID::MakeStringID(path);
+		AssetHandle handle = { strId.GetGuid()};
+		for (const auto& [key, value] : m_AssetsMgrs)
+		{
+			if (value->GetAsset(handle))
+			{
+				value->RemoveAsset(handle);
+				return;
+			}
+		}
+	}
+
+	void AssetsManager::InitManagers()
+	{
+		for (const auto& [key, value] : m_AssetsMgrs)
+		{
+			value->Init();
+		}
+	}
+
+	const Array<ShortAssetInfo*>& AssetsManager::GetAssetsOfTypes(int assetsFilter)
+	{
+		m_AssetsInfoTemp.clear();
+		for (const auto& [key, value] : m_AssetsMgrs)
+		{
+			if (assetsFilter == value->GetAssetType())
+			{
+				for (auto it = value->GetAssetIterator(); it != value->GetAssetEnd(); ++it)
+				{
+					ShortAssetInfo *assetInfo = (*it).second->GetShortAssetInfo();
+					if (assetInfo->resource != Invalid_Handle_Id)
+					{
+						m_AssetsInfoTemp.push_back(assetInfo);
+					}
+
+					ShortAssetInfo* nextElem = assetInfo->next;
+					while (nextElem != nullptr)
+					{
+						m_AssetsInfoTemp.push_back(nextElem);
+						nextElem = nextElem->next;
+					}
+				}
+			}
+		}
+		return m_AssetsInfoTemp;
+	}
+
+	bool AssetsManager::IsFormatSupported(const char* format) const
+	{
+		for (const auto& [key, value] : m_AssetsMgrs)
+		{
+			if (value->IsFormatSupported(format))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void AssetsManager::CheckIfAssetExistsAndIfNotCreate(const std::filesystem::path& pathRelative) const
+	{
+		if (m_isDuringShutdown)
+		{
+			return;
+		}
+
+		for (const auto& [key, value] : m_AssetsMgrs)
+		{
+			if (value->IsFormatSupported(pathRelative.extension().string().c_str()))
+			{
+				std::string path = pathRelative.string();
+				BaseLoadSettings settings{};
+				value->TryCreateAssetWithUnloadState(path,settings);
+				return;
+			}
+		}
+	}
+
 	TextureHandle AssetsManager::Load2DTexture(const CzuchStr& path)
 	{
+		if (m_isDuringShutdown)
+		{
+			return TextureHandle{};
+		}
+
 		TextureLoadSettings settings{};
 		settings.type = TextureDesc::Type::TEXTURE_2D;
 		auto texAsset = LoadAsset<TextureAsset, Czuch::TextureLoadSettings>(path,settings);
@@ -46,6 +141,11 @@ namespace Czuch
 
 	MaterialInstanceHandle AssetsManager::CreateMaterialInstance(MaterialInstanceCreateSettings& settings)
 	{
+		if (m_isDuringShutdown)
+		{
+			return MaterialInstanceHandle{};
+		}
+
 		auto asset = GetAsset<MaterialAsset>(settings.desc.materialAsset);
 		settings.desc.SetTransparent(asset->IsTransparent());
 		auto matInstanceHandle=CreateAsset<MaterialInstanceAsset>(settings.materialInstanceName, settings);
@@ -55,6 +155,10 @@ namespace Czuch
 
 	MaterialInstanceHandle AssetsManager::CreateMaterialInstance(const CzuchStr& matName, AssetHandle materialSource)
 	{
+		if (m_isDuringShutdown)
+		{
+			return MaterialInstanceHandle{};
+		}
 		Czuch::MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = matName;
 		instanceCreateSettings.desc.materialAsset = materialSource;

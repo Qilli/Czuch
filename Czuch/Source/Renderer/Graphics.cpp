@@ -241,6 +241,18 @@ namespace Czuch
 		}
 	}
 
+
+	void MaterialInstanceDesc::GetAllTexturesDependencies(Array<TextureHandle>& dependencies)
+	{
+		for (auto& param : paramsDesc)
+		{
+			if (param.type == DescriptorType::SAMPLER)
+			{
+				dependencies.push_back(TextureHandle(param.resource, param.resourceAsset));
+			}
+		}
+	}
+
 	MaterialInstanceDesc& MaterialInstanceDesc::Reset()
 	{
 		paramsDesc.clear();
@@ -254,7 +266,7 @@ namespace Czuch
 	}
 	MaterialInstanceDesc& MaterialInstanceDesc::AddSampler(const CzuchStr& name, TextureHandle color_texture)
 	{
-		paramsDesc.push_back({ .name = name,.type = DescriptorType::SAMPLER,.resource = color_texture.handle });
+		paramsDesc.push_back({ .name = name,.type = DescriptorType::SAMPLER,.resourceAsset = color_texture.assetHandle.handle,.resource = color_texture.handle });
 		return *this;
 	}
 
@@ -274,7 +286,8 @@ namespace Czuch
 					{
 						if (param.type == DescriptorType::SAMPLER)
 						{
-							params.AddSampler(i, param.name, TextureHandle(param.resource), b);
+							TextureHandle texture = { param.resource,param.resourceAsset };
+							params.AddSampler(i, param.name,texture, b);
 						}
 						else if (param.type == DescriptorType::UNIFORM_BUFFER)
 						{

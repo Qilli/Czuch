@@ -21,6 +21,15 @@ namespace Czuch
 		}
 	}
 
+	void EngineEditorSubsystem::AfterSystemInit()
+	{
+		if (m_EditorControl != nullptr)
+		{
+			m_EditorControl->AfterSystemInit();
+		}
+
+	}
+
 	void EngineEditorSubsystem::Shutdown()
 	{
 		if (m_EditorControl != nullptr)

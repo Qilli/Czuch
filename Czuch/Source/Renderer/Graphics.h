@@ -14,7 +14,6 @@ namespace Czuch
 	static const U8 k_max_render_passes = 4;
 
 	typedef I32 Handle;
-#define Invalid_Handle_Id -1
 #define INVALID_HANDLE(Type) Type() 
 #define HANDLE_IS_VALID(h)(h.handle!=-1)
 #define INVALIDATE_HANDLE(h)h.handle=-1; 
@@ -33,7 +32,7 @@ namespace Czuch
 	public:
 		Handle handle;
 		ResourceHandle(int val) :handle(val) {}
-		ResourceHandle() { handle = -1; }
+		ResourceHandle() { handle = -1; }	
 	};
 
 	enum class CZUCH_API RenderPassType : U32
@@ -56,6 +55,30 @@ namespace Czuch
 		Handle handle;
 	};
 
+	struct ResourceHandleWithAsset : public ResourceHandle
+	{
+		AssetHandle assetHandle;
+		ResourceHandleWithAsset(I32 handle, I32 assetHandleId) :ResourceHandle(handle), assetHandle(assetHandleId)
+		{
+		
+		}
+
+		ResourceHandleWithAsset(I32 handle, AssetHandle assetHandle) :ResourceHandle(handle)
+		{
+			assetHandle = assetHandle;
+		}
+
+		ResourceHandleWithAsset(I32 handle) :ResourceHandle(handle)
+		{
+			INVALIDATE_HANDLE(assetHandle);
+		}
+
+
+		ResourceHandleWithAsset() :ResourceHandle(Invalid_Handle_Id)
+		{
+			assetHandle = { Invalid_Handle_Id };
+		}
+	};
 
 	struct PipelineHandle : public ResourceHandle
 	{
@@ -91,9 +114,12 @@ namespace Czuch
 
 	};
 
-	struct TextureHandle : public ResourceHandle
+	struct TextureHandle : public ResourceHandleWithAsset
 	{
-
+		TextureHandle() :ResourceHandleWithAsset(Invalid_Handle_Id) {}
+		TextureHandle(I32 handle, I32 assetHandle) :ResourceHandleWithAsset(handle, assetHandle) {}
+		TextureHandle(I32 handle, AssetHandle assetHandle) :ResourceHandleWithAsset(handle, assetHandle) {}
+		TextureHandle(I32 handle) :ResourceHandleWithAsset(handle) {}
 	};
 
 	struct MaterialHandle : public ResourceHandle
@@ -605,7 +631,7 @@ namespace Czuch
 	{
 		std::shared_ptr<void> m_InternalResourceState;
 		GraphicsDevice* device;
-		AssetHandle assetHandle = { .handle = -1 };
+		AssetHandle assetHandle;
 
 		inline bool IsValid() const { return m_InternalResourceState != nullptr; }
 		GraphicsDeviceResource() = default;
@@ -1135,6 +1161,7 @@ namespace Czuch
 		{
 			CzuchStr name;
 			DescriptorType type;
+			I32 resourceAsset;
 			I32 resource;
 		};
 
@@ -1145,6 +1172,8 @@ namespace Czuch
 		{
 			Reset();
 		}
+
+		void GetAllTexturesDependencies(Array<TextureHandle> & dependencies);
 
 		MaterialInstanceDesc& Reset();
 		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, BufferHandle buffer);
@@ -1213,6 +1242,18 @@ namespace Czuch
 		}
 	};
 
+	struct MaterialInfo
+	{
+		AssetHandle materialAsset;
+		MaterialInstanceHandle materialInstanceHandle;
+
+		MaterialInfo()
+		{
+			materialAsset = INVALID_HANDLE(AssetHandle);
+			materialInstanceHandle = INVALID_HANDLE(MaterialInstanceHandle);
+		}
+	};
+
 	struct MeshData
 	{
 		Array<Vec3> positions;
@@ -1220,13 +1261,13 @@ namespace Czuch
 		Array<Vec4> colors;
 		Array<Vec4> uvs0;
 		Array<U32> indices;
-		MaterialInstanceHandle material;
+		AssetHandle materialInstanceAssetHandle;
 		CzuchStr meshName;
 
 	public:
 		MeshData()
 		{
-			material = INVALID_HANDLE(MaterialInstanceHandle);
+			materialInstanceAssetHandle = INVALID_HANDLE(AssetHandle);
 		}
 
 		MeshData(MeshData& other) noexcept
@@ -1247,13 +1288,35 @@ namespace Czuch
 				this->normals = std::move(other.normals);
 				this->colors = std::move(other.colors);
 				this->uvs0 = std::move(other.uvs0);
-				this->material = other.material;
+				this->materialInstanceAssetHandle = other.materialInstanceAssetHandle;
 				this->meshName = std::move(other.meshName);
 				this->indices = std::move(other.indices);
-
-				INVALIDATE_HANDLE(other.material);
+				INVALIDATE_HANDLE(other.materialInstanceAssetHandle);
 			}
 			return *this;
+		}
+
+		MeshData& operator=(MeshData& other) noexcept
+		{
+			if (&other != this)
+			{
+				this->positions = other.positions;
+				this->normals = other.normals;
+				this->colors = other.colors;
+				this->uvs0 = other.uvs0;
+				this->materialInstanceAssetHandle = other.materialInstanceAssetHandle;
+				this->meshName = other.meshName;
+				this->indices = other.indices;
+			}
+			return *this;
+		}
+
+		void Reserve(U32 count)
+		{
+			positions.reserve(count);
+			normals.reserve(count);
+			colors.reserve(count);
+			uvs0.reserve(count);
 		}
 	};
 
@@ -1276,6 +1339,7 @@ namespace Czuch
 
 		Mesh()
 		{
+			data = nullptr;
 			positionsHandle = INVALID_HANDLE(BufferHandle);
 			normalsHandle = INVALID_HANDLE(BufferHandle);
 			colorsHandle = INVALID_HANDLE(BufferHandle);

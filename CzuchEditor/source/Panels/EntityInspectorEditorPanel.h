@@ -11,6 +11,12 @@ namespace Czuch
 		static bool ButtonCenteredOnLine(const char* label,float alignment=0.5f);
 		static void LabelCenteredOnLine(const char* label, float alignment = 0.5f, float leftPadding = 0.0f, float rightPadding = 0.0f);
 		static void ShowModalWindow(const char* title,const char* text, bool& isOpen);
+		static const ShortAssetInfo* ShowAssetSelectorPopup(const char* popupId, AssetType filterSearchType,bool canChangeType);
+		static void FormatAssetName(Czuch::ShortAssetInfo* const asset);
+		static void* GetIconForType(AssetType type);
+	public:
+		static bool m_ResetShowAssetModal;
+		static char tempName[15];
 	};
 
 	struct ComponentModalData
@@ -65,6 +71,14 @@ namespace Czuch
 		CameraDrawer() { id = 3; }
 	};
 
+	struct MeshInspectorDrawer : public ComponentDrawer
+	{
+		void DrawComponent(Entity entity) override;
+		void OnSelectionChanged(Entity entity) override;
+		void OnRemoveComponent(Entity entity) override;
+		MeshInspectorDrawer() { id = 4; }
+	};
+
 	class EntityInspectorEditorPanel :
 		public BaseEditorPanel
 	{
@@ -79,6 +93,7 @@ namespace Czuch
 		HeaderDrawer m_HeaderDrawer;
 		TransformDrawer m_TransformDrawer;
 		CameraDrawer m_CameraDrawer;
+		MeshInspectorDrawer m_MeshDrawer;
 	};
 }
 

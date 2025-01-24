@@ -7,9 +7,8 @@ namespace Czuch
 	FrameGraph* m_FrameGraph;
 	const ImVec2 m_Size = ImVec2(256, 256);
 
-	RenderGraphEditorWindow::RenderGraphEditorWindow(const char* name) :BaseEditorWindow(),  m_Renderer(nullptr)
+	RenderGraphEditorWindow::RenderGraphEditorWindow(const char* name) :BaseEditorWindow()
 	{
-		CZUCH_BE_ASSERT(m_Renderer, "Renderer is null");
 		SetWindowName(name);
 	}
 

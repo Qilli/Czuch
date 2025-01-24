@@ -7,6 +7,8 @@
 #include"Subsystems/Scenes/Components/CameraComponent.h"
 #include"Commands/CommandTypes/ChangeTransformCommand.h"
 #include"EditorWindows/RenderGraphEditorWindow.h"
+#include"EditorWindows/AssetsEditorWindow.h"
+#include"EditorWindows/AssetsInfoEditorWindow.h"
 
 namespace Czuch
 {
@@ -76,9 +78,12 @@ namespace Czuch
 		m_EntityInspectorPanel = nullptr;
 		m_GizmoMode = GizmoMode::Translate;
 		m_RenderGraphEditorWindow = new RenderGraphEditorWindow("Render Graph Preview");
+		m_AssetsEditorWindow = new AssetsEditorWindow("Assets Editor");
+		m_AssetsInfoEditorWindow = new AssetsInfoEditorWindow("Assets Info");
 	}
 	EditorControl::~EditorControl()
 	{
+		delete m_AssetsEditorWindow;
 		delete m_RenderGraphEditorWindow;
 		delete m_CommandsControl;
 		delete m_SceneHierarchyPanel;
@@ -90,6 +95,19 @@ namespace Czuch
 		SetLightGreyStyle();
 		m_CommandsControl = new EditorCommandsControl();
 		UpdateOffscreenPass(renderSettings->targetWidth, renderSettings->targetHeight);
+
+	}
+
+	void EditorControl::AfterSystemInit()
+	{
+		auto mgr = AssetsManager::GetPtr();
+		EditorAssets::s_EditorFileTexture = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_FILE)->GetUITextureIDPtr();
+		EditorAssets::s_EditorFolderTexture = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_FOLDER)->GetUITextureIDPtr();
+		EditorAssets::s_EditorModelTexture = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_MODEL)->GetUITextureIDPtr();
+		EditorAssets::s_EditorMaterialTexture = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_MATERIAL)->GetUITextureIDPtr();
+		EditorAssets::s_EditorTextureTexture = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_TEXTURE)->GetUITextureIDPtr();
+		EditorAssets::s_EditorShaderTexture = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_SHADER)->GetUITextureIDPtr();
+		EditorAssets::s_EditorMaterialInstanceTexture = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_MATERIAL_INSTANCE)->GetUITextureIDPtr();
 	}
 
 	void EditorControl::Shutdown()
@@ -125,7 +143,7 @@ namespace Czuch
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0.0f });
 		ImGui::Begin("Scene");
-		bool isFocused=ImGui::IsWindowFocused();
+		bool isFocused = ImGui::IsWindowFocused();
 		bool isHovered = ImGui::IsWindowHovered();
 
 		m_Root->GetUIBaseManager().SetBlockEvents(!isFocused || !isHovered);
@@ -148,6 +166,18 @@ namespace Czuch
 			ImGui::Image(m_Root->GetRenderer().GetFrameGraphFinalResult(), ImGui::GetContentRegionAvail());
 		}
 
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSETS_EDITOR_ASSET"))
+			{
+				auto path = (const wchar_t*)payload->Data;
+				std::filesystem::path p(path);
+				LOG_BE_INFO("Accepted drag drop payload with path {0}", p.string());
+				auto mgr = AssetsManager::GetPtr();
+			}
+			ImGui::EndDragDropTarget();
+		}
+
 		//Handle gizmos
 		Entity currentSelectedEntity = m_SceneHierarchyPanel->GetSelectedEntity();
 		HandelGizmoTransforms(currentSelectedEntity);
@@ -161,6 +191,12 @@ namespace Czuch
 
 		//render graph editor
 		m_RenderGraphEditorWindow->DrawWindow(m_Root);
+
+		//assets editor window
+		m_AssetsEditorWindow->DrawWindow(m_Root);
+
+		//assets info editor window
+		m_AssetsInfoEditorWindow->DrawWindow(m_Root);
 
 		if (m_ShowConsoleLogPanel)
 		{
@@ -182,66 +218,66 @@ namespace Czuch
 		float height = 40.0f;
 
 		if (ImGui::BeginViewportSideBar("##SecondaryMenuBar", viewport, ImGuiDir_Up, height, window_flags)) {
-				ImVec2 sizeButton = { height*0.5f,height * 0.5f };
+			ImVec2 sizeButton = { height * 0.5f,height * 0.5f };
 
-				auto mgr = AssetsManager::GetPtr();
-				auto translateIconId = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_TRANSLATE)->GetUITextureIDPtr();
-				auto rotateIconId = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_ROTATE)->GetUITextureIDPtr();
-				auto scaleIconId = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_SCALE)->GetUITextureIDPtr();
+			auto mgr = AssetsManager::GetPtr();
+			auto translateIconId = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_TRANSLATE)->GetUITextureIDPtr();
+			auto rotateIconId = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_ROTATE)->GetUITextureIDPtr();
+			auto scaleIconId = mgr->GetAsset<TextureAsset>(DefaultAssets::EDITOR_ICON_SCALE)->GetUITextureIDPtr();
 
-				ImVec4 buttonSelected = ImVec4(0.8f, 0.8f, 0.8f, 0.5f);
-				ImVec4 buttonUnselected = ImVec4(0.05f, 0.05f, 0.05f, 0.5f);
+			ImVec4 buttonSelected = ImVec4(0.8f, 0.8f, 0.8f, 0.5f);
+			ImVec4 buttonUnselected = ImVec4(0.05f, 0.05f, 0.05f, 0.5f);
 
-				if (m_GizmoMode == GizmoMode::Translate)
-				{
-					ImGui::PushStyleColor(ImGuiCol_Button, buttonSelected);
-				}
-				else
-				{
-					ImGui::PushStyleColor(ImGuiCol_Button, buttonUnselected);
-				}
+			if (m_GizmoMode == GizmoMode::Translate)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button, buttonSelected);
+			}
+			else
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button, buttonUnselected);
+			}
 
-				if (ImGui::ImageButton(translateIconId,sizeButton))
-				{
-					m_GizmoMode = GizmoMode::Translate;
-				}
-				ImGui::PopStyleColor();
+			if (ImGui::ImageButton(translateIconId, sizeButton))
+			{
+				m_GizmoMode = GizmoMode::Translate;
+			}
+			ImGui::PopStyleColor();
 
-				if (m_GizmoMode == GizmoMode::Rotate)
-				{
-					ImGui::PushStyleColor(ImGuiCol_Button, buttonSelected);
-				}
-				else
-				{
-					ImGui::PushStyleColor(ImGuiCol_Button, buttonUnselected);
-				}
-
-
-				ImGui::SameLine();
-				if (ImGui::ImageButton(rotateIconId, sizeButton))
-				{
-					m_GizmoMode = GizmoMode::Rotate;
-				}
-				ImGui::PopStyleColor();
+			if (m_GizmoMode == GizmoMode::Rotate)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button, buttonSelected);
+			}
+			else
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button, buttonUnselected);
+			}
 
 
-				if (m_GizmoMode == GizmoMode::Scale)
-				{
-					ImGui::PushStyleColor(ImGuiCol_Button, buttonSelected);
-				}
-				else
-				{
-					ImGui::PushStyleColor(ImGuiCol_Button, buttonUnselected);
-				}
+			ImGui::SameLine();
+			if (ImGui::ImageButton(rotateIconId, sizeButton))
+			{
+				m_GizmoMode = GizmoMode::Rotate;
+			}
+			ImGui::PopStyleColor();
 
-				ImGui::SameLine();
-				if (ImGui::ImageButton(scaleIconId, sizeButton))
-				{
-					m_GizmoMode = GizmoMode::Scale;
-				}
 
-				ImGui::PopStyleColor();
-			
+			if (m_GizmoMode == GizmoMode::Scale)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button, buttonSelected);
+			}
+			else
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button, buttonUnselected);
+			}
+
+			ImGui::SameLine();
+			if (ImGui::ImageButton(scaleIconId, sizeButton))
+			{
+				m_GizmoMode = GizmoMode::Scale;
+			}
+
+			ImGui::PopStyleColor();
+
 			ImGui::End();
 		}
 
@@ -297,20 +333,20 @@ namespace Czuch
 					ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selectedTransformMatrix), matrixTranslation, matrixRotation, matrixScale);
 
 					Vec3 currentWorldPos = selectedTransform.GetLocalPosition();
-					Vec3 diff = Vec3(matrixTranslation[0]- matrixTranslation_[0], matrixTranslation[1]- matrixTranslation_[1], matrixTranslation[2]- matrixTranslation_[2]);
-					Vec3 diffScale = Vec3(matrixScale[0]/matrixScale_[0], matrixScale[1]/ matrixScale_[1], matrixScale[2]/ matrixScale_[2]);
+					Vec3 diff = Vec3(matrixTranslation[0] - matrixTranslation_[0], matrixTranslation[1] - matrixTranslation_[1], matrixTranslation[2] - matrixTranslation_[2]);
+					Vec3 diffScale = Vec3(matrixScale[0] / matrixScale_[0], matrixScale[1] / matrixScale_[1], matrixScale[2] / matrixScale_[2]);
 
 					Mat4x4 localTransform = selectedTransform.TransformToLocalSpace(selectedTransformMatrix);
-					
+
 
 					if (GetCurrentGizmoMode() == ImGuizmo::OPERATION::ROTATE)
 					{
-						Mat4x4 localTransform=selectedTransform.TransformToLocalSpace(selectedTransformMatrix);
-						Vec3 rot=glm::eulerAngles(glm::quat_cast(localTransform));
+						Mat4x4 localTransform = selectedTransform.TransformToLocalSpace(selectedTransformMatrix);
+						Vec3 rot = glm::eulerAngles(glm::quat_cast(localTransform));
 
-						selectedTransform.Rotate(rot.x, operationSpace == ImGuizmo::MODE::WORLD?selectedTransform.GetRight():Vec3(1,0,0), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
-						selectedTransform.Rotate(rot.y, operationSpace == ImGuizmo::MODE::WORLD?selectedTransform.GetUp():Vec3(0,1,0), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
-						selectedTransform.Rotate(rot.z, operationSpace == ImGuizmo::MODE::WORLD?selectedTransform.GetForward():Vec3(0,0,1), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
+						selectedTransform.Rotate(rot.x, operationSpace == ImGuizmo::MODE::WORLD ? selectedTransform.GetRight() : Vec3(1, 0, 0), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
+						selectedTransform.Rotate(rot.y, operationSpace == ImGuizmo::MODE::WORLD ? selectedTransform.GetUp() : Vec3(0, 1, 0), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
+						selectedTransform.Rotate(rot.z, operationSpace == ImGuizmo::MODE::WORLD ? selectedTransform.GetForward() : Vec3(0, 0, 1), operationSpace == ImGuizmo::MODE::WORLD ? Czuch::TransformSpace::World : Czuch::TransformSpace::Local);
 					}
 					else if (GetCurrentGizmoMode() == ImGuizmo::OPERATION::SCALE)
 					{
@@ -361,7 +397,7 @@ namespace Czuch
 			}
 			if (ImGui::BeginMenu("Edit"))
 			{
-				if (ImGui::MenuItem("Undo", "CTRL+Z",false, EditorCommandsControl::Get().CanUndo()))
+				if (ImGui::MenuItem("Undo", "CTRL+Z", false, EditorCommandsControl::Get().CanUndo()))
 				{
 					EditorCommandsControl::Get().Undo();
 				}
@@ -389,6 +425,14 @@ namespace Czuch
 				if (ImGui::MenuItem("Render Graph Editor", "CTRL+R")) {
 					m_RenderGraphEditorWindow->SetWindowVisible(true);
 				}
+
+				if (ImGui::MenuItem("Assets Editor", "CTRL+A")) {
+					m_AssetsEditorWindow->SetWindowVisible(true);
+				}
+
+				if (ImGui::MenuItem("Assets Info", "CTRL+I")) {
+					m_AssetsInfoEditorWindow->SetWindowVisible(true);
+				}
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();
@@ -396,26 +440,26 @@ namespace Czuch
 	}
 	void EditorControl::ShowMenuFile()
 	{
-		if (ImGui::MenuItem("New")) 
+		if (ImGui::MenuItem("New"))
 		{
 			CheckCurrentSceneForSave();
 			m_Root->GetScenesManager().CreateNewScene("NewScene", true);
 			m_SceneHierarchyPanel->SetActiveScene(m_Root->GetScenesManager().GetActiveScene());
 		}
-		if (ImGui::MenuItem("Open", "Ctrl+O")) 
+		if (ImGui::MenuItem("Open", "Ctrl+O"))
 		{
 			//m_Root->GetScenesManager().LoadScene("Assets/Scenes/testScene.scene");
 			std::string path = WinUtils::GetOpenFileNameDialog("Scene Files\0*.scene\0", "Open Scene");
 			if (!path.empty())
 			{
-				CheckCurrentSceneForSave();	
+				CheckCurrentSceneForSave();
 				m_Root->GetScenesManager().LoadScene(path);
 				m_CurrentScenePath = path;
 				m_SceneHierarchyPanel->SetActiveScene(m_Root->GetScenesManager().GetActiveScene());
 			}
 		}
 
-		if (ImGui::MenuItem("Save", "Ctrl+S")) 
+		if (ImGui::MenuItem("Save", "Ctrl+S"))
 		{
 			if (m_CurrentScenePath.empty())
 			{
@@ -426,7 +470,7 @@ namespace Czuch
 				m_Root->GetScenesManager().SaveActiveScene(m_CurrentScenePath);
 			}
 		}
-		if (ImGui::MenuItem("Save As..")) 
+		if (ImGui::MenuItem("Save As.."))
 		{
 			ShowSaveMenu();
 		}
@@ -456,10 +500,10 @@ namespace Czuch
 		}
 		return false;
 	}
-	
+
 	void EditorControl::ShowCommandsStackPopup()
 	{
-		if (ImGui::Begin("Commands Stack", &m_ShowCommandsStackPopup, ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_AlwaysVerticalScrollbar))
+		if (ImGui::Begin("Commands Stack", &m_ShowCommandsStackPopup, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar))
 		{
 			ImGui::Text("Undo Stack");
 			ImGui::Separator();
@@ -476,7 +520,7 @@ namespace Czuch
 			{
 				ImGui::Text((*it)->ToString().c_str());
 			}
-		}	
+		}
 		ImGui::End();
 	}
 
@@ -486,8 +530,8 @@ namespace Czuch
 		{
 			if (ImGui::Begin("Console Log", &m_ShowConsoleLogPanel, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar))
 			{
-				auto logger=Czuch::Logging::GetPtr();
-				auto &logs = logger->GetLogMessages();
+				auto logger = Czuch::Logging::GetPtr();
+				auto& logs = logger->GetLogMessages();
 				for (auto& log : logs)
 				{
 					ImGui::Text(log.c_str());
@@ -530,7 +574,7 @@ namespace Czuch
 			return true;
 		}
 		m_OffscreenPassInited = true;
-		m_Root->GetRenderer().RegisterRenderPassResizeEventResponse(width, height, true,&m_UpdateOffscreenPass);
+		m_Root->GetRenderer().RegisterRenderPassResizeEventResponse(width, height, true, &m_UpdateOffscreenPass);
 		return false;
 	}
 

@@ -73,6 +73,7 @@ namespace Czuch
 			auto& nativeBehaviour = view.get<NativeBehaviourComponent>(entity);
 			nativeBehaviour.OnUpdate(delta);
 		}
+		GetCurrentActiveCamera();
 	}
 
 	void Scene::OnFinishFrame()
@@ -88,6 +89,8 @@ namespace Czuch
 		{
 			uiElement->OnFinishFrame();
 		}
+
+		m_CurrentFrameCamera = nullptr;
 	}
 
 	void Scene::FillRenderContexts(Camera* cam, Renderer* renderer, int width, int height, RenderContextFillParams& fillParams)
@@ -96,29 +99,7 @@ namespace Czuch
 		Camera* currentCamera = cam;
 		if (cam == nullptr)
 		{
-			auto cameraView = m_Registry.view<CameraComponent>();
-			CameraComponent* mainCamera = nullptr;
-			for (auto e : cameraView)
-			{
-				auto& camera = cameraView.get<CameraComponent>(e);
-				if (m_RenderSettings->engineMode == EngineMode::Runtime && camera.IsPrimary())
-				{
-					mainCamera = &camera;
-					break;
-				}
-				else if (m_RenderSettings->engineMode == EngineMode::Editor && camera.GetType() == CameraType::EditorCamera)
-				{
-					mainCamera = &camera;
-					break;
-				}
-			}
-
-			if (!mainCamera)
-			{
-				LOG_BE_ERROR("No primary camera in the scene");
-				return;
-			}
-			currentCamera = &mainCamera->GetCamera();
+			currentCamera = m_CurrentFrameCamera;
 		}
 
 		m_GeneralRenderContext.ClearRenderList();
@@ -134,31 +115,30 @@ namespace Czuch
 			auto& mesh = renderableView.get<MeshComponent>(entity);
 			auto& meshRenderer = renderableView.get<MeshRendererComponent>(entity);
 
-			for (int a = 0; a < mesh.GetSubMeshesCount(); ++a)
-			{
-				auto material = fillParams.forceMaterialForAll ? fillParams.forcedMaterial : meshRenderer.GetOverrideMaterial(a);
-				auto materialInstance = renderer->GetDevice()->AccessMaterialInstance(material);
-				if (!materialInstance)
-				{
-					LOG_BE_ERROR("Material instance is null");
-					continue;
-				}
 
-				I32 index = renderer->GetDevice()->AccessMaterial(materialInstance->handle)->GetRenderPassIndexForType(fillParams.renderPassType);
-				if (index < 0)
-				{
-					continue;
-				}
-				RenderObjectInstance renderObjectInstance{ .localToWorldTransformation = Mat4x4(1.0f),
-				 .localToClipSpaceTransformation = currentCamera->GetViewProjectionMatrix() * transform.GetLocalToWorld(),.mesh = mesh.GetMesh(a),.overrideMaterial =material,.passIndex=index };
-				m_GeneralRenderContext.AddToRenderList(renderObjectInstance);
+			auto material = fillParams.forceMaterialForAll ? fillParams.forcedMaterial : meshRenderer.GetOverrideMaterial();
+			auto materialInstance = renderer->GetDevice()->AccessMaterialInstance(material);
+			if (!materialInstance)
+			{
+				LOG_BE_ERROR("Material instance is null");
+				continue;
 			}
+
+			I32 index = renderer->GetDevice()->AccessMaterial(materialInstance->handle)->GetRenderPassIndexForType(fillParams.renderPassType);
+			if (index < 0)
+			{
+				continue;
+			}
+			RenderObjectInstance renderObjectInstance{ .localToWorldTransformation = Mat4x4(1.0f),
+			 .localToClipSpaceTransformation = currentCamera->GetViewProjectionMatrix() * transform.GetLocalToWorld(),.mesh = mesh.GetMesh(),.overrideMaterial = material,.passIndex = index };
+			m_GeneralRenderContext.AddToRenderList(renderObjectInstance);
+
 		}
 
 		//find all opaque and transparent entities
 		//sort them by layer and sorting order
 		//fill render contexts
-		
+
 		//fill ui
 	}
 
@@ -375,6 +355,33 @@ namespace Czuch
 			DestroyEntity(entity);
 		}
 		m_EntitiesToDestroy.clear();
+	}
+
+	void Scene::GetCurrentActiveCamera()
+	{
+		auto cameraView = m_Registry.view<CameraComponent>();
+		CameraComponent* mainCamera = nullptr;
+		for (auto e : cameraView)
+		{
+			auto& camera = cameraView.get<CameraComponent>(e);
+			if (m_RenderSettings->engineMode == EngineMode::Runtime && camera.IsPrimary())
+			{
+				mainCamera = &camera;
+				break;
+			}
+			else if (m_RenderSettings->engineMode == EngineMode::Editor && camera.GetType() == CameraType::EditorCamera)
+			{
+				mainCamera = &camera;
+				break;
+			}
+		}
+
+		if (!mainCamera)
+		{
+			LOG_BE_ERROR("No primary camera in the scene");
+			return;
+		}
+		m_CurrentFrameCamera = &mainCamera->GetCamera();
 	}
 
 #pragma region Serialization

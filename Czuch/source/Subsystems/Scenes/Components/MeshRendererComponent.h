@@ -3,23 +3,19 @@
 
 namespace Czuch
 {
-	class MeshRendererComponent :
+	class CZUCH_API MeshRendererComponent :
 		public Component
 	{
 	public:
 		MeshRendererComponent(Entity owner);
-		MeshRendererComponent(Entity owner,MaterialInstanceHandle overrideMaterial);
+		MeshRendererComponent(Entity owner, AssetHandle overrideMaterial);
 		~MeshRendererComponent()=default;
-		inline MaterialInstanceHandle GetOverrideMaterial(U32 index=0) const { return m_Materials[index]; }
-		inline void SetOverrideMaterial(U32 index, MaterialInstanceHandle overrideMaterial) {
-			if (index >= m_Materials.size())
-			{
-				m_Materials.resize(index + 1);
-			}
-			m_Materials[index] = overrideMaterial;
-		}
+		inline MaterialInstanceHandle GetOverrideMaterial() const { return m_Material; }
+		void SetOverrideMaterial(AssetHandle overrideMaterial);
 	private:
-		std::vector<MaterialInstanceHandle> m_Materials;
+		bool HasMaterial() const { return HANDLE_IS_VALID(m_Material); }
+		MaterialInstanceHandle m_Material;
+		AssetHandle m_MaterialAsset;
 	};
 }
 
