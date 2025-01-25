@@ -33,21 +33,7 @@ namespace Czuch
 		cam.SetType(CameraType::GameCamera);
 		cameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
 
-		if (EngineRoot::Get().GetGameMode() == EngineMode::Editor)
-		{
-			//create default editor camera
-			Entity editorCameraEntity = CreateEntity("EditorCamera", m_RootEntity);
-			auto& editorCam = editorCameraEntity.AddComponent<CameraComponent>();
-			editorCam.SetType(CameraType::EditorCamera);
-			editorCameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
-			auto& headerComponent = editorCameraEntity.GetComponent<HeaderComponent>();
-			headerComponent.SetVisibleInEditorHierarchy(false);
-
-			//add 3d control component
-			auto& nativeScriptsComponent = editorCameraEntity.AddComponent<NativeBehaviourComponent>();
-			auto& behaviour = nativeScriptsComponent.AddNativeBehaviour<NativeFree3DCameraController>();
-			behaviour.SetRunningMode(ScriptRunningMode::EditorOnly);
-		}
+		CheckAndAddStartCamera();
 
 		CreateRenderContexts();
 		Dirty();
@@ -384,6 +370,26 @@ namespace Czuch
 		m_CurrentFrameCamera = &mainCamera->GetCamera();
 	}
 
+	void Scene::CheckAndAddStartCamera()
+	{
+		if (EngineRoot::Get().GetGameMode() == EngineMode::Editor)
+		{
+			//create default editor camera
+			Entity editorCameraEntity = CreateEntity("EditorCamera", m_RootEntity);
+			auto& editorCam = editorCameraEntity.AddComponent<CameraComponent>();
+			editorCam.SetType(CameraType::EditorCamera);
+			editorCameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
+			auto& headerComponent = editorCameraEntity.GetComponent<HeaderComponent>();
+			headerComponent.SetTag("EditorCamera");
+			headerComponent.SetVisibleInEditorHierarchy(false);
+
+			//add 3d control component
+			auto& nativeScriptsComponent = editorCameraEntity.AddComponent<NativeBehaviourComponent>();
+			auto& behaviour = nativeScriptsComponent.AddNativeBehaviour<NativeFree3DCameraController>();
+			behaviour.SetRunningMode(ScriptRunningMode::EditorOnly);
+		}
+	}
+
 #pragma region Serialization
 	bool Scene::Serialize(YAML::Emitter& out, bool binary)
 	{
@@ -398,6 +404,11 @@ namespace Czuch
 		SerializerHelper::BeginSeq();
 		ForEachEntityWithHierarchy([&](Entity entity)
 			{
+				if (entity.GetComponent<HeaderComponent>().GetTag() == "EditorCamera")
+				{
+					return true;
+				}
+
 				if (entity.IsValid())
 				{
 					bool result = entity.Serialize(out, binary);

@@ -3,13 +3,6 @@
 
 namespace Czuch
 {
-	struct LockedVec3
-	{
-		LockedVec3() { isLocked = false; value = Vec3(0, 0, 0); }
-		bool isLocked;
-		Vec3 value;
-	};
-
 
 	class BaseEditorPanel
 	{

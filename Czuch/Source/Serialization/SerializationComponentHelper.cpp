@@ -6,6 +6,8 @@
 #include"../Subsystems/Scenes/Components/MeshComponent.h"
 #include"../Subsystems/Scenes/Components/MeshRendererComponent.h"
 #include"../Subsystems/Scenes/Components/NativeBehaviourComponent.h"
+#include"../Subsystems/Assets/AssetsManager.h"
+#include"../Subsystems/Assets/Asset/ModelAsset.h"
 
 #define TRUE_STR "1"
 #define FALSE_STR "0"
@@ -74,6 +76,8 @@ namespace Czuch
 			SerializeBaseComponent(component, binary);
 			SerializerHelper::Key("CameraType");
 			SerializerHelper::UIntVal((uint32_t)component->GetType());
+			SerializerHelper::Key("IsPrimary");
+			SerializerHelper::Value(component->IsPrimary() ? TRUE_STR : FALSE_STR);
 			SerializeCamera(&component->GetCamera(), binary);
 			SerializerHelper::EndMap();
 			return true;
@@ -111,6 +115,32 @@ namespace Czuch
 			SerializerHelper::Value(std::to_string(camera->GetNearPlane()));
 			SerializerHelper::Key("FarPlane");
 			SerializerHelper::Value(std::to_string(camera->GetFarPlane()));
+		}
+	}
+
+	bool SerializationComponentHelper::SerializeMeshComponent(MeshComponent* component, bool binary)
+	{
+		if (binary)
+		{
+
+		}
+		else
+		{
+			SerializerHelper::BeginMap();
+			SerializeBaseComponent(component, binary);
+			SerializerHelper::KeyGUIDValue("ModelGUID", component->GetModel().handle);
+			SerializerHelper::Key("MeshName");
+			auto model=AssetsManager::Get().GetAsset<ModelAsset>(component->GetModel());
+			auto meshName=model->GetMeshName(component->GetMesh());
+			if (meshName != nullptr)
+			{
+				SerializerHelper::Value(meshName->c_str());
+			}
+			else
+			{
+				SerializerHelper::Value("None");
+			}
+			SerializerHelper::EndMap();
 		}
 	}
 
@@ -191,6 +221,12 @@ namespace Czuch
 			component->SetType((CameraType)type);
 		}
 
+		if (in["IsPrimary"])
+		{
+			auto isPrimary = in["IsPrimary"].as<int>();
+			component->SetPrimaryFlag(isPrimary == 1 ? true : false);
+		}
+
 		if (in["Camera"])
 		{
 			auto camera = in["Camera"];
@@ -241,6 +277,24 @@ namespace Czuch
 			auto farPlane = in["FarPlane"].as<float>();
 			camera->SetFarPlane(farPlane);
 		}
+
+		return true;
+	}
+
+	bool SerializationComponentHelper::DeserializeMeshComponent(MeshComponent* component, const YAML::Node& in, bool binary)
+	{
+		if (binary)
+		{
+			return false;
+		}
+		auto guid = in["ModelGUID"].as<uint64_t>();
+		CzuchStr meshName = in["MeshName"].as<CzuchStr>();
+
+		auto asset=AssetsManager::Get().GetAsset<ModelAsset>(AssetHandle(guid));
+		auto mesh = asset->GetMeshHandle(meshName);
+
+		component->SetMesh(AssetHandle(guid),mesh);
+
 		return true;
 	}
 

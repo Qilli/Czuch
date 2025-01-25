@@ -453,6 +453,7 @@ namespace Czuch
 			if (!path.empty())
 			{
 				CheckCurrentSceneForSave();
+				m_Root->GetScenesManager().RemoveScene(m_Root->GetScenesManager().GetActiveScene());
 				m_Root->GetScenesManager().LoadScene(path);
 				m_CurrentScenePath = path;
 				m_SceneHierarchyPanel->SetActiveScene(m_Root->GetScenesManager().GetActiveScene());

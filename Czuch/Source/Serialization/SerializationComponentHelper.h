@@ -10,6 +10,7 @@ namespace Czuch
 	struct CameraComponent;
 	struct GUIDComponent;
 	struct Camera;
+	struct MeshComponent;
 
 
 	class SerializationComponentHelper
@@ -21,6 +22,7 @@ namespace Czuch
 		static bool SerializeCameraComponent(CameraComponent* component, bool binary);
 		static bool SerializeGUIDComponent(GUIDComponent* component, bool binary);
 		static bool SerializeCamera(Camera* camera, bool binary);
+		static bool SerializeMeshComponent(MeshComponent* component, bool binary);
 
 
 		static bool DeserializeBaseComponent(Component* component, const YAML::Node& in, bool binary);
@@ -29,6 +31,7 @@ namespace Czuch
 		static bool DeserializeCameraComponent(CameraComponent* component, const YAML::Node& in, bool binary);
 		static bool DeserializeGUIDComponent(GUIDComponent* component, const YAML::Node& in, bool binary);
 		static bool DeserializeCamera(Camera* camera, const YAML::Node& in, bool binary);
+		static bool DeserializeMeshComponent(MeshComponent* component, const YAML::Node& in, bool binary);
 	};
 }
 

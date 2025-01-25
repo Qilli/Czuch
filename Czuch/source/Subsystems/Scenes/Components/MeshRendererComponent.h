@@ -12,6 +12,7 @@ namespace Czuch
 		~MeshRendererComponent()=default;
 		inline MaterialInstanceHandle GetOverrideMaterial() const { return m_Material; }
 		void SetOverrideMaterial(AssetHandle overrideMaterial);
+		AssetHandle GetMaterialAsset() const { return m_MaterialAsset; }
 	private:
 		bool HasMaterial() const { return HANDLE_IS_VALID(m_Material); }
 		MaterialInstanceHandle m_Material;

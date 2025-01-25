@@ -1,30 +1,9 @@
 #pragma once
 #include "BaseEditorPanel.h"
+#include "../EditorCommon.h"
 
 namespace Czuch
 {
-
-	struct CustomDrawers
-	{
-	public:
-		static bool DrawVector3(const CzuchStr& label, Vec3& vec,float colWidth,float resetValue,LockedVec3& locked);
-		static bool ButtonCenteredOnLine(const char* label,float alignment=0.5f);
-		static void LabelCenteredOnLine(const char* label, float alignment = 0.5f, float leftPadding = 0.0f, float rightPadding = 0.0f);
-		static void ShowModalWindow(const char* title,const char* text, bool& isOpen);
-		static const ShortAssetInfo* ShowAssetSelectorPopup(const char* popupId, AssetType filterSearchType,bool canChangeType);
-		static void FormatAssetName(Czuch::ShortAssetInfo* const asset);
-		static void* GetIconForType(AssetType type);
-	public:
-		static bool m_ResetShowAssetModal;
-		static char tempName[15];
-	};
-
-	struct ComponentModalData
-	{
-		bool show = false;
-		std::string title;
-		std::string text;
-	};
 
 	struct ComponentDrawer
 	{
@@ -73,10 +52,23 @@ namespace Czuch
 
 	struct MeshInspectorDrawer : public ComponentDrawer
 	{
+		SelectMeshAssetHelper m_MeshAssetHelper;
 		void DrawComponent(Entity entity) override;
 		void OnSelectionChanged(Entity entity) override;
 		void OnRemoveComponent(Entity entity) override;
-		MeshInspectorDrawer() { id = 4; }
+		MeshInspectorDrawer() {
+			id = 4; }
+	};
+
+	struct MeshRendererInspectorDrawer : public ComponentDrawer
+	{
+		SelectMaterialInstanceAssetHelper m_MaterialAssetHelper;
+		void DrawComponent(Entity entity) override;
+		void OnSelectionChanged(Entity entity) override;
+		void OnRemoveComponent(Entity entity) override;
+		MeshRendererInspectorDrawer() {
+			id = 5;
+		}
 	};
 
 	class EntityInspectorEditorPanel :
@@ -94,6 +86,7 @@ namespace Czuch
 		TransformDrawer m_TransformDrawer;
 		CameraDrawer m_CameraDrawer;
 		MeshInspectorDrawer m_MeshDrawer;
+		MeshRendererInspectorDrawer m_MeshRendererDrawer;
 	};
 }
 

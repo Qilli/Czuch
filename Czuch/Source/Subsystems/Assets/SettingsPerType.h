@@ -1,6 +1,7 @@
 #pragma once
 #include "./Renderer/Graphics.h"
 #include"./Core/TreeNode.h"
+#include"../Logging.h"
 
 namespace Czuch
 {
@@ -146,6 +147,18 @@ namespace Czuch
 		MeshHandle GetMeshHandleAt(U32 index) const
 		{
 			return meshesData[index].meshHandle;
+		}
+
+		MeshHandle GetMeshHandleWithName(const CzuchStr& name) const
+		{
+			for (const auto& mesh : meshesData)
+			{
+				if (mesh.meshData.meshName == name)
+				{
+					return mesh.meshHandle;
+				}
+			}
+			return INVALID_HANDLE(MeshHandle);
 		}
 
 		U32 GetMeshesCount() const

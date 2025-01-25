@@ -5,6 +5,7 @@
 #include<vector>
 #include<typeindex>
 #include<filesystem>
+#include"../Logging.h"
 
 
 namespace Czuch

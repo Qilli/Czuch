@@ -22,6 +22,7 @@ namespace Czuch
         bool UnloadAsset() override;
         bool CreateFromData() override;
         inline MeshHandle GetMeshHandle(int index) const { return m_MeshData.GetMeshHandleAt(index); }
+		inline MeshHandle GetMeshHandle(const CzuchStr& name) const { return m_MeshData.GetMeshHandleWithName(name); }
         inline U32 GetMeshesCount() const { return m_MeshData.GetMeshesCount(); }
 		const CzuchStr* GetMeshName(MeshHandle handle) const;
     public:

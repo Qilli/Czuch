@@ -45,7 +45,7 @@ namespace Czuch
 		void SetPrimaryCamera(CameraComponent* camera) override;
 		void SetEditorCamera(CameraComponent* camera) override;
 	public:
-		void OnAttached() {}
+		void OnAttached() { CheckAndAddStartCamera(); GetCurrentActiveCamera(); }
 		void OnDettached() {}
 	public:
 		virtual bool Serialize(YAML::Emitter& out, bool binary = false) override;
@@ -54,6 +54,7 @@ namespace Czuch
 		void CreateRenderContexts();
 		void DestroyMarkedEntities();
 		void GetCurrentActiveCamera();
+		void CheckAndAddStartCamera();
 	private:
 		friend class Entity;
 		friend class SceneSerializer;

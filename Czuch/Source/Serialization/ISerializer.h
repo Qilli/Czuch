@@ -98,6 +98,11 @@ namespace Czuch
 			(*m_CurrentEmitter) << YAML::Value << value;
 		}
 
+		static void IntVal(const int32_t value)
+		{
+			(*m_CurrentEmitter) << YAML::Value << value;
+		}
+
 		static void Vec2Val(const Vec2& value)
 		{
 			(*m_CurrentEmitter) << YAML::Key << YAML::Flow;

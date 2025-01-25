@@ -133,6 +133,13 @@ namespace Czuch
 				SerializationComponentHelper::SerializeCameraComponent(&GetComponent<CameraComponent>(), binary);
 			}
 
+			//Mesh component
+			if (HasComponent<MeshComponent>())
+			{
+				SerializerHelper::Key("MeshComponent");
+				SerializationComponentHelper::SerializeMeshComponent(&GetComponent<MeshComponent>(), binary);
+			}
+
 			SerializerHelper::EndMap();
 
 			return true;
@@ -214,6 +221,26 @@ namespace Czuch
 				return false;
 			}
 		}
+
+		if (entityNode["MeshComponent"])
+		{
+			auto meshNode = entityNode["MeshComponent"];
+			auto& mesh = AddComponent<MeshComponent>();
+			bool resultBaseComponent = SerializationComponentHelper::DeserializeBaseComponent(&mesh, meshNode, binary);
+			if (!resultBaseComponent)
+			{
+				LOG_BE_ERROR("Failed to deserialize base component of mesh component");
+				return false;
+			}
+			bool meshComponentResult = SerializationComponentHelper::DeserializeMeshComponent(&mesh, meshNode, binary);
+			if (!meshComponentResult)
+			{
+				LOG_BE_ERROR("Failed to deserialize mesh component");
+				return false;
+			}
+		}
+
+
 		return true;
 	}
 #pragma endregion
