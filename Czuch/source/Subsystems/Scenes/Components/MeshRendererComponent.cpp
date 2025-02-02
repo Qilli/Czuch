@@ -33,4 +33,9 @@ namespace Czuch
 		AssetsManager::GetPtr()->IncrementAssetRef<MaterialInstanceAsset>(overrideMaterial);
 	}
 
+	void MeshRendererComponent::DecrementDependenciesReference()
+	{
+		AssetsManager::GetPtr()->UnloadAsset<MaterialInstanceAsset>(m_MaterialAsset);
+	}
+
 }

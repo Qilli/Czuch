@@ -76,6 +76,12 @@ namespace Czuch
 		return true;
 	}
 
+	UBOLayout* MaterialAsset::GetUBOLayoutForName(const StringID& name) const
+	{
+		auto mat = m_Device->AccessMaterial(m_MaterialResource);
+		return mat->desc->GetUBOLayoutForName(name);
+	}
+
 	CzuchStr MaterialAsset::GetAssetLoadInfo() const
 	{
 		return "MaterialAsset: " +AssetName() + "Ref count: "+m_RefCounter.GetCountString()+" State: "+ (m_State==AssetInnerState::LOADED? " Loaded" : "Unloaded");

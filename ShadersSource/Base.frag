@@ -12,9 +12,14 @@ layout(set = 0, binding = 0) uniform  SceneData{
 	vec4 ambientColor;
 } sceneData;
 layout(set = 1, binding = 0) uniform sampler2D texSampler;
+layout(set =1, binding = 1) uniform ColorData{
+       vec4 color;
+} colorData;
 
 void main()
 {
  vec4 temp=texture(texSampler,inUV);
+ temp*=colorData.color; 
+ temp*=sceneData.ambientColor;
  outColor=vec4(temp.xyz,1);
 }

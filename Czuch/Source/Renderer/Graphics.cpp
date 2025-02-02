@@ -16,6 +16,24 @@ namespace Czuch
 		return *this;
 	}
 
+	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::SetUBOLayout(UBOLayout& layout)
+	{
+		uboLayout = std::move(layout);
+		return *this;
+	}
+
+	UBOLayout* DescriptorSetLayoutDesc::GetUBOLayoutForBinding(const StringID& name)
+	{
+		for (int a = 0; a < bindingsCount; ++a)
+		{
+			if (bindings[a].bindingName.GetGuid() == name.GetGuid())
+			{
+				return &uboLayout;
+			}
+		}
+		return nullptr;
+	}
+
 
 	bool IsDepthFormat(Format format)
 	{
@@ -109,6 +127,7 @@ namespace Czuch
 		descriptors[descriptorsCount].paramName = StringID::MakeStringID(name);
 		descriptors[descriptorsCount].binding = binding;
 		descriptors[descriptorsCount].resource = color_texture.handle;
+		descriptors[descriptorsCount].assetHandle = color_texture.assetHandle.handle;
 		descriptors[descriptorsCount++].type = DescriptorType::SAMPLER;
 
 		return *this;
@@ -129,6 +148,7 @@ namespace Czuch
 			if (descriptors[a].paramName.Compare(name)==0)
 			{
 				descriptors[a].resource = texture.handle;
+				descriptors[a].assetHandle = texture.assetHandle.handle;
 				return true;
 			}
 		}
@@ -146,6 +166,18 @@ namespace Czuch
 			}
 		}
 		return false;
+	}
+
+	TextureHandle ShaderParamsSet::GetTextureHandleForName(StringID& name)
+	{
+		for (int a = 0; a < descriptorsCount; ++a)
+		{
+			if (descriptors[a].paramName.Compare(name) == 0)
+			{
+				return TextureHandle(descriptors[a].resource, descriptors[a].assetHandle);
+			}
+		}
+		return TextureHandle();
 	}
 
 
@@ -241,6 +273,19 @@ namespace Czuch
 		}
 	}
 
+	TextureHandle MaterialInstanceParams::GetTextureHandleForName(StringID& name)
+	{
+		for (int a = 0; a < setsCount; ++a)
+		{
+			auto handle = shaderParamsDesc[a].GetTextureHandleForName(name);
+			if (HANDLE_IS_VALID(handle))
+			{
+				return handle;
+			}
+		}
+		return TextureHandle();
+	}
+
 
 	void MaterialInstanceDesc::GetAllTexturesDependencies(Array<TextureHandle>& dependencies)
 	{
@@ -259,14 +304,19 @@ namespace Czuch
 		INVALIDATE_HANDLE(materialAsset);
 		return *this;
 	}
-	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name, BufferHandle buffer)
+	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name,UBO&& data)
 	{
-		paramsDesc.push_back({ .name = name,.type = DescriptorType::UNIFORM_BUFFER,.resource = buffer.handle });
+		paramsDesc.push_back({ .name = name,.uboData=std::move(data),.type = DescriptorType::UNIFORM_BUFFER,.resource = Invalid_Handle_Id,.isInternal = false});
 		return *this;
 	}
-	MaterialInstanceDesc& MaterialInstanceDesc::AddSampler(const CzuchStr& name, TextureHandle color_texture)
+	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name, BufferHandle handle)
 	{
-		paramsDesc.push_back({ .name = name,.type = DescriptorType::SAMPLER,.resourceAsset = color_texture.assetHandle.handle,.resource = color_texture.handle });
+		paramsDesc.push_back({ .name = name,.uboData = UBO(),.type = DescriptorType::UNIFORM_BUFFER,.resource = handle.handle,.isInternal = true });
+		return *this;
+	}
+	MaterialInstanceDesc& MaterialInstanceDesc::AddSampler(const CzuchStr& name, TextureHandle color_texture,bool isInternal)
+	{
+		paramsDesc.push_back({ .name = name,.uboData=UBO(),.type = DescriptorType::SAMPLER,.resourceAsset = color_texture.assetHandle.handle,.resource = color_texture.handle,.isInternal = isInternal});
 		return *this;
 	}
 
@@ -377,6 +427,18 @@ namespace Czuch
 		for (int a = 0; a < passesCount; ++a)
 		{
 			params[a].SetUniformBuffer(name, buffer);
+		}
+	}
+
+	TextureHandle MaterialInstance::GetTextureHandleForName(StringID& name)
+	{
+		for (int a = 0; a < passesCount; ++a)
+		{
+			auto handle = params[a].GetTextureHandleForName(name);
+			if (HANDLE_IS_VALID(handle))
+			{
+				return handle;
+			}
 		}
 	}
 

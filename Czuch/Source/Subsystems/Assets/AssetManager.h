@@ -13,7 +13,7 @@ namespace Czuch
 		AssetManager();
 		virtual ~AssetManager();
 		virtual Asset* LoadAsset(const CzuchStr& path,BaseLoadSettings& settings);
-		virtual void TryCreateAssetWithUnloadState(const CzuchStr& path, BaseLoadSettings& settings);
+		virtual void TryCreateAssetWithUnloadState(const CzuchStr& path);
 		virtual Asset* LoadAsset(AssetHandle handle);
 		virtual void UnloadAsset(AssetHandle handle);
 		virtual void RemoveAsset(AssetHandle handle);
@@ -31,7 +31,8 @@ namespace Czuch
 		virtual void Init() = 0;
 	protected:
 		virtual Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) = 0;
-		virtual Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settingsa) = 0;
+		virtual Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settings) = 0;
+		virtual Asset* CreateLoadableAsset(const CzuchStr& path) = 0;
 	protected:
 		void RegisterAsset(StringID& strId, Asset* createdRes);
 		void UnRegisterAsset(AssetHandle handle);

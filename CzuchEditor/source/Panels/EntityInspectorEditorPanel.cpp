@@ -7,8 +7,10 @@
 #include"Subsystems/Scenes/Components/CameraComponent.h"
 #include"Subsystems/Scenes/Components/MeshComponent.h"
 #include"Subsystems/Scenes/Components/MeshRendererComponent.h"
+#include"Subsystems/Assets/Asset/MaterialInstanceAsset.h"
 #include"Subsystems/Assets/AssetsManager.h"
 #include"Subsystems/Assets/Asset/ModelAsset.h"
+#include"Subsystems/Assets/Asset/TextureAsset.h"
 #include"../Commands/CommandTypes/ChangeTransformCommand.h"
 #include"../Commands/EditorCommandsControl.h"
 #include"../EditorCommon.h"
@@ -328,6 +330,7 @@ namespace Czuch
 			if (open)
 			{
 				m_MaterialAssetHelper.ShowSelectAsset();
+				DrawMaterialInstance(meshRendererComponent);
 			}
 		}
 	}
@@ -339,6 +342,68 @@ namespace Czuch
 	void MeshRendererInspectorDrawer::OnRemoveComponent(Entity entity)
 	{
 		removeComponent = true;
+	}
+
+	void MeshRendererInspectorDrawer::DrawMaterialInstance(MeshRendererComponent& meshRendererComponent)
+	{
+		auto materialAsset = AssetsManager::Get().GetAsset<MaterialInstanceAsset>(meshRendererComponent.GetMaterialAsset());
+		if (materialAsset != nullptr)
+		{
+			ImGui::Text(" Parameters: ");
+			ImGui::Separator();
+			bool changed = false;
+
+			for (int i = 0; i < materialAsset->GetParametersCount(); i++)
+			{
+				auto paramType = materialAsset->GetParameterAtIndexType(i);
+				if (paramType == MaterialParamType::PARAM_BUFFER && materialAsset->IsParameterAtIndexInternal(i)==false)
+				{
+					auto param = materialAsset->GetUBOBufferAtIndex(i);
+					auto buffer = std::get<0>(param);
+					auto layout = std::get<1>(param);
+					if (buffer != nullptr && layout != nullptr)
+					{
+						for (int j = 0; j < layout->elementsCount; j++)
+						{
+							auto element = layout->GetElement(j);
+							if (element.elementType == UBOElementType::Vector)
+							{
+								auto vec = buffer->desc.ubo->GetVec4(element.offset);
+								if (ImGui::DragFloat4(element.name.GetStrName().c_str(), &vec->x, 0.1f))
+								{
+									changed = true;
+								}
+							}
+							else if(element.elementType == UBOElementType::Color)
+							{
+								auto vec = buffer->desc.ubo->GetVec4(element.offset);
+								if (ImGui::ColorEdit4(element.name.GetStrName().c_str(), &vec->x))
+								{
+									changed = true;
+								}
+							}
+
+							if (changed)
+							{
+								materialAsset->UpdateUBOBufferAtIndex(i);
+							}
+						}
+					}
+				}
+				else if(paramType == MaterialParamType::PARAM_TEXTURE )
+				{
+					m_TextureAssetHelper.SetMaterialInstance(materialAsset, i);
+
+					auto param = materialAsset->GetTextureAssetAtIndex(i);
+					auto textureAsset = AssetsManager::Get().GetAsset<TextureAsset>(std::get<0>(param));
+					if (textureAsset != nullptr)
+					{
+						m_TextureAssetHelper.ShowSelectAsset();
+					}
+				}
+			}
+			
+		}
 	}
 #pragma endregion
 }

@@ -62,6 +62,17 @@ namespace Czuch
 		ForceUpdateLocalTransform();
 	}
 
+	void TransformComponent::SetLocalTransform(const Mat4x4& transform)
+	{
+		m_LocalTransform = transform;
+		m_LocalPosition = Vec3(m_LocalTransform[3]);
+		m_LocalRotation = glm::quat_cast(m_LocalTransform);
+		m_LocalScale = Vec3(glm::length(m_LocalTransform[0]), glm::length(m_LocalTransform[1]), glm::length(m_LocalTransform[2]));
+		m_LocalEulerAngles = glm::degrees(glm::eulerAngles(m_LocalRotation));
+		m_State.SetDirty();
+
+	}
+
 	void TransformComponent::SetLocalScale(const Vec3& scale)
 	{
 		m_LocalScale = scale;

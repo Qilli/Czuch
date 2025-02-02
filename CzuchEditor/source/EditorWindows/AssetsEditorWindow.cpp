@@ -97,7 +97,8 @@ namespace Czuch
 
 				if (ImGui::BeginDragDropSource())
 				{
-					auto assetPath = entry.path.c_str();
+					std::filesystem::path relativePath = fs::relative(entry.path, m_StartPath);
+					auto assetPath = relativePath.c_str();
 					ImGui::SetDragDropPayload("ASSETS_EDITOR_ASSET",assetPath, wcslen(assetPath) * sizeof(wchar_t) +2 ,ImGuiCond_Once);
 					ImGui::EndDragDropSource();
 				}

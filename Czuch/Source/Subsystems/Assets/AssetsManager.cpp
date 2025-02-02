@@ -75,7 +75,7 @@ namespace Czuch
 				for (auto it = value->GetAssetIterator(); it != value->GetAssetEnd(); ++it)
 				{
 					ShortAssetInfo *assetInfo = (*it).second->GetShortAssetInfo();
-					if (assetInfo->resource != Invalid_Handle_Id)
+					if (assetInfo->hiddenInEditor==false)
 					{
 						m_AssetsInfoTemp.push_back(assetInfo);
 					}
@@ -116,8 +116,7 @@ namespace Czuch
 			if (value->IsFormatSupported(pathRelative.extension().string().c_str()))
 			{
 				std::string path = pathRelative.string();
-				BaseLoadSettings settings{};
-				value->TryCreateAssetWithUnloadState(path,settings);
+				value->TryCreateAssetWithUnloadState(path);
 				return;
 			}
 		}

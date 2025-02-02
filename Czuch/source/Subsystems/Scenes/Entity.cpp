@@ -95,8 +95,6 @@ namespace Czuch
 
 			SerializerHelper::SetEmitter(&out);
 			SerializerHelper::BeginMap();
-		//	SerializerHelper::Key("Entity");
-		//	SerializerHelper::Value("1");
 			//GUID component
 			if (HasComponent<GUIDComponent>())
 			{
@@ -138,6 +136,13 @@ namespace Czuch
 			{
 				SerializerHelper::Key("MeshComponent");
 				SerializationComponentHelper::SerializeMeshComponent(&GetComponent<MeshComponent>(), binary);
+			}
+
+			//Mesh renderer component
+			if (HasComponent<MeshRendererComponent>())
+			{
+				SerializerHelper::Key("MeshRendererComponent");
+				SerializationComponentHelper::SerializeMeshRendererComponent(&GetComponent<MeshRendererComponent>(), binary);
 			}
 
 			SerializerHelper::EndMap();
@@ -236,6 +241,24 @@ namespace Czuch
 			if (!meshComponentResult)
 			{
 				LOG_BE_ERROR("Failed to deserialize mesh component");
+				return false;
+			}
+		}
+
+		if (entityNode["MeshRendererComponent"])
+		{
+			auto meshRendererNode = entityNode["MeshRendererComponent"];
+			auto& meshRenderer = AddComponent<MeshRendererComponent>();
+			bool resultBaseComponent = SerializationComponentHelper::DeserializeBaseComponent(&meshRenderer, meshRendererNode, binary);
+			if (!resultBaseComponent)
+			{
+				LOG_BE_ERROR("Failed to deserialize base component of mesh renderer component");
+				return false;
+			}
+			bool meshRendererComponentResult = SerializationComponentHelper::DeserializeMeshRendererComponent(&meshRenderer, meshRendererNode, binary);
+			if (!meshRendererComponentResult)
+			{
+				LOG_BE_ERROR("Failed to deserialize mesh renderer component");
 				return false;
 			}
 		}

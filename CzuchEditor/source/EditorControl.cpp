@@ -9,6 +9,7 @@
 #include"EditorWindows/RenderGraphEditorWindow.h"
 #include"EditorWindows/AssetsEditorWindow.h"
 #include"EditorWindows/AssetsInfoEditorWindow.h"
+#include"Commands/CommandTypes/CreateDefaultMeshesCommands.h"
 
 namespace Czuch
 {
@@ -172,8 +173,9 @@ namespace Czuch
 			{
 				auto path = (const wchar_t*)payload->Data;
 				std::filesystem::path p(path);
-				LOG_BE_INFO("Accepted drag drop payload with path {0}", p.string());
-				auto mgr = AssetsManager::GetPtr();
+				LOG_BE_INFO("Accepted drag drop payload with path {0}",p.string());
+				auto activeScene = m_Root->GetScenesManager().GetActiveScene();
+				EditorCommandsControl::Get().ExecuteCommand(new CreateNewEntityHierarchyWithModelCommand(activeScene,activeScene->GetRootEntity(),p.string()));
 			}
 			ImGui::EndDragDropTarget();
 		}

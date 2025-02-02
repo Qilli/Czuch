@@ -15,6 +15,7 @@ namespace Czuch
 	protected:
 		Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) override;
 		Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settings) override;
+		Asset* CreateLoadableAsset(const CzuchStr& path) override;
 	private:
 		GraphicsDevice* m_Device;
 	};
@@ -35,6 +36,13 @@ namespace Czuch
 	inline Asset* MaterialAssetManager::CreateAsset(const CzuchStr& path, BaseLoadSettings& settings)
 	{
 		MaterialAsset* matRes = new MaterialAsset(path,m_Device, (MaterialLoadSettings&)settings,AssetsManager::GetPtr());
+		return matRes;
+	}
+
+	inline Asset* MaterialAssetManager::CreateLoadableAsset(const CzuchStr& path)
+	{
+		MaterialLoadSettings settings;
+		MaterialAsset* matRes = new MaterialAsset(path, m_Device, settings, AssetsManager::GetPtr());
 		return matRes;
 	}
 

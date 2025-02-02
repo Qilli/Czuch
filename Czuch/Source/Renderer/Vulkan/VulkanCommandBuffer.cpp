@@ -120,6 +120,12 @@ namespace Czuch
 
 			BindVertexBuffer(meshInstance->positionsHandle, 0, 0);
 			int bindIndex = 1;
+
+			if (meshInstance->IsValid() == false)
+			{
+				CZUCH_BE_ASSERT(false, "Mesh instance is invalid");
+			}
+
 			if (meshInstance->HasColors())
 			{
 				BindVertexBuffer(meshInstance->colorsHandle, bindIndex++, 0);

@@ -748,21 +748,52 @@ namespace Czuch
 	MaterialInstanceHandle VulkanDevice::CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc)
 	{
 		MaterialInstance* matInstance = new MaterialInstance();
-		matInstance->desc = std::move(materialInstanceDesc);
-		auto asset = AssetsManager::GetPtr()->GetAsset<MaterialAsset>(matInstance->desc.materialAsset);
+		matInstance->desc = &materialInstanceDesc;
+		auto asset = AssetsManager::GetPtr()->GetAsset<MaterialAsset>(matInstance->desc->materialAsset);
 		matInstance->handle = asset->GetMaterialResourceHandle();
-		matInstance->desc.isTransparent = asset->IsTransparent();
+		matInstance->desc->isTransparent = asset->IsTransparent();
 		matInstance->passesCount = asset->GetPassesCount();
 		auto material = AccessMaterial(matInstance->handle);
 		auto* matDesc = material->desc;
+
+		//make sure all buffers are created
+		auto desc= &materialInstanceDesc;
+		for (int i = 0; i < desc->paramsDesc.size(); ++i)
+		{
+			auto& paramDesc = desc->paramsDesc[i];
+			if (paramDesc.type == DescriptorType::UNIFORM_BUFFER && paramDesc.isInternal==false)
+			{
+				if (paramDesc.resource == Invalid_Handle_Id)
+				{
+					auto buffer = CreateUBOBuffer(&paramDesc.uboData);
+					paramDesc.resource = buffer.handle;
+				}
+			}
+		}
+
+
 		for (int a = 0; a < material->pipelines.size(); a++)
 		{
-			matDesc->passesContainer.states[a].SetParams(matInstance->desc, matInstance->params[a]);
+			matDesc->passesContainer.states[a].SetParams(*matInstance->desc, matInstance->params[a]);
 		}
 
 		MaterialInstanceHandle h;
 		h.handle = m_ResContainer.materialInstances.Add(matInstance);
 		return h;
+	}
+
+	BufferHandle VulkanDevice::CreateUBOBuffer(UBO* ubo)
+	{
+		BufferDesc bufferDesc{};
+		bufferDesc.size = ubo->GetSize();
+		bufferDesc.usage = Usage::MEMORY_USAGE_GPU_ONLY;
+		bufferDesc.stride = ubo->GetSize();
+		bufferDesc.elementsCount = 1;
+		bufferDesc.bind_flags = BindFlag::UNIFORM_BUFFER;
+		bufferDesc.initData =ubo->GetData();
+
+		bufferDesc.ubo = ubo;
+		return CreateBuffer(&bufferDesc);
 	}
 
 	BufferHandle VulkanDevice::CreateBuffer(const BufferDesc* desc)
@@ -1257,7 +1288,7 @@ namespace Czuch
 		m_ResContainer.materialInstances.Get(materialInstance.handle, &m);
 		m_ResContainer.materialInstances.Remove(materialInstance.handle);
 		INVALIDATE_HANDLE(materialInstance)
-			return true;
+		return true;
 	}
 
 	DescriptorAllocator* VulkanDevice::CreateDescriptorAllocator()
@@ -2666,6 +2697,59 @@ namespace Czuch
 			return true;
 		}
 		return false;
+	}
+
+	bool VulkanDevice::UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size)
+	{
+		auto bufferPtr = AccessBuffer(buffer);
+		if (bufferPtr == nullptr)
+		{
+			LOG_BE_ERROR("UploadDataToBuffer with invalid handle.");
+			return false;
+		}
+
+		auto bufferVulkan = Internal_to_Buffer(bufferPtr);
+
+		BufferInternalSettings settingsStageBuffer{};
+		settingsStageBuffer.inSize = bufferVulkan->size;
+		settingsStageBuffer.inFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		settingsStageBuffer.inStagingBuffer = true;
+		settingsStageBuffer.inCreateMapped = false;
+		settingsStageBuffer.inUsage = Usage::MEMORY_USAGE_CPU_ONLY;
+
+		if (!CreateBuffer_Internal(settingsStageBuffer))
+		{
+			LOG_BE_ERROR("{0} Failed to create new vulkan staging buffer for uniform buffer Upload", Tag);
+			return false;
+		}
+
+		//map memory
+		void* data = nullptr;
+		vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
+		memcpy(data, dataIn, size);
+		vmaUnmapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc);
+
+		if (!CopyBuffer(settingsStageBuffer.outBuffer, bufferVulkan->buffer, settingsStageBuffer.inSize))
+		{
+			LOG_BE_ERROR("{0} Failed to copy data from staging buffer to uniform buffer in upload method", Tag);
+			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
+			return false;
+		}
+		vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
+		return true;
+	}
+
+	bool VulkanDevice::UploadCurrentDataToBuffer(BufferHandle buffer)
+	{
+		auto bufferPtr = AccessBuffer(buffer);
+		if (bufferPtr == nullptr)
+		{
+			LOG_BE_ERROR("UploadCurrentDataToBuffer with invalid handle.");
+			return false;
+		}
+
+		void* data = bufferPtr->desc.ubo->GetData();
+		return UploadDataToBuffer(buffer, data, bufferPtr->desc.ubo->GetSize());
 	}
 
 	Pipeline* VulkanDevice::AccessPipeline(PipelineHandle handle)

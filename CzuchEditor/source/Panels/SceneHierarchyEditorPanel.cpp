@@ -17,6 +17,11 @@ namespace Czuch
 
 	void SceneHierarchyEditorPanel::SetActiveScene(Scene* activeScene)
 	{
+		if (m_ActiveScene != activeScene)
+		{
+			m_SelectedEntity = {};
+			NotifyOnSelectedEntityListeners();
+		}
 		m_ActiveScene = activeScene;
 	}
 

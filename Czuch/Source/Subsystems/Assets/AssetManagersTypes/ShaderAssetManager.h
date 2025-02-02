@@ -14,6 +14,7 @@ namespace Czuch
 	protected:
 		Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) override;
 		Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settings) override;
+		Asset* CreateLoadableAsset(const CzuchStr& path) override;
 	private:
 		GraphicsDevice* m_Device;
 	};
@@ -33,6 +34,13 @@ namespace Czuch
 	inline Asset* ShaderAssetManager::CreateAsset(const CzuchStr& path, BaseLoadSettings& settings)
 	{
 		ShaderAsset* shaderRes = new ShaderAsset(path, m_Device,(ShaderLoadSettings&)settings,AssetsManager::GetPtr());
+		return shaderRes;
+	}
+
+	inline Asset* ShaderAssetManager::CreateLoadableAsset(const CzuchStr& path)
+	{
+		ShaderLoadSettings settings;
+		ShaderAsset* shaderRes = new ShaderAsset(path, m_Device, settings, AssetsManager::GetPtr());
 		return shaderRes;
 	}
 

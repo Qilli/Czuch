@@ -27,12 +27,17 @@ namespace Czuch
 		Vec4 ambientColor;
 	};
 
+	struct ColorUBO
+	{
+		Vec4 color;
+	};
+
 	struct ResourceHandle
 	{
 	public:
 		Handle handle;
 		ResourceHandle(int val) :handle(val) {}
-		ResourceHandle() { handle = -1; }	
+		ResourceHandle() { handle = Invalid_Handle_Id; }	
 	};
 
 	enum class CZUCH_API RenderPassType : U32
@@ -723,8 +728,86 @@ namespace Czuch
 		FrameBufferDesc& SetName(const char* newName);
 	};
 
+	enum UBOElementType
+	{
+		Vector,
+		Color,
+		Matrix,
+	};
+
+	struct UBOLayout {
+		struct Element
+		{
+			U32 offset;
+			U32 size;
+			UBOElementType elementType;
+			StringID name;
+		};
+		U32 totalSize;
+		U8 elementsCount;
+
+		Element elements[s_max_descriptors_per_set];
+
+		void AddElement(U32 offset, U32 size, UBOElementType elemType, StringID name)
+		{
+			CZUCH_BE_ASSERT(elementsCount < s_max_descriptors_per_set,"UBO size overflow");
+			elements[elementsCount].offset = offset;
+			elements[elementsCount].size = size;
+			elements[elementsCount].elementType = elemType;
+			elements[elementsCount].name = name;
+			elementsCount++;
+		}
+
+		void Reset()
+		{
+			totalSize = 0;
+			elementsCount = 0;
+		}
+
+		const Element& GetElement(StringID& name)
+		{
+			for (U32 i = 0; i < elementsCount; i++)
+			{
+				if (elements[i].name.GetStrName() == name.GetStrName())
+				{
+					return elements[i];
+				}
+			}
+			CZUCH_BE_ASSERT(false, "Element not found");
+			return elements[0];
+		}
+
+		const Element& GetElement(U32 index)
+		{
+			CZUCH_BE_ASSERT(index < elementsCount, "Element not found");
+			return elements[index];
+		}
+
+	};
+
+	struct UBO
+	{
+		Array<U8> uboData;
+		template<typename T>
+		void SetUniform(uint32_t offset, const T& value) {
+			memcpy(uboData.data() + offset, &value, sizeof(T));
+		}
+		void* GetData() { return uboData.data(); }
+		Vec4* GetVec4(uint32_t offset) { return (Vec4*)(uboData.data() + offset); }
+		U32 GetSize() { return uboData.size(); }
+
+		UBO(void* data, U32 size)
+		{
+			this->uboData.resize(size);
+			memcpy(this->uboData.data(), data, size);
+		}
+
+		UBO() = default;
+	};
+
 	struct BufferDesc
 	{
+		UBO *ubo;
 		U64 size = 0;
 		U64 elementsCount = 0;
 		Usage usage = Usage::DEFAULT;
@@ -733,7 +816,6 @@ namespace Czuch
 		Format format = Format::UNKNOWN;
 		bool createMapped = false;
 		void* initData = nullptr;
-
 	};
 
 	struct DescriptorSetLayoutDesc
@@ -749,6 +831,7 @@ namespace Czuch
 		};
 
 		Binding bindings[s_max_descriptors_per_set];
+		UBOLayout uboLayout;
 		U32 bindingsCount = 0;
 		U32 setIndex = 0;
 		U32 shaderStage;
@@ -761,6 +844,8 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc& Reset();
 		DescriptorSetLayoutDesc& AddBinding(CzuchStr name, DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool internalParam);
+		DescriptorSetLayoutDesc& SetUBOLayout(UBOLayout& layout);
+		UBOLayout* GetUBOLayoutForBinding(const StringID& name);
 	};
 
 
@@ -772,6 +857,7 @@ namespace Czuch
 		{
 			StringID paramName;
 			I32 resource;
+			I32 assetHandle;
 			DescriptorType type;
 			U16 binding;
 		};
@@ -790,6 +876,7 @@ namespace Czuch
 		void SetSampler(int descriptor, TextureHandle color_texture);
 		bool TrySetSampler(StringID& name, TextureHandle texture);
 		bool TrySetBuffer(StringID& name, BufferHandle buffer);
+		TextureHandle GetTextureHandleForName(StringID& name);
 	};
 
 	union ClearValue
@@ -1153,6 +1240,30 @@ namespace Czuch
 		{
 			return passesContainer.states[index];
 		}
+
+		UBOLayout* GetUBOLayoutForName(const StringID& name)
+		{
+			for (U32 i = 0; i < PassesCount(); i++)
+			{
+				for (U32 j = 0; j < passesContainer.states[i].layoutsCount; j++)
+				{
+					auto layout=passesContainer.states[i].layouts[j].GetUBOLayoutForBinding(name);
+					if (layout)
+					{
+						return layout;
+					}
+				}
+			}
+			CZUCH_BE_ASSERT(false, "UBO layout not found");
+			return nullptr;
+		}
+	};
+
+	enum CZUCH_API MaterialParamType
+	{
+		PARAM_TEXTURE,
+		PARAM_BUFFER,
+		PARAM_UNKNOWN
 	};
 
 	struct CZUCH_API MaterialInstanceDesc
@@ -1160,9 +1271,11 @@ namespace Czuch
 		struct ShaderParamDesc
 		{
 			CzuchStr name;
+			UBO uboData;
 			DescriptorType type;
 			I32 resourceAsset;
 			I32 resource;
+			bool isInternal = false;
 		};
 
 		AssetHandle materialAsset;
@@ -1176,8 +1289,9 @@ namespace Czuch
 		void GetAllTexturesDependencies(Array<TextureHandle> & dependencies);
 
 		MaterialInstanceDesc& Reset();
+		MaterialInstanceDesc& AddBuffer(const CzuchStr& name,UBO&& data);
 		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, BufferHandle buffer);
-		MaterialInstanceDesc& AddSampler(const CzuchStr& name, TextureHandle color_texture);
+		MaterialInstanceDesc& AddSampler(const CzuchStr& name, TextureHandle color_texture,bool isInternal);
 		void SetTransparent(bool value) { isTransparent = value; }
 	};
 
@@ -1196,6 +1310,7 @@ namespace Czuch
 		void SetSampler(int set,TextureHandle color_texture);
 		void SetSampler(StringID& name, TextureHandle texture);
 		void SetUniformBuffer(StringID& name, BufferHandle buffer);
+		TextureHandle GetTextureHandleForName(StringID& name);
 	};
 
 	struct SamplerDesc
@@ -1329,6 +1444,7 @@ namespace Czuch
 		inline bool HasUV0() const { return data->uvs0.size() > 0; }
 
 		constexpr const MeshData& GetMeshData() const { return *data; }
+		bool IsValid() const { return data != nullptr; }
 
 		BufferHandle positionsHandle;
 		BufferHandle normalsHandle;
@@ -1369,14 +1485,15 @@ namespace Czuch
 
 	struct MaterialInstance : public GraphicsDeviceResource
 	{
-		MaterialInstanceDesc desc{};
+		MaterialInstanceDesc* desc;
 		MaterialInstanceParams params[k_max_render_passes];
 		MaterialHandle handle;
 		U32 passesCount = 0;
-		bool IsTransparent() const { return desc.isTransparent; }
-		constexpr const MaterialInstanceDesc& GetDesc() const { return desc; }
+		bool IsTransparent() const { return desc->isTransparent; }
+		constexpr const MaterialInstanceDesc& GetDesc() const { return *desc; }
 		void SetSampler(StringID &name, TextureHandle texture);
 		void SetUniformBuffer(StringID& name, BufferHandle buffer);
+		TextureHandle GetTextureHandleForName(StringID& name);
 	};
 
 	struct Pipeline : public GraphicsDeviceResource

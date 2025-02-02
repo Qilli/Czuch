@@ -6,23 +6,36 @@
 #include"MaterialInstanceAsset.h"
 #include "TextureAsset.h"
 #include "./Subsystems/Assets/BuildInAssets.h"
+#include "./Subsystems/Scenes/Scene.h"
+#include "./Subsystems/Scenes/Components/TransformComponent.h"
 
 
 namespace Czuch
 {
+	Mat4x4 ConvertMatrix(const aiMatrix4x4& m) {
+		Mat4x4 result;
+
+		// GLM is column-major so each column of glm::mat4 is filled with one row of aiMatrix4x4
+		result[0][0] = m.a1; result[1][0] = m.a2; result[2][0] = m.a3; result[3][0] = m.a4;
+		result[0][1] = m.b1; result[1][1] = m.b2; result[2][1] = m.b3; result[3][1] = m.b4;
+		result[0][2] = m.c1; result[1][2] = m.c2; result[2][2] = m.c3; result[3][2] = m.c4;
+		result[0][3] = m.d1; result[1][3] = m.d2; result[2][3] = m.d3; result[3][3] = m.d4;
+
+		return result;
+	}
 
 
-	ModelAsset::ModelAsset(const CzuchStr& path, ModelLoadSettings& loadSettings, GraphicsDevice* device, AssetsManager* assetsManager):Asset(path, GetNameFromPath(path),assetsManager),m_Device(device)
+	ModelAsset::ModelAsset(const CzuchStr& path, ModelLoadSettings& loadSettings, GraphicsDevice* device, AssetsManager* assetsManager) :Asset(path, GetNameFromPath(path), assetsManager), m_Device(device)
 	{
 		m_AssetType = AssetModeType::LOADED_TYPE;
-		m_CurrentLoadSettings = std::move(loadSettings);
+		m_CurrentLoadSettings =std::move(loadSettings);
 		LOG_BE_INFO("Created new model asset with unloaded state at path: {0}", AssetPath());
 	}
 
-	ModelAsset::ModelAsset(const CzuchStr& path, ModelCreateSettings& settings, GraphicsDevice* device, AssetsManager* assetsManager) :Asset(path,path,assetsManager), m_Device(device)
+	ModelAsset::ModelAsset(const CzuchStr& path, ModelCreateSettings& settings, GraphicsDevice* device, AssetsManager* assetsManager) :Asset(path, path, assetsManager), m_Device(device)
 	{
 		m_AssetType = AssetModeType::CREATED_TYPE;
-		m_CreateSettings = std::move(settings);
+		m_CreateSettings =std::move(settings);
 		CreateFromData();
 	}
 
@@ -40,6 +53,35 @@ namespace Czuch
 			return nullptr;
 		}
 		return &mesh->data->meshName;
+	}
+
+	Entity ModelAsset::AddMeshObjectRecursive(Scene* scene, Entity parent, TreeNode<MeshTreeNodeElement>* currentNode)
+	{
+		auto& meshElement = currentNode->GetData();
+		I32 meshIndex = meshElement.meshIndex;
+		Entity entity;
+		if (meshIndex != -1)
+		{
+			SingleMeshData& meshData = m_MeshData.meshesData[meshElement.meshIndex];
+			entity = scene->CreateEntity(meshData.meshData.meshName, parent);
+			entity.AddRenderable(GetHandle(), meshData.meshHandle, meshData.meshData.materialInstanceAssetHandle);
+			entity.GetComponent<TransformComponent>().SetLocalTransform(meshElement.localTransform);
+		}
+		else
+		{
+			entity = scene->CreateEntity(AssetName(), parent);
+			entity.GetComponent<TransformComponent>().SetLocalTransform(meshElement.localTransform);
+		}
+		for (auto& child : currentNode->GetChildren())
+		{
+			AddMeshObjectRecursive(scene, entity, &child);
+		}
+		return entity;
+	}
+
+	Entity ModelAsset::AddModelToScene(Scene* scene, Entity parent)
+	{
+		return AddMeshObjectRecursive(scene, parent, &m_MeshData.meshesHierarchy);
 	}
 
 	bool ModelAsset::LoadAsset()
@@ -79,8 +121,9 @@ namespace Czuch
 		m_MeshData.Clear();
 		m_MeshData.inited = true;
 		m_MeshData.Reserve(scene->mNumMeshes);
-		auto child=m_MeshData.meshesHierarchy.AddChild({-1});
-		ProcessNode(scene->mRootNode, scene,child);
+		auto &root = m_MeshData.meshesHierarchy;
+
+		ProcessNode(scene->mRootNode, scene, &root);
 		LOG_BE_INFO("Loaded model {0} with {1} meshes and {2} materials", AssetName(), scene->mNumMeshes, scene->mNumMaterials);
 		m_RefCounter.Up();
 		m_State = AssetInnerState::LOADED;
@@ -92,12 +135,12 @@ namespace Czuch
 	{
 		if (ShouldUnload())
 		{
-			for (auto &m : m_MeshData.meshesData)
+			for (auto& m : m_MeshData.meshesData)
 			{
 				m_Device->Release(m.meshHandle);
 			}
 
-			for (auto &m : m_MeshData.meshesData)
+			for (auto& m : m_MeshData.meshesData)
 			{
 				m_AssetsMgr->UnloadAsset<MaterialInstanceAsset>(m.meshData.materialInstanceAssetHandle);
 			}
@@ -121,15 +164,14 @@ namespace Czuch
 
 		m_MeshData.Clear();
 		m_MeshData.Reserve(m_CreateSettings.meshesData.size());
-		m_MeshData.inited = true;
-		auto child = m_MeshData.meshesHierarchy.AddChild({ -1 });
-		for (auto &meshData : m_CreateSettings.meshesData)
+		m_MeshData.meshesHierarchy = std::move(m_CreateSettings.meshesHierarchy);
+		for (auto& meshData : m_CreateSettings.meshesData)
 		{
-			U32 index=m_MeshData.AddMeshData({ meshData,MeshHandle(),MaterialInstanceHandle()}, child);
-			auto &currentMeshData = m_MeshData.meshesData[index];
-			auto meshHandle= m_Device->CreateMesh(currentMeshData.meshData);
+			U32 index = m_MeshData.AddMeshData({ meshData,MeshHandle(),MaterialInstanceHandle() }, Mat4x4(1.0f), nullptr);
+			auto& currentMeshData = m_MeshData.meshesData[index];
+			auto meshHandle = m_Device->CreateMesh(currentMeshData.meshData);
 			Mesh* mesh = m_Device->AccessMesh(meshHandle);
-			auto matInstance=m_AssetsMgr->GetAsset<MaterialInstanceAsset>(currentMeshData.meshData.materialInstanceAssetHandle)->GetMaterialInstanceResourceHandle();
+			auto matInstance = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(currentMeshData.meshData.materialInstanceAssetHandle)->GetMaterialInstanceResourceHandle();
 
 			currentMeshData.meshHandle = meshHandle;
 			currentMeshData.materialInstanceHandle = matInstance;
@@ -174,16 +216,20 @@ namespace Czuch
 
 	CzuchStr ModelAsset::GetAssetLoadInfo() const
 	{
-		return "ModelAsset: " + AssetName() + " Ref count: "+m_RefCounter.GetCountString() + " State: " + (m_State == AssetInnerState::LOADED ? " Loaded" : "Unloaded");
+		return "ModelAsset: " + AssetName() + " Ref count: " + m_RefCounter.GetCountString() + " State: " + (m_State == AssetInnerState::LOADED ? " Loaded" : "Unloaded");
 	}
 
-	void ModelAsset::ProcessNode(aiNode* node, const aiScene* scene, TreeNode<Array<I32>>* currentNode)
+	void ModelAsset::ProcessNode(aiNode* node, const aiScene* scene, TreeNode<MeshTreeNodeElement>* currentNode)
 	{
-		for (U32 i = 0; i < node->mNumMeshes; i++)
+		if (node->mNumMeshes > 0)
 		{
-			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+			aiMesh* mesh = scene->mMeshes[node->mMeshes[0]];
 			auto index = ProcessMesh(mesh, scene);
-			currentNode->GetData().push_back(index);
+			currentNode->SetData(MeshTreeNodeElement(index, ConvertMatrix(node->mTransformation)));
+		}
+		else
+		{
+			currentNode->SetData(MeshTreeNodeElement(-1, ConvertMatrix(node->mTransformation)));
 		}
 
 		for (U32 i = 0; i < node->mNumChildren; i++)
@@ -217,7 +263,7 @@ namespace Czuch
 
 		for (unsigned int i = 0; i < mesh->mNumFaces; i++)
 		{
-			aiFace &face = mesh->mFaces[i];
+			aiFace& face = mesh->mFaces[i];
 			for (unsigned int j = 0; j < face.mNumIndices; j++)
 			{
 				meshData.indices.push_back(face.mIndices[j]);
@@ -232,8 +278,8 @@ namespace Czuch
 			meshData.materialInstanceAssetHandle = materialInfo.materialAsset;
 		}
 
-		U32 index= m_MeshData.AddMeshData({ std::move(meshData),MeshHandle(),materialInfo.materialInstanceHandle}, nullptr);
-		auto &currentMeshData = m_MeshData.meshesData[index];
+		U32 index = m_MeshData.AddMeshData({ std::move(meshData),MeshHandle(),materialInfo.materialInstanceHandle }, Mat4x4(1.0f), nullptr);
+		auto& currentMeshData = m_MeshData.meshesData[index];
 		auto meshHandle = m_Device->CreateMesh(currentMeshData.meshData);
 		m_MeshData.meshesData[index].meshHandle = meshHandle;
 
@@ -245,8 +291,11 @@ namespace Czuch
 		aiString str;
 		material->GetTexture(type, index, &str);
 		LOG_BE_INFO("Checking if texture {0} already exist and is loaded", str.C_Str());
-		auto texPath = GetRelativePath().parent_path().string() +"\\"+ str.C_Str();
-		return AssetsManager::GetPtr()->LoadAsset<TextureAsset>(texPath);
+		auto texPath = GetRelativePath().parent_path().string() + "\\" + str.C_Str();
+		TextureLoadSettings settings;
+		settings.isUITexture = false;
+		settings.type = TextureDesc::Type::TEXTURE_2D;
+		return AssetsManager::GetPtr()->LoadAsset<TextureAsset,TextureLoadSettings>(texPath,settings);
 	}
 
 	MaterialInfo ModelAsset::ProcessMaterial(aiMaterial* material)
@@ -258,7 +307,7 @@ namespace Czuch
 			return m_LoadedMaterials[material];
 		}
 
-		U32 diffuseCount=material->GetTextureCount(aiTextureType_DIFFUSE);
+		U32 diffuseCount = material->GetTextureCount(aiTextureType_DIFFUSE);
 
 		if (diffuseCount == 0)
 		{
@@ -278,16 +327,22 @@ namespace Czuch
 				name += nameMat;
 
 				TextureHandle textureHandle = AssetsManager::GetPtr()->GetAsset<TextureAsset>(diffuseTextureHandle)->GetTextureResourceHandle();
-			
+
 				MaterialInstanceCreateSettings instanceCreateSettings{};
 				instanceCreateSettings.materialInstanceName = std::move(name);
-				instanceCreateSettings.desc.AddSampler("MainTexture", textureHandle);
+				instanceCreateSettings.desc.AddSampler("MainTexture", textureHandle, false);
+
+				ColorUBO colorUbo;
+				colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
+
+				instanceCreateSettings.desc.AddBuffer("Color", UBO((void*)&colorUbo, (U32)sizeof(ColorUBO)));
+
 				instanceCreateSettings.desc.materialAsset = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
 				instanceCreateSettings.desc.isTransparent = false;
 
 				AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
 				MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
-				
+
 				info.materialInstanceHandle = instanceAsset->GetMaterialInstanceResourceHandle();
 				info.materialAsset = instanceAssetHandle;
 				m_LoadedMaterials[material] = info;
@@ -303,6 +358,7 @@ namespace Czuch
 			}
 
 		}
+	}
 
 		//[TODO] add support for multiple textures, by texture existence we also select proper material type
 		/*U32 specularCount = material->GetTextureCount(aiTextureType_SPECULAR);
@@ -316,5 +372,4 @@ namespace Czuch
 		U32 lightmapCount = material->GetTextureCount(aiTextureType_LIGHTMAP);
 		U32 reflectionCount = material->GetTextureCount(aiTextureType_REFLECTION);*/
 
-	}
 }

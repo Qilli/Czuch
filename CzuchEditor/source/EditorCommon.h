@@ -6,6 +6,7 @@ namespace Czuch
 {
 	struct MeshComponent;
 	struct MeshRendererComponent;
+	class MaterialInstanceAsset;
 	struct LockedVec3
 	{
 		LockedVec3() { isLocked = false; value = Vec3(0, 0, 0); }
@@ -42,11 +43,13 @@ namespace Czuch
 	{
 	public:
 		static bool DrawVector3(const CzuchStr& label, Vec3& vec, float colWidth, float resetValue, LockedVec3& locked);
+		static bool DrawColor(const CzuchStr& label, Vec4& color, float colWidth);
 		static bool ButtonCenteredOnLine(const char* label, float alignment = 0.5f);
 		static void LabelCenteredOnLine(const char* label, float alignment = 0.5f, float leftPadding = 0.0f, float rightPadding = 0.0f);
 		static void ShowModalWindow(const char* title, const char* text, bool& isOpen);
 		static void FormatAssetName(Czuch::ShortAssetInfo* const asset, char* tempName);
 		static void* GetIconForType(AssetType type);
+		static void DrawTextureParameter(const char* label, AssetHandle& asset, I32& resource, bool& showPopup, AssetType type);
 	};
 
 	struct ShowAssetSelectorPopupHelper
@@ -106,6 +109,27 @@ namespace Czuch
 		}
 
 		MeshRendererComponent* m_MeshRendererComponent;
+		bool HasSelectedAsset() override;
+		const CzuchStr* GetSelectedAssetName() override;
+		void SetSelected(AssetHandle asset, I32 resource) override;
+	};
+
+	struct SelectTextureAssetHelper : public SelectAssetHelper
+	{
+		SelectTextureAssetHelper() : m_MaterialInstance(nullptr)
+		{
+			m_AssetType = AssetType::TEXTURE;
+			m_AssetNameType = " Texture: ";
+			m_AssetSelectButtonID = "Select##Texture";
+			m_AssetPopupName = "SelectTexturePopup";
+			m_AssetSelectorPopup.filterOnEnter = true;
+			m_AssetSelectorPopup.selectedType = AssetType::TEXTURE;
+			m_ParamIndex = -1;
+		}
+
+		MaterialInstanceAsset* m_MaterialInstance;
+		void SetMaterialInstance(MaterialInstanceAsset* mat, int index);
+		int m_ParamIndex;
 		bool HasSelectedAsset() override;
 		const CzuchStr* GetSelectedAssetName() override;
 		void SetSelected(AssetHandle asset, I32 resource) override;

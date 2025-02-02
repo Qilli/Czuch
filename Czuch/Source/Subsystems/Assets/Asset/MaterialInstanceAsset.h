@@ -19,6 +19,14 @@ namespace Czuch
     public:
         ShortAssetInfo* GetShortAssetInfo() override;
         CzuchStr GetAssetLoadInfo() const override;
+        MaterialParamType GetParameterAtIndexType(int index) const;
+		bool IsParameterAtIndexInternal(int index) const;
+		const CzuchStr& GetParameterAtIndexName(int index) const;
+		std::tuple<AssetHandle,I32> GetTextureAssetAtIndex(int index) const;
+        std::tuple<Buffer*, UBOLayout*> GetUBOBufferAtIndex(int index) const;
+		void UpdateUBOBufferAtIndex(int index);
+		void SetTextureParameterAtIndex(int index,AssetHandle asset,I32 resource);
+		U32 GetParametersCount() const;
     private:
 		void LoadDependencies();
 		void UnloadDependencies();
@@ -26,6 +34,7 @@ namespace Czuch
         GraphicsDevice* m_Device;
 		MaterialInstanceDesc m_MaterialInstanceDesc;
         MaterialInstanceHandle m_MaterialInstanceResource;
+		MaterialInstance* m_MaterialInstance;
         MaterialInstanceCreateSettings m_MaterialCreateSettings;
         MaterialInstanceLoadSettings m_MaterialLoadSettings;
         Array<char> m_MaterialInstanceBuffer;

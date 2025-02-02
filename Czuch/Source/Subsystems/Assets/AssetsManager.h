@@ -45,7 +45,9 @@ namespace Czuch
 		T* GetAsset(AssetHandle handle,bool incrementRef=false);
 
 		template<typename T,typename TM>
-		T LoadAndGetResouceHandle(const CzuchStr& path, TM&& settings);
+		T* LoadAndGetResource(const CzuchStr& path, TM&& settings);
+		template<typename T, typename TM>
+		T* LoadAndGetResource(const StringID& path, TM&& settings);
 
 		template <typename T>
 		void IncrementAssetRef(AssetHandle handle);
@@ -255,14 +257,26 @@ namespace Czuch
 		return nullptr;
 	}
 	template<typename T, typename TM>
-	T AssetsManager::LoadAndGetResouceHandle(const CzuchStr& path, TM&& settings)
+	T* AssetsManager::LoadAndGetResource(const CzuchStr& path, TM&& settings)
 	{
 		if (m_isDuringShutdown)
 		{
-			return T{};
+			return nullptr;
 		}
-		AssetHandle asset = LoadAsset<T>(path, settings);
-		auto assetObj = GetAsset<T>(asset);
+		AssetHandle asset = LoadAsset<T,TM>(path, settings);
+		auto assetObj = GetAsset<T>(asset,true);
+		return assetObj;
+	}
+
+	template<typename T, typename TM>
+	T* AssetsManager::LoadAndGetResource(const StringID& path, TM&& settings)
+	{
+		if (m_isDuringShutdown)
+		{
+			return nullptr;
+		}
+		AssetHandle asset = LoadAsset<T, TM>(path.GetStrName(), settings);
+		auto assetObj = GetAsset<T>(asset, true);
 		return assetObj;
 	}
 

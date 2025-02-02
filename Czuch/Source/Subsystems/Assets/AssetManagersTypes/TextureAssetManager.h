@@ -14,6 +14,7 @@ namespace Czuch
 	protected:
 		Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) override;
 		Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settings) override;
+		Asset* CreateLoadableAsset(const CzuchStr& path) override;
 	private:
 		GraphicsDevice* m_Device;
 	};
@@ -25,6 +26,13 @@ namespace Czuch
 	inline Asset* TextureAssetManager::CreateAsset(const CzuchStr& path, BaseLoadSettings& settings)
 	{
 		TextureAsset* texRes = new TextureAsset(path, (TextureLoadSettings&)settings, m_Device,AssetsManager::GetPtr());
+		return texRes;
+	}
+
+	inline Asset* TextureAssetManager::CreateLoadableAsset(const CzuchStr& path)
+	{
+		TextureLoadSettings settings;
+		TextureAsset* texRes = new TextureAsset(path, settings, m_Device, AssetsManager::GetPtr());
 		return texRes;
 	}
 

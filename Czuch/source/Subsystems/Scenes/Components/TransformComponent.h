@@ -16,6 +16,7 @@ namespace Czuch
 		const Mat4x4 GetParentTransform();
 		void SetLocalPosition(const Vec3& position);
 		void SetLocalEulerAngles(const Vec3& eulerAngles);
+		void SetLocalTransform(const Mat4x4& transform);
 
 		void SetLocalScale(const Vec3& scale);
 		void SetParentTransform(const Mat4x4& transform);

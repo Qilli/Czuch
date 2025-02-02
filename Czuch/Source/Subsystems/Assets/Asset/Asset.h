@@ -92,6 +92,7 @@ namespace Czuch
 		AssetType type= AssetType::ALL;
 		AssetHandle asset;
 		I32 resource=Invalid_Handle_Id;
+		bool hiddenInEditor = false;
 		ShortAssetInfo* next=nullptr;
 	};
 

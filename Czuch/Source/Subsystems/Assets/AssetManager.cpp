@@ -43,7 +43,7 @@ namespace Czuch
 		return createdRes;
 	}
 
-	void AssetManager::TryCreateAssetWithUnloadState(const CzuchStr& path, BaseLoadSettings& settings)
+	void AssetManager::TryCreateAssetWithUnloadState(const CzuchStr& path)
 	{
 		StringID strId = StringID::MakeStringID(path);
 
@@ -54,7 +54,7 @@ namespace Czuch
 			return;
 		}
 
-		Asset* createdRes = CreateAsset(path, settings);
+		Asset* createdRes = CreateLoadableAsset(path);
 		RegisterAsset(strId, createdRes);
 	}
 

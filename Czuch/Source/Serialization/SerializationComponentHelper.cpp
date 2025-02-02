@@ -6,8 +6,10 @@
 #include"../Subsystems/Scenes/Components/MeshComponent.h"
 #include"../Subsystems/Scenes/Components/MeshRendererComponent.h"
 #include"../Subsystems/Scenes/Components/NativeBehaviourComponent.h"
+#include"../Subsystems/Scenes/Components/MeshRendererComponent.h"
 #include"../Subsystems/Assets/AssetsManager.h"
 #include"../Subsystems/Assets/Asset/ModelAsset.h"
+#include"../Subsystems/Assets/Asset/MaterialInstanceAsset.h"
 
 #define TRUE_STR "1"
 #define FALSE_STR "0"
@@ -140,6 +142,21 @@ namespace Czuch
 			{
 				SerializerHelper::Value("None");
 			}
+			SerializerHelper::EndMap();
+		}
+	}
+
+	bool SerializationComponentHelper::SerializeMeshRendererComponent(MeshRendererComponent* component, bool binary)
+	{
+		if (binary)
+		{
+
+		}
+		else
+		{
+			SerializerHelper::BeginMap();
+			SerializeBaseComponent(component, binary);
+			SerializerHelper::KeyGUIDValue("MaterialGUID", component->GetMaterialAsset().handle);
 			SerializerHelper::EndMap();
 		}
 	}
@@ -295,6 +312,17 @@ namespace Czuch
 
 		component->SetMesh(AssetHandle(guid),mesh);
 
+		return true;
+	}
+
+	bool SerializationComponentHelper::DeserializeMeshRendererComponent(MeshRendererComponent* component, const YAML::Node& in, bool binary)
+	{
+		if (binary)
+		{
+			return false;
+		}
+		auto guid = in["MaterialGUID"].as<uint64_t>();
+		component->SetOverrideMaterial(AssetHandle(guid));
 		return true;
 	}
 

@@ -26,8 +26,10 @@ namespace Czuch
 		const TreeNode* GetParent() const { return parent; }
 
 		void SetParent(TreeNode* parent) { this->parent = parent; }
+		TreeNode* GetChildAt(int index) { return &children[index]; }
+		Array<TreeNode>& GetChildren() { return children; }
 
-		TreeNode* AddChild(const T& data)
+		TreeNode* AddChild(const T&& data)
 		{
 			TreeNode child(data);
 			child.SetParent(this);
@@ -46,7 +48,7 @@ namespace Czuch
 		}
 	private:
 		TreeNode* parent = nullptr;
-		std::vector<TreeNode> children;
+		Array<TreeNode> children;
 		T data;
 	};
 

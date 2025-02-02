@@ -48,13 +48,13 @@ namespace Czuch
 
 		TextureCreateSettings() = default;
 
-		TextureCreateSettings(TextureCreateSettings&& other) noexcept
+	/*	TextureCreateSettings(TextureCreateSettings&& other) noexcept
 		{
 			LOG_BE_INFO("TextureCreateSettings: Constructing create texture settings with move constructor");
 			*this = std::move(other);
-		}
+		}*/
 
-		TextureCreateSettings& operator=(TextureCreateSettings&& other) noexcept
+		/*TextureCreateSettings& operator=(TextureCreateSettings&& other) noexcept
 		{
 			LOG_BE_INFO("TextureCreateSettings: Operator = create texture settings with move option");
 			if (&other != this)
@@ -66,12 +66,13 @@ namespace Czuch
 				this->colors = std::move(other.colors);
 			}
 			return *this;
-		}
+		}*/
 	};
 
 	struct CZUCH_API MaterialCreateSettings : BaseCreateSettings
 	{
 		MaterialDefinitionDesc desc;
+		MaterialCreateSettings() = default;
 	};
 
 	struct MaterialLoadSettings : BaseLoadSettings
@@ -108,7 +109,7 @@ namespace Czuch
 
 		ShaderCreateSettings() = default;
 
-		ShaderCreateSettings(ShaderCreateSettings& other) noexcept
+		/*ShaderCreateSettings(ShaderCreateSettings& other) noexcept
 		{
 			*this = std::move(other);
 		}
@@ -122,9 +123,26 @@ namespace Czuch
 				this->shaderCode = std::move(other.shaderCode);
 			}
 			return *this;
-		}
+		}*/
 	};
 
+	struct MeshTreeNodeElement
+	{
+		I32 meshIndex;
+		Mat4x4 localTransform;
+
+		MeshTreeNodeElement(I32 meshIndex, const Mat4x4& localTransform)
+			:meshIndex(meshIndex), localTransform(localTransform)
+		{
+
+		}
+
+		MeshTreeNodeElement()
+		{
+			meshIndex = -1;
+			localTransform = Mat4x4(1.0f);
+		}
+	};
 
 	struct ModelLoadSettings : BaseLoadSettings
 	{
@@ -141,7 +159,7 @@ namespace Czuch
 	struct MeshDataContainer
 	{
 		Array<SingleMeshData> meshesData;
-		TreeNode<Array<I32>> meshesHierarchy;
+		TreeNode<MeshTreeNodeElement> meshesHierarchy;
 		bool inited = false;
 
 		MeshHandle GetMeshHandleAt(U32 index) const
@@ -166,17 +184,13 @@ namespace Czuch
 			return meshesData.size();
 		}
 
-		U32 AddMeshData(SingleMeshData&& meshData,TreeNode<Array<I32>>* node)
+		U32 AddMeshData(SingleMeshData&& meshData,Mat4x4 localTransform,TreeNode<MeshTreeNodeElement>* node)
 		{
 			meshesData.push_back(std::move(meshData));
 			U32 index = meshesData.size() - 1;
 			if(node!=nullptr)
 			{
-				node->GetData().push_back(index);
-			}
-			else
-			{
-				meshesHierarchy.GetData().push_back(index);
+				node->SetData(MeshTreeNodeElement(index,localTransform));
 			}
 			return index;
 		}
@@ -196,6 +210,7 @@ namespace Czuch
 	struct ModelCreateSettings : BaseCreateSettings
 	{
 		Array<MeshData> meshesData;
+		TreeNode<MeshTreeNodeElement> meshesHierarchy;
 		CzuchStr modelName;
 	};
 

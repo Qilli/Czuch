@@ -169,6 +169,7 @@ namespace Czuch
 			m_ShortInfo.type = AssetType::TEXTURE;
 			m_ShortInfo.asset = GetHandle();
 			m_ShortInfo.resource = m_TextureResource.handle;
+			m_ShortInfo.hiddenInEditor = m_CurrentLoadSettings.isUITexture;
 		}
 
 		return &m_ShortInfo;

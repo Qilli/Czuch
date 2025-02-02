@@ -162,10 +162,15 @@ namespace Czuch
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
 		desc_tex.AddBinding("MainTexture", DescriptorType::SAMPLER, 0, 1, 0, false);
+		desc_tex.AddBinding("Color", DescriptorType::UNIFORM_BUFFER, 1, 1, sizeof(ColorUBO), false);
+
+
+		UBOLayout uboLayout{};
+		uboLayout.AddElement(0, sizeof(ColorUBO), UBOElementType::Color,StringID::MakeStringID("Color"));
+		desc_tex.SetUBOLayout(uboLayout);
 
 		desc.AddLayout(desc_SceneData);
 		desc.AddLayout(desc_tex);
-
 
 		MaterialDefinitionDesc matDesc(1);
 		matDesc.EmplacePass(desc);
@@ -182,7 +187,13 @@ namespace Czuch
 
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "DefaultMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE);
+		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE,false);
+
+		ColorUBO colorUbo;
+		colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
+
+		//BufferHandle colorBuffer = m_Device->CreateUBOBuffer((void*)&colorUbo,sizeof(ColorUBO));
+		instanceCreateSettings.desc.AddBuffer("Color", UBO((void*)&colorUbo, sizeof(ColorUBO)));
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = false;
 
@@ -238,7 +249,6 @@ namespace Czuch
 			{ -halfSize, halfSize, halfSize }
 		};
 	}
-
 
 	std::vector<Vec4> GetCubeMeshUvs()
 	{
@@ -383,10 +393,6 @@ namespace Czuch
 		auto cubeModel = m_AssetsMgr->GetAsset<ModelAsset>(DefaultAssets::CUBE_ASSET);
 		DefaultAssets::CUBE_HANDLE = cubeModel->GetMeshHandle(0);
 
-		ModelLoadSettings loadSettings;
-		loadSettings.permamentAsset = true;
-
-		auto assetModel=m_AssetsMgr->LoadAsset<ModelAsset>("Models\\backpack.obj", loadSettings);
 
 	}
 
@@ -493,7 +499,7 @@ namespace Czuch
 
         MaterialInstanceCreateSettings instanceCreateSettings{};
         instanceCreateSettings.materialInstanceName = "FinalPassMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE);
+		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE,false);
         instanceCreateSettings.desc.materialAsset = DefaultAssets::FINAL_PASS_MATERIAL_ASSET;
         instanceCreateSettings.desc.isTransparent = false;
 
@@ -543,7 +549,7 @@ namespace Czuch
 
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "DepthLinearPrePassMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("Depth", DefaultAssets::WHITE_TEXTURE);
+		instanceCreateSettings.desc.AddSampler("Depth", DefaultAssets::WHITE_TEXTURE,true);
 		instanceCreateSettings.desc.AddBuffer("CameraPlanesData", BufferHandle{Invalid_Handle_Id});
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = false;

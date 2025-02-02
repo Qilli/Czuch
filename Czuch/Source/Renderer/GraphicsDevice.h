@@ -42,6 +42,7 @@ namespace Czuch
 		virtual MeshHandle CreateMesh(MeshData& meshData) = 0;
 		virtual MaterialHandle CreateMaterial(MaterialDefinitionDesc* materialData) = 0;
 		virtual MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) = 0;
+		virtual BufferHandle CreateUBOBuffer(UBO* ubo) = 0;
 
 		virtual bool Release(PipelineHandle& pipeline) = 0;
 		virtual bool Release(ShaderHandle& shader)= 0;
@@ -73,6 +74,8 @@ namespace Czuch
 		virtual void ResizeTexture(TextureHandle handle, U32 width, U32 height) = 0;
 		virtual void ResizeFrameBuffer(FrameBufferHandle handle, U32 width, U32 height) = 0;
 		virtual bool TryTransitionImageLayout(CommandBuffer* cmd,TextureHandle texture,ImageLayout newLayout, U32 baseMipLevel, U32 mipCount) = 0;
+		virtual bool UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size) = 0;
+		virtual bool UploadCurrentDataToBuffer(BufferHandle buffer) = 0;
 
 	};
 

@@ -63,12 +63,15 @@ namespace Czuch
 	struct MeshRendererInspectorDrawer : public ComponentDrawer
 	{
 		SelectMaterialInstanceAssetHelper m_MaterialAssetHelper;
+		SelectTextureAssetHelper m_TextureAssetHelper;
 		void DrawComponent(Entity entity) override;
 		void OnSelectionChanged(Entity entity) override;
 		void OnRemoveComponent(Entity entity) override;
 		MeshRendererInspectorDrawer() {
 			id = 5;
 		}
+	private:
+		void DrawMaterialInstance(MeshRendererComponent& meshRendererComponent);
 	};
 
 	class EntityInspectorEditorPanel :

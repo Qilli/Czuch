@@ -348,7 +348,7 @@ namespace Czuch
 		m_SceneData.bufferDesc.size = sizeof(SceneData);
 		m_SceneData.bufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
 
-		m_SceneData.data.ambientColor = Vec4(1, 0, 0, 1);
+		m_SceneData.data.ambientColor = Vec4(1, 1, 1, 1);
 
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
@@ -368,7 +368,7 @@ namespace Czuch
 			});
 		auto bufferVulkan = Internal_to_Buffer(m_Device->AccessBuffer(m_SceneData.buffer[m_CurrentFrame]));
 
-		m_SceneData.data.ambientColor = Vec4(1, 1, 0, 1);
+		m_SceneData.data.ambientColor = Vec4(1, 1, 1, 1);
 
 		SceneData* data = (SceneData*)bufferVulkan->GetMappedData();
 		*data = m_SceneData.data;

@@ -6,6 +6,7 @@
 #include"Subsystems/Scenes/Components/MeshRendererComponent.h"
 #include"Subsystems/Assets/Asset/MaterialInstanceAsset.h"
 #include"Subsystems/Assets/Asset/ModelAsset.h"
+#include"Subsystems/Assets/Asset/TextureAsset.h"
 
 namespace Czuch
 {
@@ -49,7 +50,7 @@ namespace Czuch
 		if (HasSelectedAsset())
 		{
 			auto name = GetSelectedAssetName();
-			ImGui::Text(name!=nullptr?name->c_str():"Missing");
+			ImGui::Text(name!=nullptr?name->c_str() : "Missing");
 		}
 		else
 		{
@@ -156,6 +157,24 @@ namespace Czuch
 		ImGui::PopID();
 		ImGui::Spacing();
 		return changed;
+	}
+	bool CustomDrawers::DrawColor(const CzuchStr& label, Vec4& color, float colWidth)
+	{
+		bool valueChanged = false;
+
+		ImGui::PushID(label.c_str());
+
+		ImGui::Columns(2);
+		ImGui::SetColumnWidth(0, colWidth);
+		ImGui::Text("%s", label.c_str());
+		ImGui::NextColumn();
+
+		valueChanged = ImGui::ColorEdit4("##ColorPicker", &color.x, ImGuiColorEditFlags_NoInputs);
+
+		ImGui::Columns(1);
+		ImGui::PopID();
+
+		return valueChanged;
 	}
 	bool CustomDrawers::ButtonCenteredOnLine(const char* label, float alignment)
 	{
@@ -416,6 +435,46 @@ namespace Czuch
 			ImGui::EndPopup();
 		}
 		return selected;
+	}
+
+	void SelectTextureAssetHelper::SetMaterialInstance(MaterialInstanceAsset* mat, int index)
+	{
+		m_MaterialInstance = mat;
+		m_ParamIndex = index;
+		m_AssetNameType = " "+m_MaterialInstance->GetParameterAtIndexName(index)+": ";
+	}
+
+	bool SelectTextureAssetHelper::HasSelectedAsset()
+	{
+		if (m_ParamIndex >= 0)
+		{
+			auto [asset, resource] = m_MaterialInstance->GetTextureAssetAtIndex(m_ParamIndex);
+			return HANDLE_IS_VALID(asset);
+		}
+		return false;
+	}
+
+	const CzuchStr* SelectTextureAssetHelper::GetSelectedAssetName()
+	{
+		if (m_ParamIndex >= 0)
+		{
+			auto [asset, resource] = m_MaterialInstance->GetTextureAssetAtIndex(m_ParamIndex);
+			if (HANDLE_IS_VALID(asset))
+			{
+				auto textureAsset = AssetsManager::GetPtr()->GetAsset<TextureAsset>(asset);
+				auto &name = textureAsset->AssetName();
+				return &name;
+			}
+		}
+		return nullptr;
+	}
+
+	void SelectTextureAssetHelper::SetSelected(AssetHandle asset, I32 resource)
+	{
+		if (m_ParamIndex >= 0)
+		{
+			m_MaterialInstance->SetTextureParameterAtIndex(m_ParamIndex, asset, resource);
+		}
 	}
 
 }

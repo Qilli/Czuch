@@ -4,6 +4,7 @@
 #include "./Core/FileHelper.h"
 #include "./Subsystems/Assets/AssetsManager.h"
 #include "./Subsystems/Assets/Asset/TextureAsset.h"
+#include "./Subsystems/Assets/Asset/MaterialAsset.h"
 
 namespace Czuch
 {
@@ -37,6 +38,7 @@ namespace Czuch
 		{
 			LoadDependencies();
 			m_MaterialInstanceResource = m_Device->CreateMaterialInstance(m_MaterialInstanceDesc);
+			m_MaterialInstance = m_Device->AccessMaterialInstance(m_MaterialInstanceResource);
 			m_State = AssetInnerState::LOADED;
 			m_RefCounter.Up();
 			return true;
@@ -70,6 +72,7 @@ namespace Czuch
 		}
 		return false;
 	}
+
 	bool MaterialInstanceAsset::CreateFromData()
 	{
 		if (m_State == AssetInnerState::LOADED)
@@ -82,10 +85,12 @@ namespace Czuch
 		m_MaterialInstanceDesc.GetAllTexturesDependencies(m_Dependencies);
 		LoadDependencies();
 		m_MaterialInstanceResource = m_Device->CreateMaterialInstance(m_MaterialInstanceDesc);
+		m_MaterialInstance = m_Device->AccessMaterialInstance(m_MaterialInstanceResource);
 		m_State = AssetInnerState::LOADED;
 		m_RefCounter.Up();
 		return true;
 	}
+
 	ShortAssetInfo* MaterialInstanceAsset::GetShortAssetInfo()
 	{
 		if (m_ShortInfo.name == nullptr || m_ShortInfo.name->empty())
@@ -102,6 +107,108 @@ namespace Czuch
 	{
 		return "MaterialInstanceAsset: " + AssetName()+" Ref count: "+m_RefCounter.GetCountString() + " State: " + (m_State == AssetInnerState::LOADED ? " Loaded" : "Unloaded");
 	}
+
+	MaterialParamType MaterialInstanceAsset::GetParameterAtIndexType(int index) const
+	{
+		CZUCH_BE_ASSERT(index < m_MaterialInstanceDesc.paramsDesc.size(), "Index out of range");
+		auto descType=m_MaterialInstanceDesc.paramsDesc[index].type;
+
+		switch (descType)
+		{
+
+		case DescriptorType::UNIFORM_BUFFER:
+			return MaterialParamType::PARAM_BUFFER;
+		case DescriptorType::SAMPLER:
+			return MaterialParamType::PARAM_TEXTURE;
+		default:	
+			return MaterialParamType::PARAM_UNKNOWN;
+		}
+	}
+
+	bool MaterialInstanceAsset::IsParameterAtIndexInternal(int index) const
+	{
+		CZUCH_BE_ASSERT(index < m_MaterialInstanceDesc.paramsDesc.size(), "Index out of range");
+		return m_MaterialInstanceDesc.paramsDesc[index].isInternal;
+	}
+
+	const CzuchStr& MaterialInstanceAsset::GetParameterAtIndexName(int index) const
+	{
+		CZUCH_BE_ASSERT(index < m_MaterialInstanceDesc.paramsDesc.size(), "Index out of range");
+		return m_MaterialInstanceDesc.paramsDesc[index].name;
+	}
+
+	std::tuple<AssetHandle, I32> MaterialInstanceAsset::GetTextureAssetAtIndex(int index) const
+	{
+		CZUCH_BE_ASSERT(index < m_MaterialInstanceDesc.paramsDesc.size(), "Index out of range");
+		auto id = StringID::MakeStringID(m_MaterialInstanceDesc.paramsDesc[index].name);
+		TextureHandle texHandle = m_MaterialInstance->GetTextureHandleForName(id);
+		return { texHandle.assetHandle,texHandle.handle};
+	}
+
+	std::tuple<Buffer*, UBOLayout*> MaterialInstanceAsset::GetUBOBufferAtIndex(int index) const
+	{
+		CZUCH_BE_ASSERT(index < m_MaterialInstanceDesc.paramsDesc.size(), "Index out of range");
+		auto &param = m_MaterialInstanceDesc.paramsDesc[index];
+
+
+		auto id = StringID::MakeStringID(param.name);
+		BufferHandle handle(param.resource);
+		auto buffer = m_Device->AccessBuffer(handle);
+		auto material = AssetsManager::GetPtr()->GetAsset<MaterialAsset>(m_MaterialInstanceDesc.materialAsset, false);
+		auto layout = material->GetUBOLayoutForName(id);
+		return { buffer,layout };
+	}
+
+	void MaterialInstanceAsset::UpdateUBOBufferAtIndex(int index)
+	{
+		CZUCH_BE_ASSERT(index < m_MaterialInstanceDesc.paramsDesc.size(), "Index out of range");
+		auto& param = m_MaterialInstanceDesc.paramsDesc[index];
+		auto id = StringID::MakeStringID(param.name);
+		//copy data to ubo data from buffer to update it
+
+		BufferHandle handle(param.resource);
+		m_Device->UploadCurrentDataToBuffer(handle);
+	}
+
+	void MaterialInstanceAsset::SetTextureParameterAtIndex(int index, AssetHandle asset, I32 resource)
+	{
+		CZUCH_BE_ASSERT(index < m_MaterialInstanceDesc.paramsDesc.size(), "Index out of range");
+		auto oldHandle = m_MaterialInstanceDesc.paramsDesc[index].resourceAsset;
+
+		if (asset == oldHandle)
+		{
+			return;
+		}
+
+		if (oldHandle != Invalid_Handle_Id)
+		{
+			AssetsManager::GetPtr()->UnloadAsset<TextureAsset>(oldHandle);
+		}
+
+		m_MaterialInstanceDesc.paramsDesc[index].resourceAsset = asset.handle;
+		m_MaterialInstanceDesc.paramsDesc[index].resource = resource;
+
+		auto id = StringID::MakeStringID(m_MaterialInstanceDesc.paramsDesc[index].name);
+		TextureHandle texHandle(resource, asset.handle);
+		m_MaterialInstance->SetSampler(id,texHandle);
+
+		if (asset == Invalid_Handle_Id)
+		{
+			return;
+		}
+		
+		auto assetNew = AssetsManager::GetPtr()->GetAsset<TextureAsset>(asset, true);
+		if (assetNew == nullptr || !assetNew->IsLoaded())
+		{
+			LOG_BE_ERROR("{0} Failed to load texture dependency in SetTextureParam: {1}", "[MaterialInstanceAsset]", asset.handle);
+		}
+	}
+
+	U32 MaterialInstanceAsset::GetParametersCount() const
+	{
+		return m_MaterialInstanceDesc.paramsDesc.size();
+	}
+
 	void MaterialInstanceAsset::LoadDependencies()
 	{
 		for (auto& dep : m_Dependencies)
@@ -118,6 +225,16 @@ namespace Czuch
 		for (auto& dep : m_Dependencies)
 		{
 			AssetsManager::GetPtr()->UnloadAsset<TextureAsset>(dep.assetHandle);
+		}
+
+		for (auto& param : m_MaterialInstanceDesc.paramsDesc)
+		{
+			if (param.type == DescriptorType::UNIFORM_BUFFER && param.isInternal==false)
+			{
+				auto handle = BufferHandle(param.resource);
+				m_Device->Release(handle);
+				param.resource =Invalid_Handle_Id;
+			}
 		}
 	}
 }

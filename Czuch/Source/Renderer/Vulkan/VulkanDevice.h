@@ -49,6 +49,7 @@ namespace Czuch
 		MeshHandle CreateMesh(MeshData& meshData) override;
 		MaterialHandle CreateMaterial(MaterialDefinitionDesc* materialData) override;
 		MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) override;
+		BufferHandle CreateUBOBuffer(UBO* ubo) override;
 
 
 		DescriptorAllocator* CreateDescriptorAllocator();
@@ -93,6 +94,9 @@ namespace Czuch
 		void TransitionImageLayoutImmediate(TextureHandle handle,ImageLayout oldLayout,ImageLayout newLayout,U32 baseMipLevel, U32 mipCount, bool isDepth) override;
 		void TransitionImageLayout(CommandBuffer* cmd,TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) override;
 		bool TryTransitionImageLayout(CommandBuffer* cmd, TextureHandle texture, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount) override;
+	public:
+		bool UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size) override;
+		bool UploadCurrentDataToBuffer(BufferHandle buffer) override;
 	public:
 		VkDevice GetNativeDevice() const { return m_Device; }
 		VmaAllocator GetAllocator() const { return m_VmaAllocator; }
