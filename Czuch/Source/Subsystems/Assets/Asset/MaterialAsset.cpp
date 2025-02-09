@@ -94,8 +94,9 @@ namespace Czuch
 			m_ShortInfo.name = &AssetName();
 			m_ShortInfo.type = AssetType::MATERIAL;
 			m_ShortInfo.asset = GetHandle();
-			m_ShortInfo.resource = m_MaterialResource.handle;
 		}
+
+		m_ShortInfo.resource = m_MaterialResource.handle;
 
 		return &m_ShortInfo;
 	}

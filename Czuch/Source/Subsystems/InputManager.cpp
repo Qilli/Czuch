@@ -36,6 +36,7 @@ namespace Czuch
 
 	void InputManager::OnEvent(Event& event)
 	{
+	
 		if (event.GetEventType() == KeyDownEvent::GetStaticEventType())
 		{
 			auto keyDownEvent = static_cast<const KeyDownEvent&>(event);

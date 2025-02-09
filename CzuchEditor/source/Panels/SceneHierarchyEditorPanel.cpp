@@ -123,7 +123,7 @@ namespace Czuch
 				ImGui::PopStyleColor();
 			}
 
-			if ((ImGui::IsItemClicked()|| ImGui::IsItemClicked(1)) && !ImGui::IsItemToggledOpen())
+			if ((ImGui::IsItemActivated() || ImGui::IsItemClicked()|| ImGui::IsItemClicked(1)) && !ImGui::IsItemToggledOpen())
 			{
 				m_SelectedEntity = entity;
 				NotifyOnSelectedEntityListeners();

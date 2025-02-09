@@ -72,7 +72,7 @@ namespace Czuch
 		return m_ProjectionMatrix;
 	}
 
-	Mat4x4 Camera::GetViewMatrix()
+	Mat4x4 Camera::GetInverseViewMatrix()
 	{
 		if (m_Transform!= nullptr)
 		{
@@ -81,14 +81,14 @@ namespace Czuch
 		return Mat4x4(1.0f);
 	}
 
-	Mat4x4 Camera::GetInverseViewMatrix()
+	Mat4x4 Camera::GetViewMatrix()
 	{
-		return glm::inverse(GetViewMatrix());
+		return m_Transform->GetLocalToWorld();
 	}
 
 	Mat4x4 Camera::GetViewProjectionMatrix()
 	{
-		return m_ProjectionMatrix * GetViewMatrix();
+		return m_ProjectionMatrix * GetInverseViewMatrix();
 	}
 
 }

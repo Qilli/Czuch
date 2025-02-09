@@ -423,6 +423,7 @@ namespace Czuch
 			if (ImGui::Button("Cancel")) {
 				Reset();
 				ImGui::CloseCurrentPopup();
+				selected = nullptr;
 			}
 
 			ImGui::SameLine();

@@ -7,19 +7,6 @@
 
 namespace Czuch
 {
-	bool forwardButtonDown = false;
-	bool backwardButtonDown = false;
-	bool leftButtonDown = false;
-	bool rightButtonDown = false;
-	bool middleMouseButtonPressed = false;
-	bool rightMouseButtonPressed = false;
-	bool leftMouseButtonPressed = false;
-	float mouseOffsetX = 0.0f;
-	float mouseOffsetY = 0.0f;
-	float lastMouseX = 0.0f;
-	float lastMouseY = 0.0f;
-	float lastScrollY = 0.0f;
-
 
 	NativeFree3DCameraController::NativeFree3DCameraController(Entity entity)
 	{
@@ -76,15 +63,14 @@ namespace Czuch
 			}
 			m_CameraTransformComponent->SetLocalEulerAngles(eulerCurrent);
 			m_CameraTransformComponent->ForceUpdateLocalTransform();
-
-			mouseOffsetX = 0.0f;
-			mouseOffsetY = 0.0f;
+			mouseOffsetX = 0;
+			mouseOffsetY = 0;
 		}
 		else if (middleMouseButtonPressed)
 		{
-			m_CameraTransformComponent->Translate({ -m_Speed * delta.GetDeltaTime()*mouseOffsetX,m_Speed * delta.GetDeltaTime() * mouseOffsetY,0.0f });
-			mouseOffsetX = 0.0f;
-			mouseOffsetY = 0.0f;
+			m_CameraTransformComponent->Translate({ -m_PanSpeed * delta.GetDeltaTime() * mouseOffsetX,m_PanSpeed * delta.GetDeltaTime() * mouseOffsetY,0.0f });
+			mouseOffsetX = 0;
+			mouseOffsetY = 0;
 		}
 	}
 
@@ -170,6 +156,7 @@ namespace Czuch
 			{
 				mouseOffsetX = x -lastMouseX;
 				mouseOffsetY = y - lastMouseY;
+			
 				lastMouseX = x;
 				lastMouseY = y;
 			}

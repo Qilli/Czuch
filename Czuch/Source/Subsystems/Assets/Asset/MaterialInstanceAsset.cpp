@@ -98,8 +98,9 @@ namespace Czuch
 			m_ShortInfo.name = &AssetName();
 			m_ShortInfo.type = AssetType::MATERIAL;
 			m_ShortInfo.asset = GetHandle();
-			m_ShortInfo.resource = m_MaterialInstanceResource.handle;
 		}
+
+		m_ShortInfo.resource = m_MaterialInstanceResource.handle;
 
 		return &m_ShortInfo;
 	}
@@ -183,6 +184,20 @@ namespace Czuch
 		if (oldHandle != Invalid_Handle_Id)
 		{
 			AssetsManager::GetPtr()->UnloadAsset<TextureAsset>(oldHandle);
+		}
+
+		if (resource == Invalid_Handle_Id)
+		{
+			//we need to load texture
+			auto assetNew = AssetsManager::GetPtr()->GetAsset<TextureAsset>(asset, true);
+			if (assetNew == nullptr || !assetNew->IsLoaded())
+			{
+				LOG_BE_ERROR("{0} Failed to load texture dependency in SetTextureParam: {1}", "[MaterialInstanceAsset]", asset.handle);
+			}
+			else
+			{
+				resource = assetNew->GetTextureResourceHandle().handle;
+			}
 		}
 
 		m_MaterialInstanceDesc.paramsDesc[index].resourceAsset = asset.handle;

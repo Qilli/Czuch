@@ -17,7 +17,7 @@ namespace Czuch
 				m_IsInited = true;
 			}
 
-			if (ImGui::Begin(m_WindowName, &m_IsVisible, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar))
+			if (ImGui::Begin(m_WindowName, &m_IsVisible, ImGuiWindowFlags_AlwaysAutoResize))
 			{
 				FillUI();
 			}

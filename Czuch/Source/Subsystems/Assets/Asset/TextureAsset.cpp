@@ -61,6 +61,7 @@ namespace Czuch
 		desc.width = texWidth;
 		desc.height = texHeight;
 		desc.texData = pixels;
+		desc.name = AssetName().c_str();
 
 		if (m_CurrentLoadSettings.type == TextureDesc::Type::TEXTURE_2D)
 		{
@@ -85,7 +86,7 @@ namespace Czuch
 
 		m_State = AssetInnerState::LOADED;
 
-		if (m_CurrentLoadSettings.isUITexture)
+		if (m_CurrentLoadSettings.isUITexture || AssetsManager::Get().IsInEditorMode())
 		{
 			InitUITexturePtr();
 		}
@@ -135,6 +136,7 @@ namespace Czuch
 		desc.width = texWidth;
 		desc.height = texHeight;
 		desc.texData = pixels;
+		desc.name = AssetName().c_str();
 
 		if (m_CurrentLoadSettings.type == TextureDesc::Type::TEXTURE_2D)
 		{
@@ -152,7 +154,7 @@ namespace Czuch
 
 		m_State = AssetInnerState::LOADED;
 
-		if (m_CreateSettings.isUITexture)
+		if (m_CreateSettings.isUITexture || AssetsManager::Get().IsInEditorMode())
 		{
 			InitUITexturePtr();
 		}
@@ -168,9 +170,10 @@ namespace Czuch
 			m_ShortInfo.name = &AssetName();
 			m_ShortInfo.type = AssetType::TEXTURE;
 			m_ShortInfo.asset = GetHandle();
-			m_ShortInfo.resource = m_TextureResource.handle;
 			m_ShortInfo.hiddenInEditor = m_CurrentLoadSettings.isUITexture;
 		}
+
+		m_ShortInfo.resource = m_TextureResource.handle;
 
 		return &m_ShortInfo;
 	}

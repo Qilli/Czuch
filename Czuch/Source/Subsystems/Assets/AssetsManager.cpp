@@ -104,6 +104,21 @@ namespace Czuch
 		return false;
 	}
 
+	bool AssetsManager::IsFormatAssetOfType(const char* format, AssetType type) const
+	{
+		for (const auto& [key, value] : m_AssetsMgrs)
+		{
+			if (value->GetAssetType() == (int)type)
+			{
+				if (value->IsFormatSupported(format))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	void AssetsManager::CheckIfAssetExistsAndIfNotCreate(const std::filesystem::path& pathRelative) const
 	{
 		if (m_isDuringShutdown)
@@ -138,25 +153,23 @@ namespace Czuch
 		return texResource->GetTextureResourceHandle();
 	}
 
-	MaterialInstanceHandle AssetsManager::CreateMaterialInstance(MaterialInstanceCreateSettings& settings)
+	AssetHandle AssetsManager::CreateMaterialInstance(MaterialInstanceCreateSettings& settings)
 	{
 		if (m_isDuringShutdown)
 		{
-			return MaterialInstanceHandle{};
+			return AssetHandle{};
 		}
 
 		auto asset = GetAsset<MaterialAsset>(settings.desc.materialAsset);
 		settings.desc.SetTransparent(asset->IsTransparent());
-		auto matInstanceHandle=CreateAsset<MaterialInstanceAsset>(settings.materialInstanceName, settings);
-		auto instanceResource = GetAsset<Czuch::MaterialInstanceAsset>(matInstanceHandle);
-		return instanceResource->GetMaterialInstanceResourceHandle();
+		return CreateAsset<MaterialInstanceAsset>(settings.materialInstanceName, settings);
 	}
 
-	MaterialInstanceHandle AssetsManager::CreateMaterialInstance(const CzuchStr& matName, AssetHandle materialSource)
+	AssetHandle AssetsManager::CreateMaterialInstance(const CzuchStr& matName, AssetHandle materialSource)
 	{
 		if (m_isDuringShutdown)
 		{
-			return MaterialInstanceHandle{};
+			return AssetHandle{};
 		}
 		Czuch::MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = matName;

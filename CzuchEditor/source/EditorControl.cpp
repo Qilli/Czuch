@@ -10,6 +10,7 @@
 #include"EditorWindows/AssetsEditorWindow.h"
 #include"EditorWindows/AssetsInfoEditorWindow.h"
 #include"Commands/CommandTypes/CreateDefaultMeshesCommands.h"
+#include <gtx/string_cast.hpp>
 
 namespace Czuch
 {
@@ -80,6 +81,7 @@ namespace Czuch
 		m_GizmoMode = GizmoMode::Translate;
 		m_RenderGraphEditorWindow = new RenderGraphEditorWindow("Render Graph Preview");
 		m_AssetsEditorWindow = new AssetsEditorWindow("Assets Editor");
+		m_AssetsEditorWindow->SetWindowVisible(true);
 		m_AssetsInfoEditorWindow = new AssetsInfoEditorWindow("Assets Info");
 	}
 	EditorControl::~EditorControl()
@@ -173,9 +175,11 @@ namespace Czuch
 			{
 				auto path = (const wchar_t*)payload->Data;
 				std::filesystem::path p(path);
-				LOG_BE_INFO("Accepted drag drop payload with path {0}",p.string());
-				auto activeScene = m_Root->GetScenesManager().GetActiveScene();
-				EditorCommandsControl::Get().ExecuteCommand(new CreateNewEntityHierarchyWithModelCommand(activeScene,activeScene->GetRootEntity(),p.string()));
+				if (AssetsManager::GetPtr()->IsFormatAssetOfType(p.extension().string().c_str(), AssetType::MESH))
+				{
+					auto activeScene = m_Root->GetScenesManager().GetActiveScene();
+					EditorCommandsControl::Get().ExecuteCommand(new CreateNewEntityHierarchyWithModelCommand(activeScene, activeScene->GetRootEntity(), p.string()));
+				}
 			}
 			ImGui::EndDragDropTarget();
 		}
@@ -307,17 +311,12 @@ namespace Czuch
 				auto entity = currentCamera->GetEntity();
 				auto& cameraTransform = entity.GetComponent<TransformComponent>();
 				auto cameraProjection = currentCamera->GetCamera().GetProjectionMatrix();
-				auto cam = currentCamera->GetCamera();
+				auto &cam = currentCamera->GetCamera();
 				cameraProjection = glm::perspective(glm::radians(cam.GetFov()), ImGui::GetWindowWidth() / (float)ImGui::GetWindowHeight(), cam.GetNearPlane(), cam.GetFarPlane());
-				auto cameraView = currentCamera->GetCamera().GetViewMatrix();
+				auto cameraView = currentCamera->GetCamera().GetInverseViewMatrix();
 
 				auto& selectedTransform = currentSelectedEntity.GetComponent<TransformComponent>();
 				auto selectedTransformMatrix = selectedTransform.GetLocalToWorld();
-
-				auto cameraViewProjection = cameraProjection * cameraView;
-				auto cameraViewProjectionInverse = glm::inverse(cameraViewProjection);
-
-				auto selectedTransformMatrixInverse = glm::inverse(selectedTransformMatrix);
 
 				auto operationSpace = ImGuizmo::MODE::LOCAL;
 
@@ -326,19 +325,22 @@ namespace Czuch
 				float matrixTranslation_[3], matrixRotation_[3], matrixScale_[3];
 				ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selectedTransformMatrix), matrixTranslation_, matrixRotation_, matrixScale_);
 
-				ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), GetCurrentGizmoMode(), operationSpace, glm::value_ptr(selectedTransformMatrix), nullptr, nullptr);
+				ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), GetCurrentGizmoMode(), operationSpace, glm::value_ptr(selectedTransformMatrix), glm::value_ptr(diffMatrix), nullptr);
 
 				if (ImGuizmo::IsUsing())
 				{
 					m_IsGizmoActive = true;
 					float matrixTranslation[3], matrixRotation[3], matrixScale[3];
 					ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selectedTransformMatrix), matrixTranslation, matrixRotation, matrixScale);
+					float matrixTranslation_1[3], matrixRotation_1[3], matrixScale_1[3];
+					ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(diffMatrix), matrixTranslation_1, matrixRotation_1, matrixScale_1);
+
 
 					Vec3 currentWorldPos = selectedTransform.GetLocalPosition();
-					Vec3 diff = Vec3(matrixTranslation[0] - matrixTranslation_[0], matrixTranslation[1] - matrixTranslation_[1], matrixTranslation[2] - matrixTranslation_[2]);
-					Vec3 diffScale = Vec3(matrixScale[0] / matrixScale_[0], matrixScale[1] / matrixScale_[1], matrixScale[2] / matrixScale_[2]);
-
-					Mat4x4 localTransform = selectedTransform.TransformToLocalSpace(selectedTransformMatrix);
+					//Vec3 diff = Vec3(matrixTranslation[0] - matrixTranslation_[0], matrixTranslation[1] - matrixTranslation_[1], matrixTranslation[2] - matrixTranslation_[2]);
+					//Vec3 diffScale = Vec3(matrixScale_1[0] / matrixScale_[0], matrixScale_1[1] / matrixScale_[1], matrixScale_1[2] / matrixScale_[2]);
+					Vec3 diffScale = Vec3(matrixScale_1[0], matrixScale_1[1], matrixScale_1[2]);
+					Vec3 diff = Vec3(matrixTranslation_1[0], matrixTranslation_1[1], matrixTranslation_1[2]);
 
 
 					if (GetCurrentGizmoMode() == ImGuizmo::OPERATION::ROTATE)

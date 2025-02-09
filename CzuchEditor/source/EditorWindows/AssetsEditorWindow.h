@@ -42,7 +42,10 @@ namespace Czuch
 		std::vector<std::filesystem::path> toRemove;
 		float m_FileStructureCheckTime = 1000.0f;
 		float m_LastFileStructureCheckTime = 0.0f;
+		const FileEntry* m_SelectedEntry = nullptr;
     };
+
+
 
 }
 

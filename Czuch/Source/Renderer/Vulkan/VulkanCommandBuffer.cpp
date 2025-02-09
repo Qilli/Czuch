@@ -128,17 +128,17 @@ namespace Czuch
 
 			if (meshInstance->HasColors())
 			{
-				BindVertexBuffer(meshInstance->colorsHandle, bindIndex++, 0);
+				BindVertexBuffer(meshInstance->colorsHandle, 1, 0);
 			}
 
 			if (meshInstance->HasUV0())
 			{
-				BindVertexBuffer(meshInstance->uvs0Handle, bindIndex++, 0);
+				BindVertexBuffer(meshInstance->uvs0Handle, 2, 0);
 			}
 
 			if (meshInstance->HasNormals())
 			{
-				BindVertexBuffer(meshInstance->normalsHandle, bindIndex++, 0);
+				BindVertexBuffer(meshInstance->normalsHandle, 3, 0);
 			}
 
 			auto vulkanPipeline = Internal_To_Pipeline(pipelinePtr);

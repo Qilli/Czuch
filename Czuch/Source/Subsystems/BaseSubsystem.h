@@ -12,6 +12,7 @@ namespace Czuch
 		virtual void Shutdown() = 0;
 		virtual void Update(TimeDelta timeDelta) = 0;
 		virtual void OnFinishFrame() {}
+		virtual bool IsInEditorMode() { return m_RenderSettings->engineMode == EngineMode::Editor; }
 	protected:
 		RenderSettings* m_RenderSettings;
 	};

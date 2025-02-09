@@ -59,12 +59,12 @@ int main()
 
 	Czuch::MaterialInstanceCreateSettings instanceCreateSettings{};
 	instanceCreateSettings.materialInstanceName = "DefaultAncientMaterial";
-	instanceCreateSettings.desc.AddSampler("MainTexture", texHandle);
+	instanceCreateSettings.desc.AddSampler("MainTexture", texHandle,false);
 	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
 	auto matInstanceHandle = Czuch::AssetsManager::GetPtr()->CreateMaterialInstance(instanceCreateSettings);
 
 	Czuch::Entity cubeEntity = scene->CreateEntity("CubeObject");
-	cubeEntity.AddRenderable(Czuch::DefaultAssets::CUBE_HANDLE, matInstanceHandle);
+	cubeEntity.AddRenderable(Czuch::DefaultAssets::CUBE_ASSET, Czuch::DefaultAssets::CUBE_HANDLE,matInstanceHandle);
 	cubeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 	auto& scripts=cubeEntity.AddComponent<Czuch::NativeBehaviourComponent>();
 	RotateAround& rotateAround = scripts.AddNativeBehaviour<RotateAround>();
@@ -72,7 +72,7 @@ int main()
 	Czuch::NativeFree3DCameraController& camController = scripts.AddNativeBehaviour<Czuch::NativeFree3DCameraController>();
 
 	Czuch::Entity planeEntity = scene->CreateEntity("PlaneObject");
-	planeEntity.AddRenderable(Czuch::DefaultAssets::PLANE_HANDLE, matInstanceHandle);
+	planeEntity.AddRenderable(Czuch::DefaultAssets::PLANE_ASSET,Czuch::DefaultAssets::PLANE_HANDLE, matInstanceHandle);
 	planeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, -1.0f, 0.0f));
 	planeEntity.Transform().SetLocalScale(glm::vec3(10.0f, 1.0f, 10.0f));
 

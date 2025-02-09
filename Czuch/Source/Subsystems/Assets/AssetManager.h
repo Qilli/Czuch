@@ -27,6 +27,7 @@ namespace Czuch
 		auto GetAssetEnd() const { return m_Assets.end(); }
 		void IncrementAssetRef(AssetHandle handle);
 		virtual int GetAssetType() const = 0;
+		bool AssetExistAtPath(const CzuchStr& path);
 	public:
 		virtual void Init() = 0;
 	protected:

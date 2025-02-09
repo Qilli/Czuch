@@ -102,8 +102,9 @@ namespace Czuch
 			m_ShortInfo.name = &AssetName();
 			m_ShortInfo.type = AssetType::SHADER;
 			m_ShortInfo.asset = GetHandle();
-			m_ShortInfo.resource = m_ShaderAsset.handle;
 		}
+
+		m_ShortInfo.resource = m_ShaderAsset.handle;
 
 		return &m_ShortInfo;
 	}

@@ -91,7 +91,6 @@ namespace Czuch
 		m_GeneralRenderContext.ClearRenderList();
 
 		currentCamera->SetAspectRatio((float)width / (float)height);
-		Mat4x4 viewMat = currentCamera->GetViewMatrix();
 
 		auto renderableView = m_Registry.view<TransformComponent, MeshComponent, MeshRendererComponent, ActiveComponent>(entt::exclude<DestroyedComponent>);
 		for (auto entity : renderableView)

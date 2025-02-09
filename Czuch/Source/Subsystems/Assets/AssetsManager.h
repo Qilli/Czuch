@@ -64,12 +64,13 @@ namespace Czuch
 	public:
 		bool IsDuringShutdown() const { return m_isDuringShutdown; }
 		bool IsFormatSupported(const char* format) const;
+		bool IsFormatAssetOfType(const char* foramt,AssetType type) const;
 		void CheckIfAssetExistsAndIfNotCreate(const std::filesystem::path& pathRelative) const;
 		static const std::string& GetStartPath() { return m_StartPath; }
 	public:
 		TextureHandle Load2DTexture(const CzuchStr& path);
-		MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceCreateSettings& settings);
-		MaterialInstanceHandle CreateMaterialInstance(const CzuchStr& matName, AssetHandle materialSource);
+		AssetHandle CreateMaterialInstance(MaterialInstanceCreateSettings& settings);
+		AssetHandle CreateMaterialInstance(const CzuchStr& matName, AssetHandle materialSource);
 	private:
 		std::unordered_map<std::type_index,AssetManager*> m_AssetsMgrs;
 		static std::string m_StartPath;
@@ -83,7 +84,7 @@ namespace Czuch
 	{
 		if(m_isDuringShutdown)
 		{
-			return { InvalidID };
+			return { Invalid_Handle_Id };
 		}
 		auto result = m_AssetsMgrs.find(typeid(T));
 		if (result != m_AssetsMgrs.end())
@@ -94,12 +95,12 @@ namespace Czuch
 			if (res == nullptr)
 			{
 				LOG_BE_ERROR("Failed to load resource with path: {0} in manager of type {1}", path, result->first.name());
-				return {InvalidID};
+				return {Invalid_Handle_Id};
 			}
 
 			return res->GetHandle();
 		}
-		return { InvalidID };
+		return { Invalid_Handle_Id };
 	}
 
 	template<class T, class TM>
@@ -107,7 +108,7 @@ namespace Czuch
 	{
 		if (m_isDuringShutdown)
 		{
-			return { InvalidID };
+			return { Invalid_Handle_Id };
 		}
 		auto result = m_AssetsMgrs.find(typeid(T));
 		if (result != m_AssetsMgrs.end())
@@ -118,12 +119,12 @@ namespace Czuch
 			if (res == nullptr)
 			{
 				LOG_BE_ERROR("Failed to load resource with path: {0} in manager of type {1}", path, result->first.name());
-				return { InvalidID };
+				return AssetHandle();
 			}
 
 			return res->GetHandle();
 		}
-		return { InvalidID };
+		return AssetHandle();
 	}
 
 	template<class T, class TM>
@@ -131,7 +132,7 @@ namespace Czuch
 	{
 		if (m_isDuringShutdown)
 		{
-			return { InvalidID };
+			return { Invalid_Handle_Id };
 		}
 		auto result = m_AssetsMgrs.find(typeid(T));
 		if (result != m_AssetsMgrs.end())
@@ -142,12 +143,12 @@ namespace Czuch
 			if (res == nullptr)
 			{
 				LOG_BE_ERROR("Failed to create asset with name: {0} in manager of type {1}", name, result->first.name());
-				return { InvalidID };
+				return { Invalid_Handle_Id };
 			}
 
 			return res->GetHandle();
 		}
-		return { InvalidID };
+		return { Invalid_Handle_Id };
 	}
 
 	template<class T, class TM>
@@ -155,7 +156,7 @@ namespace Czuch
 	{
 		if (m_isDuringShutdown)
 		{
-			return { InvalidID };
+			return { Invalid_Handle_Id };
 		}
 		auto result = m_AssetsMgrs.find(typeid(T));
 		if (result != m_AssetsMgrs.end())
@@ -166,13 +167,13 @@ namespace Czuch
 			if (res == nullptr)
 			{
 				LOG_BE_ERROR("Failed to create asset with name: {0} in manager of type {1}", name, result->first.name());
-				return { InvalidID };
+				return { Invalid_Handle_Id };
 			}
 
 			return res->GetHandle();
 		}
 		LOG_BE_ERROR("Failed to find manager for asset with name {0}",name);
-		return { InvalidID };
+		return { Invalid_Handle_Id };
 	}
 
 
@@ -181,7 +182,7 @@ namespace Czuch
 	{
 		if (m_isDuringShutdown)
 		{
-			return { InvalidID };
+			return { Invalid_Handle_Id };
 		}
 		auto result = m_AssetsMgrs.find(typeid(T));
 		if (result != m_AssetsMgrs.end())
@@ -193,12 +194,12 @@ namespace Czuch
 			if (res == nullptr)
 			{
 				LOG_BE_ERROR("Failed to load asset with path: {0} in manager of type {1}", path, result->first.name());
-				return { InvalidID };
+				return { Invalid_Handle_Id };
 			}
 
 			return res->GetHandle();
 		}
-		return { InvalidID };
+		return { Invalid_Handle_Id };
 	}
 
 	template<typename T>

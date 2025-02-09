@@ -31,6 +31,13 @@ namespace Czuch
 			return existingRes;
 		}
 
+		//check if asset exist
+		if (!AssetExistAtPath(path))
+		{
+			LOG_BE_ERROR("Asset with path: {0} doesn't exist!", path);
+			return nullptr;
+		}
+
 		Asset* createdRes = CreateAsset(path,settings);
 		RegisterAsset(strId, createdRes);
 
@@ -125,7 +132,7 @@ namespace Czuch
 		{
 			return {res->GetGuid()};
 		}
-		return {InvalidID};
+		return AssetHandle();
 	}
 
 	Asset* AssetManager::GetAsset(AssetHandle handle)
@@ -154,6 +161,11 @@ namespace Czuch
 		{
 			res->IncrementRefCounter();
 		}
+	}
+
+	bool AssetManager::AssetExistAtPath(const CzuchStr& path)
+	{
+		return std::filesystem::exists(AssetsManager::GetStartPath()+path);
 	}
 
 	void AssetManager::RegisterAsset(StringID& strId, Asset* createdRes)

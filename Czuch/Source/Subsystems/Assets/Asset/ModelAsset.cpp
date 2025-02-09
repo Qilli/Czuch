@@ -28,14 +28,14 @@ namespace Czuch
 	ModelAsset::ModelAsset(const CzuchStr& path, ModelLoadSettings& loadSettings, GraphicsDevice* device, AssetsManager* assetsManager) :Asset(path, GetNameFromPath(path), assetsManager), m_Device(device)
 	{
 		m_AssetType = AssetModeType::LOADED_TYPE;
-		m_CurrentLoadSettings =std::move(loadSettings);
+		m_CurrentLoadSettings = std::move(loadSettings);
 		LOG_BE_INFO("Created new model asset with unloaded state at path: {0}", AssetPath());
 	}
 
 	ModelAsset::ModelAsset(const CzuchStr& path, ModelCreateSettings& settings, GraphicsDevice* device, AssetsManager* assetsManager) :Asset(path, path, assetsManager), m_Device(device)
 	{
 		m_AssetType = AssetModeType::CREATED_TYPE;
-		m_CreateSettings =std::move(settings);
+		m_CreateSettings = std::move(settings);
 		CreateFromData();
 	}
 
@@ -109,7 +109,7 @@ namespace Czuch
 
 
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(AssetPath(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
+		const aiScene* scene = importer.ReadFile(AssetPath(), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipWindingOrder | aiProcess_FlipUVs);
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
@@ -121,7 +121,7 @@ namespace Czuch
 		m_MeshData.Clear();
 		m_MeshData.inited = true;
 		m_MeshData.Reserve(scene->mNumMeshes);
-		auto &root = m_MeshData.meshesHierarchy;
+		auto& root = m_MeshData.meshesHierarchy;
 
 		ProcessNode(scene->mRootNode, scene, &root);
 		LOG_BE_INFO("Loaded model {0} with {1} meshes and {2} materials", AssetName(), scene->mNumMeshes, scene->mNumMaterials);
@@ -247,15 +247,36 @@ namespace Czuch
 		{
 			meshData.positions.push_back({ mesh->mVertices[i].x,mesh->mVertices[i].y,mesh->mVertices[i].z });
 			meshData.normals.push_back({ mesh->mNormals[i].x,mesh->mNormals[i].y,mesh->mNormals[i].z });
+		}
 
-			if (mesh->mTextureCoords[0])
+		if (mesh->HasVertexColors(0))
+		{
+			for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+			{
+				meshData.colors.push_back({ mesh->mColors[0][i].r,mesh->mColors[0][i].g,mesh->mColors[0][i].b,mesh->mColors[0][i].a });
+			}
+		}
+		else
+		{
+			for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+			{
+				meshData.colors.push_back({ 1.0f,1.0f,1.0f,1.0f });
+			}
+		}
+
+		if (mesh->mTextureCoords[0])
+		{
+
+			for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 			{
 				meshData.uvs0.push_back({ mesh->mTextureCoords[0][i].x,mesh->mTextureCoords[0][i].y,0,0 });
 			}
-			else
+		}
+		else
+		{
+			for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 			{
 				meshData.uvs0.push_back({ 0.0f,0.0f,0.0f,0.0f });
-
 			}
 		}
 
@@ -290,12 +311,22 @@ namespace Czuch
 	{
 		aiString str;
 		material->GetTexture(type, index, &str);
+
 		LOG_BE_INFO("Checking if texture {0} already exist and is loaded", str.C_Str());
 		auto texPath = GetRelativePath().parent_path().string() + "\\" + str.C_Str();
 		TextureLoadSettings settings;
 		settings.isUITexture = false;
 		settings.type = TextureDesc::Type::TEXTURE_2D;
-		return AssetsManager::GetPtr()->LoadAsset<TextureAsset,TextureLoadSettings>(texPath,settings);
+		auto handle=AssetsManager::GetPtr()->LoadAsset<TextureAsset, TextureLoadSettings>(texPath, settings);
+
+		if (HANDLE_IS_VALID(handle))
+		{
+			return handle;
+		}
+
+		std::filesystem::path localPath = str.C_Str();
+		texPath = GetRelativePath().parent_path().string() + "\\" + localPath.filename().string();
+		return AssetsManager::GetPtr()->LoadAsset<TextureAsset, TextureLoadSettings>(texPath, settings);
 	}
 
 	MaterialInfo ModelAsset::ProcessMaterial(aiMaterial* material)
@@ -360,16 +391,16 @@ namespace Czuch
 		}
 	}
 
-		//[TODO] add support for multiple textures, by texture existence we also select proper material type
-		/*U32 specularCount = material->GetTextureCount(aiTextureType_SPECULAR);
-		U32 normalCount = material->GetTextureCount(aiTextureType_NORMALS);
-		U32 heightCount = material->GetTextureCount(aiTextureType_HEIGHT);
-		U32 ambientCount = material->GetTextureCount(aiTextureType_AMBIENT);
-		U32 emissiveCount = material->GetTextureCount(aiTextureType_EMISSIVE);
-		U32 shininessCount = material->GetTextureCount(aiTextureType_SHININESS);
-		U32 opacityCount = material->GetTextureCount(aiTextureType_OPACITY);
-		U32 displacementCount = material->GetTextureCount(aiTextureType_DISPLACEMENT);
-		U32 lightmapCount = material->GetTextureCount(aiTextureType_LIGHTMAP);
-		U32 reflectionCount = material->GetTextureCount(aiTextureType_REFLECTION);*/
+	//[TODO] add support for multiple textures, by texture existence we also select proper material type
+	/*U32 specularCount = material->GetTextureCount(aiTextureType_SPECULAR);
+	U32 normalCount = material->GetTextureCount(aiTextureType_NORMALS);
+	U32 heightCount = material->GetTextureCount(aiTextureType_HEIGHT);
+	U32 ambientCount = material->GetTextureCount(aiTextureType_AMBIENT);
+	U32 emissiveCount = material->GetTextureCount(aiTextureType_EMISSIVE);
+	U32 shininessCount = material->GetTextureCount(aiTextureType_SHININESS);
+	U32 opacityCount = material->GetTextureCount(aiTextureType_OPACITY);
+	U32 displacementCount = material->GetTextureCount(aiTextureType_DISPLACEMENT);
+	U32 lightmapCount = material->GetTextureCount(aiTextureType_LIGHTMAP);
+	U32 reflectionCount = material->GetTextureCount(aiTextureType_REFLECTION);*/
 
 }

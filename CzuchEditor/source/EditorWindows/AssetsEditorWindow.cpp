@@ -11,20 +11,57 @@ namespace Czuch
 	static float PADDING = 16.0f;
 	static float CELL_SIZE = THUMBNAIL_SIZE + PADDING;
 
-	void LoadFolderContents(Czuch::AssetsManager* mgr,const fs::path& path, std::vector<FileEntry>& entries, ImTextureID folderTexture, ImTextureID fileTexture) {
+	bool IsEditorFolder(const std::filesystem::path& path)
+	{
+		std::string folderName = path.filename().string();
+
+		if (folderName == "Editor" || folderName == "editor")
+		{
+			return true;
+		}
+		return false;
+	}
+
+	ImTextureID GetAssetTexturePreview(Czuch::AssetsManager* mgr, ImTextureID defaultTexture,const std::filesystem::path& path) {
+		// Get the texture preview
+		ImTextureID texture = defaultTexture;
+		if (mgr->IsFormatAssetOfType(path.extension().string().c_str(), AssetType::TEXTURE)) {
+			auto handle=mgr->LoadAsset<TextureAsset>(path.string());
+			if (handle.IsValid())
+			{
+				auto textureAsset = mgr->GetAsset<TextureAsset>(handle);
+				texture = textureAsset->GetUITextureIDPtr();
+			}
+			else
+			{
+				texture = defaultTexture;
+			}
+		}
+		return texture;
+	}
+
+
+	void LoadFolderContents(Czuch::AssetsManager* mgr,const fs::path& path,const fs::path& startPath, std::vector<FileEntry>& entries, ImTextureID folderTexture, ImTextureID fileTexture) {
 		entries.clear();
 		for (const auto& entry : fs::directory_iterator(path)) {
+
+			if (entry.is_directory() && IsEditorFolder(entry.path()))
+			{
+				continue;
+			}
 
 			if (!entry.is_directory() && !mgr->IsFormatSupported(entry.path().extension().string().c_str()))
 			{
 				continue;
 			}
 
+			ImTextureID thumbnail = entry.is_directory() ? folderTexture : GetAssetTexturePreview(mgr,fileTexture, fs::relative(entry.path(), startPath));
+
 			entries.push_back({
 				entry.path().filename().string(),
 				entry.path(),
 				entry.is_directory(),
-				entry.is_directory() ? folderTexture : fileTexture 
+				thumbnail
 				});
 		}
 	}
@@ -53,7 +90,7 @@ namespace Czuch
 
 		auto mgr = AssetsManager::GetPtr();
 		// Load folder contents if the directory changes
-		LoadFolderContents(mgr,m_CurrentPath, entries, EditorAssets::s_EditorFolderTexture, EditorAssets::s_EditorFileTexture);
+		LoadFolderContents(mgr,m_CurrentPath,m_StartPath, entries, EditorAssets::s_EditorFolderTexture, EditorAssets::s_EditorFileTexture);
 
 		// Display the current path and a button to go up one level
 		ImGui::Text("Current Path: %s", m_CurrentPath.string().c_str());
@@ -87,6 +124,7 @@ namespace Czuch
 
 				ImGui::TableNextColumn();
 
+				ImVec2 min = ImGui::GetCursorScreenPos();// Top-left corner of the current cell
 				// Center the thumbnail and name
 				ImGui::BeginGroup();
 
@@ -105,6 +143,7 @@ namespace Czuch
 
 				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 				{
+					m_SelectedEntry = &entry;
 					if (entry.isDirectory) {
 						m_CurrentPath /= entry.name;
 					}
@@ -118,6 +157,17 @@ namespace Czuch
 				ImGui::TextWrapped("%s", entry.name.c_str());
 
 				ImGui::EndGroup();
+
+				ImVec2 max = ImVec2(min.x+cellSize,min.y+cellSize*0.9f);
+				if (m_SelectedEntry != nullptr && entry.path == m_SelectedEntry->path) {
+					ImGui::GetWindowDrawList()->AddRect(
+						min, max,                           // Top-left and bottom-right corners
+						IM_COL32(0, 255, 0, 255),           // Green color (RGBA)
+						5.0f,                               // Optional rounding
+						0,                                  // Flags (0 for solid border)
+						2.0f                                // Border thickness
+					);
+				}
 
 				columnIndex = (columnIndex + 1) % columns;
 			}
@@ -135,6 +185,7 @@ namespace Czuch
 		m_StartPath = path;
 
 		m_CurrentPath = m_StartPath;
+		m_SelectedEntry = nullptr;
 
 		auto mgr = AssetsManager::GetPtr();
 
@@ -158,6 +209,10 @@ namespace Czuch
 			if (!entry.exist)
 			{
 				toRemove.push_back(entry.path);
+				if (m_SelectedEntry != nullptr && m_SelectedEntry->path == entry.path)
+				{
+					m_SelectedEntry = nullptr;
+				}
 			}
 		}
 
@@ -183,6 +238,11 @@ namespace Czuch
 		auto mgr = AssetsManager::GetPtr();
 
 		for (const auto& entry : fs::directory_iterator(startPath)) {
+
+			if (entry.is_directory() && IsEditorFolder(entry.path()))
+			{
+				continue;
+			}
 
 			if (entry.is_directory())
 			{

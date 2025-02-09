@@ -13,6 +13,7 @@ namespace Czuch
 		MeshHandle GetMesh() const { return m_Mesh; }
 		AssetHandle GetModel() const { return m_Model; }
 		void SetMesh(AssetHandle model, MeshHandle mesh) { 
+
 			if (mesh.handle != m_Mesh.handle)
 			{
 				if (HasMesh())
