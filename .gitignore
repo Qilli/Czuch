@@ -1,0 +1,9 @@
+#directories
+.vs/
+bin/
+bin-int/
+Czuch/vendors/glslang/Debug/
+Czuch/veondrs/glslang/Release/
+
+#files
+*.user

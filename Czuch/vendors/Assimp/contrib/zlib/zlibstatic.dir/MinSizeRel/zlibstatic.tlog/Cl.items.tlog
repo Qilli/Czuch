@@ -1,0 +1,15 @@
+F:\C++\Assimp\assimp-master\contrib\zlib\adler32.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\adler32.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\compress.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\compress.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\crc32.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\crc32.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\deflate.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\deflate.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\gzclose.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\gzclose.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\gzlib.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\gzlib.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\gzread.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\gzread.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\gzwrite.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\gzwrite.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\inflate.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\inflate.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\infback.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\infback.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\inftrees.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\inftrees.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\inffast.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\inffast.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\trees.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\trees.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\uncompr.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\uncompr.obj
+F:\C++\Assimp\assimp-master\contrib\zlib\zutil.c;F:\C++\Assimp\AssimpBuild\contrib\zlib\zlibstatic.dir\MinSizeRel\zutil.obj

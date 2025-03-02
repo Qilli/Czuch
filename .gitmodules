@@ -1,0 +1,24 @@
+[submodule "Czuch/vendors/spdlog"]
+	path = Czuch/vendors/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "Czuch/vendor/GLFW"]
+	path = Czuch/vendor/GLFW
+	url = https://github.com/glfw/glfw.git
+[submodule "Czuch/vendors/GLFW"]
+	path = Czuch/vendors/GLFW
+	url = https://github.com/glfw/glfw.git
+[submodule "Czuch/vendors/imgui"]
+	path = Czuch/vendors/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "Czuch/vendors/yaml-cpp"]
+	path = Czuch/vendors/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "Czuch/vendor/ImGuizmoCzuch"]
+	path = Czuch/vendor/ImGuizmoCzuch
+	url = https://github.com/Qilli/ImGuizmoCzuch.git
+[submodule "Czuch/vendors/ImGuizmoCzuch"]
+	path = Czuch/vendors/ImGuizmoCzuch
+	url = https://github.com/Qilli/ImGuizmoCzuch.git
+[submodule "Czuch/vendors/Assimp"]
+	path = Czuch/vendors/Assimp
+	url = https://github.com/assimp/assimp.git

@@ -1,0 +1,572 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="source">
+      <UniqueIdentifier>{76FF3A1C-62A1-65F2-4B5C-7946379DEC42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Core">
+      <UniqueIdentifier>{8E3DACBA-FAF2-24B0-83E7-1E87EF9B1BB4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Events">
+      <UniqueIdentifier>{9AEAD31B-06AB-4F52-CFE5-98CF3B65942E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Events\EventsTypes">
+      <UniqueIdentifier>{13AAF346-7F6C-27D1-C81C-B65D341E00AF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Platform">
+      <UniqueIdentifier>{8A00977C-F68B-0441-FF9C-87356BA76041}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Platform\Windows">
+      <UniqueIdentifier>{C494B974-30CC-010C-39D6-652FA58C2805}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Renderer">
+      <UniqueIdentifier>{DC077457-4893-E11B-51A4-6410BDAE3D1C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Renderer\FrameGraph">
+      <UniqueIdentifier>{28B854B2-14C8-0083-7D81-65A169B0EF1B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Renderer\Vulkan">
+      <UniqueIdentifier>{DC2568B5-C81F-9107-B18C-27189D25F773}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Renderer\Vulkan\RenderPass">
+      <UniqueIdentifier>{824C6A08-EEBA-BF87-37A4-7A87A351B523}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Serialization">
+      <UniqueIdentifier>{832E78E0-6FBD-01AA-18DC-15A5044A1250}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Subsystems">
+      <UniqueIdentifier>{C7FABBEE-3311-BA84-7C88-45A6E8DD8A0C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Subsystems\Assets">
+      <UniqueIdentifier>{C97B5D61-B5A0-ACE1-DEEB-9171CA6FABFF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Subsystems\Assets\Asset">
+      <UniqueIdentifier>{18234351-0449-0DB8-ED8E-9283D9533284}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Subsystems\Assets\AssetManagersTypes">
+      <UniqueIdentifier>{9B979B0B-07FD-2E92-90D5-D06AFC392401}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Subsystems\Scenes">
+      <UniqueIdentifier>{1746318A-036B-800A-2CB6-659A183A7F28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Subsystems\Scenes\Components">
+      <UniqueIdentifier>{CCCE2378-3888-8E22-C1E7-A8FC2DA04492}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Subsystems\Scenes\NativeBehaviours">
+      <UniqueIdentifier>{856C0825-F186-6BC6-3AA9-7B5AA60293CD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Subsystems\UI">
+      <UniqueIdentifier>{94AC5F42-803B-E90B-295A-FD0615C8F9B1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Subsystems\UI\Editor">
+      <UniqueIdentifier>{4A7BC79C-B688-F582-3F6F-F16DAB7BC139}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendors">
+      <UniqueIdentifier>{86EAAF72-F2C9-2E0E-FBE1-B9E46740956F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendors\ImGuizmoCzuch">
+      <UniqueIdentifier>{431A9617-AF86-5112-787A-E96FE4A5737A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\Core\AccessContainer.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\Common.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\EngineCore.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\FileHelper.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\GUID.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\KeyCodes.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\Math.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\MouseCodes.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\Singleton.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\StringID.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\Time.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\TimeDelta.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\TimeDiffCounter.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\TreeNode.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\UpdatableValue.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core\Window.h">
+      <Filter>source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Czuch.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="source\EngineRoot.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Events\Event.h">
+      <Filter>source\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Events\EventsTypes\ApplicationEvents.h">
+      <Filter>source\Events\EventsTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Events\EventsTypes\InputEvents.h">
+      <Filter>source\Events\EventsTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Events\EventsTypes\MouseEvents.h">
+      <Filter>source\Events\EventsTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Events\IEventsListener.h">
+      <Filter>source\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Platform\Windows\WinUtils.h">
+      <Filter>source\Platform\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Platform\Windows\WinWindow.h">
+      <Filter>source\Platform\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\CommandBuffer.h">
+      <Filter>source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\FrameGraph\FrameGraph.h">
+      <Filter>source\Renderer\FrameGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.h">
+      <Filter>source\Renderer\FrameGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Graphics.h">
+      <Filter>source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\GraphicsDevice.h">
+      <Filter>source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\GraphicsResourceAccessContainer.h">
+      <Filter>source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\RenderContext.h">
+      <Filter>source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\RenderPassControl.h">
+      <Filter>source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Renderer.h">
+      <Filter>source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\DescriptorAllocator.h">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\DescriptorLayoutCache.h">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\UITextureSource.h">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDefaultForwardLightingRenderPass.h">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDepthLinearPrepassRenderPass.h">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.h">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.h">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanRenderPassControlBase.h">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanBase.h">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanCommandBuffer.h">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanCore.h">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanDevice.h">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanPipelineBuilder.h">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\VulkanRenderer.h">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Serialization\ISerializer.h">
+      <Filter>source\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Serialization\SceneSerializer.h">
+      <Filter>source\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Serialization\SerializationComponentHelper.h">
+      <Filter>source\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\Asset.h">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialAsset.h">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.h">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\ModelAsset.h">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\ShaderAsset.h">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\Asset\TextureAsset.h">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManager.h">
+      <Filter>source\Subsystems\Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.h">
+      <Filter>source\Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.h">
+      <Filter>source\Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.h">
+      <Filter>source\Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.h">
+      <Filter>source\Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetManagersTypes\TextureAssetManager.h">
+      <Filter>source\Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\AssetsManager.h">
+      <Filter>source\Subsystems\Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\BuildInAssets.h">
+      <Filter>source\Subsystems\Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Assets\SettingsPerType.h">
+      <Filter>source\Subsystems\Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\BaseSubsystem.h">
+      <Filter>source\Subsystems</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\EventsManager.h">
+      <Filter>source\Subsystems</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\InputManager.h">
+      <Filter>source\Subsystems</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Logging.h">
+      <Filter>source\Subsystems</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\CameraComponent.h">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\Component.h">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\ComponentState.h">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\HeaderComponent.h">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\MeshComponent.h">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\MeshRendererComponent.h">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\NativeBehaviourComponent.h">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Components\TransformComponent.h">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Entity.h">
+      <Filter>source\Subsystems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\IScene.h">
+      <Filter>source\Subsystems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\NativeBehaviour.h">
+      <Filter>source\Subsystems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.h">
+      <Filter>source\Subsystems\Scenes\NativeBehaviours</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\Scene.h">
+      <Filter>source\Subsystems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\Scenes\ScenesManager.h">
+      <Filter>source\Subsystems\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\UI\Editor\EngineEditorControl.h">
+      <Filter>source\Subsystems\UI\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\UI\Editor\EngineEditorSubsystem.h">
+      <Filter>source\Subsystems\UI\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\UI\ImGUIManager.h">
+      <Filter>source\Subsystems\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\UI\UIBaseElement.h">
+      <Filter>source\Subsystems\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Subsystems\UI\UIBaseManager.h">
+      <Filter>source\Subsystems\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="source\czpch.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="vendors\ImGuizmoCzuch\ImGuizmo.h">
+      <Filter>vendors\ImGuizmoCzuch</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Renderer\Vulkan\RenderPass\VulkanDefaultForwardTransparentLightingRenderPass.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="source\Core\AccessContainer.cpp">
+      <Filter>source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Core\GUID.cpp">
+      <Filter>source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Core\StringID.cpp">
+      <Filter>source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Core\Time.cpp">
+      <Filter>source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Core\TimeDelta.cpp">
+      <Filter>source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Core\TimeDiffCounter.cpp">
+      <Filter>source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Core\TreeNode.cpp">
+      <Filter>source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Core\Window.cpp">
+      <Filter>source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\EngineRoot.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Events\Event.cpp">
+      <Filter>source\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Events\EventsTypes\ApplicationEvents.cpp">
+      <Filter>source\Events\EventsTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Events\EventsTypes\InputEvents.cpp">
+      <Filter>source\Events\EventsTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Events\EventsTypes\MouseEvents.cpp">
+      <Filter>source\Events\EventsTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Platform\Windows\WinUtils.cpp">
+      <Filter>source\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Platform\Windows\WinWindow.cpp">
+      <Filter>source\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\FrameGraph\FrameGraph.cpp">
+      <Filter>source\Renderer\FrameGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\FrameGraph\FrameGraphBuilderHelper.cpp">
+      <Filter>source\Renderer\FrameGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Graphics.cpp">
+      <Filter>source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\GraphicsResourceAccessContainer.cpp">
+      <Filter>source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\RenderContext.cpp">
+      <Filter>source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\RenderPassControl.cpp">
+      <Filter>source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Renderer.cpp">
+      <Filter>source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\DescriptorAllocator.cpp">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\DescriptorLayoutCache.cpp">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\UITextureSource.cpp">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDefaultForwardLightingRenderPass.cpp">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDepthLinearPrepassRenderPass.cpp">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDepthPrepassRenderPass.cpp">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanMainRenderPass.cpp">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanRenderPassControlBase.cpp">
+      <Filter>source\Renderer\Vulkan\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\VulkanCommandBuffer.cpp">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\VulkanCore.cpp">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\VulkanDevice.cpp">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\VulkanPipelineBuilder.cpp">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\VulkanRenderer.cpp">
+      <Filter>source\Renderer\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Serialization\ISerializer.cpp">
+      <Filter>source\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Serialization\SceneSerializer.cpp">
+      <Filter>source\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Serialization\SerializationComponentHelper.cpp">
+      <Filter>source\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\Asset.cpp">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialAsset.cpp">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\MaterialInstanceAsset.cpp">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\ModelAsset.cpp">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\ShaderAsset.cpp">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\Asset\TextureAsset.cpp">
+      <Filter>source\Subsystems\Assets\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManager.cpp">
+      <Filter>source\Subsystems\Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialAssetManager.cpp">
+      <Filter>source\Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\MaterialInstanceAssetManager.cpp">
+      <Filter>source\Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ModelAssetManager.cpp">
+      <Filter>source\Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\ShaderAssetManager.cpp">
+      <Filter>source\Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetManagersTypes\TextureAssetManager.cpp">
+      <Filter>source\Subsystems\Assets\AssetManagersTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\AssetsManager.cpp">
+      <Filter>source\Subsystems\Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Assets\BuildInAssets.cpp">
+      <Filter>source\Subsystems\Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\EventsManager.cpp">
+      <Filter>source\Subsystems</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\InputManager.cpp">
+      <Filter>source\Subsystems</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Logging.cpp">
+      <Filter>source\Subsystems</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\CameraComponent.cpp">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\Component.cpp">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\HeaderComponent.cpp">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\MeshComponent.cpp">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\MeshRendererComponent.cpp">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\NativeBehaviourComponent.cpp">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Components\TransformComponent.cpp">
+      <Filter>source\Subsystems\Scenes\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Entity.cpp">
+      <Filter>source\Subsystems\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\NativeBehaviour.cpp">
+      <Filter>source\Subsystems\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\NativeBehaviours\NativeFree3DCameraController.cpp">
+      <Filter>source\Subsystems\Scenes\NativeBehaviours</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\Scene.cpp">
+      <Filter>source\Subsystems\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\Scenes\ScenesManager.cpp">
+      <Filter>source\Subsystems\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\UI\Editor\EngineEditorControl.cpp">
+      <Filter>source\Subsystems\UI\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\UI\Editor\EngineEditorSubsystem.cpp">
+      <Filter>source\Subsystems\UI\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\UI\ImGUIManager.cpp">
+      <Filter>source\Subsystems\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\UI\ImGuiCompiler.cpp">
+      <Filter>source\Subsystems\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Subsystems\UI\UIBaseManager.cpp">
+      <Filter>source\Subsystems\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="source\czpch.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="vendors\ImGuizmoCzuch\ImGuizmo.cpp">
+      <Filter>vendors\ImGuizmoCzuch</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Renderer\Vulkan\RenderPass\VulkanDefaultForwardTransparentLightingRenderPass.cpp" />
+  </ItemGroup>
+</Project>
