@@ -3,7 +3,7 @@
 bin/
 bin-int/
 Czuch/vendors/glslang/Debug/
-Czuch/veondrs/glslang/Release/
+Czuch/vendors/glslang/Release/
 
 #files
 *.user
