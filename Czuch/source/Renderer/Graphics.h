@@ -718,6 +718,7 @@ namespace Czuch
 		U32 width;
 		U32 height;
 		U32 renderTargetsCount = 0;
+		bool isFinalFrameBuffer = false;
 
 		TextureHandle renderTextures[k_max_image_outputs];
 		TextureHandle depthStencilTexture = { Invalid_Handle_Id };

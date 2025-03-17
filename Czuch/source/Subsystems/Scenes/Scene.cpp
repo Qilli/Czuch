@@ -30,7 +30,7 @@ namespace Czuch
 		m_RootEntity.AddComponent<GUIDComponent>(GUID());
 
 		m_AmbientColor = Color(0.3f, 0.3f, 0.3f, 1.0f);
-		m_ClearColor = Color(0.8f, 0.8f, 0.8f, 1.0f);
+		m_ClearColor = Color(0.0f, 0.0f, 0.0f, 1.0f);
 
 		//create default game mode camera
 		Entity cameraEntity = CreateEntity("MainCamera", m_RootEntity);

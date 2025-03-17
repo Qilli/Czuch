@@ -115,7 +115,7 @@ namespace Czuch
 
 		if (result != VK_SUCCESS)
 		{
-			LOG_BE_ERROR("[Vulkan]Failed to wait for fence." + std::to_string(result));
+			LOG_BE_ERROR("[Vulkan]Failed to wait for fence: {0}",VkResultToString(result));
 			return;
 		}
 
@@ -148,39 +148,6 @@ namespace Czuch
 		m_FinalRenderPass->PostDraw(cmdBuffer, this);
 
 		cmdBuffer->End();
-
-		/*	for (auto it = m_RenderPasses.begin(); it != m_RenderPasses.end(); ++it)
-			{
-				if ((*it)->GetType() == RenderPassType::MainForward)
-				{
-					OnPreRenderUpdateContexts(nullptr, m_Device->GetSwapchainWidth(), m_Device->GetSwapchainHeight());
-					(*it)->BeginRenderPass(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
-					(*it)->Execute(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
-					(*it)->EndRenderPass(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
-				}
-				else
-				{
-					Camera* currentCamera = nullptr;
-
-					if ((*it)->IsDifferentAspect(m_LastWidth, m_LastHeight) || (*it)->IsDifferentCamera(currentCamera))
-					{
-						OnPostRenderUpdateContexts();
-						m_LastWidth = (*it)->GetWidth();
-						m_LastHeight = (*it)->GetHeight();
-						currentCamera = (*it)->GetCamera();
-						OnPreRenderUpdateContexts(currentCamera, m_LastWidth, m_LastHeight);
-					}
-					else
-					{
-						OnPreRenderUpdateContexts(currentCamera, m_LastWidth, m_LastHeight);
-					}
-					(*it)->Execute(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
-					(*it)->BeginRenderPass(nullptr);
-					(*it)->Execute(nullptr);
-					(*it)->EndRenderPass(nullptr);
-				}
-			}*/
-
 
 		SubmitCommandBuffer();
 		m_Device->Present(imageIndex, GetCurrentFrame().renderFinishedSemaphote);
@@ -313,7 +280,6 @@ namespace Czuch
 
 	void VulkanRenderer::InitSceneData()
 	{
-
 		m_SceneData.bufferDesc.createMapped = true;
 		m_SceneData.bufferDesc.elementsCount = 1;
 		m_SceneData.bufferDesc.bind_flags = BindFlag::UNIFORM_BUFFER;
@@ -662,11 +628,12 @@ namespace Czuch
 		lightingOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
 		lightingOutput.resource_info.texture.usage = ImageUsageFlag::COLOR_ATTACHMENT;
 
+		auto lightingPass = new VulkanDefaultForwardLightingRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize);
 		m_FrameGraphBuilder.BeginNewNode("LightingPass");
 		m_FrameGraphBuilder.AddInput(depthInput);
 		m_FrameGraphBuilder.AddOutput(lightingOutput);
 		m_FrameGraphBuilder.SetClearColor(Vec3(0.0f, 0.0f, 0.0f));
-		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(new VulkanDefaultForwardLightingRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize)));
+		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(lightingPass));
 		m_FrameGraphBuilder.EndNode();
 		//////////////////////////
 
@@ -681,10 +648,12 @@ namespace Czuch
 		lightingInputTransparent.name = "Lighting";
 
 
+		auto lightingPassTransparent = new VulkanDefaultForwardTransparentLightingRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize);
+
 		m_FrameGraphBuilder.BeginNewNode("LightingPassTransparent");
 		m_FrameGraphBuilder.AddInput(depthInputTransparent);
 		m_FrameGraphBuilder.AddInput(lightingInputTransparent);
-		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(new VulkanDefaultForwardTransparentLightingRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize)));
+		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(lightingPassTransparent));
 		m_FrameGraphBuilder.EndNode();
 
 
@@ -700,10 +669,12 @@ namespace Czuch
 		lightingInputDebug.type = FrameGraphResourceType::Attachment;
 		lightingInputDebug.name = "Lighting";
 
+		auto debugDrawPass = new VulkanDebugDrawRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize);
+
 		m_FrameGraphBuilder.BeginNewNode("DebugDrawPass");
 		m_FrameGraphBuilder.AddInput(depthInputDebug);
 		m_FrameGraphBuilder.AddInput(lightingInputDebug);
-		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(new VulkanDebugDrawRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize)));
+		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(debugDrawPass));
 		m_FrameGraphBuilder.EndNode();
 
 

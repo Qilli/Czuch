@@ -17,6 +17,10 @@ target_include_directories(CzuchEditor PRIVATE
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/source PREFIX "Source" FILES ${SOURCES})
 
+#copy assets folder to build folder
+file(COPY ${CMAKE_SOURCE_DIR}/CzuchEditor/Assets DESTINATION ${CMAKE_BINARY_DIR}/CzuchEditor)
+file(COPY ${CMAKE_SOURCE_DIR}/CzuchEditor/imgui.ini DESTINATION ${CMAKE_BINARY_DIR}/CzuchEditor)
+
 target_sources(
 CzuchEditor PRIVATE ${SOURCES}
 )

@@ -19,7 +19,7 @@ namespace Czuch
 		VkPipelineVertexInputStateCreateInfo CreateVertexInputInfo();
 		VkPipelineMultisampleStateCreateInfo CreateMultisamplingInfo();
 		VkPipelineColorBlendAttachmentState CreateBlendingAttachmentInfo();
-		VkPipelineColorBlendStateCreateInfo CreateBlendingInfo();
+		VkPipelineColorBlendStateCreateInfo CreateBlendingInfo(VkPipelineColorBlendAttachmentState& blendInfo);
 		VkPipelineDepthStencilStateCreateInfo CreateDepthStencilInfo();
 	private:
 		Pipeline_Vulkan* pipeline;

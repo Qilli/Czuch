@@ -22,13 +22,13 @@ namespace Czuch
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
 		int imageIndex = m_Device->GetCurrentImageIndex();
 
-		m_Device->TransitionSwapChainImageLayoutPreDraw(cmdBuffer, imageIndex);
-		cmdBuffer->SetClearColor(0.0f, 1.0f, 1.0f, 1.0f);
+		cmdBuffer->SetClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 		cmdBuffer->SetDepthStencil(1.0f, 0);
 
 
 		if (renderer->GetRenderSettings().dynamicRendering)
 		{
+			m_Device->TransitionSwapChainImageLayoutPreDraw(cmdBuffer, imageIndex);
 			m_Device->StartDynamicRenderPass(cmdBuffer, imageIndex);
 		}
 		else

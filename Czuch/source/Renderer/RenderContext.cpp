@@ -45,7 +45,8 @@ namespace Czuch
         {
             auto currentMaterial = obj.meshRenderer->GetOverrideMaterial();
             auto currentMaterialInstance = device->AccessMaterialInstance(currentMaterial);
-            auto material = fillParams.forceMaterialForAll ? (fillParams.ignoreTransparent && currentMaterialInstance->IsTransparent() ? obj.meshRenderer->GetOverrideMaterial() : fillParams.forcedMaterial) : obj.meshRenderer->GetOverrideMaterial();
+            //auto material = fillParams.forceMaterialForAll ? (fillParams.ignoreTransparent && currentMaterialInstance->IsTransparent() ? obj.meshRenderer->GetOverrideMaterial() : fillParams.forcedMaterial) : obj.meshRenderer->GetOverrideMaterial();
+            auto material = !fillParams.forceMaterialForAll ? obj.meshRenderer->GetOverrideMaterial() : fillParams.forcedMaterial;
             auto materialInstance = device->AccessMaterialInstance(material);
             if (!materialInstance)
             {

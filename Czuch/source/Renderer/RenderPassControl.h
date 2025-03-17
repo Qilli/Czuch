@@ -41,6 +41,9 @@ namespace Czuch
 		virtual void Release()=0;
 		virtual void SetAsTextureSource() = 0;
 
+		void SetActive(bool active) { m_Active = active; }
+		bool IsActive() const { return m_Active; }
+
 		int GetWidth() const { return m_Width<=0?1:m_Width; }
 		int GetHeight() const { return m_Height<=0?1:m_Height; }
 		RenderPassType GetType() const { return Type; }
@@ -74,6 +77,7 @@ namespace Czuch
 		int m_Priority;
 		bool m_HandleWindowResize;
 		bool m_UITextureSource;
+		bool m_Active;
 		Camera* m_Camera;
 		Camera* m_LastCamera;
 		RenderPassType Type;

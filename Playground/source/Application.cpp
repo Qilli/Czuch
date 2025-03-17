@@ -59,9 +59,7 @@ int main()
 
 	//load sponza
 	auto sponzaHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Sponza\\sponza.gltf");
-	auto sponzaEntity = scene->AddModelToScene(sponzaHandle, "SponzaObject");
-
-
+    auto sponzaEntity = scene->AddModelToScene(sponzaHandle, "SponzaObject");
 
 	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("Textures\\texture.jpg");
 
@@ -71,7 +69,7 @@ int main()
 	Czuch::ColorUBO colorUBO;
 	colorUBO.color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	instanceCreateSettings.desc.AddBuffer("Color", Czuch::UBO((void*)&colorUBO, sizeof(Czuch::ColorUBO)));
-	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_TRANSPARENT_MATERIAL_ASSET;
+	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
 	auto matInstanceHandle = Czuch::AssetsManager::GetPtr()->CreateMaterialInstance(instanceCreateSettings);
 
 	Czuch::Entity cubeEntity = scene->CreateEntity("CubeObject");

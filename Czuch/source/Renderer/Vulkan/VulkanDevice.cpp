@@ -347,7 +347,7 @@ namespace Czuch
 			VkRenderPassCreateInfo renderPassInfo{};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 			renderPassInfo.attachmentCount = 2;
-			renderPassInfo.pAttachments = attachments;
+			renderPassInfo.pAttachments = attachmentsArray;
 			renderPassInfo.subpassCount = 1;
 			renderPassInfo.pSubpasses = &subpass;
 			renderPassInfo.dependencyCount = 1;
@@ -460,6 +460,25 @@ namespace Czuch
 			}
 			FrameBuffer_Vulkan* vulkanFramebuffer = Internal_to_Framebuffer(fb);
 			vulkanFramebuffer->Release();
+
+			VkImageView attachments[k_max_image_outputs];
+			U32 count = HANDLE_IS_VALID(desc->depthStencilTexture) ? desc->renderTargetsCount + 1 : desc->renderTargetsCount;
+
+			for (U32 a = 0; a < desc->renderTargetsCount; a++)
+			{
+				Texture* colorTexture = AccessTexture(desc->renderTextures[a]);
+				attachments[a] = Internal_to_Texture(colorTexture)->imageView;
+			}
+
+			if (HANDLE_IS_VALID(desc->depthStencilTexture))
+			{
+				Texture* depthTexture = AccessTexture(desc->depthStencilTexture);
+				attachments[desc->renderTargetsCount] = Internal_to_Texture(depthTexture)->imageView;
+			}
+
+			vulkanFramebuffer->createInfo.pAttachments = attachments;
+			vulkanFramebuffer->createInfo.width = desc->width;
+			vulkanFramebuffer->createInfo.height = desc->height;
 
 			if (vkCreateFramebuffer(m_Device, &vulkanFramebuffer->createInfo, nullptr, &vulkanFramebuffer->framebuffer) != VK_SUCCESS) {
 				LOG_BE_ERROR("{0} Failed to create new frame buffer", Tag);
@@ -1279,7 +1298,7 @@ namespace Czuch
 		bool result = m_ResContainer.buffers.Get(buffer.handle, &b);
 		m_ResContainer.buffers.Remove(buffer.handle);
 		INVALIDATE_HANDLE(buffer)
-			return true;
+		return true;
 	}
 
 	bool VulkanDevice::Release(PipelineHandle& pipeline)
@@ -1539,8 +1558,9 @@ namespace Czuch
 
 	void VulkanDevice::SubmitToGraphicsQueue(VkSubmitInfo info, VkFence fence)
 	{
-		if (vkQueueSubmit(m_GraphicsQueue, 1, &info, fence) != VK_SUCCESS) {
-			LOG_BE_ERROR("{0} Failed to submit to graphics queue", Tag);
+		VkResult result = vkQueueSubmit(m_GraphicsQueue, 1, &info, fence);
+		if (result != VK_SUCCESS) {
+			LOG_BE_ERROR("{0} Failed to submit to graphics queue due: {1}", Tag,VkResultToString(result));
 		}
 	}
 
@@ -2100,45 +2120,81 @@ namespace Czuch
 		{
 			return false;
 		}
+		else
+		{
+			LOG_BE_INFO("[VulkanDevice] Vulkan instance created.");
+		}
 
 		if (CreateSurface() == false)
 		{
 			return false;
+		}
+		else
+		{
+			LOG_BE_INFO("[VulkanDevice] Vulkan surface created.");
 		}
 
 		if (SelectPhysicalDevice() == false)
 		{
 			return false;
 		}
+		else
+		{
+			LOG_BE_INFO("[VulkanDevice] Vulkan physical device created.");
+		}
 
 		if (CreateLogicalDevice() == false)
 		{
 			return false;
+		}
+		else
+		{
+			LOG_BE_INFO("[VulkanDevice] Vulkan logical device created.");
 		}
 
 		if (CreateAllocatorObject() == false)
 		{
 			return false;
 		}
+		else
+		{
+			LOG_BE_INFO("[VulkanDevice] Vulkan allocator object created.");
+		}
 
 		if (CreateSwapChain() == false)
 		{
 			return false;
+		}
+		else
+		{
+			LOG_BE_INFO("[VulkanDevice] Vulkan swap chain created.");
 		}
 
 		if (CreateCommandsPool() == false)
 		{
 			return false;
 		}
+		else
+		{
+			LOG_BE_INFO("[VulkanDevice] Vulkan commands pool created.");
+		}
 
 		if (CreateDepthImage() == false)
 		{
 			return false;
 		}
+		else
+		{
+			LOG_BE_INFO("[VulkanDevice] Vulkan depth image created.");
+		}
 
-		if (CreateSwapChainFrameBuffers() == false)
+		if (CreateSwapChainFrameBuffers(true) == false)
 		{
 			return false;
+		}
+		else
+		{
+			LOG_BE_INFO("[VulkanDevice] Vulkan frame buffers created.");
 		}
 
 
@@ -2150,6 +2206,17 @@ namespace Czuch
 		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_DeviceProperties);
 
 		return true;
+	}
+
+	VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
+		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		void* pUserData)
+	{
+		std::cerr << "Validation Layer: " << pCallbackData->pMessage << std::endl;
+		LOG_BE_ERROR("{0} Vulkan Problem: {1}", Tag, pCallbackData->pMessage);
+		return VK_FALSE;
 	}
 
 	bool VulkanDevice::CreateVulkanInstance()
@@ -2181,11 +2248,20 @@ namespace Czuch
 		{
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 			createInfo.ppEnabledLayerNames = validationLayers.data();
+
+			VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
+			debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+			debugCreateInfo.messageSeverity =
+				VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+			debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+			debugCreateInfo.pfnUserCallback = DebugCallback;
 		}
 		else
 		{
 			createInfo.enabledLayerCount = 0;
 		}
+
+
 
 		uint32_t vkExtensionsCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionsCount, nullptr);
@@ -2259,30 +2335,51 @@ namespace Czuch
 			deviceCreateInfo.enabledLayerCount = 0;
 		}
 
-		VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingCreateInfo{};
-		dynamicRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
-		dynamicRenderingCreateInfo.dynamicRendering = VK_TRUE;
+		if (m_RenderSettings->dynamicRendering)
+		{
 
-		VkPhysicalDeviceSynchronization2Features syncFeatures{};
-		syncFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
-		syncFeatures.synchronization2 = VK_TRUE;
+			VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingCreateInfo{};
+			dynamicRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+			dynamicRenderingCreateInfo.dynamicRendering = VK_TRUE;
 
-		dynamicRenderingCreateInfo.pNext = &syncFeatures;
+			VkPhysicalDeviceSynchronization2Features syncFeatures{};
+			syncFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+			syncFeatures.synchronization2 = VK_TRUE;
 
-		deviceCreateInfo.pNext = &dynamicRenderingCreateInfo;
+			dynamicRenderingCreateInfo.pNext = &syncFeatures;
 
-		//shader draw parameters(gl_BaseInstance)
-		VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features = {};
-		shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
-		shader_draw_parameters_features.pNext = nullptr;
-		shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
+			deviceCreateInfo.pNext = &dynamicRenderingCreateInfo;
 
-		dynamicRenderingCreateInfo.pNext = &shader_draw_parameters_features;
+			//shader draw parameters(gl_BaseInstance)
+			VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features = {};
+			shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
+			shader_draw_parameters_features.pNext = nullptr;
+			shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
+
+			dynamicRenderingCreateInfo.pNext = &shader_draw_parameters_features;
+		}
 
 		if (vkCreateDevice(m_PhysicalDevice, &deviceCreateInfo, nullptr, &m_Device) != VK_SUCCESS)
 		{
 			LOG_BE_ERROR("{0} Failed to Create Vulkan Device.", Tag);
 			return false;
+		}
+
+		VkPhysicalDeviceDynamicRenderingFeatures checkFeature{};
+		checkFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+
+		VkPhysicalDeviceFeatures2 checkFeatures2{};
+		checkFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		checkFeatures2.pNext = &checkFeature;
+
+		vkGetPhysicalDeviceFeatures2(m_PhysicalDevice, &checkFeatures2);
+
+		if (checkFeature.dynamicRendering) {
+			LOG_BE_INFO("{0} Dynamic Rendering is supported!", Tag);
+		}
+		else
+		{
+			LOG_BE_ERROR("{0} Dynamic Rendering is not supported!", Tag);
 		}
 
 		vkGetDeviceQueue(m_Device, families.graphicsFamily.value(), 0, &m_GraphicsQueue);
@@ -2429,7 +2526,7 @@ namespace Czuch
 		m_SwapChainData.swapChainFrameBuffers.resize(m_SwapChainData.swapChainImageViews.size());
 
 		//create swap chain render pass
-		if (createRenderPass == true)
+		if (createRenderPass)
 		{
 			VulkanRenderPassDesc renderPassDesc;
 			renderPassDesc.AddAttachment(ConvertVkFormat(m_SwapChainData.swapChainImageFormat), ImageLayout::PRESENT_SRC_KHR,AttachmentLoadOp::CLEAR);
@@ -2444,6 +2541,10 @@ namespace Czuch
 		for (size_t i = 0; i < m_SwapChainData.swapChainImageViews.size(); i++) {
 
 			FrameBuffer* framebuffer = new FrameBuffer();
+
+			auto& desc = framebuffer->desc;
+			desc.isFinalFrameBuffer = true;
+
 			framebuffer->m_InternalResourceState = std::make_shared<FrameBuffer_Vulkan>();
 			FrameBufferHandle h;
 			h.handle = m_ResContainer.frameBuffers.Add(framebuffer);

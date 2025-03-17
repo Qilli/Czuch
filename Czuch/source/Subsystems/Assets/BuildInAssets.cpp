@@ -485,7 +485,7 @@ namespace Czuch
         desc.vs = finalVS;
         desc.ps = finalPS;
         desc.pt = PrimitiveTopology::TRIANGLELIST;
-        desc.rs.cull_mode = CullMode::BACK;
+        desc.rs.cull_mode = CullMode::NONE;
         desc.rs.fill_mode = PolygonMode::SOLID;
         desc.dss.depth_enable = true;
         desc.dss.depth_func = CompFunc::ALWAYS;

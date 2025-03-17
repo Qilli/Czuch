@@ -190,7 +190,7 @@ namespace Czuch
 			BindDescriptorSet(descriptor, a, 1, nullptr, 0);
 		}
 
-		DrawQuadInternal();
+	    DrawQuadInternal();
 	}
 
 	void VulkanCommandBuffer::BindPass(RenderPassHandle renderpass, FrameBufferHandle framebuffer)
@@ -283,7 +283,27 @@ namespace Czuch
 			extent.width = fbNative->createInfo.width;
 			extent.height = fbNative->createInfo.height;
 
+			auto& renderPassDesc = render_pass->desc;
+			bool hasDepthAttachment = HANDLE_IS_VALID(fb->desc.depthStencilTexture);
+
 			VkClearValue clearValues[] = { m_ClearValueColor,m_ClearValueDepth };
+			int count = 0;
+			VkClearValue* clearTarget = nullptr;
+			if ((hasDepthAttachment && renderPassDesc.attachmentsCount>0) || fb->desc.isFinalFrameBuffer)
+			{
+				count = 2;
+				clearTarget = clearValues;
+			}
+			else if (renderPassDesc.attachmentsCount > 0)
+			{
+				count = 1;
+				clearTarget = &clearValues[0];
+			}
+			else if (hasDepthAttachment)
+			{
+				count = 1;
+				clearTarget = &clearValues[1];
+			}
 
 			VkRenderPassBeginInfo renderPassInfo{};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -291,8 +311,8 @@ namespace Czuch
 			renderPassInfo.framebuffer = fbNative->framebuffer;
 			renderPassInfo.renderArea.offset = { 0, 0 };
 			renderPassInfo.renderArea.extent = extent;
-			renderPassInfo.clearValueCount = 2;
-			renderPassInfo.pClearValues = clearValues;
+			renderPassInfo.clearValueCount = count;
+			renderPassInfo.pClearValues = clearTarget;
 
 			vkCmdBeginRenderPass(m_Cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		}
@@ -308,7 +328,8 @@ namespace Czuch
 			return;
 		}
 		auto pp = m_Device->AccessPipeline(pipeline);
-		vkCmdBindPipeline(m_Cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Internal_To_Pipeline(pp)->pipeline);
+		VkPipeline pipelineVk = Internal_To_Pipeline(pp)->pipeline;
+		vkCmdBindPipeline(m_Cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineVk);
 		m_CurrentPipeline = pipeline;
 	}
 

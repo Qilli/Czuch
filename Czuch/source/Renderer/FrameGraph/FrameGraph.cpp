@@ -45,6 +45,12 @@ namespace Czuch
 		for (U32 i = 0; i < m_Nodes.m_Nodes.size(); i++)
 		{
 			auto& node = m_Nodes.m_Nodes[i];
+
+			if (node.renderPassControl->IsActive() == false)
+			{
+				continue;
+			}
+
 			if (m_UseClearColor)
 			{
 				cmd->SetClearColor(m_ClearColor.r, m_ClearColor.g, m_ClearColor.b, 1.0f);
@@ -139,8 +145,6 @@ namespace Czuch
 
 	void FrameGraph::ResizeNode(FrameGraphNode node, U32 width, U32 height)
 	{
-		node.Resize(m_Device, width, height);
-		//resize all textures created by this node
 		for (int i = 0; i < node.outputs.size(); i++)
 		{
 			auto& output = m_Resources.GetResource(node.outputs[i]);
@@ -149,6 +153,8 @@ namespace Czuch
 				m_Device->ResizeTexture(output.info.texture.texture, width, height);
 			}
 		}
+
+		node.Resize(m_Device, width, height);
 	}
 
 	void* FrameGraph::GetRenderPassResult(RenderPassType type)
@@ -218,8 +224,20 @@ namespace Czuch
 	TextureHandle FrameGraph::GetFinalTexture()
 	{
 		//return last color attachment
-		auto& node = m_Nodes.m_Nodes.back();
-		return node.GetFirstColorAttachment(this);
+		FrameGraphNode* node = nullptr;
+
+		for (int i = m_Nodes.m_Nodes.size()-1; i>=0; i--)
+		{
+			auto& n = m_Nodes.m_Nodes[i];
+			if (n.renderPassControl->IsActive())
+			{
+				node = &n;
+				break;
+			}
+		}
+
+		CZUCH_BE_ASSERT(node, "Final render pass not found");
+		return node->GetFirstColorAttachment(this);
 	}
 
 	void FrameGraph::ReleaseDependencies()
