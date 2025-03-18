@@ -77,7 +77,7 @@ int main()
 	cubeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 	auto& scripts=cubeEntity.AddComponent<Czuch::NativeBehaviourComponent>();
 	RotateAround& rotateAround = scripts.AddNativeBehaviour<RotateAround>();
-	rotateAround.SetEnabled(false);
+	rotateAround.SetEnabled(true);
 	Czuch::NativeFree3DCameraController& camController = scripts.AddNativeBehaviour<Czuch::NativeFree3DCameraController>();
 
 	Czuch::Entity planeEntity = scene->CreateEntity("PlaneObject");

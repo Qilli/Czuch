@@ -45,8 +45,7 @@ namespace Czuch
         {
             auto currentMaterial = obj.meshRenderer->GetOverrideMaterial();
             auto currentMaterialInstance = device->AccessMaterialInstance(currentMaterial);
-            //auto material = fillParams.forceMaterialForAll ? (fillParams.ignoreTransparent && currentMaterialInstance->IsTransparent() ? obj.meshRenderer->GetOverrideMaterial() : fillParams.forcedMaterial) : obj.meshRenderer->GetOverrideMaterial();
-            auto material = !fillParams.forceMaterialForAll ? obj.meshRenderer->GetOverrideMaterial() : fillParams.forcedMaterial;
+            auto material = fillParams.forceMaterialForAll ? (fillParams.ignoreTransparent && currentMaterialInstance->IsTransparent() ? obj.meshRenderer->GetOverrideMaterial() : fillParams.forcedMaterial) : obj.meshRenderer->GetOverrideMaterial();
             auto materialInstance = device->AccessMaterialInstance(material);
             if (!materialInstance)
             {
@@ -80,7 +79,6 @@ namespace Czuch
     void DefaultTransparentRenderContext::SortRenderObjects(Camera* cam)
     {
 		Vec3 cameraPosition = cam->GetViewMatrix()[3];
-
         std::sort(m_RenderObjects.begin(), m_RenderObjects.end(), [cameraPosition](const RenderObjectInstance& a, const RenderObjectInstance& b)
             {
                 Vec3 translationA = glm::vec3(a.localToWorldTransformation[3]);

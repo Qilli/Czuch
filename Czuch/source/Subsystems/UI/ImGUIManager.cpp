@@ -38,7 +38,6 @@ namespace Czuch
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-		ImGuizmo::BeginFrame();
 ;
 		if (m_EditorModeEnabled)
 		{
@@ -69,6 +68,11 @@ namespace Czuch
 
 	void ImGUIManager::OnEvent(Event& e)
 	{
+		if (m_RenderSettings->engineMode != EngineMode::Editor)
+		{
+			return;
+		}
+
 		if (m_BlockEvents)
 		{
 			ImGuiIO& io = ImGui::GetIO();

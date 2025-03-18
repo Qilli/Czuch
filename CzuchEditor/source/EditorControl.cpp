@@ -86,6 +86,7 @@ namespace Czuch
 	}
 	EditorControl::~EditorControl()
 	{
+		ImGuizmo::SetImGuiContext(nullptr);
 		delete m_AssetsEditorWindow;
 		delete m_RenderGraphEditorWindow;
 		delete m_CommandsControl;
@@ -95,6 +96,8 @@ namespace Czuch
 	void EditorControl::Init(void* context, RenderSettings* renderSettings)
 	{
 		ImGui::SetCurrentContext((ImGuiContext*)context);
+		ImGuizmo::Enable(true);
+		ImGuizmo::SetImGuiContext((ImGuiContext*)context);
 		SetLightGreyStyle();
 		m_CommandsControl = new EditorCommandsControl();
 		UpdateOffscreenPass(renderSettings->targetWidth, renderSettings->targetHeight);
@@ -123,6 +126,7 @@ namespace Czuch
 
 	void EditorControl::FillUI(void* sceneViewportTexture)
 	{
+		ImGuizmo::BeginFrame();
 		if (m_SceneHierarchyPanel == nullptr)
 		{
 			m_SceneHierarchyPanel = new SceneHierarchyEditorPanel(m_Root->GetScenesManager().GetActiveScene());
@@ -138,15 +142,24 @@ namespace Czuch
 			m_SceneHierarchyPanel->AddOnSelectedEntityListener(m_EntityInspectorPanel);
 		}
 
-
 		FillMainMenubar();
 		HandleTopBar();
 
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0.0f });
+
+
+		// Get the position & size of the ImGui window
+		ImVec2 windowPos = ImGui::GetWindowPos();
+		ImVec2 windowSize = ImGui::GetWindowSize();
+		
 		ImGui::Begin("Scene");
 		bool isHovered = ImGui::IsWindowHovered();
+
+		// Get the position & size of the ImGui window
+		 windowPos = ImGui::GetWindowPos();
+		 windowSize = ImGui::GetWindowSize();
 
 		m_Root->GetUIBaseManager().SetBlockEvents(isHovered);
 
@@ -168,6 +181,11 @@ namespace Czuch
 			ImGui::Image((ImTextureID)m_Root->GetRenderer().GetFrameGraphFinalResult(), ImGui::GetContentRegionAvail());
 		}
 
+		// Define the correct rendering rectangle
+		ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
+		Entity currentSelectedEntity = m_SceneHierarchyPanel->GetSelectedEntity();
+		HandelGizmoTransforms(currentSelectedEntity);
+
 		if (ImGui::BeginDragDropTarget())
 		{
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSETS_EDITOR_ASSET"))
@@ -183,11 +201,10 @@ namespace Czuch
 			ImGui::EndDragDropTarget();
 		}
 
-		//Handle gizmos
-		Entity currentSelectedEntity = m_SceneHierarchyPanel->GetSelectedEntity();
-		HandelGizmoTransforms(currentSelectedEntity);
-
 		ImGui::End();
+
+
+
 
 		//scene hierarchy panel
 		m_SceneHierarchyPanel->FillUI();
@@ -323,8 +340,7 @@ namespace Czuch
 
 				float matrixTranslation_[3], matrixRotation_[3], matrixScale_[3];
 				ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selectedTransformMatrix), matrixTranslation_, matrixRotation_, matrixScale_);
-
-				ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), GetCurrentGizmoMode(), operationSpace, glm::value_ptr(selectedTransformMatrix), glm::value_ptr(diffMatrix), nullptr);
+				bool manipulating=ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), GetCurrentGizmoMode(), operationSpace, glm::value_ptr(selectedTransformMatrix), glm::value_ptr(diffMatrix), nullptr);
 
 				if (ImGuizmo::IsUsing())
 				{
