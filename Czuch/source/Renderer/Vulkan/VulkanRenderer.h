@@ -81,11 +81,40 @@ namespace Czuch
 			void Release(VulkanDevice* device);
 		};
 
+		struct TilesDataContainer
+		{
+			glm::ivec4 screenSize;
+			Array<LightsTileData> tilesData;
+		};
+
 		struct SceneDataContainer
 		{
 			SceneData data;
 			BufferDesc bufferDesc;
+			BufferDesc lightsBufferDesc;
+			BufferDesc tilesBufferDesc;
+			BufferDesc lightsListBufferDesc;
 			BufferHandle buffer[MAX_FRAMES_IN_FLIGHT];
+			BufferHandle lightsBuffer[MAX_FRAMES_IN_FLIGHT];
+			BufferHandle tilesBuffer[MAX_FRAMES_IN_FLIGHT];
+			BufferHandle lightsListBuffer[MAX_FRAMES_IN_FLIGHT];
+
+			U32 tiles_in_width;
+			U32 tiles_in_height;
+			U32 tiles_count;
+			U32 lastLightsCount;
+
+			Array<U32> lightsIndexList;;
+			Array<LightData> lightsData;
+			TilesDataContainer tilesDataContainer;
+
+			void Init(VulkanDevice* device);
+			void Release(VulkanDevice* device);
+			void InitTilesBuffer(VulkanDevice* device,bool resize,U32 width,U32 height);
+			bool FillTilesWithLights(VulkanDevice* device, const Array<LightObjectInfo>& allLight,U32 frame);
+			void UpdateMaterialsLightsInfo();
+
+			SceneDataBuffers GetSceneDataBuffers(U32 frame);
 		};
 
 		struct RenderPassResizeQuery

@@ -8,7 +8,7 @@
 
 namespace Czuch
 {
-    void RenderObjectInstance::UpdateSceneDataIfRequired(GraphicsDevice* device,BufferHandle buffer,RenderContextFillParams& fillParams) const
+    void RenderObjectInstance::UpdateSceneDataIfRequired(GraphicsDevice* device,SceneDataBuffers& sceneDataBuffers,RenderContextFillParams& fillParams) const
     {
         if (IsValid())
         {
@@ -31,7 +31,15 @@ namespace Czuch
 
             if (m != nullptr)
             {
-                m->params[passIndex].shaderParamsDesc[0].descriptors[0].resource = buffer.handle;
+                m->params[passIndex].shaderParamsDesc[0].descriptors[0].resource = sceneDataBuffers.sceneDataBuffer;
+
+				if (fillParams.renderPassType == RenderPassType::ForwardLighting || fillParams.renderPassType == RenderPassType::ForwardLightingTransparent)
+				{
+					m->params[passIndex].shaderParamsDesc[1].descriptors[0].resource = sceneDataBuffers.lightsDataBuffer; //lights data buffer
+					m->params[passIndex].shaderParamsDesc[1].descriptors[1].resource = sceneDataBuffers.lightsIndexListBuffer; //lights index buffer
+					m->params[passIndex].shaderParamsDesc[1].descriptors[2].resource = sceneDataBuffers.tilesDataBuffer; //tiles data buffer
+				}
+		
             }
           
         }

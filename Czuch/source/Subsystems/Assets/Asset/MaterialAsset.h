@@ -21,6 +21,8 @@ namespace Czuch
         bool IsTransparent() const { return m_MaterialCreateSettings.desc.IsTransparent(); }
         U32 GetPassesCount() const { return m_MaterialCreateSettings.desc.PassesCount(); }
 		UBOLayout* GetUBOLayoutForName(const StringID & name) const;
+        bool HasPassType(RenderPassType type);
+        DescriptorSetLayoutDesc::Binding* GetBindingWithTag(DescriptorBindingTagType tag);
     public:
         CzuchStr GetAssetLoadInfo() const override;
         ShortAssetInfo* GetShortAssetInfo() override;

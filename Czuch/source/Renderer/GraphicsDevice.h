@@ -43,6 +43,7 @@ namespace Czuch
 		virtual MaterialHandle CreateMaterial(MaterialDefinitionDesc* materialData) = 0;
 		virtual MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) = 0;
 		virtual BufferHandle CreateUBOBuffer(UBO* ubo) = 0;
+		virtual BufferHandle CreateSSBOBuffer(U32 elementsCount, U32 elemSize,bool permaMapped=true) = 0;
 
 		virtual bool Release(PipelineHandle& pipeline) = 0;
 		virtual bool Release(ShaderHandle& shader)= 0;

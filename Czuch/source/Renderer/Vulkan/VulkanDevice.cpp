@@ -885,7 +885,7 @@ namespace Czuch
 
 		for (int a = 0; a < material->pipelines.size(); a++)
 		{
-			matDesc->passesContainer.states[a].SetParams(*matInstance->desc, matInstance->params[a]);
+			matDesc->passesContainer.passes[a].SetParams(*matInstance->desc, matInstance->params[a]);
 		}
 
 		MaterialInstanceHandle h;
@@ -897,6 +897,7 @@ namespace Czuch
 	{
 		BufferDesc bufferDesc{};
 		bufferDesc.size = ubo->GetSize();
+		bufferDesc.persistentMapped = false;
 		bufferDesc.usage = Usage::MEMORY_USAGE_GPU_ONLY;
 		bufferDesc.stride = ubo->GetSize();
 		bufferDesc.elementsCount = 1;
@@ -904,6 +905,20 @@ namespace Czuch
 		bufferDesc.initData =ubo->GetData();
 
 		bufferDesc.ubo = ubo;
+		return CreateBuffer(&bufferDesc);
+	}
+
+	BufferHandle VulkanDevice::CreateSSBOBuffer(U32 elementsCount, U32 elemSize, bool permaMapped)
+	{
+		BufferDesc bufferDesc{};
+		bufferDesc.size = elementsCount*elemSize;
+		bufferDesc.usage = permaMapped?Usage::MEMORY_USAGE_CPU_TO_GPU:Usage::MEMORY_USAGE_GPU_ONLY;
+		bufferDesc.stride = elemSize;
+		bufferDesc.elementsCount = elementsCount;
+		bufferDesc.bind_flags = BindFlag::STORAGE_BUFFER;
+		bufferDesc.persistentMapped = permaMapped;
+		bufferDesc.initData = nullptr;
+
 		return CreateBuffer(&bufferDesc);
 	}
 
@@ -944,19 +959,25 @@ namespace Czuch
 		{
 			usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 		}
+		else if (HasFlag(buffer->desc.bind_flags, BindFlag::STORAGE_BUFFER))
+		{
+			usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+		}
+		
+
 
 		auto bufferVulkan = Internal_to_Buffer(buffer);
 		bufferVulkan->device = m_Device;
 		bufferVulkan->flags = usage;
 		bufferVulkan->size = desc->size > 0 ? desc->size : 1;
 		bufferVulkan->allocator = m_VmaAllocator;
-		bufferVulkan->mapped = desc->createMapped;
+		bufferVulkan->persistentMapping = desc->persistentMapped;
 
 		BufferInternalSettings settings{};
 		settings.inSize = bufferVulkan->size;
 		settings.inUsage = desc->usage;
 		settings.inStagingBuffer = false;
-		settings.inCreateMapped = desc->createMapped;
+		settings.inCreateMapped = desc->persistentMapped;
 		settings.inFlags = usage;
 
 		if (!CreateBuffer_Internal(settings)) {
@@ -997,7 +1018,7 @@ namespace Czuch
 			}
 			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
 		}
-		else if (HasFlag(desc->bind_flags, BindFlag::UNIFORM_BUFFER) && desc->createMapped==false && desc->initData!=nullptr)
+		else if (desc->persistentMapped==false && desc->initData!=nullptr)
 		{
 			BufferInternalSettings settingsStageBuffer{};
 			settingsStageBuffer.inSize = bufferVulkan->size;
@@ -1026,6 +1047,10 @@ namespace Czuch
 			}
 			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
 		}
+		else if (desc->persistentMapped == true && desc->initData != nullptr)
+		{
+			memcpy(bufferVulkan->GetMappedData(), desc->initData, desc->size);
+		}
 
 		BufferHandle h;
 		h.handle = m_ResContainer.buffers.Add(buffer);
@@ -1049,6 +1074,7 @@ namespace Czuch
 		if (settings.inCreateMapped)
 		{
 			memory_info.flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
+			memory_info.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 		}
 		memory_info.usage = ConvertMemoryUsage(settings.inUsage);
 
@@ -1735,7 +1761,7 @@ namespace Czuch
 		int i = 0;
 		for (const auto& family : properties)
 		{
-			if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT && family.queueFlags & VK_QUEUE_COMPUTE_BIT)
 			{
 				families.graphicsFamily = i;
 			}
@@ -2910,6 +2936,13 @@ namespace Czuch
 		}
 
 		auto bufferVulkan = Internal_to_Buffer(bufferPtr);
+
+		//check if we need stagind buffer or if buffer is persitent mapped
+		if (bufferVulkan->persistentMapping)
+		{
+			memcpy(bufferVulkan->GetMappedData(),dataIn, size);
+			return true;
+		}
 
 		BufferInternalSettings settingsStageBuffer{};
 		settingsStageBuffer.inSize = bufferVulkan->size;

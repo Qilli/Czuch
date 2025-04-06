@@ -4,15 +4,27 @@
 
 namespace Czuch
 {
+	DescriptorSetLayoutDesc::Binding* DescriptorSetLayoutDesc::GetBindingWithTag(DescriptorBindingTagType tag)
+	{
+		for (auto& binding : bindings)
+		{
+			if (binding.tag == tag)
+			{
+				return &binding;
+			}
+		}
+		return nullptr;
+	}
+
 	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::Reset()
 	{
 		bindingsCount = 0;
 		setIndex = 0;
 		return *this;
 	}
-	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(CzuchStr name, DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool internalParam)
+	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(CzuchStr name, DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool internalParam, DescriptorBindingTagType tagType)
 	{
-		bindings[bindingsCount++] = { StringID::MakeStringID(name),type,size,(U16)bindingIndex, (U16)count,internalParam };
+		bindings[bindingsCount++] = { StringID::MakeStringID(name),type,tagType,size,(U16)bindingIndex, (U16)count,internalParam };
 		return *this;
 	}
 
@@ -433,6 +445,19 @@ namespace Czuch
 			}
 		}
 		return -1;
+	}
+
+	DescriptorSetLayoutDesc::Binding* Material::GetBindingWithTag(DescriptorBindingTagType tag)
+	{
+		for (int a = 0; a < desc->passesContainer.passes.size(); ++a)
+		{
+			auto* binding = desc->passesContainer.passes[a].GetBindingWithTag(tag);
+			if (binding != nullptr)
+			{
+				return binding;
+			}
+		}
+		return nullptr;
 	}
 
 

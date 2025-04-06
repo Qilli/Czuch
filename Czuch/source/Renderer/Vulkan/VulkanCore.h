@@ -101,6 +101,11 @@ namespace Czuch
 			flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
 		}
 
+		if ((stage & (U32)ShaderStage::CS) == (U32)ShaderStage::CS)
+		{
+			flags |= VK_SHADER_STAGE_COMPUTE_BIT;
+		}
+
 		if ((stage & (U32)ShaderStage::ALL) == (U32)ShaderStage::ALL)
 		{
 			flags |= VK_SHADER_STAGE_ALL;
@@ -1017,7 +1022,7 @@ namespace Czuch
 		VkBufferUsageFlags flags;
 		U32 offset = 0;
 		bool ready = true;
-		bool mapped = false;
+		bool persistentMapping = false;
 		VmaAllocation allocation;
 
 		void* GetMappedData();

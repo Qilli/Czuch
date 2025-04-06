@@ -32,6 +32,8 @@ namespace Czuch
 		void ClearScene();
 		const CzuchStr& GetSceneName() const { return m_SceneName; }
 		entt::registry& GetRegistry() override { return m_Registry; }
+		RenderObjectsContainer& GetRenderObjects() { return m_RenderObjects; }
+		const Array<LightObjectInfo>& GetAllLightObjects() const { return m_RenderObjects.allLights; }
 	public:
 		std::vector<UIBaseElement*>& GetSceneUIElements() { return m_UIElements; }
 		void ForEachEntity(std::function<void(Entity)> func);

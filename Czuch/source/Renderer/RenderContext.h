@@ -28,6 +28,7 @@ namespace Czuch
 
 	struct LightObjectInfo
 	{
+		LightData lightData;
 		TransformComponent* transform;
 		LightComponent* light;
 	};
@@ -53,7 +54,7 @@ namespace Czuch
 			return HANDLE_IS_VALID(mesh);
 		}
 
-		void UpdateSceneDataIfRequired(GraphicsDevice* device,BufferHandle buffer,RenderContextFillParams& fillParams) const;
+		void UpdateSceneDataIfRequired(GraphicsDevice* device, SceneDataBuffers& sceneDataBuffers ,RenderContextFillParams& fillParams) const;
 
 		RenderObjectInstance(RenderObjectInstance&& other) noexcept = default;
 		RenderObjectInstance& operator=(RenderObjectInstance&& other) noexcept = default;

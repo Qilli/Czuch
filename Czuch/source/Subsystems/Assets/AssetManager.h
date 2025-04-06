@@ -28,6 +28,7 @@ namespace Czuch
 		void IncrementAssetRef(AssetHandle handle);
 		virtual int GetAssetType() const = 0;
 		bool AssetExistAtPath(const CzuchStr& path);
+		const Array<Asset*>& GetAllAssetsWithFilter(std::function<bool(Asset*)> predicate);
 	public:
 		virtual void Init() = 0;
 	protected:
@@ -41,6 +42,9 @@ namespace Czuch
 		Asset* m_DefaultAsset;
 	private:
 		std::unordered_map<Guid, Asset*> m_Assets;
+		Array<Asset*> m_filterArray;
+
 	};
+
 }
 

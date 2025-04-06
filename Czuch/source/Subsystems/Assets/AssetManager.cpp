@@ -168,6 +168,19 @@ namespace Czuch
 		return std::filesystem::exists(AssetsManager::GetStartPath()+path);
 	}
 
+	const Array<Asset*>& AssetManager::GetAllAssetsWithFilter(std::function<bool(Asset*)> predicate)
+	{
+		m_filterArray.clear();
+		for(auto &asset : m_Assets)
+		{
+			if (predicate(asset.second))
+			{
+				m_filterArray.push_back(asset.second);
+			}
+		}
+		return m_filterArray;
+	}
+
 	void AssetManager::RegisterAsset(StringID& strId, Asset* createdRes)
 	{
 		m_Assets.insert({ strId.GetGuid(), createdRes });

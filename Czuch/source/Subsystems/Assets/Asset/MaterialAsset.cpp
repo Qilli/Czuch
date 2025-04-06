@@ -82,6 +82,17 @@ namespace Czuch
 		return mat->desc->GetUBOLayoutForName(name);
 	}
 
+	bool MaterialAsset::HasPassType(RenderPassType type)
+	{
+		return m_MaterialCreateSettings.desc.passesContainer.HasPassWithType(type);
+	}
+
+	DescriptorSetLayoutDesc::Binding* MaterialAsset::GetBindingWithTag(DescriptorBindingTagType tag)
+	{
+		auto mat = m_Device->AccessMaterial(m_MaterialResource);
+		return mat->desc->passesContainer.GetBindingWithTag(tag);
+	}
+
 	CzuchStr MaterialAsset::GetAssetLoadInfo() const
 	{
 		return "MaterialAsset: " +AssetName() + "Ref count: "+m_RefCounter.GetCountString()+" State: "+ (m_State==AssetInnerState::LOADED? " Loaded" : "Unloaded");

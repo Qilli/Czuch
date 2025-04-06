@@ -81,12 +81,19 @@ namespace Czuch
 		//fill lights list
 		m_RenderObjects.allLights.clear();
 
+
+		//[TODO] Get all lights from the scene visible in the camera(collision check)
 		auto lightView = m_Registry.view<LightComponent,TransformComponent, ActiveComponent>(entt::exclude<DestroyedComponent>);
 		for (auto entity : lightView)
 		{
 			auto& light = lightView.get<LightComponent>(entity);
 			auto& transform = lightView.get<TransformComponent>(entity);
-			m_RenderObjects.allLights.push_back({ &transform,&light});
+			auto position = std::move(transform.GetWorldPosition());
+			auto direction = transform.GetWorldForward();
+			m_RenderObjects.allLights.push_back({ {.positionWithType=Vec4(position.x,position.y,position.z,light.GetLightType()),
+				.color=light.GetColor(),
+				.directionWithRange=Vec4(direction.x,direction.y,direction.z,light.GetLightRange()),
+				.spotInnerOuterAngle=Vec4(0,0,0,0)}, &transform,&light});
 		}
 	}
 

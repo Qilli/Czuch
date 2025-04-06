@@ -5,6 +5,7 @@
 #include "Asset/TextureAsset.h"
 #include "Asset/MaterialInstanceAsset.h"
 #include "Asset/MaterialAsset.h"
+#include "./Subsystems/Assets/AssetManagersTypes/MaterialAssetManager.h"
 
 
 namespace Czuch
@@ -185,6 +186,50 @@ namespace Czuch
 		instanceCreateSettings.materialInstanceName = matName;
 		instanceCreateSettings.desc.materialAsset = materialSource;
 		return CreateMaterialInstance(instanceCreateSettings);
+	}
+
+	//here we update all materials which are from lighting pass, so we have correct amount of lights for storage buffers
+	void AssetsManager::UpdateLightingMaterialsLightInfo(U32 lightsCount, U32 lightsIndexRangesCount, U32 lightTilesCount)
+	{
+		//find all material with lighting pass
+		MaterialAssetManager* mgr = GetManagerOfType<MaterialAssetManager,MaterialAsset>();
+
+		if (mgr == nullptr)
+		{
+			LOG_BE_ERROR("{0} Failed to find material asset manager", "[AssetsManager]");
+			return;
+		}
+
+		auto &filtered=mgr->GetAllAssetsWithFilter([](Asset* asset)-> bool {
+			MaterialAsset* mat = static_cast<MaterialAsset*>(asset);
+			if(mat->HasPassType(RenderPassType::ForwardLighting)|| mat->HasPassType(RenderPassType::ForwardLightingTransparent))
+			{
+				return true;
+			}
+			});
+
+		for (auto asset : filtered)
+		{
+			MaterialAsset* mat = static_cast<MaterialAsset*>(asset);
+			auto* bindingLightsContainer = mat->GetBindingWithTag(DescriptorBindingTagType::LIGHTS_CONTAINER);
+			auto* bindingLightsIndexRanges = mat->GetBindingWithTag(DescriptorBindingTagType::LIGHTS_INDEXES);
+			auto* bindingLightsTiles = mat->GetBindingWithTag(DescriptorBindingTagType::LIGHTS_TILES);
+
+			if (bindingLightsContainer)
+			{
+				bindingLightsContainer->size = lightsCount * sizeof(LightData);
+			}
+
+			if (bindingLightsIndexRanges)
+			{
+				bindingLightsIndexRanges->size = lightsIndexRangesCount * sizeof(U32);
+			}
+
+			if (bindingLightsTiles)
+			{
+				bindingLightsTiles->size = lightTilesCount * sizeof(LightsTileData);
+			}
+		}
 	}
 
 }

@@ -29,7 +29,7 @@ namespace Czuch
 			desc.size = sizeof(CameraPlanesData);
 			desc.usage = Usage::MEMORY_USAGE_GPU_ONLY;
 			desc.bind_flags = BindFlag::UNIFORM_BUFFER;
-			desc.createMapped = false;
+			desc.persistentMapped = false;
 			desc.initData = &m_PlanesData;
 			m_PlanesBuffer=m_Device->CreateBuffer(&desc);
 			m_PlanesBufferID = StringID::MakeStringID("CameraPlanesData");

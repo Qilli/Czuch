@@ -49,6 +49,8 @@ namespace Czuch
 		EventsManager::Get().RemoveListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
 		m_Device->AwaitDevice();
 
+		m_SceneData.Release(m_Device);
+
 		ReleaseFrameGraphs();
 
 		UnRegisterRenderPassControl(m_FinalRenderPass);
@@ -92,7 +94,6 @@ namespace Czuch
 		}
 
 		CreateSyncObjects();
-		InitSceneData();
 		InitImmediateSubmitData();
 
 		EventsManager::Get().AddListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
@@ -115,7 +116,7 @@ namespace Czuch
 
 		if (result != VK_SUCCESS)
 		{
-			LOG_BE_ERROR("[Vulkan]Failed to wait for fence: {0}",VkResultToString(result));
+			LOG_BE_ERROR("[Vulkan]Failed to wait for fence: {0}", VkResultToString(result));
 			return;
 		}
 
@@ -180,7 +181,9 @@ namespace Czuch
 			return;
 		}
 		m_ActiveScene = scene;
+		InitSceneData();
 		m_CurrentFrameGraph.SetClearColor(m_ActiveScene->GetClearColor());
+
 	}
 
 	void VulkanRenderer::ImmediateSubmitWithCommandBuffer(std::function<void(CommandBuffer* cmd)>&& processor)
@@ -280,17 +283,28 @@ namespace Czuch
 
 	void VulkanRenderer::InitSceneData()
 	{
-		m_SceneData.bufferDesc.createMapped = true;
+
+		m_SceneData.bufferDesc.persistentMapped = true;
 		m_SceneData.bufferDesc.elementsCount = 1;
 		m_SceneData.bufferDesc.bind_flags = BindFlag::UNIFORM_BUFFER;
 		m_SceneData.bufferDesc.size = sizeof(SceneData);
 		m_SceneData.bufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
 
+		m_SceneData.lightsBufferDesc.persistentMapped = true;
+		m_SceneData.lightsBufferDesc.elementsCount = MAX_LIGHTS_IN_SCENE;
+		m_SceneData.lightsBufferDesc.bind_flags = BindFlag::STORAGE_BUFFER;
+		m_SceneData.lightsBufferDesc.size = sizeof(LightData) * MAX_LIGHTS_IN_SCENE;
+		m_SceneData.lightsBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
+
+		m_SceneData.InitTilesBuffer(m_Device, false, 0, 0);
+
 		m_SceneData.data.ambientColor = Vec4(1, 1, 1, 1);
 
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
+			m_Device->Release(m_SceneData.buffer[a]);
 			INVALIDATE_HANDLE(m_SceneData.buffer[a]);
+			m_SceneData.lightsBuffer[a] = m_Device->CreateBuffer(&m_SceneData.lightsBufferDesc);
 		}
 
 	}
@@ -309,6 +323,12 @@ namespace Czuch
 		if (m_ActiveScene != nullptr)
 		{
 			m_SceneData.data.ambientColor = m_ActiveScene->GetAmbientColor();
+
+			auto& lights = m_ActiveScene->GetAllLightObjects();
+			if (m_SceneData.FillTilesWithLights(m_Device, lights, m_CurrentFrame))
+			{
+				m_SceneData.UpdateMaterialsLightsInfo();
+			}
 		}
 
 		SceneData* data = (SceneData*)bufferVulkan->GetMappedData();
@@ -325,6 +345,7 @@ namespace Czuch
 
 	void VulkanRenderer::OnWindowResize(uint32_t width, uint32_t height)
 	{
+		m_SceneData.InitTilesBuffer(m_Device, true, width, height);
 		m_CurrentFrameGraph.ResizeRenderPasses(width, height, true);
 		m_FinalRenderPass->Resize(width, height);
 	}
@@ -372,9 +393,10 @@ namespace Czuch
 
 
 		auto& renderList = mainRenderContext->GetRenderObjectsList();
+		auto sceneDataBuffers = m_SceneData.GetSceneDataBuffers(m_CurrentFrame);
 		for (auto& renderElement : renderList)
 		{
-			renderElement.UpdateSceneDataIfRequired(m_Device, m_SceneData.buffer[m_CurrentFrame], *fillParams);
+			renderElement.UpdateSceneDataIfRequired(m_Device, sceneDataBuffers, *fillParams);
 		}
 
 	}
@@ -706,6 +728,147 @@ namespace Czuch
 		device->ReleaseFence(fence);
 		device->Release(commandBuffer);
 		device->ReleaseCommandPool(pool);
+	}
+
+	void VulkanRenderer::SceneDataContainer::Init(VulkanDevice* device)
+	{
+		lightsIndexList.reserve(MAX_LIGHTS_IN_SCENE * MAX_LIGHTS_IN_SCENE);
+		tilesDataContainer.tilesData.reserve(MAX_LIGHTS_IN_SCENE * MAX_LIGHTS_IN_SCENE);
+		lightsData.reserve(MAX_LIGHTS_IN_SCENE);
+	}
+
+	void VulkanRenderer::SceneDataContainer::Release(VulkanDevice* device)
+	{
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			device->Release(tilesBuffer[i]);
+			device->Release(lightsListBuffer[i]);
+			device->Release(lightsBuffer[i]);
+		}
+	}
+
+	void VulkanRenderer::SceneDataContainer::InitTilesBuffer(VulkanDevice* device, bool resize, U32 width, U32 height)
+	{
+		if (width == 0 || height == 0)
+		{
+			width = device->GetSwapchainWidth();
+			height = device->GetSwapchainHeight();
+		}
+
+		tiles_in_width = ((width + TILE_SIZE - 1) / TILE_SIZE);
+		tiles_in_height = ((height + TILE_SIZE - 1) / TILE_SIZE);
+
+
+		tiles_count = tiles_in_width * tiles_in_height;
+
+		tilesBufferDesc.persistentMapped = true;
+		tilesBufferDesc.elementsCount = tiles_count;
+		tilesBufferDesc.bind_flags = BindFlag::STORAGE_BUFFER;
+		tilesBufferDesc.size = sizeof(LightsTileData) * tiles_count + 4 * sizeof(U32);
+		tilesBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
+
+		lightsListBufferDesc.persistentMapped = true;
+		lightsListBufferDesc.elementsCount = MAX_LIGHTS_IN_SCENE * tiles_count;
+		lightsListBufferDesc.bind_flags = BindFlag::STORAGE_BUFFER;
+		lightsListBufferDesc.size = sizeof(U32) * MAX_LIGHTS_IN_SCENE * tiles_count;
+		lightsListBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
+
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			device->Release(tilesBuffer[i]);
+			device->Release(lightsListBuffer[i]);
+		}
+
+
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			tilesBuffer[i] = device->CreateBuffer(&tilesBufferDesc);
+			lightsListBuffer[i] = device->CreateBuffer(&lightsListBufferDesc);
+		}
+
+		tilesDataContainer.screenSize = glm::ivec4(width, height, tiles_in_width, tiles_in_height);
+
+		//update materials for elements size?
+		UpdateMaterialsLightsInfo();
+	}
+
+	bool VulkanRenderer::SceneDataContainer::FillTilesWithLights(VulkanDevice* device, const Array<LightObjectInfo>& allLights, U32 frame)
+	{
+		bool lightsChanged = false;
+		lightsIndexList.clear();
+		tilesDataContainer.tilesData.clear();
+		lightsData.clear();
+
+		//fill lights data
+		auto bufferVulkanLights = Internal_to_Buffer(device->AccessBuffer(lightsBuffer[frame]));
+		LightData* lightsData = (LightData*)bufferVulkanLights->GetMappedData();
+		for (int a = 0; a < allLights.size(); ++a)
+		{
+			lightsData[a] = allLights[a].lightData;
+		}
+
+		//we want to check if number of lights changed so we know if we need to update material info about lights
+		if (lastLightsCount != allLights.size())
+		{
+			lightsChanged = true;
+			lastLightsCount = allLights.size();
+		}
+
+		for (int i = 0; i < tiles_count; ++i)
+		{
+			//here compute visible lights for each tile
+			//and store them in tilesData
+
+			//for now we will just store all lights in each tile
+			int startIndex = lightsIndexList.size();
+			U32 count = allLights.size() <= MAX_LIGHTS_IN_TILE ? allLights.size() : MAX_LIGHTS_IN_TILE;
+			for (int a = 0; a < count; ++a)
+			{
+				lightsIndexList.push_back(a);
+			}
+			int endIndex = lightsIndexList.size() - 1;
+
+			LightsTileData tileData;
+			tileData.lightStart = startIndex;
+			tileData.lightCount = endIndex - startIndex + 1;
+			tilesDataContainer.tilesData.emplace_back(tileData);
+		}
+
+		//fill tiled data buffer with data
+		auto bufferVulkan = Internal_to_Buffer(device->AccessBuffer(tilesBuffer[frame]));
+		void* data = bufferVulkan->GetMappedData();
+		uint8_t* byteData = static_cast<uint8_t*>(data);
+
+		// Copy screenSize at the start
+		memcpy(byteData, &tilesDataContainer.screenSize, sizeof(glm::ivec4));
+
+		// Move the pointer forward by sizeof(glm::ivec4)
+		byteData += sizeof(glm::ivec4);
+
+		// Copy tile data after screenSize
+		memcpy(byteData, tilesDataContainer.tilesData.data(), sizeof(LightsTileData) * tilesDataContainer.tilesData.size());
+
+		//fill lights list buffer
+		Buffer_Vulkan* bufferVulkanLightsList = Internal_to_Buffer(device->AccessBuffer(lightsListBuffer[frame]));
+		U32* lightsListData = (U32*)bufferVulkanLightsList->GetMappedData();
+		//do memcopy
+		memcpy(lightsListData, lightsIndexList.data(), sizeof(U32) * lightsIndexList.size());
+		return lightsChanged;
+	}
+
+	void VulkanRenderer::SceneDataContainer::UpdateMaterialsLightsInfo()
+	{
+		AssetsManager::Get().UpdateLightingMaterialsLightInfo(MAX_LIGHTS_IN_SCENE, MAX_LIGHTS_IN_TILE * tiles_count, tiles_count);
+	}
+
+	SceneDataBuffers VulkanRenderer::SceneDataContainer::GetSceneDataBuffers(U32 frame)
+	{
+		SceneDataBuffers buffers;
+		buffers.sceneDataBuffer = buffer[frame].handle;
+		buffers.lightsDataBuffer = lightsBuffer[frame].handle;
+		buffers.tilesDataBuffer = tilesBuffer[frame].handle;
+		buffers.lightsIndexListBuffer = lightsListBuffer[frame].handle;
+		return buffers;
 	}
 
 }

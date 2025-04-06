@@ -88,7 +88,7 @@ namespace Czuch
 			Material* material = m_Device->AccessMaterial(materialInstance->handle);
 			auto& paramsDesc = materialInstance->params[passIndex].shaderParamsDesc;
 			auto pipeline = material->pipelines[passIndex];
-			auto& pipelineDesc = material->GetDesc().passesContainer.states[passIndex];
+			auto& pipelineDesc = material->GetDesc().passesContainer.passes[passIndex];
 			BindPipeline(pipeline);
 
 			auto pipelinePtr = m_Device->AccessPipeline(pipeline);
@@ -99,11 +99,12 @@ namespace Czuch
 				writer.Clear();
 				auto descriptorLayout = pipelinePtr->layouts[a];
 				auto layout = m_Device->AccessDescriptorSetLayout(descriptorLayout);
+				auto &layoutDesc = pipelineDesc.layouts[a];
 				auto descriptor = allocator->Allocate(paramsDesc[a], layout);
 
-				for (int b = 0; b < layout->desc.bindingsCount; b++)
+				for (int b = 0; b < layoutDesc.bindingsCount; b++)
 				{
-					auto binding = layout->desc.bindings[b];
+					auto binding = layoutDesc.bindings[b];
 					if (binding.type == DescriptorType::UNIFORM_BUFFER)
 					{
 						writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
@@ -111,6 +112,10 @@ namespace Czuch
 					else if (binding.type == DescriptorType::SAMPLER)
 					{
 						writer.WriteTexture(binding.index, m_Device->AccessTexture({ paramsDesc[a].descriptors[b].resource,AssetHandle()}), DescriptorType::SAMPLER);
+					}
+					else if (binding.type == DescriptorType::STORAGE_BUFFER)
+					{
+						writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
 					}
 					writer.UpdateSet(m_Device, descriptor);
 				}
@@ -159,7 +164,7 @@ namespace Czuch
 
 		auto& paramsDesc = materialInstance->params[passIndex].shaderParamsDesc;
 		auto pipeline = material->pipelines[passIndex];
-		auto& pipelineDesc = material->GetDesc().passesContainer.states[passIndex];
+		auto& pipelineDesc = material->GetDesc().passesContainer.passes[passIndex];
 
 		BindPipeline(pipeline);
 
@@ -183,6 +188,10 @@ namespace Czuch
 				else if (binding.type == DescriptorType::SAMPLER)
 				{
 					writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(paramsDesc[a].descriptors[b].resource,AssetHandle())), DescriptorType::SAMPLER);
+				}
+				else if (binding.type == DescriptorType::STORAGE_BUFFER)
+				{
+					writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
 				}
 				writer.UpdateSet(m_Device, descriptor);
 			}

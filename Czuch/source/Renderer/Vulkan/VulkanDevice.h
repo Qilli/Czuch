@@ -50,6 +50,7 @@ namespace Czuch
 		MaterialHandle CreateMaterial(MaterialDefinitionDesc* materialData) override;
 		MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) override;
 		BufferHandle CreateUBOBuffer(UBO* ubo) override;
+		BufferHandle CreateSSBOBuffer(U32 elementsCount, U32 elemSize, bool permaMapped = true) override;
 
 
 		DescriptorAllocator* CreateDescriptorAllocator();

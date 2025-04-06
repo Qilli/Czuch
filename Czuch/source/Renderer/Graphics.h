@@ -13,6 +13,10 @@ namespace Czuch
 	static const U8 k_max_image_outputs = 8;
 	static const U8 k_max_render_passes = 4;
 
+	static constexpr U32 MAX_LIGHTS_IN_SCENE = 1024;
+	static constexpr U32 MAX_LIGHTS_IN_TILE = 32;
+	static constexpr U32 TILE_SIZE = 32;
+
 	typedef I32 Handle;
 #define INVALID_HANDLE(Type) Type() 
 #define HANDLE_IS_VALID(h)(h.handle!=-1)
@@ -25,6 +29,28 @@ namespace Czuch
 		Mat4x4 proj;
 		Mat4x4 viewproj;
 		Vec4 ambientColor;
+	};
+
+	struct SceneDataBuffers
+	{
+		Handle sceneDataBuffer;
+		Handle lightsDataBuffer;
+		Handle lightsIndexListBuffer;
+		Handle tilesDataBuffer;
+	};
+
+	struct LightData
+	{
+		Vec4 positionWithType;
+		Vec4 color;
+		Vec4 directionWithRange;
+		Vec4 spotInnerOuterAngle;
+	};
+
+	struct LightsTileData
+	{
+		U32 lightStart;
+		U32 lightCount;
 	};
 
 	struct ColorUBO
@@ -304,6 +330,7 @@ namespace Czuch
 		UNORDERED_ACCESS = 1 << 6,
 		SHADING_RATE = 1 << 7,
 		UNIFORM_BUFFER = 1 << 8,
+		STORAGE_BUFFER = 1 << 9,
 	};
 
 	enum CZUCH_API DescriptorType
@@ -336,7 +363,7 @@ namespace Czuch
 		VERTEX_BUFFER = 1 << 9,				// vertex buffer, read only
 		INDEX_BUFFER = 1 << 10,				// index buffer, read only
 		CONSTANT_BUFFER = 1 << 11,			// constant buffer, read only
-		INDIRECT_ARGUMENT = 1 << 12,		// argument buffer to DrawIndirect() or DispatchIndirect()
+		INDIRECT_ARGUMENT = 1 << 12,		// argument buffer to DrawIndirect or DispatchIndirect
 		RAYTRACING_ACCELERATION_STRUCTURE = 1 << 13, // acceleration structure storage or scratch
 		PREDICATION = 1 << 14,				// storage for predication comparison value
 	};
@@ -731,10 +758,6 @@ namespace Czuch
 		FrameBufferDesc& SetName(const char* newName);
 	};
 
-	struct SSBO
-	{
-
-	};
 
 	enum UBOElementType
 	{
@@ -822,8 +845,16 @@ namespace Czuch
 		BindFlag bind_flags = BindFlag::NONE;
 		U32 stride = 0;
 		Format format = Format::UNKNOWN;
-		bool createMapped = false;
+		bool persistentMapped = false;
 		void* initData = nullptr;
+	};
+
+	enum class DescriptorBindingTagType
+	{
+		NONE,
+		LIGHTS_CONTAINER,
+		LIGHTS_TILES,
+		LIGHTS_INDEXES
 	};
 
 	struct DescriptorSetLayoutDesc
@@ -832,6 +863,7 @@ namespace Czuch
 		{
 			StringID bindingName;
 			DescriptorType type = DescriptorType::UNIFORM_BUFFER;
+			DescriptorBindingTagType tag;
 			U32 size = 0;
 			U16 index = 0;
 			U16 count = 0;
@@ -850,8 +882,10 @@ namespace Czuch
 			Reset();
 		}
 
+		Binding* GetBindingWithTag(DescriptorBindingTagType tag);
+
 		DescriptorSetLayoutDesc& Reset();
-		DescriptorSetLayoutDesc& AddBinding(CzuchStr name, DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool internalParam);
+		DescriptorSetLayoutDesc& AddBinding(CzuchStr name, DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool internalParam,DescriptorBindingTagType tagType = DescriptorBindingTagType::NONE);
 		DescriptorSetLayoutDesc& SetUBOLayout(UBOLayout& layout);
 		UBOLayout* GetUBOLayoutForBinding(const StringID& name);
 	};
@@ -1031,6 +1065,19 @@ namespace Czuch
 		BindPoint bindPoint;
 		RenderPassType passType = RenderPassType::MainForward;
 
+		DescriptorSetLayoutDesc::Binding* GetBindingWithTag(DescriptorBindingTagType tag)
+		{
+			for (int a = 0; a < layoutsCount; ++a)
+			{
+				auto binding = layouts[a].GetBindingWithTag(tag);
+				if (binding != nullptr)
+				{
+					return binding;
+				}
+			}
+			return nullptr;
+		}
+
 		bool IsTransparent() const
 		{
 			return bs.blendSettings.blendEnable;
@@ -1113,15 +1160,15 @@ namespace Czuch
 
 	struct CZUCH_API MaterialDefinitionPassesContainer
 	{
-		Array<MaterialPassDesc> states;
-
+		Array<MaterialPassDesc> passes;
+		
 		MaterialDefinitionPassesContainer() = default;
 
 		MaterialDefinitionPassesContainer& operator=(MaterialDefinitionPassesContainer&& other) noexcept
 		{
 			if (&other != this)
 			{
-				this->states = std::move(other.states);
+				this->passes = std::move(other.passes);
 			}
 			return *this;
 		}
@@ -1130,9 +1177,9 @@ namespace Czuch
 		{
 			if (&other != this)
 			{
-				for (int a = 0; a < states.size(); ++a)
+				for (int a = 0; a < passes.size(); ++a)
 				{
-					this->states[a] = other.states[a];
+					this->passes[a] = other.passes[a];
 				}
 			}
 			return *this;
@@ -1140,9 +1187,9 @@ namespace Czuch
 
 		bool IsTransparent() const
 		{
-			for (int a = 0; a < states.size(); ++a)
+			for (int a = 0; a < passes.size(); ++a)
 			{
-				if (states[a].IsTransparent())
+				if (passes[a].IsTransparent())
 				{
 					return true;
 				}
@@ -1152,12 +1199,12 @@ namespace Czuch
 
 		void EmplacePass(MaterialPassDesc& state)
 		{
-			states.emplace_back(std::move(state));
+			passes.emplace_back(std::move(state));
 		}
 
 		void AddLayout(RenderPassType type, DescriptorSetLayoutDesc layout)
 		{
-			for (auto& state : states)
+			for (auto& state : passes)
 			{
 				if (state.passType == type)
 				{
@@ -1169,11 +1216,38 @@ namespace Czuch
 
 		void AddLayout(int passIndex, DescriptorSetLayoutDesc layout)
 		{
-			if (passIndex < states.size())
+			if (passIndex < passes.size())
 			{
-				states[passIndex].AddLayout(layout);
+				passes[passIndex].AddLayout(layout);
 			}
 		}
+
+		bool HasPassWithType(RenderPassType type)
+		{
+			for (auto& pass : passes)
+			{
+				if (pass.passType == type)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+
+		DescriptorSetLayoutDesc::Binding* GetBindingWithTag(DescriptorBindingTagType tag) {
+			for (int a = 0; a < passes.size(); ++a)
+			{
+				auto binding = passes[a].GetBindingWithTag(tag);
+				if (binding != nullptr)
+				{
+					return binding;
+				}
+			}
+			return nullptr;
+		}
+		
+
 	};
 
 	struct CZUCH_API MaterialDefinitionDesc
@@ -1185,7 +1259,7 @@ namespace Czuch
 		MaterialDefinitionDesc(U32 passesCount)
 		{
 			materialFlags = 0;
-			passesContainer.states.reserve(passesCount);
+			passesContainer.passes.reserve(passesCount);
 		}
 
 		MaterialDefinitionDesc()
@@ -1241,21 +1315,21 @@ namespace Czuch
 
 		U32 PassesCount() const
 		{
-			return passesContainer.states.size();
+			return passesContainer.passes.size();
 		}
 
 		const MaterialPassDesc& GetMaterialPassDescAt(U32 index) const
 		{
-			return passesContainer.states[index];
+			return passesContainer.passes[index];
 		}
 
 		UBOLayout* GetUBOLayoutForName(const StringID& name)
 		{
 			for (U32 i = 0; i < PassesCount(); i++)
 			{
-				for (U32 j = 0; j < passesContainer.states[i].layoutsCount; j++)
+				for (U32 j = 0; j < passesContainer.passes[i].layoutsCount; j++)
 				{
-					auto layout=passesContainer.states[i].layouts[j].GetUBOLayoutForBinding(name);
+					auto layout=passesContainer.passes[i].layouts[j].GetUBOLayoutForBinding(name);
 					if (layout)
 					{
 						return layout;
@@ -1493,6 +1567,7 @@ namespace Czuch
 		Array<PipelineHandle> pipelines;
 
 		I32 GetRenderPassIndexForType(RenderPassType type) const;
+		DescriptorSetLayoutDesc::Binding* GetBindingWithTag(DescriptorBindingTagType tag);
 	};
 
 	struct MaterialInstance : public GraphicsDeviceResource

@@ -72,6 +72,11 @@ namespace Czuch
 		TextureHandle Load2DTexture(const CzuchStr& path);
 		AssetHandle CreateMaterialInstance(MaterialInstanceCreateSettings& settings);
 		AssetHandle CreateMaterialInstance(const CzuchStr& matName, AssetHandle materialSource);
+		void UpdateLightingMaterialsLightInfo(U32 lightsCount, U32 lightsIndexRangesCount, U32 lightTilesCount);
+	private:
+		//Get manager of type T, where T is not manager type but Asset type it handles for for MaterialManager is MaterialAsset
+		template<class T,class AssetType>
+		T* GetManagerOfType();
 	private:
 		std::unordered_map<std::type_index,AssetManager*> m_AssetsMgrs;
 		static std::string m_StartPath;
@@ -293,6 +298,17 @@ namespace Czuch
 			return;
 		}
 		LOG_BE_ERROR("Failed to find asset for incrementing ref with handle id: {0}", handle.handle);
+	}
+
+	template<class T,class AssetType>
+	inline T* AssetsManager::GetManagerOfType()
+	{
+		auto it = m_AssetsMgrs.find(std::type_index(typeid(AssetType)));
+		if (it != m_AssetsMgrs.end())
+		{
+			return static_cast<T*>(it->second); 
+		}
+		return nullptr;
 	}
 }
 

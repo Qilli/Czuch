@@ -76,6 +76,7 @@ namespace Czuch
 		//shader assets
 		static AssetHandle DEFAULT_VS_SHADER_ASSET;
 		static AssetHandle DEFAULT_PS_SHADER_ASSET;
+		static AssetHandle DEBUG_DRAW_PS_SHADER_ASSET;
 	};
 
 	class BuildInAssets

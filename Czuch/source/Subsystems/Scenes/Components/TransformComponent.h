@@ -33,9 +33,14 @@ namespace Czuch
 		const Vec3 GetRight() const { return glm::normalize(m_LocalTransform[0]); }
 		const Vec3 GetUp() const { return glm::normalize(m_LocalTransform[1]); }
 
+		const Vec3 GetWorldForward() const { return glm::normalize(m_LocalToWorld[2]); }
+		const Vec3 GetWorldRight() const { return glm::normalize(m_LocalToWorld[0]); }
+		const Vec3 GetWorldUp() const { return glm::normalize(m_LocalToWorld[1]); }
+
 		const Vec3 GetInvWorldForward() const { return glm::normalize(glm::inverse(m_LocalToWorld)[2]); }
 		const Vec3 GetInvWorldRight() const { return glm::normalize(glm::inverse(m_LocalToWorld)[0]); }
 		const Vec3 GetInvWorldUp() const { return glm::normalize(glm::inverse(m_LocalToWorld)[1]); }
+
 
 		const Mat3x3 GetWorldInv3x3()
 		{

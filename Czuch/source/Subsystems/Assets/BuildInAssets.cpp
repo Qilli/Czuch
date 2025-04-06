@@ -70,6 +70,9 @@ namespace Czuch
 	AssetHandle DefaultAssets::DEFAULT_VS_SHADER_ASSET;
 	AssetHandle DefaultAssets::DEFAULT_PS_SHADER_ASSET;
 
+	AssetHandle DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET;
+
+
 	BuildInAssets::BuildInAssets(GraphicsDevice* device, AssetsManager* mgr,EngineMode mode) :m_Device(device), m_AssetsMgr(mgr)
 	{
 		m_Mode = mode;
@@ -142,6 +145,9 @@ namespace Czuch
 		//Simple material
 		auto handleVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\vertShader.vert", {});
 		auto handlePS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\fragShader.frag", {});
+		//debug draw shader
+		DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawShader.frag", {});
+
 
 		DefaultAssets::DEFAULT_VS_SHADER_ASSET = handleVS;
 		DefaultAssets::DEFAULT_PS_SHADER_ASSET = handlePS;
@@ -174,6 +180,12 @@ namespace Czuch
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
 		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
 
+		DescriptorSetLayoutDesc desc_LightBuffers{};
+		desc_LightBuffers.shaderStage = (U32)ShaderStage::PS;
+		desc_LightBuffers.AddBinding("LightBuffer", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(LightData), true, DescriptorBindingTagType::LIGHTS_CONTAINER);
+		desc_LightBuffers.AddBinding("LightIndexBuffer", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(LightsTileData), true, DescriptorBindingTagType::LIGHTS_INDEXES);
+		desc_LightBuffers.AddBinding("TileDataBuffer", DescriptorType::STORAGE_BUFFER, 2, 1, sizeof(U32), true, DescriptorBindingTagType::LIGHTS_TILES);
+
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
 		desc_tex.AddBinding("MainTexture", DescriptorType::SAMPLER, 0, 1, 0, false);
@@ -185,6 +197,7 @@ namespace Czuch
 		desc_tex.SetUBOLayout(uboLayout);
 
 		desc.AddLayout(desc_SceneData);
+		desc.AddLayout(desc_LightBuffers);
 		desc.AddLayout(desc_tex);
 
 		MaterialDefinitionDesc matDesc(1);
@@ -606,6 +619,12 @@ namespace Czuch
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
 		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
 
+		DescriptorSetLayoutDesc desc_LightBuffers{};
+		desc_LightBuffers.shaderStage = (U32)ShaderStage::PS;
+		desc_LightBuffers.AddBinding("LightBuffer", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(LightData), true, DescriptorBindingTagType::LIGHTS_CONTAINER);
+		desc_LightBuffers.AddBinding("LightIndexBuffer", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(LightsTileData), true, DescriptorBindingTagType::LIGHTS_INDEXES);
+		desc_LightBuffers.AddBinding("TileDataBuffer", DescriptorType::STORAGE_BUFFER, 2, 1, sizeof(U32), true, DescriptorBindingTagType::LIGHTS_TILES);
+
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
 		desc_tex.AddBinding("MainTexture", DescriptorType::SAMPLER, 0, 1, 0, false);
@@ -617,7 +636,9 @@ namespace Czuch
 		desc_tex.SetUBOLayout(uboLayout);
 
 		desc.AddLayout(desc_SceneData);
+		desc.AddLayout(desc_LightBuffers);
 		desc.AddLayout(desc_tex);
+
 
 		MaterialDefinitionDesc matDesc(1);
 		matDesc.EmplacePass(desc);
@@ -653,7 +674,7 @@ namespace Czuch
 	{
 		MaterialPassDesc desc;
 		desc.vs = DefaultAssets::DEFAULT_VS_SHADER_ASSET;
-		desc.ps = DefaultAssets::DEFAULT_PS_SHADER_ASSET;
+		desc.ps = DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET;
 		desc.pt = PrimitiveTopology::TRIANGLELIST;
 		desc.rs.cull_mode = CullMode::BACK;
 		desc.rs.fill_mode = PolygonMode::SOLID;
