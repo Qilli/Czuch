@@ -73,7 +73,7 @@ namespace Czuch
 	AssetHandle DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET;
 
 
-	BuildInAssets::BuildInAssets(GraphicsDevice* device, AssetsManager* mgr,EngineMode mode) :m_Device(device), m_AssetsMgr(mgr)
+	BuildInAssets::BuildInAssets(GraphicsDevice* device, AssetsManager* mgr, EngineMode mode) :m_Device(device), m_AssetsMgr(mgr)
 	{
 		m_Mode = mode;
 	}
@@ -169,12 +169,12 @@ namespace Czuch
 		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
+		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 
 		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
 		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
 		desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
-		desc.il.AddAttribute({ .location = 3,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
+		desc.il.AddAttribute({ .location = 3,.binding = 3,.offset = 0,.format = Format::R32G32B32_FLOAT });
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
@@ -193,7 +193,7 @@ namespace Czuch
 
 
 		UBOLayout uboLayout{};
-		uboLayout.AddElement(0, sizeof(ColorUBO), UBOElementType::ColorType,StringID::MakeStringID("Color"));
+		uboLayout.AddElement(0, sizeof(ColorUBO), UBOElementType::ColorType, StringID::MakeStringID("Color"));
 		desc_tex.SetUBOLayout(uboLayout);
 
 		desc.AddLayout(desc_SceneData);
@@ -215,7 +215,7 @@ namespace Czuch
 
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "DefaultMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE,false);
+		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
 
 		ColorUBO colorUbo;
 		colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
@@ -224,7 +224,7 @@ namespace Czuch
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = false;
 
-		AssetHandle instanceAssetHandle=m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName,instanceCreateSettings);
+		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
 		DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET = instanceAssetHandle;
 		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
 		DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
@@ -243,7 +243,7 @@ namespace Czuch
 			// Front face
 			{ -halfSize, halfSize, halfSize },
 			{ halfSize, halfSize, halfSize },
-			{- halfSize, -halfSize, halfSize },
+			{-halfSize, -halfSize, halfSize },
 			{ halfSize, -halfSize, halfSize },
 
 			// Back face
@@ -350,11 +350,11 @@ namespace Czuch
 	void BuildInAssets::CreateDefaultModels()
 	{
 		//Plane model simple
-		 std::vector<Vec3> positions = {
-			{-0.5f, 0.0f,-0.5f},
-			{0.5f, 0.0f,-0.5f},
-			{0.5f, 0.0f,0.5f},
-			{-0.5f, 0.0f,0.5f},
+		std::vector<Vec3> positions = {
+		   {-0.5f, 0.0f,-0.5f},
+		   {0.5f, 0.0f,-0.5f},
+		   {0.5f, 0.0f,0.5f},
+		   {-0.5f, 0.0f,0.5f},
 		};
 
 		std::vector<Vec3> normals = {
@@ -368,7 +368,7 @@ namespace Czuch
 			{1.0f,0.0f, 0.0f,1.0f},
 			{1.0f, 0.0f, 0.0f,1.0f},
 			{0.0f, 0.0f, 1.0f,1.0f},
-			{0.0f, 0.0f, 0.0f,1.0f},
+			{0.0f, 1.0f, 0.0f,1.0f},
 		};
 
 
@@ -378,6 +378,7 @@ namespace Czuch
 			{1.0f, 0.0f,0,0},
 			{0.0f, 0.0f,0,0},
 		};
+
 
 		std::vector<U32> indices = { 0, 1, 2, 3, 0, 2 };
 
@@ -409,13 +410,13 @@ namespace Czuch
 		cubeData.uvs0 = std::move(GetCubeMeshUvs());
 		cubeData.meshName = "CubeMeshSimple";
 		cubeData.materialInstanceAssetHandle = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET;
-		
+
 
 		ModelCreateSettings createSettingsCube{};
 		createSettingsCube.modelName = "CubeModel";
 		createSettingsCube.permamentAsset = true;
 		createSettingsCube.meshesData.push_back(std::move(cubeData));
-		
+
 
 		DefaultAssets::CUBE_ASSET = m_AssetsMgr->CreateAsset<ModelAsset>("Cube", createSettingsCube);
 		auto cubeModel = m_AssetsMgr->GetAsset<ModelAsset>(DefaultAssets::CUBE_ASSET);
@@ -429,7 +430,7 @@ namespace Czuch
 		if (m_Mode == EngineMode::Editor)
 		{
 			//Transform icons for editor
-			DefaultAssets::EDITOR_ICON_TRANSLATE =m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_TranslateIcon.png",{.type=TextureDesc::Type::TEXTURE_2D,.isUITexture=true});
+			DefaultAssets::EDITOR_ICON_TRANSLATE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_TranslateIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
 			DefaultAssets::EDITOR_ICON_ROTATE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_RotateIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
 			DefaultAssets::EDITOR_ICON_SCALE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_ScaleIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
 			DefaultAssets::EDITOR_ICON_FILE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_FileIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
@@ -488,24 +489,24 @@ namespace Czuch
 		DefaultAssets::DEPTH_PREPASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
 	}
 
-    void BuildInAssets::CreateFinalPassMaterial()
-    {
-        // Final pass material
-        auto finalVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\VertexFinalPassShader.vert", {});
-        auto finalPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\FragmentFinalPassShader.frag", {});
+	void BuildInAssets::CreateFinalPassMaterial()
+	{
+		// Final pass material
+		auto finalVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\VertexFinalPassShader.vert", {});
+		auto finalPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\FragmentFinalPassShader.frag", {});
 
-        MaterialPassDesc desc;
-        desc.vs = finalVS;
-        desc.ps = finalPS;
-        desc.pt = PrimitiveTopology::TRIANGLELIST;
-        desc.rs.cull_mode = CullMode::NONE;
-        desc.rs.fill_mode = PolygonMode::SOLID;
-        desc.dss.depth_enable = true;
-        desc.dss.depth_func = CompFunc::ALWAYS;
-        desc.dss.depth_write_mask = DepthWriteMask::ZERO;
-        desc.dss.stencil_enable = false;
-        desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
-        desc.passType = RenderPassType::Final;
+		MaterialPassDesc desc;
+		desc.vs = finalVS;
+		desc.ps = finalPS;
+		desc.pt = PrimitiveTopology::TRIANGLELIST;
+		desc.rs.cull_mode = CullMode::NONE;
+		desc.rs.fill_mode = PolygonMode::SOLID;
+		desc.dss.depth_enable = true;
+		desc.dss.depth_func = CompFunc::ALWAYS;
+		desc.dss.depth_write_mask = DepthWriteMask::ZERO;
+		desc.dss.stencil_enable = false;
+		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
+		desc.passType = RenderPassType::Final;
 
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
@@ -513,29 +514,29 @@ namespace Czuch
 
 		desc.AddLayout(desc_tex);
 
-        MaterialDefinitionDesc matDesc(1);
-        matDesc.EmplacePass(desc);
-        matDesc.materialName = "FinalPassMaterial";
+		MaterialDefinitionDesc matDesc(1);
+		matDesc.EmplacePass(desc);
+		matDesc.materialName = "FinalPassMaterial";
 
-        MaterialCreateSettings createSettings;
-        createSettings.desc = std::move(matDesc);
+		MaterialCreateSettings createSettings;
+		createSettings.desc = std::move(matDesc);
 
-        DefaultAssets::FINAL_PASS_MATERIAL_ASSET = m_AssetsMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createSettings.desc.materialName, createSettings);
-        auto materialAsset = m_AssetsMgr->GetAsset<MaterialAsset>(DefaultAssets::FINAL_PASS_MATERIAL_ASSET);
-        materialAsset->SetPersistentStatus(true);
-        DefaultAssets::FINAL_PASS_MATERIAL = materialAsset->GetMaterialResourceHandle();
+		DefaultAssets::FINAL_PASS_MATERIAL_ASSET = m_AssetsMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createSettings.desc.materialName, createSettings);
+		auto materialAsset = m_AssetsMgr->GetAsset<MaterialAsset>(DefaultAssets::FINAL_PASS_MATERIAL_ASSET);
+		materialAsset->SetPersistentStatus(true);
+		DefaultAssets::FINAL_PASS_MATERIAL = materialAsset->GetMaterialResourceHandle();
 
-        MaterialInstanceCreateSettings instanceCreateSettings{};
-        instanceCreateSettings.materialInstanceName = "FinalPassMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE,false);
-        instanceCreateSettings.desc.materialAsset = DefaultAssets::FINAL_PASS_MATERIAL_ASSET;
-        instanceCreateSettings.desc.isTransparent = false;
+		MaterialInstanceCreateSettings instanceCreateSettings{};
+		instanceCreateSettings.materialInstanceName = "FinalPassMaterialInstance";
+		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
+		instanceCreateSettings.desc.materialAsset = DefaultAssets::FINAL_PASS_MATERIAL_ASSET;
+		instanceCreateSettings.desc.isTransparent = false;
 
-        AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
+		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
 		DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE_ASSET = instanceAssetHandle;
-        MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
-        DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
-    }
+		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
+		DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
+	}
 
 	void BuildInAssets::CreateDepthLinearPrePassMaterial()
 	{
@@ -577,8 +578,8 @@ namespace Czuch
 
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "DepthLinearPrePassMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("Depth", DefaultAssets::WHITE_TEXTURE,true);
-		instanceCreateSettings.desc.AddBuffer("CameraPlanesData", BufferHandle{Invalid_Handle_Id});
+		instanceCreateSettings.desc.AddSampler("Depth", DefaultAssets::WHITE_TEXTURE, true);
+		instanceCreateSettings.desc.AddBuffer("CameraPlanesData", BufferHandle{ Invalid_Handle_Id });
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = false;
 
@@ -608,12 +609,12 @@ namespace Czuch
 		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
+		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 
 		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
 		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
 		desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
-		desc.il.AddAttribute({ .location = 3,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
+		desc.il.AddAttribute({ .location = 3,.binding = 3,.offset = 0,.format = Format::R32G32B32_FLOAT });
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
@@ -689,12 +690,12 @@ namespace Czuch
 		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
+		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 
 		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
 		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
 		desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
-		desc.il.AddAttribute({ .location = 3,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
+		desc.il.AddAttribute({ .location = 3,.binding = 3,.offset = 0,.format = Format::R32G32B32_FLOAT });
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
@@ -748,7 +749,7 @@ namespace Czuch
 		instanceLightCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
 
 		ColorUBO colorLightUbo;
-		colorLightUbo.color = Vec4(1.0f, 1.0f, 0.0f, 1);
+		colorLightUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
 
 		instanceLightCreateSettings.desc.AddBuffer("Color", Czuch::UBO((void*)&colorLightUbo, sizeof(ColorUBO)));
 		instanceLightCreateSettings.desc.materialAsset = DefaultAssets::DEBUG_DRAW_MATERIAL_ASSET;

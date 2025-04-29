@@ -17,18 +17,32 @@ namespace Czuch
 
 	void RenderPassControl::PreDraw(CommandBuffer* cmd,Renderer* renderer)
 	{
+
+	}
+
+	void RenderPassControl::PostDraw(CommandBuffer* cmd, Renderer* renderer)
+	{
+		
+	}
+
+	void RenderPassControl::BeforeFrameGraphExecute(CommandBuffer* cmd, Renderer* renderer)
+	{
 		if (IsDifferentAspect(m_LastWidth, m_LastHeight) || IsDifferentCamera(m_LastCamera))
 		{
-			renderer->OnPostRenderUpdateContexts(&m_FillParams,&GetMainRenderContext());
 			m_LastWidth = GetWidth();
 			m_LastHeight = GetHeight();
 			m_LastCamera = GetCamera();
-			renderer->OnPreRenderUpdateContexts(m_Camera, m_LastWidth, m_LastHeight,&m_FillParams,&GetMainRenderContext());
+			renderer->OnPreRenderUpdateContexts(m_Camera, m_LastWidth, m_LastHeight, &m_FillParams);
 		}
 		else
 		{
-			renderer->OnPreRenderUpdateContexts(m_Camera, m_Width, m_Height,&m_FillParams,&GetMainRenderContext());
+			renderer->OnPreRenderUpdateContexts(m_Camera, m_Width, m_Height, &m_FillParams);
 		}
+	}
+
+	void RenderPassControl::AfterFrameGraphExecute(CommandBuffer* cmd, Renderer* renderer)
+	{
+		renderer->OnPostRenderUpdateContexts(m_Camera, &m_FillParams);
 	}
 
 	void RenderPassControl::Resize(int width, int height)

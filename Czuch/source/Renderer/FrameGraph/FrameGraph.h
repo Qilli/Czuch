@@ -6,6 +6,7 @@ namespace Czuch
 	class CommandBuffer;
 	class RenderPassControl;
 	class Renderer;
+	class GraphicsDevice;
 
 	struct FrameGraphResourceHandle
 	{
@@ -134,6 +135,15 @@ namespace Czuch
 		void SetClearColor(Color color) { m_ClearColor = color; m_UseClearColor = true; }
 		Color GetClearColor() { return m_ClearColor; }
 		void SetUseClearColor(bool use) { m_UseClearColor = use; }
+		/// <summary>
+		/// called before rendering another frame, here we fill and create required contexts
+		/// </summary>
+		void BeforeFrameGraphExecute(CommandBuffer* cmd);
+		/// <summary>
+		/// Called after frame was rendered, here we can invalidate or make dirty current contexts
+		/// </summary>
+		/// <param name="cmd"></param>
+		void AfterFrameGraphExecute(CommandBuffer* cmd);
 		//[TODO] we need to add option to init offscreen node with size from UI
 	private:
 		FrameGraphNodesContainer m_Nodes;

@@ -2986,6 +2986,19 @@ namespace Czuch
 		return UploadDataToBuffer(buffer, data, bufferPtr->desc.ubo->GetSize());
 	}
 
+	void* VulkanDevice::GetMappedBufferDataPtr(BufferHandle buffer)
+	{
+		auto bufferPtr = AccessBuffer(buffer);
+		if (bufferPtr == nullptr)
+		{
+			LOG_BE_ERROR("GetMappedBufferDataPtr with invalid handle.");
+			return nullptr;
+		}
+
+		auto bufferVulkan = Internal_to_Buffer(bufferPtr);
+		return bufferVulkan->GetMappedData();
+	}
+
 	Pipeline* VulkanDevice::AccessPipeline(PipelineHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))

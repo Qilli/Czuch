@@ -147,7 +147,7 @@ namespace Czuch
 			}
 
 			auto vulkanPipeline = Internal_To_Pipeline(pipelinePtr);
-			vkCmdPushConstants(m_Cmd, vulkanPipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4x4), (void*)&renderElement.localToClipSpaceTransformation);
+			vkCmdPushConstants(m_Cmd, vulkanPipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4x4)*2.0f, (void*)&renderElement.localToClipSpaceTransformation);
 
 			BindIndexBuffer(meshInstance->indicesHandle, 0);
 			DrawIndexed(m_Device->AccessBuffer(meshInstance->indicesHandle)->desc.elementsCount);

@@ -28,13 +28,13 @@ namespace Czuch
 		virtual void Init() = 0;
 		virtual void BindInputTextures(GraphicsDevice* device, FrameGraphNode* node) = 0;
 		virtual void PreDraw(CommandBuffer* cmd,Renderer* renderer);
-		virtual void PostDraw(CommandBuffer* cmd,Renderer* renderer) = 0;
+		virtual void PostDraw(CommandBuffer* cmd,Renderer* renderer);
+		virtual void BeforeFrameGraphExecute(CommandBuffer* cmd, Renderer* renderer);
+		virtual void AfterFrameGraphExecute(CommandBuffer* cmd, Renderer* renderer);
 		virtual void Execute(CommandBuffer* cmd) = 0;
 		virtual void* GetRenderPassResult() { return nullptr; }
 		virtual void ReleaseDependencies() = 0;
 		virtual void TransitionResultsToShaderReadOnly(CommandBuffer* cmd) = 0;
-		virtual RenderContext& GetMainRenderContext() = 0;
-		virtual RenderContext& GetDebugRenderContext() = 0;
 
 
 		virtual void Resize(int width, int height);

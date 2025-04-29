@@ -21,7 +21,7 @@ namespace Czuch
 {
 	const CzuchStr SceneTag = "SceneControl";
 
-	Scene::Scene(const CzuchStr& sceneName, RenderSettings* settings) : m_SceneName(sceneName), m_RenderSettings(settings)
+	Scene::Scene(const CzuchStr& sceneName, RenderSettings* settings, GraphicsDevice* device) : m_SceneName(sceneName), m_RenderSettings(settings), m_Device(device)
 	{
 		m_RootEntity = Entity{ m_Registry.create(),this };
 		m_RootEntity.AddComponent<HeaderComponent>(sceneName, "Root", Layer{ 0 });
@@ -63,7 +63,6 @@ namespace Czuch
 			auto& nativeBehaviour = view.get<NativeBehaviourComponent>(entity);
 			nativeBehaviour.OnUpdate(delta);
 		}
-		GetCurrentActiveCamera();
 
 		//fill render list
 		m_RenderObjects.allObjects.clear();
@@ -95,6 +94,13 @@ namespace Czuch
 				.directionWithRange=Vec4(direction.x,direction.y,direction.z,light.GetLightRange()),
 				.spotInnerOuterAngle=Vec4(0,0,0,0)}, &transform,&light});
 		}
+
+
+		//fill all cameras with visible objects
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			cameraControl.UpdateVisibleObjects(m_RenderObjects);
+		}
 	}
 
 	void Scene::OnFinishFrame()
@@ -110,11 +116,9 @@ namespace Czuch
 		{
 			uiElement->OnFinishFrame();
 		}
-
-		m_CurrentFrameCamera = nullptr;
 	}
 
-	void Scene::FillRenderContexts(Camera* cam, Renderer* renderer, int width, int height, RenderContextFillParams& fillParams,RenderContext* renderContext)
+	RenderContext* Scene::FillRenderContexts(Camera* cam, Renderer* renderer, int width, int height, RenderContextFillParams& fillParams)
 	{
 		//get main camera
 		Camera* currentCamera = cam;
@@ -124,7 +128,40 @@ namespace Czuch
 		}
 
 		currentCamera->SetAspectRatio((float)width / (float)height);
-		renderContext->FillRenderList(renderer->GetDevice(), currentCamera, m_RenderObjects, fillParams);
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			if (cameraControl.camera == currentCamera)
+			{
+				return cameraControl.FillRenderList(renderer->GetDevice(),fillParams);
+			}
+		}
+		LOG_BE_ERROR("[Scene] Scene does not have camera control for the camera in FillRenderContexts.");
+		return nullptr;
+	}
+
+	void Scene::AfterFrameGraphExecute()
+	{
+		
+	}
+
+	void Scene::OnPostRender(Camera* camera, RenderContextFillParams* fillParams)
+	{
+		Camera* currentCamera = camera;
+		if (camera == nullptr)
+		{
+			currentCamera = m_CurrentFrameCamera;
+		}
+
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			if (cameraControl.camera == currentCamera)
+			{
+				cameraControl.OnPostRender();
+				return;
+			}
+		}
+		LOG_BE_ERROR("[Scene] Scene does not have camera control for the camera in OnPostRender.");
+		return;
 	}
 
 	Entity Scene::CreateEntity(const CzuchStr& entityName, Entity parent)
@@ -218,12 +255,61 @@ namespace Czuch
 
 	void Scene::ClearScene()
 	{
+		OnDettached();
 		m_Registry.clear();
 		m_RootEntity = Entity{ m_Registry.create(),this };
 		m_RootEntity.AddComponent<HeaderComponent>(m_SceneName, "Root", Layer{ 0 });
 		m_RootEntity.AddComponent<TransformComponent>();
 		m_RootEntity.AddComponent<ActiveComponent>();
 		m_RootEntity.AddComponent<GUIDComponent>(GUID());
+	}
+
+	void Scene::OnSceneActive(GraphicsDevice* device)
+	{
+		m_Device = device;
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			cameraControl.OnSceneActive(m_Device,this);
+		}
+	}
+
+	void Scene::OnResize(U32 width, U32 height,bool windowSizeChanged)
+	{
+
+		if (m_RenderSettings->engineMode == EngineMode::Editor && windowSizeChanged)
+		{
+			return;
+		}
+
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			cameraControl.OnResize(m_Device, width, height,windowSizeChanged);
+		}
+	}
+
+	void Scene::BeforeFrameGraphExecute(U32 currentFrame, DeletionQueue& deletionQueue)
+	{
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			cameraControl.UpdateSceneDataBuffers(m_Device,currentFrame, deletionQueue);
+		}
+	}
+
+	SceneDataBuffers Scene::GetSceneDataBuffers(Camera* camera, U32 frame, RenderPassType renderPassType)
+	{
+		if (camera == nullptr)
+		{
+			camera = m_CurrentFrameCamera;
+		}
+
+		for (auto& control : m_CamerasControl)
+		{
+			if (control.camera == camera)
+			{
+				return control.GetSceneDataBuffers(frame);
+			}
+		}
+		return m_CamerasControl[0].GetSceneDataBuffers(frame);
 	}
 
 	void Scene::ForEachEntity(std::function<void(Entity)> func)
@@ -277,16 +363,22 @@ namespace Czuch
 		}
 	}
 
-	CameraComponent* Scene::FindPrimaryCamera()
+	CameraComponent* Scene::GetPrimaryCamera()
 	{
 		auto view = m_Registry.view<CameraComponent>(entt::exclude<DestroyedComponent>);
 		for (auto entity : view)
 		{
 			auto& camera = view.get<CameraComponent>(entity);
-			if (camera.IsPrimary())
+
+			if (m_RenderSettings->engineMode == EngineMode::Runtime && camera.IsPrimary() && camera.IsEnabled())
 			{
 				return &camera;
 			}
+			else if (m_RenderSettings->engineMode == EngineMode::Editor && camera.GetType() == CameraType::EditorCamera && camera.IsEnabled())
+			{
+				return &camera;
+			}
+
 		}
 		LOG_BE_ERROR("{0} Scene does not have primary camera", SceneTag);
 		return nullptr;
@@ -307,6 +399,24 @@ namespace Czuch
 		return nullptr;
 	}
 
+	CameraComponent* Scene::FindPrimaryCamera()
+	{
+		auto view = m_Registry.view<CameraComponent>(entt::exclude<DestroyedComponent>);
+		for (auto entity : view)
+		{
+			auto& camera = view.get<CameraComponent>(entity);
+			if (m_RenderSettings->engineMode == EngineMode::Runtime && camera.GetType() == CameraType::GameCamera && camera.IsEnabled())
+			{
+				return &camera;
+			}
+			else if (m_RenderSettings->engineMode == EngineMode::Editor && camera.GetType() == CameraType::EditorCamera && camera.IsEnabled())
+			{
+				return &camera;
+			}
+		}
+		return nullptr;
+	}
+
 	void Scene::SetPrimaryCamera(CameraComponent* camera)
 	{
 		auto view = m_Registry.view<CameraComponent>(entt::exclude<DestroyedComponent>);
@@ -316,6 +426,8 @@ namespace Czuch
 			camera.SetPrimaryFlag(false);
 		}
 		camera->SetPrimaryFlag(true);
+		m_CurrentFrameCamera = &camera->GetCamera();
+		UpdateAllCameras();
 		Dirty();
 	}
 
@@ -328,7 +440,42 @@ namespace Czuch
 			camera.SetType(CameraType::GameCamera);
 		}
 		camera->SetType(CameraType::EditorCamera);
+
+		UpdateAllCameras();
 		Dirty();
+	}
+
+	void Scene::CameraEnabledChanged(CameraComponent* camera)
+	{
+		UpdateAllCameras();
+	}
+
+	void Scene::CameraAdded(CameraComponent* camera)
+	{
+		UpdateAllCameras();
+	}
+
+	void Scene::CameraRemoved(CameraComponent* camera)
+	{
+		UpdateAllCameras();
+	}
+
+	RenderContext* Scene::GetRenderContext(RenderPassType type, Camera* camera)
+	{
+		if (camera == nullptr)
+		{
+			camera = m_CurrentFrameCamera;
+		}
+
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			if (cameraControl.camera == camera)
+			{
+				return cameraControl.GetRenderContext(type);
+			}
+		}
+		LOG_BE_ERROR("[Scene] Scene does not have camera control for the camera in GerRenderContext.");
+		return nullptr;
 	}
 
 	void Scene::DestroyMarkedEntities()
@@ -338,33 +485,6 @@ namespace Czuch
 			DestroyEntity(entity);
 		}
 		m_EntitiesToDestroy.clear();
-	}
-
-	void Scene::GetCurrentActiveCamera()
-	{
-		auto cameraView = m_Registry.view<CameraComponent>();
-		CameraComponent* mainCamera = nullptr;
-		for (auto e : cameraView)
-		{
-			auto& camera = cameraView.get<CameraComponent>(e);
-			if (m_RenderSettings->engineMode == EngineMode::Runtime && camera.IsPrimary())
-			{
-				mainCamera = &camera;
-				break;
-			}
-			else if (m_RenderSettings->engineMode == EngineMode::Editor && camera.GetType() == CameraType::EditorCamera)
-			{
-				mainCamera = &camera;
-				break;
-			}
-		}
-
-		if (!mainCamera)
-		{
-			LOG_BE_ERROR("No primary camera in the scene");
-			return;
-		}
-		m_CurrentFrameCamera = &mainCamera->GetCamera();
 	}
 
 	void Scene::CheckAndAddStartCamera()
@@ -385,6 +505,63 @@ namespace Czuch
 			auto& behaviour = nativeScriptsComponent.AddNativeBehaviour<NativeFree3DCameraController>();
 			behaviour.SetRunningMode(ScriptRunningMode::EditorOnly);
 		}
+	}
+
+	void Scene::UpdateAllCameras()
+	{
+		auto cam = GetPrimaryCamera();
+
+		if (cam!=nullptr)
+		{
+			m_CurrentFrameCamera = &cam->GetCamera();
+		}
+		else
+		{
+			auto cameraComp = FindPrimaryCamera();
+			if (cameraComp != nullptr)
+			{
+				m_CurrentFrameCamera = &cameraComp->GetCamera();
+			}
+			else
+			{
+				LOG_BE_ERROR("{0} Scene does not have primary camera", SceneTag);
+				return;
+			}
+		}
+
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			cameraControl.Release(m_Device);
+		}
+
+		m_CamerasControl.clear();
+		auto view = m_Registry.view<CameraComponent>(entt::exclude<DestroyedComponent>);
+		SceneCameraControl cameraControl;
+		cameraControl.camera = m_CurrentFrameCamera;
+		cameraControl.isPrimaryCamera = true;
+		cameraControl.OnSceneActive(m_Device, this);
+		m_CamerasControl.push_back(std::move(cameraControl));
+		for (auto entity : view)
+		{
+			auto& camera = view.get<CameraComponent>(entity);
+			if (camera.IsPrimary())
+			{
+				continue;
+			}
+			SceneCameraControl cameraControl;
+			cameraControl.camera = &camera.GetCamera();
+			cameraControl.isPrimaryCamera = false;
+			m_CamerasControl.push_back(std::move(cameraControl));
+		}
+	}
+
+	void Scene::OnDettached()
+	{
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			cameraControl.Release(m_Device);
+		}
+		m_CamerasControl.clear();
 	}
 
 #pragma region Serialization

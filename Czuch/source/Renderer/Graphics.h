@@ -17,6 +17,8 @@ namespace Czuch
 	static constexpr U32 MAX_LIGHTS_IN_TILE = 32;
 	static constexpr U32 TILE_SIZE = 32;
 
+	static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
 	typedef I32 Handle;
 #define INVALID_HANDLE(Type) Type() 
 #define HANDLE_IS_VALID(h)(h.handle!=-1)
@@ -29,6 +31,18 @@ namespace Czuch
 		Mat4x4 proj;
 		Mat4x4 viewproj;
 		Vec4 ambientColor;
+	};
+
+	struct LightsTileData
+	{
+		U32 lightStart;
+		U32 lightCount;
+	};
+
+	struct TilesDataContainer
+	{
+		glm::ivec4 screenSize;
+		Array<LightsTileData> tilesData;
 	};
 
 	struct SceneDataBuffers
@@ -47,11 +61,6 @@ namespace Czuch
 		Vec4 spotInnerOuterAngle;
 	};
 
-	struct LightsTileData
-	{
-		U32 lightStart;
-		U32 lightCount;
-	};
 
 	struct ColorUBO
 	{
@@ -66,7 +75,7 @@ namespace Czuch
 		ResourceHandle() { handle = Invalid_Handle_Id; }	
 	};
 
-	enum class CZUCH_API RenderPassType : U32
+	enum CZUCH_API RenderPassType : U32
 	{
 		MainForward = 0,
 		Shadow = 1,
@@ -79,7 +88,8 @@ namespace Czuch
 		DepthLinearPrePass = 1 << 8,
 		ForwardLightingTransparent = 1 << 9,
 		DebugDraw = 1 << 10,
-		Custom = 1<<11
+		ShadowMap = 1 << 11,
+		Custom = 1<<12
 	};
 
 

@@ -49,13 +49,14 @@ namespace Czuch
 	{
 	public:
 		static bool DrawVector3(const CzuchStr& label, Vec3& vec, float colWidth, float resetValue, LockedVec3& locked);
-		static bool DrawColor(const CzuchStr& label, Vec4& color, float colWidth);
+		static bool DrawColorWithLabel(const CzuchStr& label, Vec4& color, float colWidth);
 		static bool ButtonCenteredOnLine(const char* label, float alignment = 0.5f);
 		static void LabelCenteredOnLine(const char* label, float alignment = 0.5f, float leftPadding = 0.0f, float rightPadding = 0.0f);
 		static void ShowModalWindow(const char* title, const char* text, bool& isOpen);
 		static void FormatAssetName(Czuch::ShortAssetInfo* const asset, char* tempName);
 		static void* GetIconForType(AssetType type);
 		static void DrawTextureParameter(const char* label, AssetHandle& asset, I32& resource, bool& showPopup, AssetType type);
+		static bool DrawLinearColor(const CzuchStr& name, Vec4* color);
 	};
 
 	struct ShowAssetSelectorPopupHelper

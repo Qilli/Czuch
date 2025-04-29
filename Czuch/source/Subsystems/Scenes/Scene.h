@@ -16,14 +16,25 @@ namespace Czuch
 	{
 	public:
 
-		Scene(const CzuchStr& sceneName, RenderSettings* settings);
+		Scene(const CzuchStr& sceneName, RenderSettings* settings, GraphicsDevice* device);
 		~Scene();
 
 		void AddUIElement(UIBaseElement* element);
 
 		void OnUpdate(TimeDelta delta);
 		void OnFinishFrame();
-		void FillRenderContexts(Camera* cam,Renderer* renderer,int width,int height,RenderContextFillParams& fillParams,RenderContext* renderContext);
+		/// <summary>
+		/// Fill render context for selected camera and rendering pass
+		/// Some contexts can be shared between different rendering pass like preZ pass and opaque lighting pass
+		/// </summary>
+		/// <param name="cam"></param>
+		/// <param name="renderer"></param>
+		/// <param name="width"></param>
+		/// <param name="height"></param>
+		/// <param name="fillParams"></param>
+		/// <returns></returns>
+		RenderContext* FillRenderContexts(Camera* cam, Renderer* renderer, int width, int height, RenderContextFillParams& fillParams);
+		void OnPostRender(Camera* camera, RenderContextFillParams* fillParams);
 		Entity CreateEntity(const CzuchStr& entityName, Entity parent = Entity());
 		Entity AddModelToScene(Czuch::AssetHandle model, const CzuchStr& entityName, Entity parent = Entity());
 		void DestroyEntity(Entity entity);
@@ -34,6 +45,30 @@ namespace Czuch
 		entt::registry& GetRegistry() override { return m_Registry; }
 		RenderObjectsContainer& GetRenderObjects() { return m_RenderObjects; }
 		const Array<LightObjectInfo>& GetAllLightObjects() const { return m_RenderObjects.allLights; }
+		void OnSceneActive(GraphicsDevice* device);
+		/// <summary>
+		/// Event called from renderer when window is resized or target texture is resized(for editor width/height will be equal to render view port), only to active scene
+		/// </summary>
+		/// <param name="width"></param>
+		/// <param name="height"></param>
+		/// <param name="windowSizeChanged">if true then the entire window size changed, otherwise only render view</param>
+		void OnResize(U32 width, U32 height,bool windowSizeChanged);
+		/// <summary>
+		/// This method is called when we are about to start rendering next frame, after we aquire the next image from swapchain
+		/// </summary>
+		void BeforeFrameGraphExecute(U32 currentFrame, DeletionQueue& deletionQueue);
+		/// <summary>
+		/// Here we want to make all render contexts dirty so we can update them at the beginning of the next frame
+		/// </summary>
+		void AfterFrameGraphExecute();
+		/// <summary>
+		/// Get scene data buffers for selected camera, if null then use primary camera
+		/// </summary>
+		/// <param name="camera"></param>
+		/// <param name="frame"></param>
+		/// <param name="renderPassType"></param>
+		/// <returns></returns>
+		SceneDataBuffers GetSceneDataBuffers(Camera* camera, U32 frame, RenderPassType renderPassType);
 	public:
 		std::vector<UIBaseElement*>& GetSceneUIElements() { return m_UIElements; }
 		void ForEachEntity(std::function<void(Entity)> func);
@@ -41,13 +76,19 @@ namespace Czuch
 		entt::entity GetEntityWithGUID(GUID guid) override;
 		Entity GetEntityObjectWithGUID(GUID guid);
 	public:
-		CameraComponent* FindPrimaryCamera() override;
+		CameraComponent* GetPrimaryCamera() override;
 		CameraComponent* FindEditorCamera() override;
+		CameraComponent* FindPrimaryCamera();
 		void SetPrimaryCamera(CameraComponent* camera) override;
 		void SetEditorCamera(CameraComponent* camera) override;
+		void CameraEnabledChanged(CameraComponent* camera) override;
+		void CameraAdded(CameraComponent* camera) override;
+		void CameraRemoved(CameraComponent* camera) override;
+		Array<SceneCameraControl>& GetCamerasControl() { return m_CamerasControl; }
+		RenderContext* GetRenderContext(RenderPassType type, Camera* camera);
 	public:
-		void OnAttached() { CheckAndAddStartCamera(); GetCurrentActiveCamera(); }
-		void OnDettached() {}
+		void OnAttached() { CheckAndAddStartCamera(); UpdateAllCameras(); }
+		void OnDettached();
 	public:
 		virtual bool Serialize(YAML::Emitter& out, bool binary = false) override;
 		virtual bool Deserialize(const YAML::Node& in, bool binary = false) override;
@@ -59,8 +100,8 @@ namespace Czuch
 		RenderSettings* GetRenderSettings() { return m_RenderSettings; }
 	private:
 		void DestroyMarkedEntities();
-		void GetCurrentActiveCamera();
 		void CheckAndAddStartCamera();
+		void UpdateAllCameras();
 	private:
 		friend class Entity;
 		friend class SceneSerializer;
@@ -70,8 +111,10 @@ namespace Czuch
 		CzuchStr m_SceneName;
 		Array<UIBaseElement*> m_UIElements;
 		Array<Entity> m_EntitiesToDestroy;
+		Array<SceneCameraControl> m_CamerasControl;
 		RenderObjectsContainer m_RenderObjects;
 		RenderSettings* m_RenderSettings;
+		GraphicsDevice* m_Device;
 		Color m_ClearColor;
 		Color m_AmbientColor;
 	};

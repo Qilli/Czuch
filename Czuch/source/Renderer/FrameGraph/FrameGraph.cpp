@@ -3,6 +3,7 @@
 #include "../GraphicsDevice.h"
 #include "../CommandBuffer.h"
 #include "../RenderPassControl.h"
+#include "../Renderer.h"
 
 namespace Czuch
 {
@@ -203,6 +204,8 @@ namespace Czuch
 
 	void FrameGraph::ResizeRenderPasses(U32 width, U32 height, bool windowSizeChanged)
 	{
+		LOG_BE_INFO("Resizing render passes to {0}x{1} , window size changed: {2}", width, height , windowSizeChanged);
+
 		//resize every node render pass control
 		for (int i = 0; i < m_Nodes.m_Nodes.size(); i++)
 		{
@@ -214,11 +217,12 @@ namespace Czuch
 					ResizeNode(node, width, height);
 				}
 			}
-			else if(!windowSizeChanged)
+			else if (!windowSizeChanged)
 			{
 				ResizeNode(node, width, height);
 			}
 		}
+
 	}
 
 	TextureHandle FrameGraph::GetFinalTexture()
@@ -250,6 +254,24 @@ namespace Czuch
 		CZUCH_BE_ASSERT(renderPassIndex < m_Nodes.m_Nodes.size(), "Render pass index out of range");
 		auto& node = m_Nodes.m_Nodes[renderPassIndex];
 		return node.renderPassControl->GetRenderPassResult();
+	}
+
+	void FrameGraph::BeforeFrameGraphExecute(CommandBuffer* cmd)
+	{
+		for (U32 i = 0; i < m_Nodes.m_Nodes.size(); i++)
+		{
+			auto& node = m_Nodes.m_Nodes[i];
+			node.renderPassControl->BeforeFrameGraphExecute(cmd, m_Renderer);
+		}
+	}
+
+	void FrameGraph::AfterFrameGraphExecute(CommandBuffer* cmd)
+	{
+		for (U32 i = 0; i < m_Nodes.m_Nodes.size(); i++)
+		{
+			auto& node = m_Nodes.m_Nodes[i];
+			node.renderPassControl->AfterFrameGraphExecute(cmd, m_Renderer);
+		}
 	}
 
 	void FrameGraphNodesContainer::Init(GraphicsDevice* dev)

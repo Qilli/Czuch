@@ -10,28 +10,10 @@ namespace Czuch
 		m_FillParams.renderPassType = type;
 		m_FillParams.forceMaterialForAll = false;
 		m_TextureSource = nullptr;
-		m_GeneralRenderContext = nullptr;
-		m_DebugRenderContext = nullptr;
 	}
 	VulkanRenderPassControlBase::~VulkanRenderPassControlBase()
 	{
 		Release();
-		if (m_DebugRenderContext != nullptr)
-		{
-			delete m_DebugRenderContext;
-		}
-		if (m_GeneralRenderContext != nullptr)
-		{
-			delete m_GeneralRenderContext;
-		}
-	}
-	void VulkanRenderPassControlBase::PreDraw(CommandBuffer* cmdBuffer, Renderer* renderer)
-	{
-		m_Renderer->OnPreRenderUpdateContexts(m_Camera, m_Width, m_Height, &m_FillParams, m_GeneralRenderContext);
-	}
-	void VulkanRenderPassControlBase::PostDraw(CommandBuffer* cmdBuffer, Renderer* renderer)
-	{
-		m_Renderer->OnPostRenderUpdateContexts(&m_FillParams, m_GeneralRenderContext);
 	}
 
 	void VulkanRenderPassControlBase::BindInputTextures(GraphicsDevice* device, FrameGraphNode* node)
@@ -54,7 +36,7 @@ namespace Czuch
 
 	void VulkanRenderPassControlBase::Execute(CommandBuffer* cmdBuffer)
 	{
-		m_Renderer->DrawScene((VulkanCommandBuffer*)cmdBuffer,m_GeneralRenderContext);
+		m_Renderer->DrawScene((VulkanCommandBuffer*)cmdBuffer,m_Camera,&m_FillParams);
 	}
 	void* VulkanRenderPassControlBase::GetRenderPassResult()
 	{
@@ -102,16 +84,6 @@ namespace Czuch
 			delete m_TextureSource;
 			m_TextureSource = nullptr;
 		}
-
-		if (m_DebugRenderContext != nullptr)
-		{
-			m_DebugRenderContext->ClearRenderList();
-		}
-
-		if (m_GeneralRenderContext != nullptr)
-		{
-			m_GeneralRenderContext->ClearRenderList();
-		}
 	}
 
 	void VulkanRenderPassControlBase::ReleaseDependencies()
@@ -136,21 +108,7 @@ namespace Czuch
 
 	void VulkanRenderPassControlBase::Init()
 	{
-		CreateRenderContexts();
-	}
-
-	void VulkanRenderPassControlBase::CreateRenderContexts()
-	{
-		RenderContextCreateInfo renderContextCreateInfo{};
-		renderContextCreateInfo.autoClearAfterRender = true;
-		renderContextCreateInfo.renderType = RenderType::General;
-		renderContextCreateInfo.renderLayer = RenderLayer::LAYER_0;
-		renderContextCreateInfo.sortingOrder = 0;
-		m_GeneralRenderContext = new DefaultRenderContext(renderContextCreateInfo);
-
-		renderContextCreateInfo.renderType = RenderType::Debug;
-		renderContextCreateInfo.renderLayer = RenderLayer::LAYER_0;
-		m_DebugRenderContext =new DefaultRenderContext(renderContextCreateInfo);
+		
 	}
 
 }

@@ -4,6 +4,7 @@
 
 namespace Czuch
 {
+
 	class ShaderAssetManager :public AssetManager
 	{
 	public:
@@ -11,16 +12,19 @@ namespace Czuch
 		bool IsFormatSupported(const char* format)const override { return strcmp(format, ".vert") == 0 || strcmp(format, ".frag") == 0; }
 		void Init() override;
 		int GetAssetType() const override { return (int)AssetType::SHADER; }
+		static const CzuchStr& GetShaderIncludePath() { return s_ShaderIncludePath; }
 	protected:
 		Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) override;
 		Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settings) override;
 		Asset* CreateLoadableAsset(const CzuchStr& path) override;
 	private:
 		GraphicsDevice* m_Device;
+		static CzuchStr s_ShaderIncludePath;
 	};
 
 	inline ShaderAssetManager::ShaderAssetManager(GraphicsDevice* device):m_Device(device)
 	{
+		ShaderAssetManager::s_ShaderIncludePath = AssetsManager::GetStartPath() + "Shaders\\Include";
 	}
 
 	inline Asset* ShaderAssetManager::CreateAsset(const CzuchStr& path, BaseCreateSettings& settings)

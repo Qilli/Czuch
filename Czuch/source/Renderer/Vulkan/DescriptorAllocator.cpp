@@ -34,6 +34,11 @@ namespace Czuch
 			if (current.type == DescriptorType::UNIFORM_BUFFER || current.type == DescriptorType::UNIFORM_BUFFER_DYNAMIC || current.type == DescriptorType::STORAGE_BUFFER || current.type == DescriptorType::STORAGE_BUFFER_DYNAMIC)
 			{
 				Buffer* buffer = (Buffer*)device->AccessBuffer(BufferHandle(current.resource));
+				if (buffer == nullptr)
+				{
+					LOG_BE_ERROR("[DescriptorAllocator] Failed to access buffer for descriptor set with id: {0}", current.resource);
+					continue;
+				}
 				writer.WriteBuffer(current.binding, buffer, buffer->desc.size, 0, current.type);
 			}
 			else

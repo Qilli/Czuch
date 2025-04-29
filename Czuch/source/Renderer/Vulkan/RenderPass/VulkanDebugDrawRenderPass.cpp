@@ -13,18 +13,4 @@ namespace Czuch
 
 	}
 
-	void VulkanDebugDrawRenderPass::CreateRenderContexts()
-	{
-		RenderContextCreateInfo renderContextCreateInfo{};
-		renderContextCreateInfo.autoClearAfterRender = true;
-		renderContextCreateInfo.renderType = RenderType::Debug;
-		renderContextCreateInfo.renderLayer = RenderLayer::LAYER_0;
-		renderContextCreateInfo.sortingOrder = 0;
-		m_GeneralRenderContext = new DebugRenderContext(renderContextCreateInfo);
-
-		renderContextCreateInfo.renderType = RenderType::Debug;
-		renderContextCreateInfo.renderLayer = RenderLayer::LAYER_0;
-		m_DebugRenderContext = new DebugRenderContext(renderContextCreateInfo);
-	}
-
 }

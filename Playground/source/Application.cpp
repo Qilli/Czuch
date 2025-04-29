@@ -50,7 +50,7 @@ int main()
 	Czuch::EngineRoot* root = new Czuch::EngineRoot();
 	root->Init("engineConfig.cfg",nullptr);
 
-	Czuch::Scene *scene= new Czuch::Scene("MainScene",&root->GetRenderSettings());
+	Czuch::Scene *scene= new Czuch::Scene("MainScene",&root->GetRenderSettings(),root->GetRenderer().GetDevice());
 
 	auto& sceneMgr = root->GetScenesManager();
 	sceneMgr.AddScene(scene, true);

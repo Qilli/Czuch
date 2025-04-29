@@ -19,6 +19,7 @@ namespace Czuch
 	}
 	void VulkanDepthLinearPrepassRenderPass::PreDraw(CommandBuffer* cmdBuffer, Renderer* renderer)
 	{
+		VulkanRenderPassControlBase::PreDraw(cmdBuffer, renderer);
 		if (!m_MaterialsAdded)
 		{
 			m_MaterialsAdded = true;

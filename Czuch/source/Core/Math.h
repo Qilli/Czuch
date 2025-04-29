@@ -37,5 +37,27 @@ namespace Czuch
 	public:
 		static Color White;
 	};
+
+	inline glm::vec3 GammaToLinear(const glm::vec3& colorGamma)
+	{
+		return glm::pow(colorGamma, glm::vec3(2.2f));
+	}
+
+	inline glm::vec3 LinearToGamma(const glm::vec3& colorLinear)
+	{
+		return glm::pow(colorLinear, glm::vec3(1.0f / 2.2f));
+	}
+
+	inline glm::vec4 GammaToLinear(const glm::vec4& colorGamma)
+	{
+		glm::vec3 rgbLinear = glm::pow(glm::vec3(colorGamma), glm::vec3(2.2f));
+		return glm::vec4(rgbLinear, colorGamma.a);
+	}
+
+	inline glm::vec4 LinearToGamma(const glm::vec4& colorLinear)
+	{
+		glm::vec3 rgbGamma = glm::pow(glm::vec3(colorLinear), glm::vec3(1.0f / 2.2f));
+		return glm::vec4(rgbGamma, colorLinear.a);
+	}
 }
 

@@ -5,6 +5,7 @@
 namespace Czuch
 {
 	class CameraComponent;
+	struct LightObjectInfo;
 	class IScene: public ISerializer
 	{
 	public:
@@ -18,14 +19,19 @@ namespace Czuch
 			}
 			return entt::null;
 		}
-		virtual CameraComponent* FindPrimaryCamera() = 0;
+		virtual CameraComponent* GetPrimaryCamera() = 0;
 		virtual CameraComponent* FindEditorCamera() = 0;
 		virtual void SetPrimaryCamera(CameraComponent* camera) = 0;
 		virtual void SetEditorCamera(CameraComponent* camera) = 0;
+		virtual void CameraEnabledChanged(CameraComponent* camera) = 0;
+		virtual void CameraAdded(CameraComponent* camera) = 0;
+		virtual void CameraRemoved(CameraComponent* camera) = 0;
 		bool IsDirty() const { return m_isDirty; }
 		void Dirty() { m_isDirty = true; }
 		void SetDirty(bool dirty) { m_isDirty = dirty; }
 		virtual entt::entity GetEntityWithGUID(GUID guid)=0;
+		virtual const Color GetAmbientColor() const = 0;
+		virtual const Array<LightObjectInfo>& GetAllLightObjects() const=0;
 		friend class Entity;
 	protected:
 		virtual entt::registry& GetRegistry() = 0;

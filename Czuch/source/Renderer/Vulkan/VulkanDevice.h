@@ -98,6 +98,7 @@ namespace Czuch
 	public:
 		bool UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size) override;
 		bool UploadCurrentDataToBuffer(BufferHandle buffer) override;
+		void* GetMappedBufferDataPtr(BufferHandle buffer) override;
 	public:
 		VkDevice GetNativeDevice() const { return m_Device; }
 		VmaAllocator GetAllocator() const { return m_VmaAllocator; }

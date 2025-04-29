@@ -22,7 +22,6 @@ namespace Czuch
 	{
 	public:
 		static RendererAPI GetUsedAPI() { return RendererAPI::Vulkan; }
-		static const int MAX_FRAMES_IN_FLIGHT = 2;
 	public:
 		VulkanRenderer(Window* window, RenderSettings* renderSettings);
 		~VulkanRenderer() override;
@@ -38,7 +37,7 @@ namespace Czuch
 		void SetActiveScene(Scene* scene) override;
 	public:
 		void ImmediateSubmitWithCommandBuffer(std::function<void(CommandBuffer* cmd)>&& processor);
-		void DrawScene(VulkanCommandBuffer* cmdBuffer,RenderContext* context);
+		void DrawScene(VulkanCommandBuffer* cmdBuffer, Camera* camera,RenderContextFillParams* params);
 		void DrawFullScreenQuad(VulkanCommandBuffer* cmdBuffer, MaterialInstanceHandle material);
 		void* GetRenderPassResult(RenderPassType type) override;
 		bool HasRenderPass(RenderPassType type) override;
@@ -49,9 +48,8 @@ namespace Czuch
 		void CreateSyncObjects();
 		void ReleaseSyncObjects();
 		void SubmitCommandBuffer();
-
-		void InitSceneData();
-		void SetSceneData();
+		void BeforeFrameGraphExecute();
+		void AfterFrameGraphExecute();
 
 		void InitImmediateSubmitData();
 	protected:
@@ -81,41 +79,6 @@ namespace Czuch
 			void Release(VulkanDevice* device);
 		};
 
-		struct TilesDataContainer
-		{
-			glm::ivec4 screenSize;
-			Array<LightsTileData> tilesData;
-		};
-
-		struct SceneDataContainer
-		{
-			SceneData data;
-			BufferDesc bufferDesc;
-			BufferDesc lightsBufferDesc;
-			BufferDesc tilesBufferDesc;
-			BufferDesc lightsListBufferDesc;
-			BufferHandle buffer[MAX_FRAMES_IN_FLIGHT];
-			BufferHandle lightsBuffer[MAX_FRAMES_IN_FLIGHT];
-			BufferHandle tilesBuffer[MAX_FRAMES_IN_FLIGHT];
-			BufferHandle lightsListBuffer[MAX_FRAMES_IN_FLIGHT];
-
-			U32 tiles_in_width;
-			U32 tiles_in_height;
-			U32 tiles_count;
-			U32 lastLightsCount;
-
-			Array<U32> lightsIndexList;;
-			Array<LightData> lightsData;
-			TilesDataContainer tilesDataContainer;
-
-			void Init(VulkanDevice* device);
-			void Release(VulkanDevice* device);
-			void InitTilesBuffer(VulkanDevice* device,bool resize,U32 width,U32 height);
-			bool FillTilesWithLights(VulkanDevice* device, const Array<LightObjectInfo>& allLight,U32 frame);
-			void UpdateMaterialsLightsInfo();
-
-			SceneDataBuffers GetSceneDataBuffers(U32 frame);
-		};
 
 		struct RenderPassResizeQuery
 		{
@@ -131,8 +94,8 @@ namespace Czuch
 		}
 
 	public:
-		void OnPreRenderUpdateContexts(Camera* cam, int width, int height,RenderContextFillParams* fillParams, RenderContext* mainRenderContext) override;
-		void OnPostRenderUpdateContexts(RenderContextFillParams* fillParams,RenderContext* mainRenderContext) override;
+		void OnPreRenderUpdateContexts(Camera* cam, int width, int height,RenderContextFillParams* fillParams) override;
+		void OnPostRenderUpdateContexts(Camera* cam,RenderContextFillParams* fillParams) override;
 	public:
 		//render pass contorl helpers
 		RenderPassControl* RegisterRenderPassControl(RenderPassControl* control) override;
@@ -153,7 +116,6 @@ namespace Czuch
 		Window* m_AttachedWindow;
 		VulkanDevice* m_Device;
 		uint32_t m_CurrentFrame = 0;
-		SceneDataContainer m_SceneData;
 		RenderContextFillParams m_DefaultContextFillParams;
 		Scene* m_ActiveScene;
 		int m_LastWidth = 0;

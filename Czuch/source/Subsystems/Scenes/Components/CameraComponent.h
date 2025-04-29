@@ -59,6 +59,10 @@ namespace Czuch
 		inline bool IsPrimary() { return m_Primary; }
 		inline void SetType(CameraType type) { m_Type = type; }
 		inline CameraType GetType() { return m_Type; }
+	public:
+		virtual void SetEnabled(bool enabled) override { Component::SetEnabled(enabled); }
+		virtual void OnCreated() override {}
+		virtual void OnRemoved() override {}
 	private:
 		Camera m_Camera;
 		CameraType m_Type;

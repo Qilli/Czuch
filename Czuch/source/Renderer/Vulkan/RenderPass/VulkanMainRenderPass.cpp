@@ -19,6 +19,7 @@ namespace Czuch
 
 	void VulkanMainRenderPass::PreDraw(CommandBuffer* cmd,Renderer* renderer)
 	{
+		RenderPassControl::PreDraw(cmd, renderer);
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
 		int imageIndex = m_Device->GetCurrentImageIndex();
 
@@ -55,6 +56,7 @@ namespace Czuch
 
 	void VulkanMainRenderPass::PostDraw(CommandBuffer* cmd,Renderer* renderer)
 	{
+		RenderPassControl::PostDraw(cmd, renderer);
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
 
 		if (renderer->GetRenderSettings().dynamicRendering)

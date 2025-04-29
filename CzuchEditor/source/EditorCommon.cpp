@@ -176,7 +176,7 @@ namespace Czuch
 		ImGui::Spacing();
 		return changed;
 	}
-	bool CustomDrawers::DrawColor(const CzuchStr& label, Vec4& color, float colWidth)
+	bool CustomDrawers::DrawColorWithLabel(const CzuchStr& label, Vec4& color, float colWidth)
 	{
 		bool valueChanged = false;
 
@@ -249,6 +249,21 @@ namespace Czuch
 		}
 
 		tempName[14] = '\0';
+	}
+
+	bool CustomDrawers::DrawLinearColor(const CzuchStr& name, Vec4* color)
+	{
+		bool changed = false;
+		ImGui::PushID(name.c_str());
+		Vec4 gammaColor = LinearToGamma(*color);
+		if (ImGui::ColorEdit4(name.c_str(), &gammaColor.x, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_NoOptions))
+		{
+			changed = true;
+			*color = GammaToLinear(gammaColor);
+		}
+
+		ImGui::PopID();
+		return changed;
 	}
 
 

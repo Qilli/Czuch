@@ -77,7 +77,7 @@ namespace Czuch
 	void NativeFree3DCameraController::OnCreate()
 	{
 		auto scene = GetEntity().GetScene();
-		auto camComponent = scene->FindPrimaryCamera();
+		auto camComponent = scene->GetPrimaryCamera();
 		m_CameraTransformComponent=&camComponent->GetEntity().Transform();
 
 	}

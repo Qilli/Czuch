@@ -12,19 +12,4 @@ namespace Czuch
 	{
 
 	}
-
-	void VulkanDefaultForwardTransparentLightingRenderPass::CreateRenderContexts()
-	{
-		RenderContextCreateInfo renderContextCreateInfo{};
-		renderContextCreateInfo.autoClearAfterRender = true;
-		renderContextCreateInfo.renderType = RenderType::General;
-		renderContextCreateInfo.renderLayer = RenderLayer::LAYER_0;
-		renderContextCreateInfo.sortingOrder = 0;
-		m_GeneralRenderContext = new DefaultTransparentRenderContext(renderContextCreateInfo);
-
-		renderContextCreateInfo.renderType = RenderType::Debug;
-		renderContextCreateInfo.renderLayer = RenderLayer::LAYER_0;
-		m_DebugRenderContext = new DefaultTransparentRenderContext(renderContextCreateInfo);
-	}
-
 }

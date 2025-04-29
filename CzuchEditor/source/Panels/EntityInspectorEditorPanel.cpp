@@ -392,7 +392,7 @@ namespace Czuch
 							else if(element.elementType == UBOElementType::ColorType)
 							{
 								auto vec = buffer->desc.ubo->GetVec4(element.offset);
-								if (ImGui::ColorEdit4(element.name.GetStrName().c_str(), &vec->x))
+								if (CustomDrawers::DrawLinearColor(element.name.GetStrName().c_str(), vec))
 								{
 									changed = true;
 								}
@@ -460,7 +460,8 @@ namespace Czuch
 
 				// Display and edit Light Color
 				Color lightColor = light.GetColor();
-				if (ImGui::ColorEdit3("Light Color", &lightColor.x))
+
+				if (CustomDrawers::DrawLinearColor("Light Color", &lightColor) == true)
 				{
 					light.SetColor(lightColor);
 				}

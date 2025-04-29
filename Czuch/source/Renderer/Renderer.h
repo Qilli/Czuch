@@ -20,9 +20,8 @@ namespace Czuch
 	class Camera;
 	struct RenderContextFillParams;
 	struct FrameGraph;
-	enum class RenderPassType:U32;
 
-	class CZUCH_API Renderer : public Czuch::IEventsListener
+	class CZUCH_API Renderer : public IEventsListener
 	{
 	public:
 		static RendererAPI GetUsedAPI() { return RendererAPI::Vulkan; }
@@ -43,8 +42,8 @@ namespace Czuch
 		virtual RenderPassHandle GetNativeRenderPassHandle(RenderPassType type) = 0;
 		virtual RenderPassControl* RegisterRenderPassControl(RenderPassControl* control) = 0;
 		virtual void UnRegisterRenderPassControl(RenderPassControl* control) = 0;
-		virtual void OnPreRenderUpdateContexts(Camera* cam, int width, int height,RenderContextFillParams* fillParams,RenderContext* mainRenderContext)=0;
-		virtual void OnPostRenderUpdateContexts(RenderContextFillParams* fillParams,RenderContext* mainRenderContext)=0;
+		virtual void OnPreRenderUpdateContexts(Camera* camera, int width, int height,RenderContextFillParams* fillParams)=0;
+		virtual void OnPostRenderUpdateContexts(Camera* camera,RenderContextFillParams* fillParams)=0;
 		virtual void* GetFrameGraphFinalResult() = 0;
 		virtual FrameGraph* GetFrameGraph() = 0;
 	protected:

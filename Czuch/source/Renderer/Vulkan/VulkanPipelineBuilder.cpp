@@ -187,7 +187,7 @@ namespace Czuch
 
         VkPushConstantRange pushConstant{};
         pushConstant.offset = 0;
-        pushConstant.size = sizeof(glm::mat4x4);
+        pushConstant.size = sizeof(glm::mat4x4)*2;
         pushConstant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT|VK_SHADER_STAGE_FRAGMENT_BIT|VK_SHADER_STAGE_VERTEX_BIT;
 
         pipelineLayoutInfo.pPushConstantRanges = &pushConstant;

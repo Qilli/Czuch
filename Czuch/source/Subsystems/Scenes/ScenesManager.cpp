@@ -11,6 +11,7 @@ namespace Czuch
     {
         m_Renderer = renderer;
 		m_AssetsManager = assetsMgr;
+		m_ActiveScene = nullptr;
     }
 
     ScenesManager::~ScenesManager()
@@ -34,7 +35,7 @@ namespace Czuch
 
 	bool ScenesManager::LoadScene(std::string& path)
 	{
-		Scene* scene = new Scene("NewScene",m_RenderSettings);
+		Scene* scene = new Scene("NewScene",m_RenderSettings,m_Renderer->GetDevice());
 		SceneSerializer serializer(scene);
 		if (serializer.Deserialize(path, false))
 		{
@@ -135,7 +136,7 @@ namespace Czuch
 		{
 			RemoveScene(m_ActiveScene);
 		}
-		Scene* scene = new Scene(name, m_RenderSettings);
+		Scene* scene = new Scene(name, m_RenderSettings,m_Renderer->GetDevice());
 		AddScene(scene, true);
 	}
 

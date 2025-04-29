@@ -5,6 +5,7 @@
 #include "glslang/Public/ShaderLang.h"
 #include <glslang/Public/ResourceLimits.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
+#include "Subsystems/Assets/AssetManagersTypes/ShaderAssetManager.h"
 
 namespace Czuch
 {
@@ -36,12 +37,13 @@ namespace Czuch
 		}
 
 		IncludeResult* includeLocal(const char* headerName, const char* includerName,
-			size_t inclusionDepth) override {
-			CzuchStr fullPath = shaderDirectory + "/" + headerName;
+			size_t inclusionDepth) override
+		{
+			CzuchStr fullPath = shaderDirectory+ "\\" + headerName;
 			std::ifstream fileStream(fullPath, std::ios::in);
 			if (!fileStream.is_open()) {
 				CzuchStr errMsg = "Failed to open included file: ";
-				errMsg.append(headerName);
+				errMsg.append(fullPath);
 				return nullptr;
 			}
 
@@ -58,7 +60,8 @@ namespace Czuch
 			return new IncludeResult(headerName, content, fileContent.str().length(), nullptr);
 		}
 
-		void releaseInclude(IncludeResult* result) override {
+		void releaseInclude(IncludeResult* result) override
+		{
 			if (result) {
 				delete result;
 			}
@@ -79,7 +82,8 @@ namespace Czuch
 	Array<char> glslToSpirv(const Array<char>& data,
 		EShLanguage shaderStage,
 		const std::string& shaderDir,
-		const char* entryPoint) {
+		const char* entryPoint) 
+	{
 		static bool glslangInitialized = false;
 
 		if (!glslangInitialized) {
@@ -234,7 +238,7 @@ namespace Czuch
 
 		auto glslangStage = ShaderStageToGlslang(stage);
 
-		m_SpirvCode = std::move(glslToSpirv(m_ShaderCode, glslangStage,"Include/","main"));
+		m_SpirvCode = std::move(glslToSpirv(m_ShaderCode, glslangStage,ShaderAssetManager::GetShaderIncludePath(), "main"));
 
 		if (m_SpirvCode.size() == 0)
 		{
