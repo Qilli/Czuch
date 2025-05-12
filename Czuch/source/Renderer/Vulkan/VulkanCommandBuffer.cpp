@@ -115,7 +115,12 @@ namespace Czuch
 					}
 					else if (binding.type == DescriptorType::STORAGE_BUFFER)
 					{
-						writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
+
+						auto buffer=m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource));
+						if (buffer != nullptr)
+						{
+							writer.WriteBuffer(binding.index, buffer, binding.size, 0, binding.type);
+						}
 					}
 					writer.UpdateSet(m_Device, descriptor);
 				}
@@ -147,7 +152,7 @@ namespace Czuch
 			}
 
 			auto vulkanPipeline = Internal_To_Pipeline(pipelinePtr);
-			vkCmdPushConstants(m_Cmd, vulkanPipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4x4)*2.0f, (void*)&renderElement.localToClipSpaceTransformation);
+			vkCmdPushConstants(m_Cmd, vulkanPipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, PUSH_CONSTANTS_SIZE, (void*)&renderElement.localToClipSpaceTransformation);
 
 			BindIndexBuffer(meshInstance->indicesHandle, 0);
 			DrawIndexed(m_Device->AccessBuffer(meshInstance->indicesHandle)->desc.elementsCount);

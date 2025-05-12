@@ -232,4 +232,34 @@ namespace Czuch
 		}
 	}
 
+	void AssetsManager::UpdateRenderObjectsInfo(U32 renderObjectsCount)
+	{
+		MaterialAssetManager* mgr = GetManagerOfType<MaterialAssetManager, MaterialAsset>();
+
+		if (mgr == nullptr)
+		{
+			LOG_BE_ERROR("{0} Failed to find material asset manager", "[AssetsManager]");
+			return;
+		}
+
+		auto& filtered = mgr->GetAllAssetsWithFilter([](Asset* asset)-> bool {
+			MaterialAsset* mat = static_cast<MaterialAsset*>(asset);
+			if (mat->HasPassType(RenderPassType::ForwardLighting) || mat->HasPassType(RenderPassType::ForwardLightingTransparent))
+			{
+				return true;
+			}
+			});
+
+		for (auto asset : filtered)
+		{
+			MaterialAsset* mat = static_cast<MaterialAsset*>(asset);
+			auto* bindingRenderObjectsContainer = mat->GetBindingWithTag(DescriptorBindingTagType::RENDER_OBJECTS);
+
+			if (bindingRenderObjectsContainer)
+			{
+				bindingRenderObjectsContainer->size = renderObjectsCount * sizeof(RenderObjectGPUData);
+			}
+		}
+	}
+
 }

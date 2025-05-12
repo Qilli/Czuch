@@ -7,6 +7,7 @@
 #include"../Commands/CommandTypes/RemoveEntityCommand.h"
 #include"../Commands/CommandTypes/CreateDefaultMeshesCommands.h"
 #include"../Commands/CommandTypes/ReparentEntityCommand.h"
+#include"../Commands/CommandTypes/CreateNewEntityWithLightCommand.h"
 
 namespace Czuch
 {
@@ -112,7 +113,7 @@ namespace Czuch
 					if (droppedData->GetGUID() != guid.GetGUID())
 					{
 						auto droppedEntity = m_ActiveScene->GetEntityObjectWithGUID(droppedData->GetGUID());
-						EditorCommandsControl::Get().ExecuteCommand(NEW(ReparentEntityCommand(m_ActiveScene,droppedEntity, entity)));
+						EditorCommandsControl::Get().ExecuteCommand(NEW(ReparentEntityCommand(m_ActiveScene, droppedEntity, entity)));
 					}
 				}
 				ImGui::EndDragDropTarget();
@@ -123,7 +124,7 @@ namespace Czuch
 				ImGui::PopStyleColor();
 			}
 
-			if ((ImGui::IsItemActivated() || ImGui::IsItemClicked()|| ImGui::IsItemClicked(1)) && !ImGui::IsItemToggledOpen())
+			if ((ImGui::IsItemActivated() || ImGui::IsItemClicked() || ImGui::IsItemClicked(1)) && !ImGui::IsItemToggledOpen())
 			{
 				m_SelectedEntity = entity;
 				NotifyOnSelectedEntityListeners();
@@ -137,7 +138,7 @@ namespace Czuch
 				{
 					ImGui::Separator();
 
-					if (ImGui::MenuItem(" Create Child Entity "))
+					if (ImGui::MenuItem("Create Child Entity"))
 					{
 						auto command = new CreateNewEntityCommand(m_ActiveScene, m_SelectedEntity);
 						EditorCommandsControl::Get().ExecuteCommand(command);
@@ -146,25 +147,57 @@ namespace Czuch
 						NotifyOnSelectedEntityListeners();
 					}
 
-					if (ImGui::MenuItem(" Create Plane Mesh"))
+					// Submenu for Mesh Creation
+					if (ImGui::BeginMenu("Create Mesh"))
 					{
-						auto command = NEW(CreateNewEntityWithPlaneMeshCommand(m_ActiveScene, m_SelectedEntity));
-						EditorCommandsControl::Get().ExecuteCommand(command);
+						if (ImGui::MenuItem("Create Plane Mesh"))
+						{
+							auto command = NEW(CreateNewEntityWithPlaneMeshCommand(m_ActiveScene, m_SelectedEntity));
+							EditorCommandsControl::Get().ExecuteCommand(command);
 
-						m_SelectedEntity = command->GetCreatedEntity();
-						NotifyOnSelectedEntityListeners();
+							m_SelectedEntity = command->GetCreatedEntity();
+							NotifyOnSelectedEntityListeners();
+						}
+
+						if (ImGui::MenuItem("Create Cube Mesh"))
+						{
+							auto command = NEW(CreateNewEntityWithCubeMeshCommand(m_ActiveScene, m_SelectedEntity));
+							EditorCommandsControl::Get().ExecuteCommand(command);
+
+							m_SelectedEntity = command->GetCreatedEntity();
+							NotifyOnSelectedEntityListeners();
+						}
+						ImGui::EndMenu(); // End the "Create Mesh" submenu
 					}
 
-					if (ImGui::MenuItem(" Create Cube Mesh"))
+					// Submenu for Light Creation
+					if (ImGui::BeginMenu("Create Light"))
 					{
-						auto command = NEW(CreateNewEntityWithCubeMeshCommand(m_ActiveScene, m_SelectedEntity));
-						EditorCommandsControl::Get().ExecuteCommand(command);
-
-						m_SelectedEntity = command->GetCreatedEntity();
-						NotifyOnSelectedEntityListeners();
+						if (ImGui::MenuItem("Create Directional Light"))
+						{
+							auto command = NEW(CreateNewEntityWithLightCommand(m_ActiveScene, m_SelectedEntity, LightType::Directional));
+							EditorCommandsControl::Get().ExecuteCommand(command);
+							m_SelectedEntity = command->GetCreatedEntity();
+							NotifyOnSelectedEntityListeners();
+						}
+						if (ImGui::MenuItem("Create Point Light"))
+						{
+							auto command = NEW(CreateNewEntityWithLightCommand(m_ActiveScene, m_SelectedEntity, LightType::Point));
+							EditorCommandsControl::Get().ExecuteCommand(command);
+							m_SelectedEntity = command->GetCreatedEntity();
+							NotifyOnSelectedEntityListeners();
+						}
+						if (ImGui::MenuItem("Create Spot Light"))
+						{
+							auto command = NEW(CreateNewEntityWithLightCommand(m_ActiveScene, m_SelectedEntity, LightType::Spot));
+							EditorCommandsControl::Get().ExecuteCommand(command);
+							m_SelectedEntity = command->GetCreatedEntity();
+							NotifyOnSelectedEntityListeners();
+						}
+						ImGui::EndMenu(); 
 					}
 
-					if (ImGui::MenuItem(" Delete Entity "))
+					if (ImGui::MenuItem("Delete Entity"))
 					{
 						EditorCommandsControl::Get().ExecuteCommand(new RemoveNewEntityCommand(m_ActiveScene, m_SelectedEntity));
 						if (m_SelectedEntity == entity)
@@ -176,6 +209,7 @@ namespace Czuch
 					ImGui::Separator();
 					ImGui::EndPopup();
 				}
+
 
 			}
 

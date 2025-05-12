@@ -58,7 +58,8 @@ namespace Czuch
 	struct CZUCH_API RenderObjectInstance
 	{
 		Mat4x4 localToClipSpaceTransformation;
-		Mat4x4 localToWorldTransformation;
+		glm::ivec4 paramData;
+		Vec3 worldPosition;
 		MeshHandle mesh;
 		MaterialInstanceHandle overrideMaterial;
 		int passIndex;
@@ -103,10 +104,12 @@ namespace Czuch
 		BufferDesc lightsBufferDesc;
 		BufferDesc tilesBufferDesc;
 		BufferDesc lightsListBufferDesc;
+		BufferDesc renderObjectsBufferDesc;
 		BufferHandle buffer[MAX_FRAMES_IN_FLIGHT];
 		BufferHandle lightsBuffer[MAX_FRAMES_IN_FLIGHT];
 		BufferHandle tilesBuffer[MAX_FRAMES_IN_FLIGHT];
 		BufferHandle lightsListBuffer[MAX_FRAMES_IN_FLIGHT];
+		BufferHandle renderObjectsBuffer[MAX_FRAMES_IN_FLIGHT];
 
 		U32 tiles_in_width;
 		U32 tiles_in_height;
@@ -115,6 +118,7 @@ namespace Czuch
 
 		Array<U32> lightsIndexList;;
 		Array<LightData> lightsData;
+		Array<RenderObjectGPUData> renderObjectsData;
 		TilesDataContainer tilesDataContainer;
 		bool lightsChanged = true;
 
@@ -123,10 +127,25 @@ namespace Czuch
 		void Release(GraphicsDevice* device);
 		void InitTilesBuffer(GraphicsDevice* device, bool resize, U32 width, U32 height);
 		bool FillTilesWithLights(GraphicsDevice* device, const Array<LightObjectInfo>& allLight, U32 frame);
+		/// <summary>
+		/// Fill buffer with render objects data(materials info, transforms). If returns true thats mean we need to update materials for new buffer size
+		/// </summary>
+		/// <param name="device"></param>
+		/// <param name="allObjects"></param>
+		/// <param name="frame"></param>
+		bool FillRenderObjectsData(GraphicsDevice* device, const RenderObjectsContainer& allObjects, U32 frame);
+		/// <summary>
+		/// Init render objects buffer, resize if needed
+		/// </summary>
+		/// <param name="device"></param>
+		/// <param name="resize"></param>
+		/// <param name="frame"></param>
+		void InitRenderObjectsBuffer(GraphicsDevice* device, bool resize,U32 size);
 		void UpdateMaterialsLightsInfo();
+		void UpdateMaterialsRenderObjectsInfo();
 
 		SceneDataBuffers GetSceneDataBuffers(U32 frame);
-		void UpdateSceneDataBuffers(IScene* scene, GraphicsDevice* device, U32 frame, DeletionQueue& deletionQueue);
+		void UpdateSceneDataBuffers(IScene* scene, GraphicsDevice* device,RenderObjectsContainer& visibleObjects, U32 frame, DeletionQueue& deletionQueue);
 	};
 
 

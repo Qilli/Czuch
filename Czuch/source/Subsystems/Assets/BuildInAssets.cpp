@@ -179,12 +179,14 @@ namespace Czuch
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
 		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, INIT_MAX_RENDER_OBJECTS, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
 
 		DescriptorSetLayoutDesc desc_LightBuffers{};
 		desc_LightBuffers.shaderStage = (U32)ShaderStage::PS;
 		desc_LightBuffers.AddBinding("LightBuffer", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(LightData), true, DescriptorBindingTagType::LIGHTS_CONTAINER);
 		desc_LightBuffers.AddBinding("LightIndexBuffer", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(LightsTileData), true, DescriptorBindingTagType::LIGHTS_INDEXES);
 		desc_LightBuffers.AddBinding("TileDataBuffer", DescriptorType::STORAGE_BUFFER, 2, 1, sizeof(U32), true, DescriptorBindingTagType::LIGHTS_TILES);
+
 
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
@@ -619,6 +621,7 @@ namespace Czuch
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
 		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
 
 		DescriptorSetLayoutDesc desc_LightBuffers{};
 		desc_LightBuffers.shaderStage = (U32)ShaderStage::PS;
@@ -700,6 +703,7 @@ namespace Czuch
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
 		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
 
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;

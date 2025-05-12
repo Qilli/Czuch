@@ -28,6 +28,7 @@ namespace Czuch
 #define EPSILON 0.001f
 #define PI glm::pi<float>()
 #define RAD2DEG 180.0f / PI
+#define DEG2RAD PI / 180.0f
 
 #define Vec3ToString(vec) std::string(std::to_string(vec.x) + ", " + std::to_string(vec.y) + ", " + std::to_string(vec.z))
 

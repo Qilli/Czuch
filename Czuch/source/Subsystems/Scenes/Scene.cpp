@@ -88,11 +88,11 @@ namespace Czuch
 			auto& light = lightView.get<LightComponent>(entity);
 			auto& transform = lightView.get<TransformComponent>(entity);
 			auto position = std::move(transform.GetWorldPosition());
-			auto direction = transform.GetWorldForward();
+			auto direction = -transform.GetWorldForward();
 			m_RenderObjects.allLights.push_back({ {.positionWithType=Vec4(position.x,position.y,position.z,light.GetLightType()),
 				.color=light.GetColor(),
 				.directionWithRange=Vec4(direction.x,direction.y,direction.z,light.GetLightRange()),
-				.spotInnerOuterAngle=Vec4(0,0,0,0)}, &transform,&light});
+				.spotInnerOuterAngle=Vec4(light.GetInnerAngleCos(),light.GetOuterAngleCos(),0,0)},& transform,& light});
 		}
 
 

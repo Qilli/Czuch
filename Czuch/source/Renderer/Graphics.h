@@ -18,6 +18,8 @@ namespace Czuch
 	static constexpr U32 TILE_SIZE = 32;
 
 	static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+	static constexpr int PUSH_CONSTANTS_SIZE = sizeof(glm::mat4x4) + sizeof(glm::ivec4);
+	static constexpr int INIT_MAX_RENDER_OBJECTS = 2056;
 
 	typedef I32 Handle;
 #define INVALID_HANDLE(Type) Type() 
@@ -51,6 +53,13 @@ namespace Czuch
 		Handle lightsDataBuffer;
 		Handle lightsIndexListBuffer;
 		Handle tilesDataBuffer;
+		Handle renderObjectsBuffer;
+	};
+
+	struct RenderObjectGPUData
+	{
+		Mat4x4 localToWorldTransformation;
+		Mat4x4 invTransposeToWorldMatrix;
 	};
 
 	struct LightData
@@ -864,7 +873,8 @@ namespace Czuch
 		NONE,
 		LIGHTS_CONTAINER,
 		LIGHTS_TILES,
-		LIGHTS_INDEXES
+		LIGHTS_INDEXES,
+		RENDER_OBJECTS,
 	};
 
 	struct DescriptorSetLayoutDesc
