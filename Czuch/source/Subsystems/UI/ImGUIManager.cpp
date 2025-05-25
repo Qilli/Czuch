@@ -26,7 +26,7 @@ namespace Czuch
 		
 	}
 
-	void ImGUIManager::Init(RenderSettings* settings)
+	void ImGUIManager::Init(EngineSettings* settings)
 	{
 		BaseSubsystem::Init(settings);
 		m_UIContext=m_Device->InitImGUI();
@@ -53,6 +53,8 @@ namespace Czuch
 			currentScene = nullptr;
 		}
 
+		ImGui::EndFrame();
+		ImGui::UpdatePlatformWindows();
 		ImGui::Render();
 	}
 

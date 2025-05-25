@@ -4,7 +4,7 @@
 namespace Czuch
 {
 	class CommandBuffer;
-	struct RenderSettings;
+	struct EngineSettings;
 	struct FrameGraphBuilderHelper;
 
 	enum class RenderMode
@@ -17,11 +17,11 @@ namespace Czuch
 	{
 	protected:
 		GraphicsDeviceCapability m_DeviceCapabilities = GraphicsDeviceCapability::NONE;
-		RenderSettings *m_RenderSettings;
+		EngineSettings *m_RenderSettings;
 		RenderMode m_RenderMode;
 	public:
 		virtual ~GraphicsDevice() = default;
-		virtual bool InitDevice(RenderSettings* settings) = 0;
+		virtual bool InitDevice(EngineSettings* settings) = 0;
 
 		virtual float GetSwapchainWidth() const = 0;
 		virtual float GetSwapchainHeight() const = 0;

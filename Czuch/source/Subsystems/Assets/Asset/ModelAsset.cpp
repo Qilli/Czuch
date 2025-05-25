@@ -84,6 +84,18 @@ namespace Czuch
 		return AddMeshObjectRecursive(scene, parent, &m_MeshData.meshesHierarchy);
 	}
 
+	const MeshData* ModelAsset::GetMeshData(MeshHandle handle) const
+	{
+		for (auto& meshData : m_MeshData.meshesData)
+		{
+			if (meshData.meshHandle.handle == handle.handle)
+			{
+				return &meshData.meshData;
+			}
+		}
+		return nullptr;
+	}
+
 	bool ModelAsset::LoadAsset()
 	{
 		if (Asset::LoadAsset())

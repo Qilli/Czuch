@@ -20,12 +20,20 @@ namespace Czuch
 	static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 	static constexpr int PUSH_CONSTANTS_SIZE = sizeof(glm::mat4x4) + sizeof(glm::ivec4);
 	static constexpr int INIT_MAX_RENDER_OBJECTS = 2056;
+	static constexpr int MAX_LINES_IN_SCENE = 10000;
+	static constexpr int MAX_DEBUG_TRIANGLES_IN_SCENE = 10000;
+	static constexpr int MAX_DEBUG_POINTS_IN_SCENE = 10000;
 
 	typedef I32 Handle;
 #define INVALID_HANDLE(Type) Type() 
 #define HANDLE_IS_VALID(h)(h.handle!=-1)
 #define INVALIDATE_HANDLE(h)h.handle=-1; 
 	class GraphicsDevice;
+
+	struct PositionVertex
+	{
+		Vec3 position;
+	};
 
 	struct SceneData
 	{
@@ -350,6 +358,7 @@ namespace Czuch
 		SHADING_RATE = 1 << 7,
 		UNIFORM_BUFFER = 1 << 8,
 		STORAGE_BUFFER = 1 << 9,
+		INDIRECT_BUFFER = 1 <<10,
 	};
 
 	enum CZUCH_API DescriptorType
@@ -643,6 +652,42 @@ namespace Czuch
 	struct Texture;
 	struct RenderPass;
 
+	struct IndirectDrawForCommandBufferData
+	{
+		/// <summary>
+		/// Scene data uniform buffer containing all the matrices for view * projection and other scene related data
+		/// it always has 0 set and 0 binding
+		/// </summary>
+		BufferHandle sceneDataBuffer;
+		/// <summary>
+		/// Buffer with instances data(like for lines start/end, for triangles vertices, etc.)
+		/// </summary>
+		BufferHandle instancesBuffer;
+		U32 set = 0;//set for instances buffer
+		U32 binding = 0;//binding for instances buffer
+		U32 instancesSize = 0;//size of one instance in bytes
+		/// <summary>
+		/// Debug material for draw
+		/// </summary>
+		MaterialInstanceHandle material;
+		/// <summary>
+		/// We need vertex buffer with basic vertices, then we transform them to screen space using world transformation from instances buffer
+		/// </summary>
+		BufferHandle vertexBuffer;
+		/// <summary>
+		/// (Optional)We do not need index buffer for lines, but we need it for triangles
+		/// </summary>
+		BufferHandle indexBuffer;
+		/// <summary>
+		/// Information for indirect draw(VkDrawIndexedIndirectCommand)
+		/// </summary>
+		BufferHandle indirectDrawsCommandsBuffer;
+		/// <summary>
+		/// offset for starting indirect draw command in vkCmdDrawIndexedIndirect
+		/// </summary>
+		U32 indirectDrawsCommandsOffset = 0;
+	};
+
 	struct ImageLayouInfo
 	{
 		ImageLayout currentFormat = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
@@ -875,6 +920,9 @@ namespace Czuch
 		LIGHTS_TILES,
 		LIGHTS_INDEXES,
 		RENDER_OBJECTS,
+		DEBUG_LINES_INSTANCE_DATA,
+		DEBUG_TRIANGLES_INSTANCE_DATA,
+		DEBUG_POINTS_INSTANCE_DATA,
 	};
 
 	struct DescriptorSetLayoutDesc
@@ -1393,6 +1441,7 @@ namespace Czuch
 		MaterialInstanceDesc& Reset();
 		MaterialInstanceDesc& AddBuffer(const CzuchStr& name,UBO&& data);
 		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, BufferHandle buffer);
+		MaterialInstanceDesc& AddStorageBuffer(const CzuchStr& name, BufferHandle buffer);
 		MaterialInstanceDesc& AddSampler(const CzuchStr& name, TextureHandle color_texture,bool isInternal);
 		void SetTransparent(bool value) { isTransparent = value; }
 
@@ -1482,10 +1531,14 @@ namespace Czuch
 		Array<Vec4> colors;
 		Array<Vec4> uvs0;
 		Array<U32> indices;
+		AABB aabb;
 		AssetHandle materialInstanceAssetHandle;
 		CzuchStr meshName;
 
 	public:
+
+		void ComputeAABB();
+
 		MeshData()
 		{
 			materialInstanceAssetHandle = INVALID_HANDLE(AssetHandle);

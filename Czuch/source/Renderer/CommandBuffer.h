@@ -28,6 +28,7 @@ namespace Czuch
 		virtual void SetScrissors(ScissorsDesc scissors) = 0;
 		virtual void Draw(U32 vertexCount, U32 firstVertex, U32 instanceCount, U32 firstInstance) = 0;
 		virtual void DrawIndexed(U32 indicesCount, U32 firstIndex = 0, U32 instanceCount = 1, U32 firstnstance = 0, U32 vertexOffset = 0) = 0;
+		virtual void DrawIndirectIndexedWithData(IndirectDrawForCommandBufferData* data,DescriptorAllocator* allocator) = 0;
 	};
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include"Graphics.h"
 #include"Core/Math.h"
+#include"DebugDraw.h"
 
 namespace Czuch
 {
@@ -71,7 +72,7 @@ namespace Czuch
 			return HANDLE_IS_VALID(mesh);
 		}
 
-		void UpdateSceneDataIfRequired(GraphicsDevice* device, SceneDataBuffers& sceneDataBuffers ,RenderContextFillParams& fillParams) const;
+		void UpdateSceneDataIfRequired(GraphicsDevice* device, SceneDataBuffers& sceneDataBuffers, RenderContextFillParams& fillParams) const;
 
 		RenderObjectInstance(RenderObjectInstance&& other) noexcept = default;
 		RenderObjectInstance& operator=(RenderObjectInstance&& other) noexcept = default;
@@ -140,22 +141,115 @@ namespace Czuch
 		/// <param name="device"></param>
 		/// <param name="resize"></param>
 		/// <param name="frame"></param>
-		void InitRenderObjectsBuffer(GraphicsDevice* device, bool resize,U32 size);
+		void InitRenderObjectsBuffer(GraphicsDevice* device, bool resize, U32 size);
 		void UpdateMaterialsLightsInfo();
 		void UpdateMaterialsRenderObjectsInfo();
 
 		SceneDataBuffers GetSceneDataBuffers(U32 frame);
-		void UpdateSceneDataBuffers(IScene* scene, GraphicsDevice* device,RenderObjectsContainer& visibleObjects, U32 frame, DeletionQueue& deletionQueue);
+		void UpdateSceneDataBuffers(IScene* scene, GraphicsDevice* device, RenderObjectsContainer& visibleObjects, U32 frame, DeletionQueue& deletionQueue);
+	};
+
+
+	struct DrawIndexedIndirectCommand {
+		U32 indexCount;
+		U32 instanceCount;
+		U32 firstIndex;
+		I32 vertexOffset;
+		U32 firstInstance;
+	};
+
+
+	class SceneCameraDebugRenderingControl : public IDebugDrawBuilder
+	{
+	private:
+		BufferDesc m_LinesBufferDesc;
+		BufferDesc m_VertexBufferLinesDesc;
+		BufferDesc m_IndexBufferLinesDesc;
+		BufferHandle m_VertexBufferLines;
+		BufferHandle m_IndexBufferLines;
+		BufferHandle m_LinesBuffer[MAX_FRAMES_IN_FLIGHT];
+		IndirectDrawForCommandBufferData m_IndirectDrawDataLines;
+		void CreateAndInitLinesBuffer(GraphicsDevice* device);
+		void ReleaseLinesBuffer(GraphicsDevice* device);
+	private:
+		BufferDesc m_TrianglesBufferDesc;
+		BufferDesc m_VertexBufferTrianglesDesc;
+		BufferDesc m_IndexBufferTrianglesDesc;
+		BufferHandle m_VertexBufferTriangles;
+		BufferHandle m_IndexBufferTriangles;
+		BufferHandle m_TrianglesBuffer[MAX_FRAMES_IN_FLIGHT];
+		IndirectDrawForCommandBufferData m_IndirectDrawDataTriangles;
+		void CreateAndInitTrianglesBuffer(GraphicsDevice* device);
+		void ReleaseTrianglesBuffer(GraphicsDevice* device);
+	private:
+		BufferDesc m_PointsBufferDesc;
+		BufferDesc m_VertexBufferPointsDesc;
+		BufferHandle m_VertexBufferPoints;
+		BufferHandle m_PointsBuffer[MAX_FRAMES_IN_FLIGHT];
+		IndirectDrawForCommandBufferData m_IndirectDrawDataPoints;
+		void CreateAndInitPointsBuffer(GraphicsDevice* device);
+		void ReleasePointsBuffer(GraphicsDevice* device);
+	private:
+		BufferDesc m_CommandsBufferDesc;
+		BufferDesc m_SceneBufferDesc;
+		BufferHandle m_SceneBuffer[MAX_FRAMES_IN_FLIGHT];
+		BufferHandle m_CommandsBuffer[MAX_FRAMES_IN_FLIGHT];
+		SceneData m_SceneData;
+	private:
+		Array<LineInstanceData> m_Lines;
+		Array<TriangleInstanceData> m_Triangles;
+		Array<PointInstanceData> m_Points;
+		Array<MeshInstanceData> m_Meshes;
+		Array<DrawIndexedIndirectCommand> indirectCommands;
+		Camera* m_Camera;
+	public:
+		void UpdateSceneDataBuffer(IScene* scene, GraphicsDevice* device, U32 frame);
+		void OnSceneActive(Camera* cam,GraphicsDevice* device);
+		void Release(GraphicsDevice* device);
+		bool FillDebugBuffersData(GraphicsDevice* device,U32 frame);
+		void UpdateDebugMaterialInfo();
+		IndirectDrawForCommandBufferData& FillAndGetIndirectDrawDataForDebugLinesDrawing(MaterialInstanceHandle material,U32 frame);
+		IndirectDrawForCommandBufferData& FillAndGetIndirectDrawDataForDebugTrianglesDrawing(MaterialInstanceHandle material, U32 frame);
+		IndirectDrawForCommandBufferData& FillAndGetIndirectDrawDataForDebugPointsDrawing(MaterialInstanceHandle material, U32 frame);
+	public:
+		SceneCameraDebugRenderingControl()
+		{
+			m_Lines.reserve(MAX_LINES_IN_SCENE);
+			m_Triangles.reserve(1000);
+			m_Points.reserve(1000);
+			m_Meshes.reserve(100);
+			indirectCommands.resize(3);
+		}
+
+		void Clear()
+		{
+			m_Lines.clear();
+			m_Triangles.clear();
+			m_Points.clear();
+			m_Meshes.clear();
+		}
+		/// <summary>
+		///  Those methods can be used to draw debug lines, triangles, points and meshes
+		/// every component gets access to IDebugDrawBuilder interface
+		/// </summary>
+		void DrawLine(const Vec3& start, const Vec3& end, const Color& color) override;
+		void DrawTriangle(const Vec3& a, const Vec3& b, const Vec3& c, const Color& color) override;
+		void DrawPoint(const Vec3& point, const Color& color,const float size) override;
+		void DrawMesh(const AssetHandle mesh, const Mat4x4& transform, const Color& color) override;
+		void DrawQuad(const Vec3& center, const Vec3& normal, float size, const Color& color) override;
+		void DrawCircle(const Vec3& center,const Vec3& normal, float radius, const Color& color) override;
+		void DrawLinesSphere(const Vec3& center, float radius, const Color& color) override;
 	};
 
 
 	struct SceneCameraRendering
 	{
 		SceneCameraRenderingControl cameraControl;
+		SceneCameraDebugRenderingControl debugCameraControl;
 		IScene* activeScene;
 
 		void Release(GraphicsDevice* device);
-		void OnSceneActive(Camera* camera,GraphicsDevice* device, IScene* scene);
+		void OnSceneActive(Camera* camera, GraphicsDevice* device, IScene* scene);
 
 	};
 
@@ -163,6 +257,7 @@ namespace Czuch
 	struct SceneCameraControl
 	{
 		Camera* camera;
+		IScene* currentScene;
 		SceneCameraRendering cameraRendering;
 		bool isPrimaryCamera;
 		Array<RenderContextControl> renderContexts;
@@ -183,10 +278,14 @@ namespace Czuch
 		SceneDataBuffers GetSceneDataBuffers(U32 frame);
 		void UpdateSceneDataBuffers(GraphicsDevice* device, U32 frame, DeletionQueue& deletionQueue);
 
-		RenderContext* GetRenderContext(RenderPassType type,bool createIfNotExist=true);
+		RenderContext* GetRenderContext(RenderPassType type, bool createIfNotExist = true);
 		void AddRenderContext(RenderContextCreateInfo ctx, RenderPassType type);
 		bool IsPrimaryCamera() const { return isPrimaryCamera; }
 		RenderContext* FillRenderList(GraphicsDevice* device, RenderContextFillParams& fillParams);
+		void FillDebugDrawElements(GraphicsDevice* device, RenderContextFillParams& fillParams);
+		IndirectDrawForCommandBufferData& GetIndirectDrawDataForDebugDrawingLines(RenderContextFillParams& fillParams,U32 frame);
+		IndirectDrawForCommandBufferData& GetIndirectDrawDataForDebugDrawingTriangles(RenderContextFillParams& fillParams, U32 frame);
+		IndirectDrawForCommandBufferData& GetIndirectDrawDataForDebugDrawingPoints(RenderContextFillParams& fillParams, U32 frame);
 		/// <summary>
 		/// make contexts dirty so we can update them at the beginning of the next frame
 		/// </summary>
@@ -205,13 +304,13 @@ namespace Czuch
 		RenderContext(RenderContextCreateInfo& createInfo) :m_Settings(createInfo) { m_RenderObjects.reserve(1000); m_IsDirty = true; }
 		RenderContext() = default;
 		inline void ClearRenderList() { m_RenderObjects.clear(); m_IsDirty = true; }
-		inline void AddToRenderList(RenderObjectInstance& instance) {m_RenderObjects.push_back(std::move(instance)); }
+		inline void AddToRenderList(RenderObjectInstance& instance) { m_RenderObjects.push_back(std::move(instance)); }
 		inline const Array<RenderObjectInstance>& GetRenderObjectsList() const { return m_RenderObjects; }
 		inline bool IsAutoCleanEnabled() const { return m_Settings.autoClearBeforeRender; }
 		inline RenderLayer GetRenderLayer() const { return m_Settings.renderLayer; }
 		inline RenderType GetRenderType() const { return m_Settings.renderType; }
 		inline int GetSortingOrder() const { return m_Settings.sortingOrder; }
-		virtual void FillRenderList(GraphicsDevice* device, Camera* cam,RenderObjectsContainer& allObjects, RenderContextFillParams& fillParams) = 0;
+		virtual void FillRenderList(GraphicsDevice* device, Camera* cam, RenderObjectsContainer& allObjects, RenderContextFillParams& fillParams) = 0;
 		inline bool IsDirty() const { return m_IsDirty; }
 		virtual bool SupportRenderPass(RenderPassType type) const;
 	protected:
@@ -245,7 +344,7 @@ namespace Czuch
 	class CZUCH_API DefaultTransparentRenderContext : public DefaultRenderContext
 	{
 	public:
-		DefaultTransparentRenderContext(RenderContextCreateInfo& createInfo): DefaultRenderContext(createInfo) {}
+		DefaultTransparentRenderContext(RenderContextCreateInfo& createInfo) : DefaultRenderContext(createInfo) {}
 		virtual void FillRenderList(GraphicsDevice* device, Camera* cam, RenderObjectsContainer& allObjects, RenderContextFillParams& fillParams) override;
 		bool SupportRenderPass(RenderPassType type) const override;
 	protected:

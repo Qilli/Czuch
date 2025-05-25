@@ -28,7 +28,7 @@ namespace Czuch
 		VulkanDevice(Window* window);
 		~VulkanDevice() override;
 
-		bool InitDevice(RenderSettings* settings) override;
+		bool InitDevice(EngineSettings* settings) override;
 		float GetSwapchainWidth() const override { return m_SwapChainData.swapChainExtent.width; }
 		float GetSwapchainHeight() const override { return m_SwapChainData.swapChainExtent.height; }
 		VkFormat* GetSwapchainFormat() { return &m_SwapChainData.swapChainImageFormat; }

@@ -30,6 +30,7 @@ namespace Czuch
 		void SetScrissors(ScissorsDesc scissors) override;
 		void Draw(U32 vertexCount, U32 firstVertex=0, U32 instanceCount=1, U32 firstInstance=0) override;
 		void DrawIndexed(U32 indicesCount, U32 firstIndex=0, U32 instanceCount=1, U32 firstnstance=0, U32 vertexOffset=0) override;
+		void DrawIndirectIndexedWithData(IndirectDrawForCommandBufferData* data,DescriptorAllocator* allocator) override;
 	public:
 		void BeginDynamicRenderPassForMainPass(VkImageView colorVew, VkImageView depthView,U32 width,U32 height);
 		void EndDynamicRenderPassForMainPass();

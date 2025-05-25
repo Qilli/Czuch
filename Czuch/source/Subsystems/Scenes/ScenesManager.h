@@ -13,7 +13,7 @@ namespace Czuch
 		ScenesManager(Renderer* renderer, AssetsManager* assetsMgr);
 		~ScenesManager();
 
-		void Init(RenderSettings* settings) override;
+		void Init(EngineSettings* settings) override;
 		void Update(TimeDelta timeDelta) override;
 		void OnFinishFrame() override;
 		void Shutdown() override;

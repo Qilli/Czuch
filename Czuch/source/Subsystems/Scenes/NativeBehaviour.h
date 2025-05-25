@@ -13,6 +13,7 @@ namespace Czuch
 	};
 
 	class Scene;
+	class IDebugDrawBuilder;
 	class CZUCH_API NativeBehaviour : public IEventsListener
 	{
 	public:
@@ -35,6 +36,7 @@ namespace Czuch
 		virtual void OnUpdate(TimeDelta delta) {}
 		virtual void OnEnable() {}
 		virtual void OnDisable() {}
+		virtual void OnDebugDraw(IDebugDrawBuilder* debugDraw ) {}
 		void OnEvent(Event& event) override  {}
 
 		void SetEntity(Entity entity) { m_Entity = entity; }

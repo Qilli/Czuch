@@ -5,6 +5,7 @@
 #include"Components/MeshComponent.h"
 #include"Components/HeaderComponent.h"
 #include"Components/CameraComponent.h"
+#include"Components/LightComponent.h"
 #include"Serialization/SerializationComponentHelper.h"
 
 namespace Czuch
@@ -24,6 +25,62 @@ namespace Czuch
 	{
 		RemoveComponent<MeshComponent>();
 		RemoveComponent<MeshRendererComponent>();
+	}
+
+	void Entity::AddPointLight(const Color& color, float intensity, float range)
+	{
+		//only one light per object
+		if (HasComponent<LightComponent>())
+		{
+			LOG_BE_WARN("Entity already has a light component. Only one light component is allowed per entity.");
+			return;
+		}
+		auto& light = AddComponent<LightComponent>();
+		light.SetLightType(LightType::Point);
+		light.SetColor(color);
+		light.SetLightRange(range);
+	}
+
+	void Entity::AddDirectionalLight(const Color& color, float intensity)
+	{
+		//only one light per object
+		if (HasComponent<LightComponent>())
+		{
+			LOG_BE_WARN("Entity already has a light component. Only one light component is allowed per entity.");
+			return;
+		}
+
+		auto& light =AddComponent<LightComponent>();
+		light.SetLightType(LightType::Directional);
+		light.SetColor(color);
+	}
+
+	void Entity::AddSpotLight(const Color& color, float intensity, float range, float innerAngle, float outerAngle)
+	{
+		//only one light per object
+		if (HasComponent<LightComponent>())
+		{
+			LOG_BE_WARN("Entity already has a light component. Only one light component is allowed per entity.");
+			return;
+		} 
+		auto& light = AddComponent<LightComponent>();
+		light.SetLightType(LightType::Spot);
+		light.SetColor(color);
+		light.SetLightRange(range);
+		light.SetInnerAngle(innerAngle);
+		light.SetOuterAngle(outerAngle);
+	}
+
+	void Entity::RemoveLightComponent()
+	{
+		if (HasComponent<LightComponent>())
+		{
+			RemoveComponent<LightComponent>();
+		}
+		else
+		{
+			LOG_BE_WARN("Entity does not have a light component to remove.");
+		}
 	}
 
 	bool Entity::IsRenderable()

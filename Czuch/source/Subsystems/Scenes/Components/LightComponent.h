@@ -5,7 +5,7 @@
 
 namespace Czuch
 {
-	enum class LightType: int
+	enum class CZUCH_API LightType: int
 	{
 		Directional = 0,
 		Point = 1,

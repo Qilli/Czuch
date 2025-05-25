@@ -12,7 +12,7 @@ namespace Czuch
 {
 	std::string AssetsManager::m_StartPath;
 
-	void AssetsManager::Init(RenderSettings* settings)
+	void AssetsManager::Init(EngineSettings* settings)
 	{
 		BaseSubsystem::Init(settings);
 		m_StartPath = settings->GetStartPath();

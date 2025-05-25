@@ -1,6 +1,7 @@
 #include "czpch.h"
 #include "NativeBehaviourComponent.h"
 #include "./Subsystems/Scenes/NativeBehaviour.h"
+#include "Renderer/DebugDraw.h"
 
 namespace Czuch
 {
@@ -32,6 +33,22 @@ namespace Czuch
 		else
 		{
 			OnDisable();
+		}
+	}
+
+	void NativeBehaviourComponent::OnDebugDraw(IDebugDrawBuilder* debugBuilder)
+	{
+		if (!IsEnabled())
+		{
+			return;
+		}
+
+		for (size_t i = 0; i < m_BehavioursCount; i++)
+		{
+			if (m_NativeBehaviours[i].behaviour->IsEnabled())
+			{
+				m_NativeBehaviours[i].behaviour->OnDebugDraw(debugBuilder);
+			}
 		}
 	}
 

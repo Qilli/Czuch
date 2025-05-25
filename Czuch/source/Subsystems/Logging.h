@@ -40,7 +40,7 @@ namespace Czuch
 	class CZUCH_API Logging: public BaseSubsystem<Logging>
 	{
 	public:
-		void Init(RenderSettings* settings) override;
+		void Init(EngineSettings* settings) override;
 		void Shutdown();
 		void Update(TimeDelta timeDelta);
 	public:

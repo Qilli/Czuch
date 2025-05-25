@@ -21,7 +21,7 @@ namespace Czuch
 {
 	const CzuchStr SceneTag = "SceneControl";
 
-	Scene::Scene(const CzuchStr& sceneName, RenderSettings* settings, GraphicsDevice* device) : m_SceneName(sceneName), m_RenderSettings(settings), m_Device(device)
+	Scene::Scene(const CzuchStr& sceneName,GraphicsDevice* device) : m_SceneName(sceneName), m_Device(device)
 	{
 		m_RootEntity = Entity{ m_Registry.create(),this };
 		m_RootEntity.AddComponent<HeaderComponent>(sceneName, "Root", Layer{ 0 });
@@ -142,6 +142,26 @@ namespace Czuch
 	void Scene::AfterFrameGraphExecute()
 	{
 		
+	}
+
+	void Scene::FillDebugDrawElements(Camera* cam, Renderer* renderer, RenderContextFillParams& fillParams)
+	{
+		Camera* currentCamera = cam;
+		if (cam == nullptr)
+		{
+			currentCamera = m_CurrentFrameCamera;
+		}
+
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			if (cameraControl.camera == currentCamera)
+			{
+				cameraControl.FillDebugDrawElements(renderer->GetDevice(), fillParams);
+				return;
+			}
+		}
+		LOG_BE_ERROR("[Scene] Scene does not have camera control for the camera in FillDebugDrawElements.");
+		return;
 	}
 
 	void Scene::OnPostRender(Camera* camera, RenderContextFillParams* fillParams)
@@ -276,7 +296,7 @@ namespace Czuch
 	void Scene::OnResize(U32 width, U32 height,bool windowSizeChanged)
 	{
 
-		if (m_RenderSettings->engineMode == EngineMode::Editor && windowSizeChanged)
+		if (EngineRoot::GetEngineSettings().engineMode == EngineMode::Editor && windowSizeChanged)
 		{
 			return;
 		}
@@ -312,16 +332,17 @@ namespace Czuch
 		return m_CamerasControl[0].GetSceneDataBuffers(frame);
 	}
 
-	void Scene::ForEachEntity(std::function<void(Entity)> func)
+	void Scene::ForEachEntity(std::function<void(Entity*)> func)
 	{
 		auto view = m_Registry.view<HeaderComponent>();
 		for (auto entity : view)
 		{
-			func(Entity{ entity,this });
+			auto current = Entity{ entity,this };
+			func(&current);
 		}
 	}
 
-	void ForEachChildEntity(TransformComponent* transform, std::function<void(Entity)> func, Czuch::IScene* scene)
+	void ForEachChildEntity(TransformComponent* transform, std::function<void(Entity*)> func, Czuch::IScene* scene)
 	{
 		for (auto child : transform->GetChildren())
 		{
@@ -329,15 +350,15 @@ namespace Czuch
 			{
 				continue;
 			}
-			func(child);
+			func(&child);
 			ForEachChildEntity(&child.GetComponent<TransformComponent>(), func, scene);
 		}
 	}
 
-	void Scene::ForEachEntityWithHierarchy(std::function<void(Entity)> func)
+	void Scene::ForEachEntityWithHierarchy(std::function<void(Entity*)> func)
 	{
 		TransformComponent* rootTransform = &m_RootEntity.GetComponent<TransformComponent>();
-		func(m_RootEntity);
+		func(&m_RootEntity);
 		ForEachChildEntity(rootTransform, func, this);
 	}
 
@@ -370,11 +391,11 @@ namespace Czuch
 		{
 			auto& camera = view.get<CameraComponent>(entity);
 
-			if (m_RenderSettings->engineMode == EngineMode::Runtime && camera.IsPrimary() && camera.IsEnabled())
+			if (EngineRoot::GetEngineSettings().engineMode == EngineMode::Runtime && camera.IsPrimary() && camera.IsEnabled())
 			{
 				return &camera;
 			}
-			else if (m_RenderSettings->engineMode == EngineMode::Editor && camera.GetType() == CameraType::EditorCamera && camera.IsEnabled())
+			else if (EngineRoot::GetEngineSettings().engineMode == EngineMode::Editor && camera.GetType() == CameraType::EditorCamera && camera.IsEnabled())
 			{
 				return &camera;
 			}
@@ -405,11 +426,11 @@ namespace Czuch
 		for (auto entity : view)
 		{
 			auto& camera = view.get<CameraComponent>(entity);
-			if (m_RenderSettings->engineMode == EngineMode::Runtime && camera.GetType() == CameraType::GameCamera && camera.IsEnabled())
+			if (EngineRoot::GetEngineSettings().engineMode == EngineMode::Runtime && camera.GetType() == CameraType::GameCamera && camera.IsEnabled())
 			{
 				return &camera;
 			}
-			else if (m_RenderSettings->engineMode == EngineMode::Editor && camera.GetType() == CameraType::EditorCamera && camera.IsEnabled())
+			else if (EngineRoot::GetEngineSettings().engineMode == EngineMode::Editor && camera.GetType() == CameraType::EditorCamera && camera.IsEnabled())
 			{
 				return &camera;
 			}
@@ -576,19 +597,19 @@ namespace Czuch
 		SerializerHelper::KeyVal("Scene", GetSceneName());
 		SerializerHelper::Key("Entities");
 		SerializerHelper::BeginSeq();
-		ForEachEntityWithHierarchy([&](Entity entity)
+		ForEachEntityWithHierarchy([&](Entity* entity)
 			{
-				if (entity.GetComponent<HeaderComponent>().GetTag() == "EditorCamera")
+				if (entity->GetComponent<HeaderComponent>().GetTag() == "EditorCamera")
 				{
 					return true;
 				}
 
-				if (entity.IsValid())
+				if (entity->IsValid())
 				{
-					bool result = entity.Serialize(out, binary);
+					bool result = entity->Serialize(out, binary);
 					if (result == false)
 					{
-						LOG_BE_ERROR("[Scene][Save]Failed to save scene {0} to the file. Entity {1} serialization failed.", GetSceneName(), entity.GetComponent<HeaderComponent>().GetHeader());
+						LOG_BE_ERROR("[Scene][Save]Failed to save scene {0} to the file. Entity {1} serialization failed.", GetSceneName(), entity->GetComponent<HeaderComponent>().GetHeader());
 						return false;
 					}
 				}

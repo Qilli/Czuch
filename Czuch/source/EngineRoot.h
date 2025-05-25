@@ -41,13 +41,14 @@ namespace Czuch
 		UIBaseManager& GetUIBaseManager() const { return *m_UIBaseMgr; }
 		Window& GetWindow() const { return *m_Window; }
 		virtual void OnEvent(Event& e) override;
-		inline void SetGameMode(EngineMode mode) { m_RenderSettings.engineMode = mode; }
-		EngineMode GetGameMode() const { return m_RenderSettings.engineMode; }
-		RenderSettings& GetRenderSettings() { return m_RenderSettings; }
+		inline void SetGameMode(EngineMode mode) { m_EngineSettings.engineMode = mode; }
+		EngineMode GetGameMode() const { return m_EngineSettings.engineMode; }
 		EngineStateMode GetEngineStateMode() const { return m_EngineStateMode; }
 		void SetEngineStateMode(EngineStateMode mode) { m_EngineStateMode = mode; }
 		UpdateMode GetUpdateMode() const { return m_UpdateMode; }
 		void SetUpdateMode(UpdateMode mode) { m_UpdateMode = mode; }
+	public:
+		static EngineSettings& GetEngineSettings() { return m_EngineSettings; }
 	private:
 		TimeDelta UpdateDeltaTime(TimeDiffCounter& counter);
 	private:
@@ -66,9 +67,10 @@ namespace Czuch
 		BuildInAssets* m_DefaultAssets;
 	private:
 		bool m_ShouldStopLoop;
-		RenderSettings m_RenderSettings;
 		EngineStateMode m_EngineStateMode;
 		UpdateMode m_UpdateMode;
+	private:
+		static EngineSettings m_EngineSettings;
 	};
 }
 

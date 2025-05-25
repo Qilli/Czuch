@@ -6,7 +6,9 @@
 #include "Subsystems/Scenes/Components/MeshRendererComponent.h"
 #include "Subsystems/Scenes/Components/CameraComponent.h"
 #include "Subsystems/Scenes/Components/LightComponent.h"
+#include "Subsystems/Scenes/Components/NativeBehaviourComponent.h"
 #include "Subsystems/Assets/AssetsManager.h"
+#include "Subsystems/Scenes/Components/NativeBehaviourComponent.h"
 
 namespace Czuch
 {
@@ -159,9 +161,10 @@ namespace Czuch
 	void SceneCameraControl::OnSceneActive(GraphicsDevice* device, IScene* scene)
 	{
 		cameraRendering.OnSceneActive(camera, device, scene);
+		currentScene = scene;
 	}
 
-	void SceneCameraControl::OnResize(GraphicsDevice* device, U32 width, U32 height,bool windowSizeChanged)
+	void SceneCameraControl::OnResize(GraphicsDevice* device, U32 width, U32 height, bool windowSizeChanged)
 	{
 		cameraRendering.cameraControl.InitTilesBuffer(device, true, width, height);
 	}
@@ -174,6 +177,7 @@ namespace Czuch
 	void SceneCameraControl::UpdateSceneDataBuffers(GraphicsDevice* device, U32 frame, DeletionQueue& deletionQueue)
 	{
 		cameraRendering.cameraControl.UpdateSceneDataBuffers(cameraRendering.activeScene, device, visibleRenderObjects, frame, deletionQueue);
+		cameraRendering.debugCameraControl.UpdateSceneDataBuffer(cameraRendering.activeScene, device, frame);
 	}
 
 	RenderContext* SceneCameraControl::GetRenderContext(RenderPassType type, bool createIfNotExist)
@@ -232,7 +236,7 @@ namespace Czuch
 		renderContexts.push_back({ renderContext, type });
 	}
 
-	RenderContext* SceneCameraControl::FillRenderList(GraphicsDevice* device,RenderContextFillParams& fillParams)
+	RenderContext* SceneCameraControl::FillRenderList(GraphicsDevice* device, RenderContextFillParams& fillParams)
 	{
 		auto context = GetRenderContext(fillParams.renderPassType, true);
 		if (context->IsDirty())
@@ -240,6 +244,88 @@ namespace Czuch
 			context->FillRenderList(device, camera, visibleRenderObjects, fillParams);
 		}
 		return context;
+	}
+
+	void SceneCameraControl::FillDebugDrawElements(GraphicsDevice* device, RenderContextFillParams& fillParams)
+	{
+		cameraRendering.debugCameraControl.Clear();
+
+		currentScene->ForEachEntity([&](Entity* entity)
+			{
+				if (entity->HasComponent<NativeBehaviourComponent>())
+				{
+					auto& behaviour = entity->GetComponent<NativeBehaviourComponent>();
+					if (behaviour.IsEnabled())
+					{
+						behaviour.OnDebugDraw(&cameraRendering.debugCameraControl);
+					}
+				}
+
+				if (EngineRoot::GetEngineSettings().debugSettings.IsDebugDrawOBBForMeshesEnabled() &&  entity->HasComponent<MeshRendererComponent>())
+				{
+					auto& meshRendererComp = entity->GetComponent<MeshRendererComponent>();
+					if (meshRendererComp.IsEnabled())
+					{
+						auto& meshComp = entity->GetComponent<MeshComponent>();
+						auto& transformComp = entity->GetComponent<TransformComponent>();
+						OBB obb = meshComp.GetOBB(transformComp,EngineRoot::GetEngineSettings().debugSettings.GetDebugDrawOBBForMeshesScale());
+
+						auto& rendering = cameraRendering.debugCameraControl;
+						//add lines building obb around mesh
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, -1)), obb.TransformLocalPoint(Vec3(1, -1, -1)), Colors::Green);
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, -1)), obb.TransformLocalPoint(Vec3(-1, 1, -1)), Colors::Green);
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, -1)), obb.TransformLocalPoint(Vec3(-1, -1, 1)), Colors::Green);
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, -1, -1)), obb.TransformLocalPoint(Vec3(1, 1, -1)), Colors::Green);
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, -1, -1)), obb.TransformLocalPoint(Vec3(1, -1, 1)), Colors::Green);
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, 1, -1)), obb.TransformLocalPoint(Vec3(1, 1, -1)), Colors::Green);
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, 1, -1)), obb.TransformLocalPoint(Vec3(-1, 1, 1)), Colors::Green);
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, 1)), obb.TransformLocalPoint(Vec3(1, -1, 1)), Colors::Green);
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, 1)), obb.TransformLocalPoint(Vec3(-1, 1, 1)), Colors::Green);
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, -1, 1)), obb.TransformLocalPoint(Vec3(1, 1, 1)), Colors::Green);
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, 1, 1)), obb.TransformLocalPoint(Vec3(1, 1, 1)), Colors::Green);
+						rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, 1, 1)), obb.TransformLocalPoint(Vec3(1, 1, -1)), Colors::Green);
+					}
+				}
+
+				if (entity->HasComponent<LightComponent>())
+				{
+					auto &transform = entity->GetComponent<TransformComponent>();
+					auto& lightComp = entity->GetComponent<LightComponent>();
+					if (lightComp.IsEnabled())
+					{
+						auto& rendering = cameraRendering.debugCameraControl;
+						switch (lightComp.GetLightType())
+						{
+						case LightType::Point:
+							rendering.DrawLinesSphere(transform.GetWorldPosition(), lightComp.GetLightRange(), Colors::Yellow);
+							break;
+						case LightType::Spot:
+							//rendering.DrawCone(transform.GetWorldPosition(), transform.GetWorldForward(), lightComp.GetRange(), lightComp.GetSpotAngle(), lightComp.GetColor());
+							break;
+						case LightType::Directional:
+							//rendering.DrawLine(transform.GetWorldPosition(), transform.GetWorldPosition() + transform.GetWorldForward() * 10.0f, Colors::Yellow);
+							break;
+						default:
+							break;
+						}
+					}
+				}
+			});
+	}
+
+	IndirectDrawForCommandBufferData& SceneCameraControl::GetIndirectDrawDataForDebugDrawingLines(RenderContextFillParams& fillParams, U32 frame)
+	{
+		return cameraRendering.debugCameraControl.FillAndGetIndirectDrawDataForDebugLinesDrawing(fillParams.forcedMaterial, frame);
+	}
+
+	IndirectDrawForCommandBufferData& SceneCameraControl::GetIndirectDrawDataForDebugDrawingTriangles(RenderContextFillParams& fillParams, U32 frame)
+	{
+		return cameraRendering.debugCameraControl.FillAndGetIndirectDrawDataForDebugTrianglesDrawing(fillParams.forcedMaterial, frame);
+	}
+
+	IndirectDrawForCommandBufferData& SceneCameraControl::GetIndirectDrawDataForDebugDrawingPoints(RenderContextFillParams& fillParams, U32 frame)
+	{
+		return cameraRendering.debugCameraControl.FillAndGetIndirectDrawDataForDebugPointsDrawing(fillParams.forcedMaterial, frame);
 	}
 
 	void SceneCameraControl::OnPostRender()
@@ -256,7 +342,7 @@ namespace Czuch
 	void SceneCameraControl::UpdateVisibleObjects(RenderObjectsContainer& allObjects)
 	{
 		visibleRenderObjects.Clear();
-		
+
 		for (auto& obj : allObjects.allObjects)
 		{
 			visibleRenderObjects.allObjects.push_back(obj);
@@ -285,6 +371,7 @@ namespace Czuch
 	void SceneCameraRendering::Release(GraphicsDevice* device)
 	{
 		cameraControl.Release(device);
+		debugCameraControl.Release(device);
 	}
 
 	void SceneCameraRendering::OnSceneActive(Camera* camera, GraphicsDevice* device, IScene* scene)
@@ -292,6 +379,7 @@ namespace Czuch
 		activeScene = scene;
 		cameraControl.Init(device, camera);
 		cameraControl.OnSceneActive(device);
+		debugCameraControl.OnSceneActive(camera, device);
 	}
 
 	void SceneCameraRenderingControl::Init(GraphicsDevice* device, Camera* cam)
@@ -358,13 +446,13 @@ namespace Czuch
 		tilesBufferDesc.persistentMapped = true;
 		tilesBufferDesc.elementsCount = 1;
 		tilesBufferDesc.bind_flags = BindFlag::STORAGE_BUFFER;
-		tilesBufferDesc.size = sizeof(LightsTileData)* tiles_count;
+		tilesBufferDesc.size = sizeof(LightsTileData) * tiles_count;
 		tilesBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
 
 		lightsListBufferDesc.persistentMapped = true;
 		lightsListBufferDesc.elementsCount = 1;
 		lightsListBufferDesc.bind_flags = BindFlag::STORAGE_BUFFER;
-		lightsListBufferDesc.size = sizeof(U32)* MAX_LIGHTS_IN_TILE * tiles_count +sizeof(glm::ivec4);
+		lightsListBufferDesc.size = sizeof(U32) * MAX_LIGHTS_IN_TILE * tiles_count + sizeof(glm::ivec4);
 		lightsListBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
 
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -394,7 +482,7 @@ namespace Czuch
 			lightsBuffer[frame].handle,
 			lightsListBuffer[frame].handle,
 			tilesBuffer[frame].handle,
-		    renderObjectsBuffer[frame].handle};
+			renderObjectsBuffer[frame].handle };
 	}
 
 	void SceneCameraRenderingControl::UpdateSceneDataBuffers(IScene* scene, GraphicsDevice* device, RenderObjectsContainer& visibleObjects, U32 frame, DeletionQueue& deletionQueue)
@@ -417,7 +505,7 @@ namespace Czuch
 				UpdateMaterialsLightsInfo();
 			}
 
-			if (FillRenderObjectsData(device, visibleObjects,frame))
+			if (FillRenderObjectsData(device, visibleObjects, frame))
 			{
 				//Update materials render elements info
 				UpdateMaterialsRenderObjectsInfo();
@@ -428,7 +516,7 @@ namespace Czuch
 	}
 
 
-	void SceneCameraRenderingControl::InitRenderObjectsBuffer(GraphicsDevice* device, bool resize,U32 size)
+	void SceneCameraRenderingControl::InitRenderObjectsBuffer(GraphicsDevice* device, bool resize, U32 size)
 	{
 		if (resize)
 		{
@@ -523,19 +611,19 @@ namespace Czuch
 		//copy screen size to the beginning of the buffer
 		memcpy(lightsListData, &screenSize, sizeof(glm::ivec4));
 		//do memcopy
-		memcpy(lightsListData+sizeof(glm::ivec4), lightsIndexList.data(), sizeof(U32) * lightsIndexList.size() + sizeof(glm::ivec4));
+		memcpy(lightsListData + sizeof(glm::ivec4), lightsIndexList.data(), sizeof(U32) * lightsIndexList.size() + sizeof(glm::ivec4));
 
 		bool localLightsChanged = lightsChanged;
 		lightsChanged = false;
 		return localLightsChanged;
 	}
 
-	bool SceneCameraRenderingControl::FillRenderObjectsData(GraphicsDevice* device, const RenderObjectsContainer& allObjects,U32 frame)
+	bool SceneCameraRenderingControl::FillRenderObjectsData(GraphicsDevice* device, const RenderObjectsContainer& allObjects, U32 frame)
 	{
 		bool changed = false;
 		if (renderObjectsData.capacity() < allObjects.allObjects.size())
 		{
-			InitRenderObjectsBuffer(device, true, allObjects.allObjects.size()*2);
+			InitRenderObjectsBuffer(device, true, allObjects.allObjects.size() * 2);
 			changed = true;
 		}
 
@@ -584,7 +672,7 @@ namespace Czuch
 				continue;
 			}
 
-			auto material =  fillParams.forcedMaterial;
+			auto material = fillParams.forcedMaterial;
 			auto materialInstance = device->AccessMaterialInstance(material);
 			if (!materialInstance)
 			{
@@ -612,6 +700,436 @@ namespace Czuch
 	bool DefaultDepthPrePassRenderContext::SupportRenderPass(RenderPassType type) const
 	{
 		return (U32)type & SUPPORTED_RENDER_PASSES_FLAGS;
+	}
+
+	PositionVertex LineBasicVertices[] = {
+		{ Vec3(0, 0, 0)},
+		{ Vec3(1, 0, 0)},
+	};
+
+	U32 LineBasicIndices[] = {
+		0, 1
+	};
+
+	PositionVertex TriangleBasicVertices[] = {
+		{ Vec3(0, 0, 0)},
+		{ Vec3(1, 0, 0)},
+		{ Vec3(0, 1, 0)},
+	};
+
+	U32 TriangleBasicIndices[] = {
+		0, 1, 2
+	};
+
+	PositionVertex PointBasicVertices[] = {
+		{ Vec3(0, 0, 0)},
+	};
+
+	U32 PointBasicIndices[] = {
+		0
+	};
+
+
+	void SceneCameraDebugRenderingControl::CreateAndInitLinesBuffer(GraphicsDevice* device)
+	{
+		m_LinesBufferDesc.persistentMapped = true;
+		m_LinesBufferDesc.elementsCount = 1;
+		m_LinesBufferDesc.bind_flags = BindFlag::STORAGE_BUFFER;
+		m_LinesBufferDesc.size = sizeof(LineInstanceData) * MAX_LINES_IN_SCENE;
+		m_LinesBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
+
+		m_VertexBufferLinesDesc.persistentMapped = false;
+		m_VertexBufferLinesDesc.elementsCount = 1;
+		m_VertexBufferLinesDesc.bind_flags = BindFlag::VERTEX_BUFFER;
+		m_VertexBufferLinesDesc.size = sizeof(PositionVertex) * 2;
+		m_VertexBufferLinesDesc.usage = Usage::DEFAULT;
+		m_VertexBufferLinesDesc.stride = sizeof(PositionVertex);
+		m_VertexBufferLinesDesc.initData = LineBasicVertices;
+
+		m_IndexBufferLinesDesc.persistentMapped = false;
+		m_IndexBufferLinesDesc.elementsCount = 1;
+		m_IndexBufferLinesDesc.bind_flags = BindFlag::INDEX_BUFFER;
+		m_IndexBufferLinesDesc.size = sizeof(U32) * 2;
+		m_IndexBufferLinesDesc.usage = Usage::DEFAULT;
+		m_IndexBufferLinesDesc.stride = sizeof(U32);
+		m_IndexBufferLinesDesc.initData = LineBasicIndices;
+
+		m_VertexBufferLines = device->CreateBuffer(&m_VertexBufferLinesDesc);
+		m_IndexBufferLines = device->CreateBuffer(&m_IndexBufferLinesDesc);
+
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			m_LinesBuffer[a] = device->CreateBuffer(&m_LinesBufferDesc);
+		}
+	}
+
+	void SceneCameraDebugRenderingControl::ReleaseLinesBuffer(GraphicsDevice* device)
+	{
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			device->Release(m_LinesBuffer[a]);
+			INVALIDATE_HANDLE(m_LinesBuffer[a]);
+		}
+		device->Release(m_VertexBufferLines);
+		device->Release(m_IndexBufferLines);
+		m_Lines.clear();
+	}
+
+	void SceneCameraDebugRenderingControl::CreateAndInitTrianglesBuffer(GraphicsDevice* device)
+	{
+		m_TrianglesBufferDesc.persistentMapped = true;
+		m_TrianglesBufferDesc.elementsCount = 1;
+		m_TrianglesBufferDesc.bind_flags = BindFlag::STORAGE_BUFFER;
+		m_TrianglesBufferDesc.size = sizeof(TriangleInstanceData) * MAX_DEBUG_TRIANGLES_IN_SCENE;
+		m_TrianglesBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
+
+		m_VertexBufferTrianglesDesc.persistentMapped = false;
+		m_VertexBufferTrianglesDesc.elementsCount = 1;
+		m_VertexBufferTrianglesDesc.bind_flags = BindFlag::VERTEX_BUFFER;
+		m_VertexBufferTrianglesDesc.size = sizeof(PositionVertex) * 3;
+		m_VertexBufferTrianglesDesc.usage = Usage::DEFAULT;
+		m_VertexBufferTrianglesDesc.stride = sizeof(PositionVertex);
+		m_VertexBufferTrianglesDesc.initData = TriangleBasicVertices;
+
+		m_IndexBufferTrianglesDesc.persistentMapped = false;
+		m_IndexBufferTrianglesDesc.elementsCount = 1;
+		m_IndexBufferTrianglesDesc.bind_flags = BindFlag::INDEX_BUFFER;
+		m_IndexBufferTrianglesDesc.size = sizeof(U32) * 3;
+		m_IndexBufferTrianglesDesc.usage = Usage::DEFAULT;
+		m_IndexBufferTrianglesDesc.stride = sizeof(U32);
+		m_IndexBufferTrianglesDesc.initData = TriangleBasicIndices;
+
+		m_VertexBufferTriangles = device->CreateBuffer(&m_VertexBufferTrianglesDesc);
+		m_IndexBufferTriangles = device->CreateBuffer(&m_IndexBufferTrianglesDesc);
+
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			m_TrianglesBuffer[a] = device->CreateBuffer(&m_TrianglesBufferDesc);
+		}
+	}
+
+	void SceneCameraDebugRenderingControl::ReleaseTrianglesBuffer(GraphicsDevice* device)
+	{
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			device->Release(m_TrianglesBuffer[a]);
+			INVALIDATE_HANDLE(m_TrianglesBuffer[a]);
+		}
+		device->Release(m_VertexBufferTriangles);
+		device->Release(m_IndexBufferTriangles);
+		m_Triangles.clear();
+	}
+
+	void SceneCameraDebugRenderingControl::CreateAndInitPointsBuffer(GraphicsDevice* device)
+	{
+		m_PointsBufferDesc.persistentMapped = true;
+		m_PointsBufferDesc.elementsCount = 1;
+		m_PointsBufferDesc.bind_flags = BindFlag::STORAGE_BUFFER;
+		m_PointsBufferDesc.size = sizeof(PointInstanceData) * MAX_DEBUG_POINTS_IN_SCENE;
+		m_PointsBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
+
+		m_VertexBufferPointsDesc.persistentMapped = false;
+		m_VertexBufferPointsDesc.elementsCount = 1;
+		m_VertexBufferPointsDesc.bind_flags = BindFlag::VERTEX_BUFFER;
+		m_VertexBufferPointsDesc.size = sizeof(PositionVertex);
+		m_VertexBufferPointsDesc.usage = Usage::DEFAULT;
+		m_VertexBufferPointsDesc.stride = sizeof(PositionVertex);
+		m_VertexBufferPointsDesc.initData = PointBasicVertices;
+
+		m_VertexBufferPoints = device->CreateBuffer(&m_VertexBufferPointsDesc);
+
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			m_PointsBuffer[a] = device->CreateBuffer(&m_PointsBufferDesc);
+		}
+	}
+
+	void SceneCameraDebugRenderingControl::ReleasePointsBuffer(GraphicsDevice* device)
+	{
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			device->Release(m_PointsBuffer[a]);
+			INVALIDATE_HANDLE(m_PointsBuffer[a]);
+		}
+		device->Release(m_VertexBufferPoints);
+		m_Points.clear();
+	}
+
+	void SceneCameraDebugRenderingControl::UpdateSceneDataBuffer(IScene* scene, GraphicsDevice* device, U32 frame)
+	{
+		if (scene != nullptr)
+		{
+			m_SceneData.ambientColor = scene->GetAmbientColor();
+			m_SceneData.view = m_Camera->GetViewMatrix();
+			m_SceneData.proj = m_Camera->GetProjectionMatrix();
+			m_SceneData.viewproj = m_Camera->GetViewProjectionMatrix();
+
+			if (FillDebugBuffersData(device, frame))
+			{
+				UpdateDebugMaterialInfo();
+			}
+		}
+
+		auto bufferVulkan = device->GetMappedBufferDataPtr(m_SceneBuffer[frame]);
+		uint8_t* byteData = static_cast<uint8_t*>(bufferVulkan);
+		memcpy(byteData, &m_SceneData, sizeof(SceneData));
+	}
+
+	void SceneCameraDebugRenderingControl::OnSceneActive(Camera* cam, GraphicsDevice* device)
+	{
+		m_Camera = cam;
+
+		m_SceneBufferDesc.persistentMapped = true;
+		m_SceneBufferDesc.elementsCount = 1;
+		m_SceneBufferDesc.bind_flags = BindFlag::UNIFORM_BUFFER;
+		m_SceneBufferDesc.size = sizeof(SceneData);
+		m_SceneBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
+
+		m_CommandsBufferDesc.persistentMapped = true;
+		m_CommandsBufferDesc.elementsCount = 1;
+		m_CommandsBufferDesc.bind_flags = BindFlag::INDIRECT_BUFFER;
+		m_CommandsBufferDesc.size = sizeof(DrawIndexedIndirectCommand) * 3;
+		m_CommandsBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
+
+		Release(device);
+
+		CreateAndInitLinesBuffer(device);
+		CreateAndInitTrianglesBuffer(device);
+		CreateAndInitPointsBuffer(device);
+
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			m_SceneBuffer[a] = device->CreateBuffer(&m_SceneBufferDesc);
+			m_CommandsBuffer[a] = device->CreateBuffer(&m_CommandsBufferDesc);
+		}
+
+	}
+
+	void SceneCameraDebugRenderingControl::Release(GraphicsDevice* device)
+	{
+		ReleaseLinesBuffer(device);
+		ReleaseTrianglesBuffer(device);
+		ReleasePointsBuffer(device);
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			device->Release(m_SceneBuffer[a]);
+			device->Release(m_CommandsBuffer[a]);
+			INVALIDATE_HANDLE(m_SceneBuffer[a]);
+			INVALIDATE_HANDLE(m_CommandsBuffer[a]);
+		}
+		m_SceneData = {};
+	}
+
+	bool SceneCameraDebugRenderingControl::FillDebugBuffersData(GraphicsDevice* device, U32 frame)
+	{
+		if (m_Lines.size() < MAX_LINES_IN_SCENE)
+		{
+
+			auto bufferVulkan = device->GetMappedBufferDataPtr(m_LinesBuffer[frame]);
+			uint8_t* byteData = static_cast<uint8_t*>(bufferVulkan);
+			memcpy(byteData, m_Lines.data(), sizeof(LineInstanceData) * m_Lines.size());
+
+			auto bufferVulkanCommands = device->GetMappedBufferDataPtr(m_CommandsBuffer[frame]);
+			DrawIndexedIndirectCommand* commands = (DrawIndexedIndirectCommand*)bufferVulkanCommands;
+
+			//Lines instances info
+			commands[0].indexCount = 2;
+			commands[0].instanceCount = static_cast<U32>(m_Lines.size());
+			commands[0].firstIndex = 0;
+			commands[0].vertexOffset = 0;
+			commands[0].firstInstance = 0;
+		}
+
+		if (m_Triangles.size() < MAX_DEBUG_TRIANGLES_IN_SCENE)
+		{
+			auto bufferVulkanTriangles = device->GetMappedBufferDataPtr(m_TrianglesBuffer[frame]);
+			uint8_t* byteDataTriangles = static_cast<uint8_t*>(bufferVulkanTriangles);
+			memcpy(byteDataTriangles, m_Triangles.data(), sizeof(TriangleInstanceData) * m_Triangles.size());
+
+			auto bufferVulkanCommands = device->GetMappedBufferDataPtr(m_CommandsBuffer[frame]);
+			DrawIndexedIndirectCommand* commands = (DrawIndexedIndirectCommand*)bufferVulkanCommands;
+
+			//Triangles instances info
+			commands[1].indexCount = 3;
+			commands[1].instanceCount = static_cast<U32>(m_Triangles.size());
+			commands[1].firstIndex = 0;
+			commands[1].vertexOffset = 0;
+			commands[1].firstInstance = 0;
+		}
+
+		if (m_Points.size() < MAX_DEBUG_POINTS_IN_SCENE)
+		{
+			auto bufferVulkanPoints = device->GetMappedBufferDataPtr(m_PointsBuffer[frame]);
+			uint8_t* byteDataPoints = static_cast<uint8_t*>(bufferVulkanPoints);
+			memcpy(byteDataPoints, m_Points.data(), sizeof(PointInstanceData) * m_Points.size());
+
+			auto bufferVulkanCommands = device->GetMappedBufferDataPtr(m_CommandsBuffer[frame]);
+			DrawIndexedIndirectCommand* commands = (DrawIndexedIndirectCommand*)bufferVulkanCommands;
+
+			//Points instances info
+			commands[2].indexCount = 1;
+			commands[2].instanceCount = static_cast<U32>(m_Points.size());
+			commands[2].firstIndex = 0;
+			commands[2].vertexOffset = 0;
+			commands[2].firstInstance = 0;
+		}
+
+		return true;
+	}
+
+	void SceneCameraDebugRenderingControl::UpdateDebugMaterialInfo()
+	{
+	}
+
+	IndirectDrawForCommandBufferData& SceneCameraDebugRenderingControl::FillAndGetIndirectDrawDataForDebugLinesDrawing(MaterialInstanceHandle material, U32 frame)
+	{
+		m_IndirectDrawDataLines.binding = 0;
+		m_IndirectDrawDataLines.indexBuffer = m_IndexBufferLines;
+		m_IndirectDrawDataLines.vertexBuffer = m_VertexBufferLines;
+		m_IndirectDrawDataLines.instancesBuffer = m_LinesBuffer[frame];
+		m_IndirectDrawDataLines.sceneDataBuffer = m_SceneBuffer[frame];
+		m_IndirectDrawDataLines.material = material;
+		m_IndirectDrawDataLines.indirectDrawsCommandsBuffer = m_CommandsBuffer[frame];
+		m_IndirectDrawDataLines.indirectDrawsCommandsOffset = 0;
+		m_IndirectDrawDataLines.instancesSize = sizeof(LineInstanceData) * m_Lines.size();
+		m_IndirectDrawDataLines.set = 1;
+		m_IndirectDrawDataLines.binding = 0;
+
+		return m_IndirectDrawDataLines;
+	}
+
+	IndirectDrawForCommandBufferData& SceneCameraDebugRenderingControl::FillAndGetIndirectDrawDataForDebugTrianglesDrawing(MaterialInstanceHandle material, U32 frame)
+	{
+		m_IndirectDrawDataTriangles.binding = 0;
+		m_IndirectDrawDataTriangles.indexBuffer = m_IndexBufferTriangles;
+		m_IndirectDrawDataTriangles.vertexBuffer = m_VertexBufferTriangles;
+		m_IndirectDrawDataTriangles.instancesBuffer = m_TrianglesBuffer[frame];
+		m_IndirectDrawDataTriangles.sceneDataBuffer = m_SceneBuffer[frame];
+		m_IndirectDrawDataTriangles.material = material;
+		m_IndirectDrawDataTriangles.indirectDrawsCommandsBuffer = m_CommandsBuffer[frame];
+		m_IndirectDrawDataTriangles.indirectDrawsCommandsOffset = sizeof(DrawIndexedIndirectCommand);
+		m_IndirectDrawDataTriangles.instancesSize = sizeof(TriangleInstanceData) * m_Triangles.size();
+		m_IndirectDrawDataTriangles.set = 1;
+		m_IndirectDrawDataTriangles.binding = 0;
+
+		return m_IndirectDrawDataTriangles;
+	}
+
+	IndirectDrawForCommandBufferData& SceneCameraDebugRenderingControl::FillAndGetIndirectDrawDataForDebugPointsDrawing(MaterialInstanceHandle material, U32 frame)
+	{
+		m_IndirectDrawDataPoints.binding = 0;
+		m_IndirectDrawDataPoints.indexBuffer = BufferHandle();
+		m_IndirectDrawDataPoints.vertexBuffer = m_VertexBufferPoints;
+		m_IndirectDrawDataPoints.instancesBuffer = m_PointsBuffer[frame];
+		m_IndirectDrawDataPoints.sceneDataBuffer = m_SceneBuffer[frame];
+		m_IndirectDrawDataPoints.material = material;
+		m_IndirectDrawDataPoints.indirectDrawsCommandsBuffer = m_CommandsBuffer[frame];
+		m_IndirectDrawDataPoints.indirectDrawsCommandsOffset = sizeof(DrawIndexedIndirectCommand) * 2;
+		m_IndirectDrawDataPoints.instancesSize = sizeof(PointInstanceData) * m_Points.size();
+		m_IndirectDrawDataPoints.set = 1;
+		m_IndirectDrawDataPoints.binding = 0;
+
+		return m_IndirectDrawDataPoints;
+	}
+
+	void SceneCameraDebugRenderingControl::DrawLine(const Vec3& start, const Vec3& end, const Color& color)
+	{
+		m_Lines.push_back(LineInstanceData(start, end, color));
+	}
+
+	void SceneCameraDebugRenderingControl::DrawTriangle(const Vec3& a, const Vec3& b, const Vec3& c, const Color& color)
+	{
+		if (m_Triangles.size() < MAX_DEBUG_TRIANGLES_IN_SCENE)
+		{
+			m_Triangles.push_back(TriangleInstanceData(a, b, c, color));
+		}
+		else
+		{
+			LOG_BE_ERROR("Maximum number of debug triangles reached: " + std::to_string(MAX_DEBUG_TRIANGLES_IN_SCENE));
+		}
+	}
+
+	void SceneCameraDebugRenderingControl::DrawPoint(const Vec3& point, const Color& color, const float size)
+	{
+		if (m_Points.size() < MAX_DEBUG_POINTS_IN_SCENE)
+		{
+			m_Points.push_back(PointInstanceData(point, color,size));
+		}
+		else
+		{
+			LOG_BE_ERROR("Maximum number of debug points reached: " + std::to_string(MAX_DEBUG_POINTS_IN_SCENE));
+		}
+	}
+
+	void SceneCameraDebugRenderingControl::DrawMesh(const AssetHandle mesh, const Mat4x4& transform, const Color& color)
+	{
+	}
+
+	void SceneCameraDebugRenderingControl::DrawQuad(const Vec3& center, const Vec3& normal, float size, const Color& color)
+	{
+		Vec3 normalIn= glm::normalize(normal);
+		Vec3 right;
+		if (glm::abs(glm::dot(normal, Vec3(0, 1.0f, 0))) > 0.99f)
+		{
+			right = Vec3(1, 0, 0);
+		}
+		else
+		{
+			right = glm::normalize(glm::cross(normalIn, Vec3(0, 1, 0)));
+		}
+		Vec3 up = glm::normalize(glm::cross(right, normalIn)) * size;
+
+		Vec3 a = center - right - up;
+		Vec3 b = center + right - up;
+		Vec3 c = center + right + up;
+		Vec3 d = center - right + up;
+
+		DrawTriangle(a, b, c, color);
+		DrawTriangle(a, c, d, color);
+	}
+
+	void SceneCameraDebugRenderingControl::DrawCircle(const Vec3& center,const Vec3& normal, float radius, const Color& color)
+	{
+		//compute axes in the plane of the circle
+		Vec3 normalIn = glm::normalize(normal);
+		Vec3 right;
+		if (glm::abs(glm::dot(normalIn,Vec3(0,1.0f,0)))>0.99f)
+		{
+			right = Vec3(1, 0, 0);
+		}
+		else
+		{
+			right = glm::normalize(glm::cross(normalIn, Vec3(0, 1, 0)));
+		}
+		Vec3 up = glm::normalize(glm::cross(right, normalIn));
+		float numSegments = 32; // Number of segments for the circle
+		Vec3 worldPosition = center;
+
+		for (int i = 0; i < numSegments; ++i) {
+			float angle = (2.0f * glm::pi<float>() * static_cast<float>(i)) / static_cast<float>(numSegments);
+			float x = radius * glm::cos(angle);
+			float y = radius * glm::sin(angle);
+
+			// Calculate the point on the circle in 3D space
+			Vec3 point1 = worldPosition + x * right + y * up;
+
+			float nextAngle = (2.0f * glm::pi<float>() * static_cast<float>(i + 1)) / static_cast<float>(numSegments);
+			float nextX = radius * glm::cos(nextAngle);
+			float nextY = radius * glm::sin(nextAngle);
+
+			// Calculate the next point on the circle in 3D space
+			Vec3 point2 = worldPosition + nextX * right + nextY * up;
+
+			// Draw the line between the two points
+			DrawLine(point1, point2, color);	
+		}
+	}
+
+	void SceneCameraDebugRenderingControl::DrawLinesSphere(const Vec3& center, float radius, const Color& color)
+	{
+		DrawCircle(center, Vec3(0, 1, 0), radius, color);
+		DrawCircle(center, Vec3(1, 0, 0), radius, color);
+		DrawCircle(center, Vec3(0, 0, 1), radius, color);
 	}
 
 }

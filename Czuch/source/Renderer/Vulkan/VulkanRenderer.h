@@ -23,7 +23,7 @@ namespace Czuch
 	public:
 		static RendererAPI GetUsedAPI() { return RendererAPI::Vulkan; }
 	public:
-		VulkanRenderer(Window* window, RenderSettings* renderSettings);
+		VulkanRenderer(Window* window, EngineSettings* renderSettings);
 		~VulkanRenderer() override;
 
 		void Init() override;
@@ -38,6 +38,7 @@ namespace Czuch
 	public:
 		void ImmediateSubmitWithCommandBuffer(std::function<void(CommandBuffer* cmd)>&& processor);
 		void DrawScene(VulkanCommandBuffer* cmdBuffer, Camera* camera,RenderContextFillParams* params);
+		void DrawDebugData(VulkanCommandBuffer* cmdBuffer, Camera* camera, RenderContextFillParams* params);
 		void DrawFullScreenQuad(VulkanCommandBuffer* cmdBuffer, MaterialInstanceHandle material);
 		void* GetRenderPassResult(RenderPassType type) override;
 		bool HasRenderPass(RenderPassType type) override;
@@ -96,6 +97,7 @@ namespace Czuch
 	public:
 		void OnPreRenderUpdateContexts(Camera* cam, int width, int height,RenderContextFillParams* fillParams) override;
 		void OnPostRenderUpdateContexts(Camera* cam,RenderContextFillParams* fillParams) override;
+		void OnPreRenderUpdateDebugDrawElements(Camera* cam, RenderContextFillParams* fillParams) override;
 	public:
 		//render pass contorl helpers
 		RenderPassControl* RegisterRenderPassControl(RenderPassControl* control) override;

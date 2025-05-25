@@ -5,7 +5,7 @@
 
 namespace Czuch
 {
-	void Logging::Init(RenderSettings* settings)
+	void Logging::Init(EngineSettings* settings)
 	{
 		BaseSubsystem::Init(settings);
 		spdlog::set_pattern("%^[%T] %n: %v%$");

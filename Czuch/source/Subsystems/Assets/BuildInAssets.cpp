@@ -8,6 +8,7 @@
 #include"Asset/ShaderAsset.h"
 #include"Asset/MaterialInstanceAsset.h"
 #include"Renderer/Graphics.h"
+#include"Renderer/DebugDraw.h"
 
 namespace Czuch
 {
@@ -34,6 +35,16 @@ namespace Czuch
 	AssetHandle DefaultAssets::DEBUG_DRAW_MATERIAL_INSTANCE_ASSET;
 	AssetHandle DefaultAssets::DEBUG_DRAW_LIGHT_MATERIAL_INSTANCE_ASSET;
 	MaterialInstanceHandle DefaultAssets::DEBUG_DRAW_LIGHT_MATERIAL_INSTANCE;
+
+
+	AssetHandle DefaultAssets::DEBUG_DRAW_LINES_MATERIAL_ASSET;
+	MaterialInstanceHandle DefaultAssets::DEBUG_DRAW_LINES_MATERIAL_INSTANCE;
+
+	AssetHandle DefaultAssets::DEBUG_DRAW_TRIANGLES_MATERIAL_ASSET;
+	MaterialInstanceHandle DefaultAssets::DEBUG_DRAW_TRIANGLES_MATERIAL_INSTANCE;
+
+	AssetHandle DefaultAssets::DEBUG_DRAW_POINTS_MATERIAL_ASSET;
+	MaterialInstanceHandle DefaultAssets::DEBUG_DRAW_POINTS_MATERIAL_INSTANCE;
 
 	MaterialHandle DefaultAssets::DEPTH_PREPASS_MATERIAL;
 	MaterialInstanceHandle DefaultAssets::DEPTH_PREPASS_MATERIAL_INSTANCE;
@@ -71,6 +82,10 @@ namespace Czuch
 	AssetHandle DefaultAssets::DEFAULT_PS_SHADER_ASSET;
 
 	AssetHandle DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET;
+	AssetHandle DefaultAssets::DEFAULT_SIMPLE_COLOR_PS_ASSET;
+	AssetHandle DefaultAssets::DEBUG_DRAW_VS_INSTANCED_LINES_ASSET;
+	AssetHandle DefaultAssets::DEBUG_DRAW_VS_INSTANCED_TRIANGLES_ASSET;
+	AssetHandle DefaultAssets::DEBUG_DRAW_VS_INSTANCED_POINTS_ASSET;
 
 
 	BuildInAssets::BuildInAssets(GraphicsDevice* device, AssetsManager* mgr, EngineMode mode) :m_Device(device), m_AssetsMgr(mgr)
@@ -146,8 +161,7 @@ namespace Czuch
 		auto handleVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\vertShader.vert", {});
 		auto handlePS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\fragShader.frag", {});
 		//debug draw shader
-		DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawShader.frag", {});
-
+		DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawFragmentShader.frag", {});
 
 		DefaultAssets::DEFAULT_VS_SHADER_ASSET = handleVS;
 		DefaultAssets::DEFAULT_PS_SHADER_ASSET = handlePS;
@@ -676,6 +690,7 @@ namespace Czuch
 
 	void BuildInAssets::CreateDebugDrawMaterials()
 	{
+		//Debug material for standard debug meshes
 		MaterialPassDesc desc;
 		desc.vs = DefaultAssets::DEFAULT_VS_SHADER_ASSET;
 		desc.ps = DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET;
@@ -763,5 +778,180 @@ namespace Czuch
 		DefaultAssets::DEBUG_DRAW_LIGHT_MATERIAL_INSTANCE_ASSET = instanceLightAssetHandle;
 		MaterialInstanceAsset* instanceLightAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceLightAssetHandle);
 		DefaultAssets::DEBUG_DRAW_LIGHT_MATERIAL_INSTANCE = instanceLightAsset->GetMaterialInstanceResourceHandle();
+
+		//Debug material for standard debug lines/points/tris
+		CreateDebugLinesMaterial();
+		CreateDebugTrianglesMaterial();
+		CreateDebugPointsMaterial();
+	}
+	void BuildInAssets::CreateDebugLinesMaterial()
+	{
+		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_LINES_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawIndirectLinesVertexShader.vert", {});
+		DefaultAssets::DEFAULT_SIMPLE_COLOR_PS_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\SimpleColorFragmentShader.frag", {});
+
+		//Debug material for standard debug lines/points/tris
+		MaterialPassDesc descDebug;
+		descDebug.vs = DefaultAssets::DEBUG_DRAW_VS_INSTANCED_LINES_ASSET;
+		descDebug.ps = DefaultAssets::DEFAULT_SIMPLE_COLOR_PS_ASSET;
+		descDebug.pt = PrimitiveTopology::LINELIST;
+		descDebug.rs.cull_mode = CullMode::NONE;
+		descDebug.rs.fill_mode = PolygonMode::SOLID;
+		descDebug.dss.depth_enable = true;
+		descDebug.dss.depth_func = CompFunc::LESS_EQUAL;
+		descDebug.dss.depth_write_mask = DepthWriteMask::ZERO;
+		descDebug.dss.depth_write_enable = false;
+		descDebug.dss.stencil_enable = false;
+		descDebug.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
+		descDebug.passType = RenderPassType::DebugDraw;
+
+		descDebug.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
+		descDebug.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
+
+		DescriptorSetLayoutDesc desc_SceneData{};
+		desc_SceneData.shaderStage = (U32)ShaderStage::VS;
+		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+
+		DescriptorSetLayoutDesc desc_data{};
+		desc_data.shaderStage = (U32)ShaderStage::VS;
+		desc_data.AddBinding("LineInstances", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(LineInstanceData), true, DescriptorBindingTagType::DEBUG_LINES_INSTANCE_DATA);
+
+		descDebug.AddLayout(desc_SceneData);
+		descDebug.AddLayout(desc_data);
+
+		MaterialDefinitionDesc matDesc(1);
+		matDesc.EmplacePass(descDebug);
+		matDesc.materialName = "DefaultLinesDebugMaterial";
+
+
+		MaterialCreateSettings createLinesSettings;
+		createLinesSettings.desc = std::move(matDesc);
+
+		DefaultAssets::DEBUG_DRAW_LINES_MATERIAL_ASSET = m_AssetsMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createLinesSettings.desc.materialName, createLinesSettings);
+		auto materialDebugAsset = m_AssetsMgr->GetAsset<MaterialAsset>(DefaultAssets::DEBUG_DRAW_LINES_MATERIAL_ASSET);
+		materialDebugAsset->SetPersistentStatus(true);
+		auto materialDebugHandle = materialDebugAsset->GetMaterialResourceHandle();
+
+		MaterialInstanceCreateSettings instanceLinesCreateSettings{};
+		instanceLinesCreateSettings.materialInstanceName = "DefaultDebugLinesMaterialInstance";
+		instanceLinesCreateSettings.desc.materialAsset = DefaultAssets::DEBUG_DRAW_LINES_MATERIAL_ASSET;
+		instanceLinesCreateSettings.desc.isTransparent = false;
+		instanceLinesCreateSettings.desc.AddStorageBuffer("LineInstances", BufferHandle{ Invalid_Handle_Id });
+
+		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceLinesCreateSettings.materialInstanceName, instanceLinesCreateSettings);
+		MaterialInstanceAsset* instanceLinesAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
+		DefaultAssets::DEBUG_DRAW_LINES_MATERIAL_INSTANCE = instanceLinesAsset->GetMaterialInstanceResourceHandle();
+	}
+	void BuildInAssets::CreateDebugTrianglesMaterial()
+	{
+		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_TRIANGLES_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawIndirectTrianglesVertexShader.vert", {});
+
+		//Debug material for standard debug lines/points/tris
+		MaterialPassDesc descDebug;
+		descDebug.vs = DefaultAssets::DEBUG_DRAW_VS_INSTANCED_TRIANGLES_ASSET;
+		descDebug.ps = DefaultAssets::DEFAULT_SIMPLE_COLOR_PS_ASSET;
+		descDebug.pt = PrimitiveTopology::TRIANGLELIST;
+		descDebug.rs.cull_mode = CullMode::NONE;
+		descDebug.rs.fill_mode = PolygonMode::SOLID;
+		descDebug.dss.depth_enable = true;
+		descDebug.dss.depth_func = CompFunc::LESS_EQUAL;
+		descDebug.dss.depth_write_mask = DepthWriteMask::ZERO;
+		descDebug.dss.depth_write_enable = false;
+		descDebug.dss.stencil_enable = false;
+		descDebug.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
+		descDebug.passType = RenderPassType::DebugDraw;
+		descDebug.bs.SetAlphaBlend();
+
+		descDebug.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
+		descDebug.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
+
+		DescriptorSetLayoutDesc desc_SceneData{};
+		desc_SceneData.shaderStage = (U32)ShaderStage::VS;
+		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+
+		DescriptorSetLayoutDesc desc_data{};
+		desc_data.shaderStage = (U32)ShaderStage::VS;
+		desc_data.AddBinding("TrianglesInstances", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(TriangleInstanceData), true, DescriptorBindingTagType::DEBUG_TRIANGLES_INSTANCE_DATA);
+
+		descDebug.AddLayout(desc_SceneData);
+		descDebug.AddLayout(desc_data);
+
+		MaterialDefinitionDesc matDesc(1);
+		matDesc.EmplacePass(descDebug);
+		matDesc.materialName = "DefaultTrianglesDebugMaterial";
+
+
+		MaterialCreateSettings createTrianglesSettings;
+		createTrianglesSettings.desc = std::move(matDesc);
+
+		DefaultAssets::DEBUG_DRAW_TRIANGLES_MATERIAL_ASSET = m_AssetsMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createTrianglesSettings.desc.materialName, createTrianglesSettings);
+		auto materialDebugAsset = m_AssetsMgr->GetAsset<MaterialAsset>(DefaultAssets::DEBUG_DRAW_TRIANGLES_MATERIAL_ASSET);
+		materialDebugAsset->SetPersistentStatus(true);
+		auto materialDebugHandle = materialDebugAsset->GetMaterialResourceHandle();
+
+		MaterialInstanceCreateSettings instanceTrianglesCreateSettings{};
+		instanceTrianglesCreateSettings.materialInstanceName = "DefaultDebugTrianglesMaterialInstance";
+		instanceTrianglesCreateSettings.desc.materialAsset = DefaultAssets::DEBUG_DRAW_TRIANGLES_MATERIAL_ASSET;
+		instanceTrianglesCreateSettings.desc.isTransparent = false;
+		instanceTrianglesCreateSettings.desc.AddStorageBuffer("TrianglesInstances", BufferHandle{ Invalid_Handle_Id });
+
+		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceTrianglesCreateSettings.materialInstanceName, instanceTrianglesCreateSettings);
+		MaterialInstanceAsset* instanceLinesAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
+		DefaultAssets::DEBUG_DRAW_TRIANGLES_MATERIAL_INSTANCE = instanceLinesAsset->GetMaterialInstanceResourceHandle();
+	}
+	void BuildInAssets::CreateDebugPointsMaterial()
+	{
+		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_POINTS_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawIndirectPointsVertexShader.vert", {});
+
+		//Debug material for standard debug lines/points/tris
+		MaterialPassDesc descDebug;
+		descDebug.vs = DefaultAssets::DEBUG_DRAW_VS_INSTANCED_POINTS_ASSET;
+		descDebug.ps = DefaultAssets::DEFAULT_SIMPLE_COLOR_PS_ASSET;
+		descDebug.pt = PrimitiveTopology::POINTLIST;
+		descDebug.rs.cull_mode = CullMode::NONE;
+		descDebug.rs.fill_mode = PolygonMode::SOLID;
+		descDebug.dss.depth_enable = true;
+		descDebug.dss.depth_func = CompFunc::LESS_EQUAL;
+		descDebug.dss.depth_write_mask = DepthWriteMask::ZERO;
+		descDebug.dss.depth_write_enable = false;
+		descDebug.dss.stencil_enable = false;
+		descDebug.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
+		descDebug.passType = RenderPassType::DebugDraw;
+
+		descDebug.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
+		descDebug.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
+
+		DescriptorSetLayoutDesc desc_SceneData{};
+		desc_SceneData.shaderStage = (U32)ShaderStage::VS;
+		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+
+		DescriptorSetLayoutDesc desc_data{};
+		desc_data.shaderStage = (U32)ShaderStage::VS;
+		desc_data.AddBinding("PointsInstances", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(PointInstanceData), true, DescriptorBindingTagType::DEBUG_POINTS_INSTANCE_DATA);
+
+		descDebug.AddLayout(desc_SceneData);
+		descDebug.AddLayout(desc_data);
+
+		MaterialDefinitionDesc matDesc(1);
+		matDesc.EmplacePass(descDebug);
+		matDesc.materialName = "DefaultPointsDebugMaterial";
+
+
+		MaterialCreateSettings createPointsSettings;
+		createPointsSettings.desc = std::move(matDesc);
+
+		DefaultAssets::DEBUG_DRAW_POINTS_MATERIAL_ASSET = m_AssetsMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createPointsSettings.desc.materialName, createPointsSettings);
+		auto materialDebugAsset = m_AssetsMgr->GetAsset<MaterialAsset>(DefaultAssets::DEBUG_DRAW_POINTS_MATERIAL_ASSET);
+		materialDebugAsset->SetPersistentStatus(true);
+		auto materialDebugHandle = materialDebugAsset->GetMaterialResourceHandle();
+
+		MaterialInstanceCreateSettings instancePointsCreateSettings{};
+		instancePointsCreateSettings.materialInstanceName = "DefaultDebugPointsMaterialInstance";
+		instancePointsCreateSettings.desc.materialAsset = DefaultAssets::DEBUG_DRAW_POINTS_MATERIAL_ASSET;
+		instancePointsCreateSettings.desc.isTransparent = false;
+		instancePointsCreateSettings.desc.AddStorageBuffer("PointsInstances", BufferHandle{ Invalid_Handle_Id });
+
+		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instancePointsCreateSettings.materialInstanceName, instancePointsCreateSettings);
+		MaterialInstanceAsset* instanceLinesAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
+		DefaultAssets::DEBUG_DRAW_POINTS_MATERIAL_INSTANCE = instanceLinesAsset->GetMaterialInstanceResourceHandle();
 	}
 }

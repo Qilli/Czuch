@@ -21,6 +21,7 @@ namespace Czuch
 		~NativeBehaviourComponent();
 
 		void SetEnabled(bool enabled) override;
+		void OnDebugDraw(IDebugDrawBuilder* debugBuilder) override;
 	public:
 		void OnCreate();
 		void OnDestroy();

@@ -30,9 +30,22 @@ namespace Czuch
 		static AssetHandle DEBUG_DRAW_MATERIAL_ASSET;
 		static AssetHandle DEBUG_DRAW_MATERIAL_INSTANCE_ASSET;
 		static MaterialInstanceHandle DEBUG_DRAW_MATERIAL_INSTANCE;
+
 		//debug drawing for lights
 		static AssetHandle DEBUG_DRAW_LIGHT_MATERIAL_INSTANCE_ASSET;
 		static MaterialInstanceHandle DEBUG_DRAW_LIGHT_MATERIAL_INSTANCE;
+
+		//debug drawing for lines
+		static AssetHandle DEBUG_DRAW_LINES_MATERIAL_ASSET;
+		static MaterialInstanceHandle DEBUG_DRAW_LINES_MATERIAL_INSTANCE;
+
+		//debug drawing for triangles
+		static AssetHandle DEBUG_DRAW_TRIANGLES_MATERIAL_ASSET;
+		static MaterialInstanceHandle DEBUG_DRAW_TRIANGLES_MATERIAL_INSTANCE;
+
+		//debug drawing for points
+		static AssetHandle DEBUG_DRAW_POINTS_MATERIAL_ASSET;
+		static MaterialInstanceHandle DEBUG_DRAW_POINTS_MATERIAL_INSTANCE;
 
 		//material for depth prepass
 		static MaterialHandle DEPTH_PREPASS_MATERIAL;
@@ -76,7 +89,11 @@ namespace Czuch
 		//shader assets
 		static AssetHandle DEFAULT_VS_SHADER_ASSET;
 		static AssetHandle DEFAULT_PS_SHADER_ASSET;
+		static AssetHandle DEFAULT_SIMPLE_COLOR_PS_ASSET;
 		static AssetHandle DEBUG_DRAW_PS_SHADER_ASSET;
+		static AssetHandle DEBUG_DRAW_VS_INSTANCED_LINES_ASSET;
+		static AssetHandle DEBUG_DRAW_VS_INSTANCED_TRIANGLES_ASSET;
+		static AssetHandle DEBUG_DRAW_VS_INSTANCED_POINTS_ASSET;
 	};
 
 	class BuildInAssets
@@ -95,6 +112,9 @@ namespace Czuch
 		void CreateDepthLinearPrePassMaterial();
 		void CreateDefaultSimpleTransparentMaterial();
 		void CreateDebugDrawMaterials();
+		void CreateDebugLinesMaterial();
+		void CreateDebugTrianglesMaterial();
+		void CreateDebugPointsMaterial();
 	private:
 		GraphicsDevice* m_Device;
 		AssetsManager* m_AssetsMgr;

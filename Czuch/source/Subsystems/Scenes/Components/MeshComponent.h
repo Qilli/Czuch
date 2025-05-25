@@ -3,6 +3,7 @@
 
 namespace Czuch
 {
+	struct TransformComponent;
 	struct CZUCH_API MeshComponent :public Component
 	{
 	public:
@@ -10,6 +11,8 @@ namespace Czuch
 		MeshComponent(Entity owner,AssetHandle model,MeshHandle mesh);
 		~MeshComponent()=default;
 		bool HasMesh() const { return HANDLE_IS_VALID(m_Mesh); }
+		OBB GetOBB(TransformComponent& transform,float scale=1.0f) const;
+		AABB GetAABB(float scale=1.0f) const;
 		MeshHandle GetMesh() const { return m_Mesh; }
 		AssetHandle GetModel() const { return m_Model; }
 		void SetMesh(AssetHandle model, MeshHandle mesh) { 

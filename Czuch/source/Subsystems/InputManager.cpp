@@ -155,7 +155,7 @@ namespace Czuch
 		return false;
 	}
 
-	void InputManager::Init(RenderSettings* settings)
+	void InputManager::Init(EngineSettings* settings)
 	{
 		BaseSubsystem::Init(settings);
 		memset(m_Keys, 0, 512);

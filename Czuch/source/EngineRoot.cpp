@@ -21,25 +21,27 @@ namespace Czuch
 	U32 WindowInfo::Width = 0;
 	U32 WindowInfo::Height = 0;
 
+	EngineSettings EngineRoot::m_EngineSettings;
+
 	void EngineRoot::Init(const std::string& configFilePath, EngineEditorControl* control)
 	{
 		m_ShouldStopLoop = false;
 		m_UpdateMode = UpdateMode::Unlocked;
 
-		m_RenderSettings.dynamicRendering = true;
-		m_RenderSettings.validationMode = ValidationMode::Enabled;
-		m_RenderSettings.engineMode = control!=nullptr?EngineMode::Editor:EngineMode::Runtime;
-		m_RenderSettings.targetWidth = 800;
-		m_RenderSettings.targetHeight = 600;
-		m_RenderSettings.startPath = std::filesystem::current_path().string() + "\\Assets\\";
+		m_EngineSettings.dynamicRendering = true;
+		m_EngineSettings.validationMode = ValidationMode::Enabled;
+		m_EngineSettings.engineMode = control!=nullptr?EngineMode::Editor:EngineMode::Runtime;
+		m_EngineSettings.targetWidth = 800;
+		m_EngineSettings.targetHeight = 600;
+		m_EngineSettings.startPath = std::filesystem::current_path().string() + "\\Assets\\";
 
 		//create subsystems
 		m_Logging = new Logging();
 		m_EventsMgr = new EventsManager();
 
 		//Init subsystems
-		m_Logging->Init(&m_RenderSettings);
-		m_EventsMgr->Init(&m_RenderSettings);
+		m_Logging->Init(&m_EngineSettings);
+		m_EventsMgr->Init(&m_EngineSettings);
 
 		const WindowParams wndParams{};
 
@@ -50,17 +52,17 @@ namespace Czuch
 		m_Window = Window::Create(wndParams);
 
 		//create renderer
-		m_Renderer = new VulkanRenderer(m_Window.get(), &m_RenderSettings);
+		m_Renderer = new VulkanRenderer(m_Window.get(), &m_EngineSettings);
 		m_Renderer->Init();
 		m_Renderer->CreateRenderGraph();
 
 		//create input manager
 		m_InputMgr = new InputManager();
-		m_InputMgr->Init(&m_RenderSettings);
+		m_InputMgr->Init(&m_EngineSettings);
 
 		//create resources managers
 		m_ResourcesMgr = new AssetsManager();
-		m_ResourcesMgr->Init(&m_RenderSettings);
+		m_ResourcesMgr->Init(&m_EngineSettings);
 		m_ResourcesMgr->RegisterManager(new ShaderAssetManager(m_Renderer->GetDevice()), typeid(ShaderAsset));
 		m_ResourcesMgr->RegisterManager(new TextureAssetManager(m_Renderer->GetDevice()), typeid(TextureAsset));
 		m_ResourcesMgr->RegisterManager(new MaterialAssetManager(m_Renderer->GetDevice()), typeid(MaterialAsset));
@@ -69,17 +71,17 @@ namespace Czuch
 
 		//create ui manager
 		m_UIBaseMgr = new ImGUIManager(m_Renderer->GetDevice(), m_Window.get());
-		m_UIBaseMgr->Init(&m_RenderSettings);
+		m_UIBaseMgr->Init(&m_EngineSettings);
 
 		//create editor subsystem
 		m_EditorSubsystem = new EngineEditorSubsystem(control);
-		m_EditorSubsystem->Init(&m_RenderSettings);
+		m_EditorSubsystem->Init(&m_EngineSettings);
 
 		//listen to events
 		m_EventsMgr->AddListener(WindowClosedEvent::GetStaticEventType(), this);
 
 		//create default assetse
-		m_DefaultAssets = new BuildInAssets(m_Renderer->GetDevice(), m_ResourcesMgr, m_RenderSettings.engineMode);
+		m_DefaultAssets = new BuildInAssets(m_Renderer->GetDevice(), m_ResourcesMgr, m_EngineSettings.engineMode);
 		m_DefaultAssets->BuildAndLoad();
 
 		//init all resources managers
@@ -87,13 +89,13 @@ namespace Czuch
 
 		//init scenes manager
 		m_ScenesMgr = new ScenesManager(m_Renderer, m_ResourcesMgr);
-		m_ScenesMgr->Init(&m_RenderSettings);
+		m_ScenesMgr->Init(&m_EngineSettings);
 
 		//after system init renderer
 		m_Renderer->AfterSystemInit();
 
 		//for editor mode add dockspace with editor ui
-		m_UIBaseMgr->EnableEditorMode(m_RenderSettings.engineMode == EngineMode::Editor);
+		m_UIBaseMgr->EnableEditorMode(m_EngineSettings.engineMode == EngineMode::Editor);
 		m_EditorSubsystem->AfterSystemInit();
 	}
 

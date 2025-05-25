@@ -157,7 +157,7 @@ namespace Czuch
 	{
 		for (int a = 0; a < descriptorsCount; ++a)
 		{
-			if (descriptors[a].paramName.Compare(name)==0)
+			if (descriptors[a].paramName.Compare(name) == 0)
 			{
 				descriptors[a].resource = texture.handle;
 				descriptors[a].assetHandle = texture.assetHandle.handle;
@@ -236,7 +236,7 @@ namespace Czuch
 		{
 			return *this;
 		}
-		setsCount = std::max(set+1, this->setsCount);
+		setsCount = std::max(set + 1, this->setsCount);
 
 		shaderParamsDesc[set].AddBuffer(name, buffer, binding);
 		return *this;
@@ -248,7 +248,7 @@ namespace Czuch
 		{
 			return *this;
 		}
-		setsCount = std::max(set+1, this->setsCount);
+		setsCount = std::max(set + 1, this->setsCount);
 
 		shaderParamsDesc[set].AddSampler(name, color_texture, binding);
 		return *this;
@@ -316,9 +316,9 @@ namespace Czuch
 		INVALIDATE_HANDLE(materialAsset);
 		return *this;
 	}
-	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name,UBO&& data)
+	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name, UBO&& data)
 	{
-		paramsDesc.push_back({ .name = name,.uboData=std::move(data),.type = DescriptorType::UNIFORM_BUFFER,.resource = Invalid_Handle_Id,.isInternal = false});
+		paramsDesc.push_back({ .name = name,.uboData = std::move(data),.type = DescriptorType::UNIFORM_BUFFER,.resource = Invalid_Handle_Id,.isInternal = false });
 		return *this;
 	}
 	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name, BufferHandle handle)
@@ -326,9 +326,14 @@ namespace Czuch
 		paramsDesc.push_back({ .name = name,.uboData = UBO(),.type = DescriptorType::UNIFORM_BUFFER,.resource = handle.handle,.isInternal = true });
 		return *this;
 	}
-	MaterialInstanceDesc& MaterialInstanceDesc::AddSampler(const CzuchStr& name, TextureHandle color_texture,bool isInternal)
+	MaterialInstanceDesc& MaterialInstanceDesc::AddStorageBuffer(const CzuchStr& name, BufferHandle handle)
 	{
-		paramsDesc.push_back({ .name = name,.uboData=UBO(),.type = DescriptorType::SAMPLER,.resourceAsset = color_texture.assetHandle.handle,.resource = color_texture.handle,.isInternal = isInternal});
+		paramsDesc.push_back({ .name = name,.uboData = UBO(),.type = DescriptorType::STORAGE_BUFFER,.resource = handle.handle,.isInternal = true });
+		return *this;
+	}
+	MaterialInstanceDesc& MaterialInstanceDesc::AddSampler(const CzuchStr& name, TextureHandle color_texture, bool isInternal)
+	{
+		paramsDesc.push_back({ .name = name,.uboData = UBO(),.type = DescriptorType::SAMPLER,.resourceAsset = color_texture.assetHandle.handle,.resource = color_texture.handle,.isInternal = isInternal });
 		return *this;
 	}
 
@@ -370,7 +375,7 @@ namespace Czuch
 						if (param.type == DescriptorType::SAMPLER)
 						{
 							TextureHandle texture = { param.resource,param.resourceAsset };
-							params.AddSampler(i, param.name,texture, b);
+							params.AddSampler(i, param.name, texture, b);
 						}
 						else if (param.type == DescriptorType::UNIFORM_BUFFER)
 						{
@@ -389,7 +394,7 @@ namespace Czuch
 			colorAttachments[attachmentsCount++] = { format,layout,loadOp };
 			return *this;
 		}
-		LOG_BE_ERROR("[VulkanRenderPassDesc]Too many color attachments for render pass with name {0}",name);
+		LOG_BE_ERROR("[VulkanRenderPassDesc]Too many color attachments for render pass with name {0}", name);
 		return *this;
 	}
 
@@ -489,5 +494,17 @@ namespace Czuch
 		}
 	}
 
+
+	void MeshData::ComputeAABB()
+	{
+		//compute aabb from positions
+		aabb.min = Vec3(FLT_MAX);
+		aabb.max = Vec3(-FLT_MAX);
+		for (int a = 0; a < positions.size(); ++a)
+		{
+			aabb.min = glm::min(aabb.min, positions[a]);
+			aabb.max = glm::max(aabb.max, positions[a]);
+		}
+	}
 
 }

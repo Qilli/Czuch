@@ -43,6 +43,31 @@ private:
 
 };
 
+class DrawDebugLines : public Czuch::NativeBehaviour
+{
+public:
+	DrawDebugLines()
+	{
+	}
+
+	void OnUpdate(Czuch::TimeDelta delta) override
+	{
+		
+	}
+
+	void OnDebugDraw(Czuch::IDebugDrawBuilder* debugBuilder) override
+	{
+		//debugBuilder->DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 3.0f, 0.0f), Color(1.0f, 0.0f, 0.0f,1.0f));
+		//debugBuilder->DrawTriangle(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(3.0f, 3.0f, 0.0f), Color(1.0f, 0.0f, 0.0f, 0.5f));
+
+		//debugBuilder->DrawQuad(glm::vec3(0.0f, 2.0f, 0.0f), glm::normalize(glm::vec3(1.0f, 1.0f, 0.0f)), 1.0f, Color(0.0f, 1.0f, 0.0f, 0.2f));
+		//debugBuilder->DrawPoint(glm::vec3(0.0f, 2.0f, 0.0f), Color(1.0f, 1.0f, 1.0f, 1.0f),10.0f);
+		//debugBuilder->DrawPoint(glm::vec3(0.0f, 3.0f, 0.0f), Color(1.0f, 1.0f, 1.0f, 1.0f),20.0f);
+
+		//debugBuilder->DrawLinesSphere(glm::vec3(0.0f, 2.0f, 0.0f), 1.0f, Color(1.0f, 1.0f, 1.0f, 1.0f));
+	}
+};
+
 
 int main()
 {
@@ -50,7 +75,10 @@ int main()
 	Czuch::EngineRoot* root = new Czuch::EngineRoot();
 	root->Init("engineConfig.cfg",nullptr);
 
-	Czuch::Scene *scene= new Czuch::Scene("MainScene",&root->GetRenderSettings(),root->GetRenderer().GetDevice());
+	auto &settings=Czuch::EngineRoot::GetEngineSettings();
+	settings.debugSettings.SetDebugDrawOBBForMeshesEnabled(false);
+
+	Czuch::Scene *scene= new Czuch::Scene("MainScene",root->GetRenderer().GetDevice());
 
 	auto& sceneMgr = root->GetScenesManager();
 	sceneMgr.AddScene(scene, true);
@@ -84,6 +112,12 @@ int main()
 	planeEntity.AddRenderable(Czuch::DefaultAssets::PLANE_ASSET,Czuch::DefaultAssets::PLANE_HANDLE, matInstanceHandle);
 	planeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, -1.0f, 0.0f));
 	planeEntity.Transform().SetLocalScale(glm::vec3(10.0f, 1.0f, 10.0f));
+
+	planeEntity.AddComponent<Czuch::NativeBehaviourComponent>().AddNativeBehaviour<DrawDebugLines>();
+
+	Czuch::Entity lightEntity = scene->CreateEntity("LightObject");
+	lightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 2.0f, 0.0f));
+	lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 100.0f, 2.0f);
 
 	root->Run();
 	root->Shutdown();

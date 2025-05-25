@@ -28,7 +28,7 @@
 
 namespace Czuch
 {
-	VulkanRenderer::VulkanRenderer(Window* window, RenderSettings* renderSettings)
+	VulkanRenderer::VulkanRenderer(Window* window, EngineSettings* renderSettings)
 	{
 		m_AttachedWindow = window;
 		m_ActiveScene = nullptr;
@@ -227,6 +227,32 @@ namespace Czuch
 
 	}
 
+	void VulkanRenderer::DrawDebugData(VulkanCommandBuffer* cmdBuffer, Camera* camera, RenderContextFillParams* params)
+	{
+		if (m_ActiveScene == nullptr)
+		{
+			return;
+		}
+
+		auto &camerasControl=m_ActiveScene->GetCamerasControl();
+
+		for (auto& cameraControl : camerasControl)
+		{
+			if (cameraControl.camera == camera || camera==nullptr)
+			{
+				auto& data=cameraControl.GetIndirectDrawDataForDebugDrawingLines(params[0], m_CurrentFrame);
+				cmdBuffer->DrawIndirectIndexedWithData(&data, GetCurrentFrame().descriptorAllocator);
+				auto& dataTris = cameraControl.GetIndirectDrawDataForDebugDrawingTriangles(params[1], m_CurrentFrame);
+				cmdBuffer->DrawIndirectIndexedWithData(&dataTris, GetCurrentFrame().descriptorAllocator);
+				auto& dataPoints = cameraControl.GetIndirectDrawDataForDebugDrawingPoints(params[2], m_CurrentFrame);
+				cmdBuffer->DrawIndirectIndexedWithData(&dataPoints, GetCurrentFrame().descriptorAllocator);
+				return;
+			}
+		}
+
+		LOG_BE_ERROR("[Vulkan]DrawDebugData: Camera not found in scene cameras control.");	
+	}
+
 	void VulkanRenderer::DrawFullScreenQuad(VulkanCommandBuffer* cmdBuffer, MaterialInstanceHandle material)
 	{
 		cmdBuffer->DrawFullScreenQuad(material, GetCurrentFrame().descriptorAllocator);
@@ -395,6 +421,20 @@ namespace Czuch
 		{
 			m_ActiveScene->OnPostRender(camera, fillParams);
 		}
+	}
+
+	void VulkanRenderer::OnPreRenderUpdateDebugDrawElements(Camera* cam, RenderContextFillParams* fillParams)
+	{
+		if (fillParams == nullptr)
+		{
+			fillParams = &m_DefaultContextFillParams;
+		}
+
+		if (m_ActiveScene != nullptr)
+		{
+			m_ActiveScene->FillDebugDrawElements(cam, this,*fillParams);
+		}
+
 	}
 
 	RenderPassControl* VulkanRenderer::RegisterRenderPassControl(RenderPassControl* control)

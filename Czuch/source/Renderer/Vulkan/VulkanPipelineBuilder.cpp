@@ -170,6 +170,7 @@ namespace Czuch
         pipeline->rasterizer.depthBiasConstantFactor = 0.0f;
         pipeline->rasterizer.depthBiasClamp = 0.0f;
         pipeline->rasterizer.depthBiasSlopeFactor = 0.0f;
+		pipeline->rasterizer.lineWidth = 1.0f; // Default line width
     }
 
     bool VulkanPipelineBuilder::CreatePipelineLayout()

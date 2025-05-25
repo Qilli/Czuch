@@ -9,7 +9,7 @@ namespace Czuch
 	class CZUCH_API UIBaseManager : public BaseSubsystem<UIBaseManager>,public IEventsListener
 	{
 	public:
-		virtual void Init(RenderSettings* settings) override { BaseSubsystem::Init(settings); };
+		virtual void Init(EngineSettings* settings) override { BaseSubsystem::Init(settings); };
 		virtual void Shutdown() override {};
 		virtual void Update(TimeDelta timeDelta) override {};
 		virtual void SetSceneForUI(Scene* scene) {};

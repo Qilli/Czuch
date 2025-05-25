@@ -7,6 +7,7 @@
 
 namespace Czuch
 {
+	class IDebugDrawBuilder;
 	struct Layer
 	{
 		U32 m_Layer = 0;
@@ -18,7 +19,7 @@ namespace Czuch
 		World
 	};
 
-	struct Component
+	struct CZUCH_API Component
 	{
 	public:
 		Component(Entity owner);
@@ -30,6 +31,7 @@ namespace Czuch
 		virtual void OnCreated() {}
 		virtual void OnRemoved() {}
 		virtual void OnFinishFrame() {}
+		virtual void OnDebugDraw(IDebugDrawBuilder* debugBuilder);
 	private:
 
 	protected:

@@ -14,7 +14,7 @@ namespace Czuch
 		void AddListener(EventTypeID eventType, IEventsListener* listener,int priority=0);
 		void AddListenerForAllEvents(IEventsListener* listener,int priority=0);
 		void RemoveListener(EventTypeID eventType, IEventsListener* listener);
-		void Init(RenderSettings* settings) override ;
+		void Init(EngineSettings* settings) override ;
 		void Shutdown();
 		void Update(TimeDelta timeDelta);
 	private:

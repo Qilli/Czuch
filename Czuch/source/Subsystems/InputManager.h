@@ -8,7 +8,7 @@ namespace Czuch
 	class CZUCH_API InputManager : public BaseSubsystem<InputManager>, public IEventsListener
 	{
 	public:
-		void Init(RenderSettings* settings) override;
+		void Init(EngineSettings* settings) override;
 		void Shutdown() override;
 		void Update(TimeDelta timeDelta) override;
 

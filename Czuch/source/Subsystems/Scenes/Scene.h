@@ -16,7 +16,7 @@ namespace Czuch
 	{
 	public:
 
-		Scene(const CzuchStr& sceneName, RenderSettings* settings, GraphicsDevice* device);
+		Scene(const CzuchStr& sceneName,GraphicsDevice* device);
 		~Scene();
 
 		void AddUIElement(UIBaseElement* element);
@@ -34,6 +34,14 @@ namespace Czuch
 		/// <param name="fillParams"></param>
 		/// <returns></returns>
 		RenderContext* FillRenderContexts(Camera* cam, Renderer* renderer, int width, int height, RenderContextFillParams& fillParams);
+		/// <summary>
+		///  Gather all debug elements do draw from all the entities in the scene
+		///  (lines, triangles, points, simple meshes)
+		/// </summary>
+		/// <param name="cam"></param>
+		/// <param name="renderer"></param>
+		/// <param name="fillParams"></param>
+		void FillDebugDrawElements(Camera* cam, Renderer* renderer,RenderContextFillParams& fillParams);
 		void OnPostRender(Camera* camera, RenderContextFillParams* fillParams);
 		Entity CreateEntity(const CzuchStr& entityName, Entity parent = Entity());
 		Entity AddModelToScene(Czuch::AssetHandle model, const CzuchStr& entityName, Entity parent = Entity());
@@ -71,8 +79,8 @@ namespace Czuch
 		SceneDataBuffers GetSceneDataBuffers(Camera* camera, U32 frame, RenderPassType renderPassType);
 	public:
 		std::vector<UIBaseElement*>& GetSceneUIElements() { return m_UIElements; }
-		void ForEachEntity(std::function<void(Entity)> func);
-		void ForEachEntityWithHierarchy(std::function<void(Entity)> func);
+		void ForEachEntity(std::function<void(Entity*)> func) override;
+		void ForEachEntityWithHierarchy(std::function<void(Entity*)> func) override;
 		entt::entity GetEntityWithGUID(GUID guid) override;
 		Entity GetEntityObjectWithGUID(GUID guid);
 	public:
@@ -97,7 +105,6 @@ namespace Czuch
 		const Color GetClearColor() const { return m_ClearColor; }
 		void SetAmbientColor(const Color& color) { m_AmbientColor = color; }
 		const Color GetAmbientColor() const { return m_AmbientColor; }
-		RenderSettings* GetRenderSettings() { return m_RenderSettings; }
 	private:
 		void DestroyMarkedEntities();
 		void CheckAndAddStartCamera();
@@ -113,7 +120,6 @@ namespace Czuch
 		Array<Entity> m_EntitiesToDestroy;
 		Array<SceneCameraControl> m_CamerasControl;
 		RenderObjectsContainer m_RenderObjects;
-		RenderSettings* m_RenderSettings;
 		GraphicsDevice* m_Device;
 		Color m_ClearColor;
 		Color m_AmbientColor;

@@ -36,7 +36,7 @@ namespace Czuch
 		virtual void SetActiveScene(Scene* scene) = 0;
 		virtual GraphicsDevice* GetDevice() = 0;
 		virtual void RegisterRenderPassResizeEventResponse(U32 width, U32 height, bool handleWindowResize, std::function<void(U32, U32)>* onResize) = 0;
-		const RenderSettings& GetRenderSettings() const { return *m_RenderSettings; }
+		const EngineSettings& GetRenderSettings() const { return *m_RenderSettings; }
 		virtual void* GetRenderPassResult(RenderPassType type) = 0;
 		virtual bool HasRenderPass(RenderPassType type) = 0;
 		virtual RenderPassHandle GetNativeRenderPassHandle(RenderPassType type) = 0;
@@ -44,13 +44,14 @@ namespace Czuch
 		virtual void UnRegisterRenderPassControl(RenderPassControl* control) = 0;
 		virtual void OnPreRenderUpdateContexts(Camera* camera, int width, int height,RenderContextFillParams* fillParams)=0;
 		virtual void OnPostRenderUpdateContexts(Camera* camera,RenderContextFillParams* fillParams)=0;
+		virtual void OnPreRenderUpdateDebugDrawElements(Camera* camera, RenderContextFillParams* fillParams) = 0;
 		virtual void* GetFrameGraphFinalResult() = 0;
 		virtual FrameGraph* GetFrameGraph() = 0;
 	protected:
 		void OnEvent(Event& e) override;
 		virtual void OnWindowResize(uint32_t width, uint32_t height) = 0;
 	protected:
-		RenderSettings* m_RenderSettings;
+		EngineSettings* m_RenderSettings;
 
 	};
 }

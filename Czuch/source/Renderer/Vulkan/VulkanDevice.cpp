@@ -775,6 +775,8 @@ namespace Czuch
 		MaterialInstanceHandle matInstanceHandle = AssetsManager::GetPtr()->GetAsset<MaterialInstanceAsset>(meshData.materialInstanceAssetHandle)->GetMaterialInstanceResourceHandle();
 		mesh->materialHandle = matInstanceHandle;
 
+		mesh->data->ComputeAABB();
+
 		BufferDesc vbDesc;
 		vbDesc.elementsCount = mesh->data->positions.size();
 		vbDesc.size = vbDesc.elementsCount * sizeof(float) * 3;
@@ -963,8 +965,11 @@ namespace Czuch
 		{
 			usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 		}
+		else if (HasFlag(buffer->desc.bind_flags, BindFlag::INDIRECT_BUFFER))
+		{
+			usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+		}
 		
-
 
 		auto bufferVulkan = Internal_to_Buffer(buffer);
 		bufferVulkan->device = m_Device;
@@ -2138,7 +2143,7 @@ namespace Czuch
 	}
 
 
-	bool VulkanDevice::InitDevice(RenderSettings* settings)
+	bool VulkanDevice::InitDevice(EngineSettings* settings)
 	{
 		m_RenderSettings = settings;
 

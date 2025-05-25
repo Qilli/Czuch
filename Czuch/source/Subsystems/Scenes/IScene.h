@@ -5,6 +5,7 @@
 namespace Czuch
 {
 	class CameraComponent;
+	class Entity;
 	struct LightObjectInfo;
 	class IScene: public ISerializer
 	{
@@ -32,6 +33,8 @@ namespace Czuch
 		virtual entt::entity GetEntityWithGUID(GUID guid)=0;
 		virtual const Color GetAmbientColor() const = 0;
 		virtual const Array<LightObjectInfo>& GetAllLightObjects() const=0;
+		virtual void ForEachEntity(std::function<void(Entity*)> func) = 0;
+		virtual void ForEachEntityWithHierarchy(std::function<void(Entity*)> func) =0;
 		friend class Entity;
 	protected:
 		virtual entt::registry& GetRegistry() = 0;

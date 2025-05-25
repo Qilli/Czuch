@@ -412,6 +412,82 @@ namespace Czuch
 		vkCmdDrawIndexed(m_Cmd, indicesCount, instanceCount, firstIndex, vertexOffset, firstnstance);
 	}
 
+	void VulkanCommandBuffer::DrawIndirectIndexedWithData(IndirectDrawForCommandBufferData* data, DescriptorAllocator* allocator)
+	{	
+		CZUCH_BE_ASSERT(data != nullptr, "Indirect draw data is null");
+		CZUCH_BE_ASSERT(data->buffer != nullptr, "Indirect draw buffer is null");
+
+		CZUCH_BE_ASSERT(HANDLE_IS_VALID(data->material), "Material instance passed to command buffer is invalid");
+
+		auto mat = data->material;
+		U32 passIndex = 0;
+		MaterialInstance* materialInstance = m_Device->AccessMaterialInstance(mat);
+		CZUCH_BE_ASSERT(materialInstance != nullptr, "Material instance passed to command buffer is null");
+		Material* material = m_Device->AccessMaterial(materialInstance->handle);
+
+		auto& paramsDesc = materialInstance->params[passIndex].shaderParamsDesc;
+		auto pipeline = material->pipelines[passIndex];
+		auto& pipelineDesc = material->GetDesc().passesContainer.passes[passIndex];
+
+		BindPipeline(pipeline);
+
+		auto pipelinePtr = m_Device->AccessPipeline(pipeline);
+		DescriptorWriter writer;
+
+		//set scene data for material
+		paramsDesc[0].descriptors[0].resource = data->sceneDataBuffer.handle;
+		//set instances count in material
+		paramsDesc[data->set].descriptors[data->binding].resource = data->instancesBuffer.handle;
+
+		for (int a = 0; a < pipelineDesc.layoutsCount; a++)
+		{
+			writer.Clear();
+			auto descriptorLayout = pipelinePtr->layouts[a];
+			auto layout = m_Device->AccessDescriptorSetLayout(descriptorLayout);
+			auto descriptor = allocator->Allocate(paramsDesc[a], layout);
+
+			for (int b = 0; b < layout->desc.bindingsCount; b++)
+			{
+				auto binding = layout->desc.bindings[b];
+				if (binding.type == DescriptorType::UNIFORM_BUFFER)
+				{
+					writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
+				}
+				else if (binding.type == DescriptorType::SAMPLER)
+				{
+					writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(paramsDesc[a].descriptors[b].resource, AssetHandle())), DescriptorType::SAMPLER);
+				}
+				else if (binding.type == DescriptorType::STORAGE_BUFFER)
+				{
+					U32 size = binding.size;
+
+					if (a == data->set && b == data->binding)
+					{
+						size = data->instancesSize;
+					}
+
+					writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), size==0? VK_WHOLE_SIZE:size, 0, binding.type);
+				}
+				writer.UpdateSet(m_Device, descriptor);
+			}
+
+			BindDescriptorSet(descriptor, a, 1, nullptr, 0);
+		}
+
+		//set vertex and index buffer
+		BindVertexBuffer(data->vertexBuffer, 0, 0);
+
+		if (HANDLE_IS_VALID(data->indexBuffer))
+		{
+			BindIndexBuffer(data->indexBuffer, 0);
+		}
+
+		auto indirectBuffer=m_Device->AccessBuffer(data->indirectDrawsCommandsBuffer);
+		CZUCH_BE_ASSERT(indirectBuffer != nullptr, "Indirect draw buffer is null");
+		VkBuffer buffer = Internal_to_Buffer(indirectBuffer)->buffer;
+		vkCmdDrawIndexedIndirect(m_Cmd, buffer, data->indirectDrawsCommandsOffset, 1, sizeof(VkDrawIndexedIndirectCommand));
+	}
+
 	void VulkanCommandBuffer::BeginDynamicRenderPassForMainPass(VkImageView colorView, VkImageView depthView, U32 width, U32 height)
 	{
 		VkRenderingAttachmentInfoKHR colorAttachment{};

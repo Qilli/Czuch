@@ -12,7 +12,7 @@ namespace Czuch
 	{
 	}
 
-	void EngineEditorSubsystem::Init(RenderSettings* settings)
+	void EngineEditorSubsystem::Init(EngineSettings* settings)
 	{
 		BaseSubsystem::Init(settings);
 		if (m_EditorControl != nullptr)

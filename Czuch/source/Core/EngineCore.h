@@ -104,7 +104,35 @@ namespace Czuch
 		Editor
 	};
 
-	struct RenderSettings
+	struct DebugSettings
+	{
+	public:
+		DebugSettings()
+			: enableDebugDrawOBBForMeshes(false)
+			, debugDrawOBBForMeshesScale(1.01f)
+		{};
+		bool IsDebugDrawOBBForMeshesEnabled() const
+		{
+			return enableDebugDrawOBBForMeshes;
+		}
+		void SetDebugDrawOBBForMeshesEnabled(bool enabled)
+		{
+			enableDebugDrawOBBForMeshes = enabled;
+		}
+		float GetDebugDrawOBBForMeshesScale() const
+		{
+			return debugDrawOBBForMeshesScale;
+		}
+		void SetDebugDrawOBBForMeshesScale(float scale)
+		{
+			debugDrawOBBForMeshesScale = scale;
+		}
+	private:
+		bool enableDebugDrawOBBForMeshes; // Enable or disable debug drawing of OBB for meshes
+		float debugDrawOBBForMeshesScale = 1.01f; //Scale for debug drawing OBB for meshes 1.0 means it will fit exactly the mesh 1.1 will add 10% in size
+	};
+
+	struct EngineSettings
 	{
 		bool dynamicRendering = false;
 		ValidationMode validationMode = ValidationMode::Disabled;
@@ -112,6 +140,7 @@ namespace Czuch
 		U32 targetWidth = 0;//only for dynamic size rendering
 		U32 targetHeight = 0;
 		std::string startPath = "Czuch";
+		DebugSettings debugSettings;
 
 		const CzuchStr& GetStartPath() const
 		{

@@ -20,6 +20,12 @@ namespace Czuch
 		void AddRenderable(AssetHandle model,MeshHandle meshHandle,AssetHandle overrideMaterial);
 		void RemoveRenderable();
 
+		void AddPointLight(const Color& color, float intensity, float range);
+		void AddDirectionalLight(const Color& color, float intensity);
+		void AddSpotLight(const Color& color, float intensity, float range, float innerAngle, float outerAngle);
+		void RemoveLightComponent();
+
+
 		bool IsRenderable();
 
 		template<typename T, typename... Args>

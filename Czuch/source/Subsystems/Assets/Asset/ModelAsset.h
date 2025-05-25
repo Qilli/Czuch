@@ -31,6 +31,7 @@ namespace Czuch
         inline U32 GetMeshesCount() const { return m_MeshData.GetMeshesCount(); }
 		const CzuchStr* GetMeshName(MeshHandle handle) const;
         Entity AddModelToScene(Scene* scene,Entity parent);
+		const MeshData* GetMeshData(MeshHandle handle) const;
     public:
         ShortAssetInfo* GetShortAssetInfo() override;
         CzuchStr GetAssetLoadInfo() const override;

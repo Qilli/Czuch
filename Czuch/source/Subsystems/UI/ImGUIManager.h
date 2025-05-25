@@ -15,7 +15,7 @@ namespace Czuch
 		ImGUIManager(GraphicsDevice* device,Window* wnd);
 		virtual ~ImGUIManager();
 
-		void Init(RenderSettings* settings) override;
+		void Init(EngineSettings* settings) override;
 		void Update(TimeDelta timeDelta) override;
 		void Shutdown() override;
 		void SetSceneForUI(Scene* scene) override;

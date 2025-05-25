@@ -37,7 +37,67 @@ namespace Czuch
 	{
 	public:
 		static Color White;
+		static Color Green;
+		static Color Yellow;
 	};
+
+	struct AABB
+	{
+	public:
+		Vec3 min;
+		Vec3 max;
+
+		AABB() : min(0.0f), max(0.0f) {}
+		AABB(const Vec3& min, const Vec3& max) : min(min), max(max) {}
+		AABB(const AABB& other) : min(other.min), max(other.max) {}
+
+		Vec3 GetCenter() const
+		{
+			return (min + max) * 0.5f;
+		}
+
+		Vec3 GetSize() const
+		{
+			return max - min;
+		}
+
+		Vec3 GetHalfSize() const
+		{
+			return GetSize() * 0.5f;
+		}
+
+		AABB GetScaled(float scale) const
+		{
+			Vec3 center = GetCenter();
+			Vec3 halfSize = GetHalfSize() * scale;
+			return AABB(center - halfSize, center + halfSize);
+		}
+	};
+
+	struct OBB
+	{
+		Vec3 center;
+		Mat4x4 orientation;
+		Vec3 extents;// Half-size of the box along its local axes
+
+		OBB() : center(0.0f), orientation(Mat4x4(1.0f)), extents(0.0f) {} 
+		OBB(const Vec3& center, const Mat4x4& orientation, const Vec3& extents)
+			: center(center), orientation(orientation), extents(extents) {}
+
+
+		/// <summary>
+		/// input should be in range [-1,1]
+		/// </summary>
+		/// <param name="localPoint"></param>
+		/// <returns></returns>
+		Vec3 TransformLocalPoint(const Vec3& localPoint) const
+		{
+			return Vec3(orientation * Vec4(localPoint * extents, 1.0f)) + center;
+		}
+	};
+
+	OBB TransformAABBToOBB(const AABB& local_aabb, const Mat4x4& localToWorld);
+
 
 	inline glm::vec3 GammaToLinear(const glm::vec3& colorGamma)
 	{

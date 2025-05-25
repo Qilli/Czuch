@@ -14,7 +14,7 @@ namespace Czuch
 	class CZUCH_API AssetsManager: public BaseSubsystem<AssetsManager>
 	{
 	public:
-		void Init(RenderSettings* settings) override;
+		void Init(EngineSettings* settings) override;
 		void Shutdown() override;
 		void Update(TimeDelta timeDelta) override;
 
