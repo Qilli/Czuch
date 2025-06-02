@@ -29,16 +29,20 @@ namespace Czuch
 #define PI glm::pi<float>()
 #define RAD2DEG 180.0f / PI
 #define DEG2RAD PI / 180.0f
+#define UP Vec3(0.0f, 1.0f, 0.0f)
+#define RIGHT Vec3(1.0f, 0.0f, 0.0f)
+#define FORWARD Vec3(0.0f, 0.0f,1.0f)
 
 #define Vec3ToString(vec) std::string(std::to_string(vec.x) + ", " + std::to_string(vec.y) + ", " + std::to_string(vec.z))
 
 
-	struct Colors
+	struct CZUCH_API Colors
 	{
 	public:
 		static Color White;
 		static Color Green;
 		static Color Yellow;
+		static Color Red;
 	};
 
 	struct AABB
@@ -97,6 +101,16 @@ namespace Czuch
 	};
 
 	OBB TransformAABBToOBB(const AABB& local_aabb, const Mat4x4& localToWorld);
+
+	/// <summary>
+	/// Compute a new orientation matrix for a given world center and normal vector.
+	/// This function is useful for aligning an object to a surface normal in world space.
+	/// The result is new world space where normal is forward direction and right, are tangents
+	/// </summary>
+	/// <param name="worldCenter"></param>
+	/// <param name="normal"></param>
+	/// <returns></returns>
+	Mat3x3 GetNewSpaceOrientation(const Vec3& worldCenter, const Vec3& normal,const Vec3 inUP=UP);
 
 
 	inline glm::vec3 GammaToLinear(const glm::vec3& colorGamma)

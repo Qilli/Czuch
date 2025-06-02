@@ -49,6 +49,11 @@ namespace Czuch
 		EventsManager::Get().RemoveListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
 		m_Device->AwaitDevice();
 
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			m_FramesData[a].frameDeletionQueue.Flush();
+		}
+
 		if (m_ActiveScene != nullptr)
 		{
 			m_ActiveScene->OnDettached();
@@ -61,11 +66,6 @@ namespace Czuch
 		delete m_FinalRenderPass;
 
 		m_ImmediateSubmitData.Release(m_Device);
-
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
-		{
-			m_FramesData[a].frameDeletionQueue.Flush();
-		}
 
 		ReleaseSyncObjects();
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)

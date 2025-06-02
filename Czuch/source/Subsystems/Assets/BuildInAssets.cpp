@@ -81,6 +81,7 @@ namespace Czuch
 	AssetHandle DefaultAssets::DEFAULT_VS_SHADER_ASSET;
 	AssetHandle DefaultAssets::DEFAULT_PS_SHADER_ASSET;
 
+	AssetHandle DefaultAssets::DEBUG_DRAW_VS_SHADER_ASSET;
 	AssetHandle DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET;
 	AssetHandle DefaultAssets::DEFAULT_SIMPLE_COLOR_PS_ASSET;
 	AssetHandle DefaultAssets::DEBUG_DRAW_VS_INSTANCED_LINES_ASSET;
@@ -690,9 +691,11 @@ namespace Czuch
 
 	void BuildInAssets::CreateDebugDrawMaterials()
 	{
+		DefaultAssets::DEBUG_DRAW_VS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawVertexShader.vert", {});
+
 		//Debug material for standard debug meshes
 		MaterialPassDesc desc;
-		desc.vs = DefaultAssets::DEFAULT_VS_SHADER_ASSET;
+		desc.vs = DefaultAssets::DEBUG_DRAW_VS_SHADER_ASSET;
 		desc.ps = DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET;
 		desc.pt = PrimitiveTopology::TRIANGLELIST;
 		desc.rs.cull_mode = CullMode::BACK;
@@ -718,7 +721,6 @@ namespace Czuch
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
 		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
-		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
 
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
@@ -746,6 +748,7 @@ namespace Czuch
 		materialAsset->SetPersistentStatus(true);
 		DefaultAssets::DEBUG_DRAW_MATERIAL = materialAsset->GetMaterialResourceHandle();
 
+		//Create Instance for debug draw material
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "DefaultDebugMaterialInstance";
 		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);

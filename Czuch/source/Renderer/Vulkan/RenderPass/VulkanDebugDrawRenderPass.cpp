@@ -36,7 +36,7 @@ namespace Czuch
 	void VulkanDebugDrawRenderPass::Execute(CommandBuffer* cmdBuffer)
 	{
 		//render debug draw lines/triangles/points
-		//VulkanRenderPassControlBase::Execute(cmdBuffer);
+		VulkanRenderPassControlBase::Execute(cmdBuffer);
 
 		m_FillParams.forcedMaterial = DefaultAssets::DEBUG_DRAW_LINES_MATERIAL_INSTANCE;
 		m_Renderer->DrawDebugData((VulkanCommandBuffer*)cmdBuffer, m_Camera, m_DebugFillParams);

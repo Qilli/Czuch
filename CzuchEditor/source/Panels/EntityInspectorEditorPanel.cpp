@@ -480,16 +480,16 @@ namespace Czuch
 				if (lightType == LightType::Spot)
 				{
 					// Display and edit Light Spot Inner Angle
-					float lightSpotInnerAngle = light.GetInnerAngle();
+					float lightSpotInnerAngle = light.GetInnerAngle()*RAD2DEG;
 					if (ImGui::DragFloat("Light Spot Inner Angle", &lightSpotInnerAngle, 0.1f, 0.0f, 180.0f, "%.1f"))
 					{
-						light.SetInnerAngle(lightSpotInnerAngle);
+						light.SetInnerAngle(lightSpotInnerAngle*DEG2RAD);
 					}
 
-					float lightSpotOuterAngle = light.GetOuterAngle();
+					float lightSpotOuterAngle = light.GetOuterAngle()*RAD2DEG;
 					if (ImGui::DragFloat("Light Spot Outer Angle", &lightSpotOuterAngle, 0.1f, 0.0f, 180.0f, "%.1f"))
 					{
-						light.SetOuterAngle(lightSpotOuterAngle);
+						light.SetOuterAngle(lightSpotOuterAngle*DEG2RAD);
 					}
 				}
 			}

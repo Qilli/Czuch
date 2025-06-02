@@ -7,6 +7,7 @@ namespace Czuch
 	Color Colors::White = Color(1.0f, 1.0f, 1.0f, 1.0f);
 	Color Colors::Green = Color(0.0f, 1.0f, 0.0f, 1.0f);
 	Color Colors::Yellow = Color(1.0f, 1.0f, 0.0f, 1.0f);
+	Color Colors::Red = Color(1.0f, 0.0f, 0.0f, 1.0f);
 	OBB TransformAABBToOBB(const AABB& local_aabb, const Mat4x4& localToWorld)
 	{
 		// 1. Get the center and half-extents of the local AABB
@@ -59,5 +60,24 @@ namespace Czuch
 		Vec3 world_obb_extents = local_half_extents*scale; // The extents remain the local half-sizes
 
 		return OBB(world_obb_center, world_obb_orientation, world_obb_extents);
+	}
+
+	Mat3x3 GetNewSpaceOrientation(const Vec3& worldCenter, const Vec3& forward,const Vec3 inUP)
+	{
+		Vec3 nForward = glm::normalize(forward);
+		if (glm::dot(nForward,inUP) > 0.99f)
+		{
+			// If the normal is almost vertical, we can use a different up vector to avoid singularity
+			Vec3 up = UP;
+			Vec3 right = glm::normalize(glm::cross(nForward, up));
+			Vec3 forward = glm::normalize(glm::cross(nForward, right));
+			return Mat3x3(right,up,forward);
+		}
+		else
+		{
+			Vec3 right = -glm::normalize(glm::cross(nForward, inUP));
+			Vec3 up = glm::normalize(glm::cross(nForward,right));
+			return Mat3x3(right, up, nForward);
+		}
 	}
 }

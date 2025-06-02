@@ -20,6 +20,7 @@ namespace Czuch
 
 		void SetLocalScale(const Vec3& scale);
 		void SetParentTransform(const Mat4x4& transform);
+		void LookAt(const Vec3& target);
 
 		Vec3& GetLocalPosition() { return m_LocalPosition; }
 		Vec3& GetLocalEulerAngles(){ return m_LocalEulerAngles; }
@@ -47,6 +48,11 @@ namespace Czuch
 			UpdateLocalToWorld();
 			auto inv = glm::inverse(m_LocalToWorld);
 			return Mat3x3(inv);
+		}
+
+		const Mat4x4 GetInverseTransposeLocalToWorld()
+		{
+			return glm::inverse(glm::transpose(m_LocalToWorld));
 		}
 
 		const Mat4x4 GetWorldInv4x4()

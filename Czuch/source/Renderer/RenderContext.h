@@ -239,6 +239,7 @@ namespace Czuch
 		void DrawQuad(const Vec3& center, const Vec3& normal, float size, const Color& color) override;
 		void DrawCircle(const Vec3& center,const Vec3& normal, float radius, const Color& color) override;
 		void DrawLinesSphere(const Vec3& center, float radius, const Color& color) override;
+		void DrawCone(const Vec3& position, const Vec3& direction, float range, float angle, const Color& color) override;
 	};
 
 

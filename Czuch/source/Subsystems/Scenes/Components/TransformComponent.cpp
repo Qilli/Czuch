@@ -68,9 +68,9 @@ namespace Czuch
 		m_LocalPosition = Vec3(m_LocalTransform[3]);
 		m_LocalRotation = glm::quat_cast(m_LocalTransform);
 		m_LocalScale = Vec3(glm::length(m_LocalTransform[0]), glm::length(m_LocalTransform[1]), glm::length(m_LocalTransform[2]));
+		LOG_BE_INFO("Local scale is: {0}, {1} , {2}", m_LocalScale.x, m_LocalScale.y, m_LocalScale.z);
 		m_LocalEulerAngles = glm::degrees(glm::eulerAngles(m_LocalRotation));
 		m_State.SetDirty();
-
 	}
 
 	void TransformComponent::SetLocalScale(const Vec3& scale)
@@ -85,6 +85,19 @@ namespace Czuch
 		m_ParentTransform = transform;
 		m_State.SetDirty();
 		UpdateLocalToWorld();
+	}
+
+	void TransformComponent::LookAt(const Vec3& target)
+	{
+		Vec3 direction = glm::normalize(target - GetWorldPosition());
+		if (glm::dot(direction,-GetWorldForward()) > 0.99f)
+		{
+			return; // Already looking at the target
+		}
+
+		Mat3x3 newOrientation = GetNewSpaceOrientation(GetWorldPosition(), direction);
+		m_LocalRotation = glm::quat_cast(newOrientation);
+		m_State.SetDirty();
 	}
 
 	Vec3 TransformComponent::GetWorldPosition()
@@ -112,15 +125,15 @@ namespace Czuch
 		m_State.SetDirty();
 	}
 
-	void TransformComponent::Rotate(float angle, Vec3 axis, TransformSpace space)
+	void TransformComponent::Rotate(float angleRad, Vec3 axis, TransformSpace space)
 	{
 		if (space == TransformSpace::Local)
 		{
-			m_LocalRotation = glm::rotate(m_LocalRotation, angle, axis);
+			m_LocalRotation = glm::rotate(m_LocalRotation, angleRad, axis);
 		}
 		else
 		{
-			m_LocalRotation = m_LocalRotation*glm::rotate(glm::quat(1,0,0,0), angle, axis);
+			m_LocalRotation = m_LocalRotation*glm::rotate(glm::quat(1,0,0,0), angleRad, axis);
 		}
 		m_LocalEulerAngles = glm::degrees(glm::eulerAngles(m_LocalRotation));
 		UpdateLocalRotation();

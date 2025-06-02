@@ -261,29 +261,58 @@ namespace Czuch
 					}
 				}
 
-				if (EngineRoot::GetEngineSettings().debugSettings.IsDebugDrawOBBForMeshesEnabled() &&  entity->HasComponent<MeshRendererComponent>())
+				if (EngineRoot::GetEngineSettings().debugSettings.GetDebugDrawSelectedEntityID() == entity->GetID())
 				{
-					auto& meshRendererComp = entity->GetComponent<MeshRendererComponent>();
-					if (meshRendererComp.IsEnabled())
+					if (EngineRoot::GetEngineSettings().debugSettings.IsDebugDrawOBBForMeshesEnabled() && entity->HasComponent<MeshRendererComponent>())
+					{
+						auto& meshRendererComp = entity->GetComponent<MeshRendererComponent>();
+						if (meshRendererComp.IsEnabled())
+						{
+							auto& meshComp = entity->GetComponent<MeshComponent>();
+							auto& transformComp = entity->GetComponent<TransformComponent>();
+							OBB obb = meshComp.GetOBB(transformComp, EngineRoot::GetEngineSettings().debugSettings.GetDebugDrawOBBForMeshesScale());
+
+							auto& rendering = cameraRendering.debugCameraControl;
+							//add lines building obb around mesh
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, -1)), obb.TransformLocalPoint(Vec3(1, -1, -1)), Colors::Green);
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, -1)), obb.TransformLocalPoint(Vec3(-1, 1, -1)), Colors::Green);
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, -1)), obb.TransformLocalPoint(Vec3(-1, -1, 1)), Colors::Green);
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, -1, -1)), obb.TransformLocalPoint(Vec3(1, 1, -1)), Colors::Green);
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, -1, -1)), obb.TransformLocalPoint(Vec3(1, -1, 1)), Colors::Green);
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, 1, -1)), obb.TransformLocalPoint(Vec3(1, 1, -1)), Colors::Green);
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, 1, -1)), obb.TransformLocalPoint(Vec3(-1, 1, 1)), Colors::Green);
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, 1)), obb.TransformLocalPoint(Vec3(1, -1, 1)), Colors::Green);
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, 1)), obb.TransformLocalPoint(Vec3(-1, 1, 1)), Colors::Green);
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, -1, 1)), obb.TransformLocalPoint(Vec3(1, 1, 1)), Colors::Green);
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, 1, 1)), obb.TransformLocalPoint(Vec3(1, 1, 1)), Colors::Green);
+							rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, 1, 1)), obb.TransformLocalPoint(Vec3(1, 1, -1)), Colors::Green);
+						}
+					}
+
+					if (EngineRoot::GetEngineSettings().debugSettings.IsDebugDrawNormalForMeshesEnabled() && entity->HasComponent<MeshComponent>() && entity->HasComponent<MeshRendererComponent>())
 					{
 						auto& meshComp = entity->GetComponent<MeshComponent>();
 						auto& transformComp = entity->GetComponent<TransformComponent>();
-						OBB obb = meshComp.GetOBB(transformComp,EngineRoot::GetEngineSettings().debugSettings.GetDebugDrawOBBForMeshesScale());
-
-						auto& rendering = cameraRendering.debugCameraControl;
-						//add lines building obb around mesh
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, -1)), obb.TransformLocalPoint(Vec3(1, -1, -1)), Colors::Green);
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, -1)), obb.TransformLocalPoint(Vec3(-1, 1, -1)), Colors::Green);
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, -1)), obb.TransformLocalPoint(Vec3(-1, -1, 1)), Colors::Green);
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, -1, -1)), obb.TransformLocalPoint(Vec3(1, 1, -1)), Colors::Green);
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, -1, -1)), obb.TransformLocalPoint(Vec3(1, -1, 1)), Colors::Green);
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, 1, -1)), obb.TransformLocalPoint(Vec3(1, 1, -1)), Colors::Green);
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, 1, -1)), obb.TransformLocalPoint(Vec3(-1, 1, 1)), Colors::Green);
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, 1)), obb.TransformLocalPoint(Vec3(1, -1, 1)), Colors::Green);
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, -1, 1)), obb.TransformLocalPoint(Vec3(-1, 1, 1)), Colors::Green);
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, -1, 1)), obb.TransformLocalPoint(Vec3(1, 1, 1)), Colors::Green);
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(-1, 1, 1)), obb.TransformLocalPoint(Vec3(1, 1, 1)), Colors::Green);
-						rendering.DrawLine(obb.TransformLocalPoint(Vec3(1, 1, 1)), obb.TransformLocalPoint(Vec3(1, 1, -1)), Colors::Green);
+						auto handle = meshComp.GetMesh();
+						if (HANDLE_IS_VALID(handle))
+						{
+							auto& rendering = cameraRendering.debugCameraControl;
+							auto mesh = device->AccessMesh(handle);
+							if (mesh != nullptr && mesh->HasNormals())
+							{
+								auto& normals = mesh->GetMeshData().normals;
+								auto& positions = mesh->GetMeshData().positions;
+								Mat4x4 localToWorld = transformComp.GetLocalToWorld();
+								for (int a = 0; a < normals.size(); ++a)
+								{
+									const Vec3& posLocal = positions[a];
+									const Vec3& normalLocal = normals[a];
+									Vec3 position = localToWorld * Vec4(posLocal.x, posLocal.y, posLocal.z, 1.0f);
+									Vec3 normal = transformComp.GetInverseTransposeLocalToWorld() * Vec4(normalLocal.x, normalLocal.y, normalLocal.z, 0.0f);
+									rendering.DrawLine(position, position + normal * 0.2f, Colors::Red);
+								}
+							}
+						}
 					}
 				}
 
@@ -300,10 +329,23 @@ namespace Czuch
 							rendering.DrawLinesSphere(transform.GetWorldPosition(), lightComp.GetLightRange(), Colors::Yellow);
 							break;
 						case LightType::Spot:
-							//rendering.DrawCone(transform.GetWorldPosition(), transform.GetWorldForward(), lightComp.GetRange(), lightComp.GetSpotAngle(), lightComp.GetColor());
+							rendering.DrawCone(transform.GetWorldPosition(), transform.GetWorldForward(), lightComp.GetLightRange(), lightComp.GetOuterAngle(), Colors::Yellow);
 							break;
 						case LightType::Directional:
-							//rendering.DrawLine(transform.GetWorldPosition(), transform.GetWorldPosition() + transform.GetWorldForward() * 10.0f, Colors::Yellow);
+							rendering.DrawCircle(transform.GetWorldPosition(), transform.GetWorldForward(), 0.2f, Colors::Yellow);
+							rendering.DrawLine(transform.GetWorldPosition(), transform.GetWorldPosition() + transform.GetWorldForward() * 0.5f, Colors::Yellow);
+
+							Mat3x3 forwardSpace = GetNewSpaceOrientation(transform.GetWorldPosition(), transform.GetWorldForward());
+
+							//draw a few line in a circle along right and up direction of this new local space
+							for (int i = 0; i < 360; i += 30)
+							{
+								float angle = glm::radians(static_cast<float>(i));
+								Vec3 localPosition = Vec3(cos(angle),0, sin(angle))*0.2f;
+								Vec3 targetPos = forwardSpace[0] * localPosition.x + forwardSpace[1] * localPosition.z;
+								rendering.DrawLine(transform.GetWorldPosition()+targetPos, transform.GetWorldPosition() + targetPos + transform.GetWorldForward() * 0.5f, Colors::Yellow);
+							}
+
 							break;
 						default:
 							break;
@@ -488,7 +530,7 @@ namespace Czuch
 	void SceneCameraRenderingControl::UpdateSceneDataBuffers(IScene* scene, GraphicsDevice* device, RenderObjectsContainer& visibleObjects, U32 frame, DeletionQueue& deletionQueue)
 	{
 		buffer[frame] = device->CreateBuffer(&bufferDesc);
-		deletionQueue.PushFunction([=, this]() {
+		deletionQueue.PushFunction([=,this]() {
 			if (HANDLE_IS_VALID(buffer[frame]))
 			{
 				device->Release(buffer[frame]);
@@ -1034,6 +1076,10 @@ namespace Czuch
 
 	void SceneCameraDebugRenderingControl::DrawLine(const Vec3& start, const Vec3& end, const Color& color)
 	{
+		if (m_Lines.size() >= MAX_LINES_IN_SCENE)
+		{
+			return;
+		}
 		m_Lines.push_back(LineInstanceData(start, end, color));
 	}
 
@@ -1130,6 +1176,29 @@ namespace Czuch
 		DrawCircle(center, Vec3(0, 1, 0), radius, color);
 		DrawCircle(center, Vec3(1, 0, 0), radius, color);
 		DrawCircle(center, Vec3(0, 0, 1), radius, color);
+	}
+
+	void SceneCameraDebugRenderingControl::DrawCone(const Vec3& position, const Vec3& direction, float range, float angle, const Color& color)
+	{
+		Vec3 forward = glm::normalize(direction);
+		Vec3 right = glm::normalize(glm::cross(forward, Vec3(0, 1, 0)));
+		Vec3 up = glm::normalize(glm::cross(right, forward));
+
+		Vec3 baseCenter = position + forward * range;
+		float radius = range * tan(angle);
+
+		Vec3 targetRight = baseCenter +right * radius;
+		Vec3 targetUp = baseCenter + up * radius;
+		Vec3 targetLeft = baseCenter - right * radius;
+		Vec3 targetDown = baseCenter - up * radius;
+
+		DrawLine(position, baseCenter, color);
+		DrawLine(position, targetRight, color);
+		DrawLine(position, targetUp, color);
+		DrawLine(position, targetLeft, color);
+		DrawLine(position, targetDown, color);
+
+		DrawCircle(baseCenter, -forward, radius, color);
 	}
 
 }

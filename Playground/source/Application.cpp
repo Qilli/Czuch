@@ -46,13 +46,17 @@ private:
 class DrawDebugLines : public Czuch::NativeBehaviour
 {
 public:
+
+	Czuch::TransformComponent* transform;
+	Czuch::TransformComponent* cameraTransform;
 	DrawDebugLines()
 	{
 	}
 
 	void OnUpdate(Czuch::TimeDelta delta) override
 	{
-		
+		//transform->LookAt(cameraTransform->GetWorldPosition());
+		//transform->Rotate(DEG2RAD * 90.0f, RIGHT);
 	}
 
 	void OnDebugDraw(Czuch::IDebugDrawBuilder* debugBuilder) override
@@ -65,6 +69,7 @@ public:
 		//debugBuilder->DrawPoint(glm::vec3(0.0f, 3.0f, 0.0f), Color(1.0f, 1.0f, 1.0f, 1.0f),20.0f);
 
 		//debugBuilder->DrawLinesSphere(glm::vec3(0.0f, 2.0f, 0.0f), 1.0f, Color(1.0f, 1.0f, 1.0f, 1.0f));
+
 	}
 };
 
@@ -77,6 +82,7 @@ int main()
 
 	auto &settings=Czuch::EngineRoot::GetEngineSettings();
 	settings.debugSettings.SetDebugDrawOBBForMeshesEnabled(false);
+	settings.debugSettings.SetDebugDrawNormalForMeshesEnabled(true);
 
 	Czuch::Scene *scene= new Czuch::Scene("MainScene",root->GetRenderer().GetDevice());
 
@@ -87,7 +93,7 @@ int main()
 
 	//load sponza
 	auto sponzaHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Sponza\\sponza.gltf");
-    auto sponzaEntity = scene->AddModelToScene(sponzaHandle, "SponzaObject");
+   // auto sponzaEntity = scene->AddModelToScene(sponzaHandle, "SponzaObject");
 
 	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("Textures\\texture.jpg");
 
@@ -102,22 +108,50 @@ int main()
 
 	Czuch::Entity cubeEntity = scene->CreateEntity("CubeObject");
 	cubeEntity.AddRenderable(Czuch::DefaultAssets::CUBE_ASSET, Czuch::DefaultAssets::CUBE_HANDLE,matInstanceHandle);
-	cubeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	cubeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 0.0f, 1.0f));
 	auto& scripts=cubeEntity.AddComponent<Czuch::NativeBehaviourComponent>();
 	RotateAround& rotateAround = scripts.AddNativeBehaviour<RotateAround>();
 	rotateAround.SetEnabled(true);
 	Czuch::NativeFree3DCameraController& camController = scripts.AddNativeBehaviour<Czuch::NativeFree3DCameraController>();
+	settings.debugSettings.SetDebugDrawSelectedEntityID(cubeEntity.GetID());
+
+
 
 	Czuch::Entity planeEntity = scene->CreateEntity("PlaneObject");
 	planeEntity.AddRenderable(Czuch::DefaultAssets::PLANE_ASSET,Czuch::DefaultAssets::PLANE_HANDLE, matInstanceHandle);
-	planeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, -1.0f, 0.0f));
+	planeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, -1.0f, -5.0f));
 	planeEntity.Transform().SetLocalScale(glm::vec3(10.0f, 1.0f, 10.0f));
+	//planeEntity.Transform().LookAt(glm::vec3(0.0f, 10.0f, 0.0f));
+	//planeEntity.Transform().Rotate(DEG2RAD* 90.0f,RIGHT);
 
-	planeEntity.AddComponent<Czuch::NativeBehaviourComponent>().AddNativeBehaviour<DrawDebugLines>();
+	auto& debugLines=planeEntity.AddComponent<Czuch::NativeBehaviourComponent>().AddNativeBehaviour<DrawDebugLines>();
+	debugLines.transform = &planeEntity.Transform();
+
+	//add simple entity with spot light
+	Czuch::Entity spotLightEntity = scene->CreateEntity("SpotLightObject");
+	spotLightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 2.0f, -2.0f));
+	spotLightEntity.Transform().Rotate(DEG2RAD * 45.0f, RIGHT);
+
+	auto& spot=spotLightEntity.AddComponent<Czuch::LightComponent>();
+	spot.SetLightType(Czuch::LightType::Spot);
+	spot.SetColor(Czuch::Colors::White);
+	spot.SetLightRange(10.0f);
+	spot.SetInnerAngle(20.0f);
+	spot.SetOuterAngle(25.0f);
+
+
+
+	auto camComponent = scene->GetPrimaryCamera();
+	auto camTransform = &camComponent->GetEntity().Transform();
+
+	debugLines.cameraTransform = camTransform;
 
 	Czuch::Entity lightEntity = scene->CreateEntity("LightObject");
-	lightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 2.0f, 0.0f));
-	lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 100.0f, 2.0f);
+	lightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 2.0f, 2.0f));
+	lightEntity.Transform().Rotate(0.0f);
+	//lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 100.0f, 2.0f);
+	lightEntity.AddDirectionalLight(Czuch::Colors::White, 1.0f);
+
 
 	root->Run();
 	root->Shutdown();

@@ -127,7 +127,30 @@ namespace Czuch
 		{
 			debugDrawOBBForMeshesScale = scale;
 		}
+
+		bool IsDebugDrawNormalForMeshesEnabled() const
+		{
+			return debugDrawNormalForMeshes;
+		}
+
+		void SetDebugDrawNormalForMeshesEnabled(bool enabled)
+		{
+			debugDrawNormalForMeshes = enabled;
+		}
+
+		void SetDebugDrawSelectedEntityID(intptr_t entityID)
+		{
+			m_DebugDrawSelectedEntityID = entityID;
+		}
+
+		intptr_t GetDebugDrawSelectedEntityID() const
+		{
+			return m_DebugDrawSelectedEntityID;
+		}
+
 	private:
+		intptr_t m_DebugDrawSelectedEntityID; // Entity used for debug drawing, if needed
+		bool debugDrawNormalForMeshes = false; // Enable or disable debug drawing of normals for meshes
 		bool enableDebugDrawOBBForMeshes; // Enable or disable debug drawing of OBB for meshes
 		float debugDrawOBBForMeshesScale = 1.01f; //Scale for debug drawing OBB for meshes 1.0 means it will fit exactly the mesh 1.1 will add 10% in size
 	};

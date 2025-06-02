@@ -90,6 +90,7 @@ namespace Czuch
 		static AssetHandle DEFAULT_VS_SHADER_ASSET;
 		static AssetHandle DEFAULT_PS_SHADER_ASSET;
 		static AssetHandle DEFAULT_SIMPLE_COLOR_PS_ASSET;
+		static AssetHandle DEBUG_DRAW_VS_SHADER_ASSET;
 		static AssetHandle DEBUG_DRAW_PS_SHADER_ASSET;
 		static AssetHandle DEBUG_DRAW_VS_INSTANCED_LINES_ASSET;
 		static AssetHandle DEBUG_DRAW_VS_INSTANCED_TRIANGLES_ASSET;
