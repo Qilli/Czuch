@@ -44,6 +44,11 @@ namespace Czuch
 	bool HasStencilComponent(VkFormat format);
 	VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
+	Format VulkanDevice::GetDepthFormat() const
+	{
+		return ConvertVkFormat(m_DepthImage.depthFormat);
+	}
+
 	void VulkanDevice::DrawUI(CommandBuffer* commandBuffer)
 	{
 		ImGuiIO& io = ImGui::GetIO();
@@ -281,6 +286,17 @@ namespace Czuch
 
 	RenderPassHandle VulkanDevice::CreateRenderPass(const RenderPassDesc* desc)
 	{
+		//First check if given render pass already exists
+		if (desc != nullptr)
+		{
+			auto handle = GetRenderPassWithDescIfExist(desc);
+			if (HANDLE_IS_VALID(handle))
+			{
+				return handle;
+			}
+		}
+
+
 		RenderPass* rp = new RenderPass();
 		rp->m_InternalResourceState = std::make_shared<RenderPass_Vulkan>();
 		if (desc != nullptr)
@@ -2248,6 +2264,29 @@ namespace Czuch
 		std::cerr << "Validation Layer: " << pCallbackData->pMessage << std::endl;
 		LOG_BE_ERROR("{0} Vulkan Problem: {1}", Tag, pCallbackData->pMessage);
 		return VK_FALSE;
+	}
+
+	RenderPassHandle VulkanDevice::GetRenderPassWithDescIfExist(const RenderPassDesc* desc)
+	{
+			auto& renderPasses = m_ResContainer.renderPasses;
+			U32 currentIndex = renderPasses.GetCount();
+			
+			for (auto it = renderPasses.Rbegin_const(); it != renderPasses.Rend_const(); it++)
+			{
+				currentIndex--;
+				RenderPass* renderPass = *it;
+
+				if (renderPass == nullptr)
+				{
+					continue;
+				}
+
+				if (renderPass->desc == *desc)
+				{
+					return RenderPassHandle(currentIndex);
+				}
+			}
+		return RenderPassHandle();
 	}
 
 	bool VulkanDevice::CreateVulkanInstance()

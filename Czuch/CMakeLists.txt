@@ -38,6 +38,7 @@ target_include_directories(Czuch PRIVATE
     source
     ${CMAKE_CURRENT_SOURCE_DIR}/vendors/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/vendors/ImGuizmo
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendors/Json
     ${VulkanMemoryAllocator_INCLUDE_DIRS}
 )
 

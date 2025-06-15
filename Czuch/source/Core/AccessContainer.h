@@ -25,6 +25,8 @@ namespace Czuch
 		inline std::vector<T*>::const_reverse_iterator Rbegin_const() const { return m_Elements.rbegin(); }
 		inline std::vector<T*>::const_reverse_iterator Rend_const() const { return m_Elements.rend(); }
 
+		inline U32 GetCount() const { return m_Elements.size(); }
+
 	private:
 		std::vector<T*> m_Elements;
 		std::list<U32> m_FreeSpots;

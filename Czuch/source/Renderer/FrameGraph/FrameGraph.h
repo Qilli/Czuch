@@ -7,6 +7,7 @@ namespace Czuch
 	class RenderPassControl;
 	class Renderer;
 	class GraphicsDevice;
+	struct Camera;
 
 	struct FrameGraphResourceHandle
 	{
@@ -109,7 +110,7 @@ namespace Czuch
 
 	struct CZUCH_API FrameGraph
 	{
-		void Init(GraphicsDevice* device,Renderer* renderer);
+		void Init(Camera* camera,GraphicsDevice* device,Renderer* renderer);
 		void Release();
 		FrameGraphNode& GetNode(FrameGraphNodeHandle handle) { return m_Nodes.GetNode(handle); }
 		FrameGraphResource& GetResource(FrameGraphResourceHandle handle) { return m_Resources.GetResource(handle); }
@@ -118,15 +119,17 @@ namespace Czuch
 		void AfterSystemInit();
 		void Execute(GraphicsDevice* device,CommandBuffer* cmd);
 		void ResizeNode(FrameGraphNode node, U32 width, U32 height);
+		Camera* GetCamera() { return m_Camera; }
 		void* GetRenderPassResult(RenderPassType type);
 		void* GetFinalRenderPassResult();
 		RenderPassControl* GetRenderPassControlByType(RenderPassType type);
+		RenderPassHandle GetFinalRenderPassHandle();
 		bool HasRenderPass(RenderPassType type);
 		void ResizeRenderPasses(U32 width, U32 height, bool windowSizeChanged = true);
 		TextureHandle GetFinalTexture();
+		TextureHandle GetFinalDepthTexture();
 		bool HasUI() { return m_HasUI; }
 		void AddUI() { m_HasUI = true; }
-		void ReleaseDependencies();
 		U32 GetNodesCount() { return m_Nodes.m_Nodes.size(); }
 		U32 GetResourceCount() { return m_Resources.resources.size(); }
 		void* GetRenderPassResultAt(U32 renderPassIndex);
@@ -146,9 +149,12 @@ namespace Czuch
 		void AfterFrameGraphExecute(CommandBuffer* cmd);
 		//[TODO] we need to add option to init offscreen node with size from UI
 	private:
+		void ReleaseDependencies();
+	private:
 		FrameGraphNodesContainer m_Nodes;
 		FrameGraphResourcesContainer m_Resources;
 		Array<FrameGraphNodeHandle> m_SortedNodes;
+		Camera* m_Camera;
 		GraphicsDevice* m_Device;
 		Renderer* m_Renderer;
 		bool m_HasUI = false;

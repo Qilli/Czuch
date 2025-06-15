@@ -4,15 +4,17 @@
 #include "../CommandBuffer.h"
 #include "../RenderPassControl.h"
 #include "../Renderer.h"
+#include "Subsystems/Scenes/Components/CameraComponent.h"
 
 namespace Czuch
 {
-	void FrameGraph::Init(GraphicsDevice* device,Renderer* renderer )
+	void FrameGraph::Init(Camera* camera,GraphicsDevice* device,Renderer* renderer )
 	{
 		m_Device = device;
 		m_Renderer= renderer;
 		m_Nodes.Init(device);
 		m_Resources.Init(device);
+		m_Camera = camera;
 	}
 
 	void FrameGraph::Release()
@@ -189,6 +191,11 @@ namespace Czuch
 		return nullptr;
 	}
 
+	RenderPassHandle FrameGraph::GetFinalRenderPassHandle()
+	{
+		return m_Nodes.m_Nodes[m_Nodes.m_Nodes.size() - 1].renderPassControl->GetNativeRenderPassHandle();
+	}
+
 	bool FrameGraph::HasRenderPass(RenderPassType type)
 	{
 		for (int i = 0; i < m_Nodes.m_Nodes.size(); i++)
@@ -244,6 +251,25 @@ namespace Czuch
 		return node->GetFirstColorAttachment(this);
 	}
 
+	TextureHandle FrameGraph::GetFinalDepthTexture()
+	{
+		//return last color attachment
+		FrameGraphNode* node = nullptr;
+
+		for (int i = m_Nodes.m_Nodes.size() - 1; i >= 0; i--)
+		{
+			auto& n = m_Nodes.m_Nodes[i];
+			if (n.renderPassControl->IsActive())
+			{
+				node = &n;
+				break;
+			}
+		}
+
+		CZUCH_BE_ASSERT(node, "Final render pass not found");
+		return node->GetDepthAttachment(this);
+	}
+
 	void FrameGraph::ReleaseDependencies()
 	{
 		m_Nodes.ReleaseDependencies();
@@ -282,6 +308,7 @@ namespace Czuch
 
 	void FrameGraphNodesContainer::Release()
 	{
+		ReleaseDependencies();
 		for (U32 i = 0; i < m_Nodes.size(); i++)
 		{
 			m_Nodes[i].Release(device);
@@ -406,6 +433,24 @@ namespace Czuch
 				}
 			}
 		}
+
+		//if not found check inputs
+		for (int i = 0; i < inputs.size(); i++)
+		{
+			auto inputHandle = inputs[i];
+			//get resource using out handle 
+			auto& input = fgraph->GetResource(inputHandle);
+			if (input.type == FrameGraphResourceType::Attachment)
+			{
+				//check if it has depth format
+				if (IsDepthFormat(input.info.texture.format))
+				{
+					auto& res = fgraph->GetResource(input.output_target);
+					return res.info.texture.texture;
+				}
+			}
+		}
+
 		return TextureHandle{ Invalid_Handle_Id };
 	}
 

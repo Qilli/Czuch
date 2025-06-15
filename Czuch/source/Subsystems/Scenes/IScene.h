@@ -6,6 +6,8 @@ namespace Czuch
 {
 	class CameraComponent;
 	class Entity;
+	struct Camera;
+	struct FrameGraphControl;
 	struct LightObjectInfo;
 	class IScene: public ISerializer
 	{
@@ -27,6 +29,8 @@ namespace Czuch
 		virtual void CameraEnabledChanged(CameraComponent* camera) = 0;
 		virtual void CameraAdded(CameraComponent* camera) = 0;
 		virtual void CameraRemoved(CameraComponent* camera) = 0;
+		virtual FrameGraphControl* GetFrameGraphControl(Camera* camera) = 0;
+		virtual FrameGraphControl* GetFrameGraphControl(int index) = 0;
 		bool IsDirty() const { return m_isDirty; }
 		void Dirty() { m_isDirty = true; }
 		void SetDirty(bool dirty) { m_isDirty = dirty; }

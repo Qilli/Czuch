@@ -53,7 +53,7 @@ namespace Czuch
 		entt::registry& GetRegistry() override { return m_Registry; }
 		RenderObjectsContainer& GetRenderObjects() { return m_RenderObjects; }
 		const Array<LightObjectInfo>& GetAllLightObjects() const { return m_RenderObjects.allLights; }
-		void OnSceneActive(GraphicsDevice* device);
+		void OnSceneActive(Renderer* renderer,GraphicsDevice* device);
 		/// <summary>
 		/// Event called from renderer when window is resized or target texture is resized(for editor width/height will be equal to render view port), only to active scene
 		/// </summary>
@@ -64,11 +64,11 @@ namespace Czuch
 		/// <summary>
 		/// This method is called when we are about to start rendering next frame, after we aquire the next image from swapchain
 		/// </summary>
-		void BeforeFrameGraphExecute(U32 currentFrame, DeletionQueue& deletionQueue);
+		void BeforeFrameGraphExecute(CommandBufferHandle cmdBuffer,U32 currentFrame, DeletionQueue& deletionQueue);
 		/// <summary>
 		/// Here we want to make all render contexts dirty so we can update them at the beginning of the next frame
 		/// </summary>
-		void AfterFrameGraphExecute();
+		void AfterFrameGraphExecute(CommandBufferHandle cmdBuffer);
 		/// <summary>
 		/// Get scene data buffers for selected camera, if null then use primary camera
 		/// </summary>
@@ -95,7 +95,7 @@ namespace Czuch
 		Array<SceneCameraControl>& GetCamerasControl() { return m_CamerasControl; }
 		RenderContext* GetRenderContext(RenderPassType type, Camera* camera);
 	public:
-		void OnAttached() { CheckAndAddStartCamera(); UpdateAllCameras(); }
+		void OnAttached() { CheckAndAddStartCamera(); m_isDirty = false; UpdateAllCameras(); }
 		void OnDettached();
 	public:
 		virtual bool Serialize(YAML::Emitter& out, bool binary = false) override;
@@ -105,6 +105,13 @@ namespace Czuch
 		const Color GetClearColor() const { return m_ClearColor; }
 		void SetAmbientColor(const Color& color) { m_AmbientColor = color; }
 		const Color GetAmbientColor() const { return m_AmbientColor; }
+	public:
+		FrameGraphControl* GetFrameGraphControl(Camera* camera) override;
+		FrameGraphControl* GetFrameGraphControl(int index) override;
+		void OnResizeRenderPassType(RenderPassType type, int width, int height);
+		void InitFrameGraphsControls();
+		int GetActiveFrameGraphsCount() const { return m_CamerasControl.size(); 
+		}
 	private:
 		void DestroyMarkedEntities();
 		void CheckAndAddStartCamera();
@@ -121,6 +128,7 @@ namespace Czuch
 		Array<SceneCameraControl> m_CamerasControl;
 		RenderObjectsContainer m_RenderObjects;
 		GraphicsDevice* m_Device;
+		Renderer* m_Renderer;
 		Color m_ClearColor;
 		Color m_AmbientColor;
 	};

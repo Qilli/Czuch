@@ -99,8 +99,8 @@ namespace Czuch
 			{
                 pipeline_rendering_create_info.colorAttachmentCount = 1;
                 pipeline_rendering_create_info.pColorAttachmentFormats = device->GetSwapchainFormat();
-                pipeline_rendering_create_info.depthAttachmentFormat = device->GetDepthFormat();
-                pipeline_rendering_create_info.stencilAttachmentFormat = device->GetDepthFormat();
+                pipeline_rendering_create_info.depthAttachmentFormat = device->GetNativeDepthFormat();
+                pipeline_rendering_create_info.stencilAttachmentFormat = device->GetNativeDepthFormat();
 			}
             pipelineInfo.pNext = &pipeline_rendering_create_info;
 		}

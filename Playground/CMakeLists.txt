@@ -19,3 +19,5 @@ target_compile_definitions(Playground PRIVATE
 set_target_properties(Playground PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+
+file(COPY ${CMAKE_SOURCE_DIR}/Assets DESTINATION ${CMAKE_BINARY_DIR}/Playground)

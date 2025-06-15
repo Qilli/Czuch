@@ -3,7 +3,7 @@
 
 namespace Czuch
 {
-
+	struct Camera;
 	struct FrameGraphResourceInputCreation {
 		FrameGraphResourceType type;
 		FrameGraphResourceInfo resource_info;
@@ -51,6 +51,10 @@ namespace Czuch
 		void SetRenderPassControl(RenderPassControl* control);
 		void EndNode();
 		void Build(FrameGraph* graph);
+		void SetFrameGraphBuildCamera(Camera* camera)
+		{
+			m_Camera = camera;
+		}
 	private:
 		FrameGraphNodeHandle CreateNode(FrameGraphNodeCreateData data);
 		FrameGraphResourceHandle CreateOutputResource(const FrameGraphResourceOutputCreation& output, FrameGraphNodeHandle node);
@@ -66,5 +70,6 @@ namespace Czuch
 		bool m_Inited = false;
 		GraphicsDevice* m_Device;
 		FrameGraph *m_FrameGraph;
+		Camera * m_Camera;
 	};
 }

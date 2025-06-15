@@ -7,6 +7,7 @@ namespace Czuch
 {
 
 	struct TransformComponent;
+	struct CameraComponent;
 	class CZUCH_API Entity: public ISerializer
 	{
 	public:
@@ -99,6 +100,11 @@ namespace Czuch
 	{
 		CZUCH_BE_ASSERT(!HasComponent<T>(), "Entity already has component!");
 		auto& comp = EmplaceComp<T>(*this, std::forward<Args>(args)...);
+		if (std::is_same<T, CameraComponent>::value) 
+		{
+			m_Scene->CameraAdded((CameraComponent*) & comp);
+		}
+
 		comp.OnCreated();
 		return comp;
 	}
@@ -110,10 +116,18 @@ namespace Czuch
 		{
 			return;
 		}
-		GetComponent<T>().OnRemoved();
+
+		auto &comp = GetComponent<T>();
+		if (std::is_same<T, CameraComponent>::value)
+		{
+			m_Scene->CameraRemoved((CameraComponent*)&comp);
+		}
+
+		comp.OnRemoved();
 		m_Scene->GetRegistry().get<T>(m_EntityHandle).OnRemoved();
 		m_Scene->GetRegistry().remove<T>(m_EntityHandle);
 		m_Scene->Dirty();
+
 	}
 
 	template<typename T>

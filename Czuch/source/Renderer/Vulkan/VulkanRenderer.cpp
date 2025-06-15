@@ -22,17 +22,18 @@
 #include"RenderPass/VulkanDepthLinearPrepassRenderPass.h"
 #include"RenderPass/VulkanDefaultForwardTransparentLightingRenderPass.h"
 #include"RenderPass/VulkanDebugDrawRenderPass.h"
+#include"RenderPass/VulkanFullScreenRenderPass.h"
 
 #include"Events/EventsTypes/ApplicationEvents.h"
+#include"EngineRoot.h"
 
 
 namespace Czuch
 {
-	VulkanRenderer::VulkanRenderer(Window* window, EngineSettings* renderSettings)
+	VulkanRenderer::VulkanRenderer(Window* window)
 	{
 		m_AttachedWindow = window;
 		m_ActiveScene = nullptr;
-		m_RenderSettings = renderSettings;
 	}
 
 
@@ -60,9 +61,10 @@ namespace Czuch
 			m_ActiveScene = nullptr;
 		}
 
-		ReleaseFrameGraphs();
+		m_FullScreenRenderPass->Release();
+		delete m_FullScreenRenderPass;
 
-		UnRegisterRenderPassControl(m_FinalRenderPass);
+		m_FinalRenderPass->Release();
 		delete m_FinalRenderPass;
 
 		m_ImmediateSubmitData.Release(m_Device);
@@ -81,7 +83,7 @@ namespace Czuch
 	{
 		m_Device = new VulkanDevice(m_AttachedWindow);
 
-		bool init = m_Device->InitDevice(m_RenderSettings);
+		bool init = m_Device->InitDevice(&EngineRoot::GetEngineSettings());
 
 		if (init == false)
 		{
@@ -105,7 +107,7 @@ namespace Czuch
 
 	void VulkanRenderer::AfterSystemInit()
 	{
-		m_CurrentFrameGraph.AfterSystemInit();
+
 	}
 
 	void VulkanRenderer::CreateRenderGraph()
@@ -143,14 +145,36 @@ namespace Czuch
 
 		auto cmdBuffer = m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer);
 		cmdBuffer->Begin();
-		//render passes from frame graph
-		m_CurrentFrameGraph.Execute(m_Device, cmdBuffer);
 
-		auto finalTexture = m_CurrentFrameGraph.GetFinalTexture();
-		m_FinalRenderPass->SetFinalTexture(cmdBuffer, finalTexture);
-		m_FinalRenderPass->PreDraw(cmdBuffer, this);
-		m_FinalRenderPass->Execute(cmdBuffer);
-		m_FinalRenderPass->PostDraw(cmdBuffer, this);
+		if (m_ActiveScene->GetActiveFrameGraphsCount() > 0)
+		{
+
+			auto mainFrameGraph = m_ActiveScene->GetFrameGraphControl(0);
+			mainFrameGraph->Execute(m_Device, cmdBuffer);
+			auto finalInfo = mainFrameGraph->GetFinalFrameGraphNodeInfo();
+			m_FullScreenRenderPass->SetSourceTexture(cmdBuffer, finalInfo.finalTexture,finalInfo.finalDepthTexture,finalInfo.finalRenderPass);
+
+			for (int a = 1; a < m_ActiveScene->GetActiveFrameGraphsCount(); ++a)
+			{
+				auto* frameGraph = m_ActiveScene->GetFrameGraphControl(a);
+
+				frameGraph->Execute(m_Device, cmdBuffer);
+
+				auto finalCurrentInfo = frameGraph->GetFinalFrameGraphNodeInfo();
+				m_FullScreenRenderPass->SetViewportAndScissor(frameGraph->GetCamera());
+				m_FullScreenRenderPass->SetTargetTexture(cmdBuffer, finalCurrentInfo.finalTexture);
+				m_FullScreenRenderPass->PreDraw(cmdBuffer, this);
+				m_FullScreenRenderPass->Execute(cmdBuffer);
+				m_FullScreenRenderPass->PostDraw(cmdBuffer, this);
+			}
+
+			m_FinalRenderPass->SetViewportAndScissor(mainFrameGraph->GetCamera());
+			m_FinalRenderPass->SetFinalTexture(cmdBuffer, finalInfo.finalTexture);
+			m_FinalRenderPass->PreDraw(cmdBuffer, this);
+			m_FinalRenderPass->Execute(cmdBuffer);
+			m_FinalRenderPass->PostDraw(cmdBuffer, this);
+		}
+
 
 		cmdBuffer->End();
 
@@ -171,7 +195,7 @@ namespace Czuch
 
 	void VulkanRenderer::ReleaseDependencies()
 	{
-		m_CurrentFrameGraph.ReleaseDependencies();
+		
 	}
 
 	GraphicsDevice* VulkanRenderer::GetDevice()
@@ -182,14 +206,14 @@ namespace Czuch
 
 	void VulkanRenderer::SetActiveScene(Scene* scene)
 	{
+		EngineRoot::Get().TryBuildDefaultAssets();
+
 		if (m_ActiveScene == scene)
 		{
 			return;
 		}
 		m_ActiveScene = scene;
-		scene->OnSceneActive(m_Device);
-		m_CurrentFrameGraph.SetClearColor(m_ActiveScene->GetClearColor());
-
+		scene->OnSceneActive(this,m_Device);
 	}
 
 	void VulkanRenderer::ImmediateSubmitWithCommandBuffer(std::function<void(CommandBuffer* cmd)>&& processor)
@@ -258,14 +282,30 @@ namespace Czuch
 		cmdBuffer->DrawFullScreenQuad(material, GetCurrentFrame().descriptorAllocator);
 	}
 
-	void* VulkanRenderer::GetRenderPassResult(RenderPassType type)
+	void* VulkanRenderer::GetRenderPassResult(Camera* cam,RenderPassType type)
 	{
-		return m_CurrentFrameGraph.GetRenderPassResult(type);
+		CZUCH_BE_ASSERT(m_ActiveScene != nullptr, "Active scene is null, cannot get render pass result.");
+
+		auto frameGraph=m_ActiveScene->GetFrameGraphControl(cam);
+		if (frameGraph == nullptr)
+		{
+			LOG_BE_ERROR("[Vulkan]GetRenderPassResult: Frame graph is null for camera.");
+			return nullptr;
+		}
+
+		return frameGraph->GetRenderPassControlByType(type);
 	}
 
-	bool VulkanRenderer::HasRenderPass(RenderPassType type)
+	bool VulkanRenderer::HasRenderPass(Camera* cam,RenderPassType type)
 	{
-		return m_CurrentFrameGraph.HasRenderPass(type);
+		CZUCH_BE_ASSERT(m_ActiveScene != nullptr, "Active scene is null, cannot check render pass existence.");
+		auto frameGraph = m_ActiveScene->GetFrameGraphControl(cam);
+		if (frameGraph == nullptr)
+		{
+			LOG_BE_ERROR("[Vulkan]HasRenderPass: Frame graph is null for camera.");
+			return false;
+		}
+		return frameGraph->HasRenderPass(type);
 	}
 
 
@@ -329,8 +369,7 @@ namespace Czuch
 	{
 		if (m_ActiveScene != nullptr)
 		{
-			m_ActiveScene->BeforeFrameGraphExecute(m_CurrentFrame, m_FramesData[m_CurrentFrame].frameDeletionQueue);
-			m_CurrentFrameGraph.BeforeFrameGraphExecute(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
+			m_ActiveScene->BeforeFrameGraphExecute(GetCurrentFrame().commandBuffer,m_CurrentFrame, m_FramesData[m_CurrentFrame].frameDeletionQueue);
 		}
 	}
 
@@ -338,8 +377,7 @@ namespace Czuch
 	{
 		if (m_ActiveScene != nullptr)
 		{
-			m_CurrentFrameGraph.AfterFrameGraphExecute(m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer));
-			m_ActiveScene->AfterFrameGraphExecute();
+			m_ActiveScene->AfterFrameGraphExecute(GetCurrentFrame().commandBuffer);
 		}
 	}
 
@@ -355,9 +393,9 @@ namespace Czuch
 		if (m_ActiveScene != nullptr)
 		{
 			m_ActiveScene->OnResize(width, height,true);
-		}
-		m_CurrentFrameGraph.ResizeRenderPasses(width, height, true);
+		};
 		m_FinalRenderPass->Resize(width, height);
+		m_FullScreenRenderPass->Resize(width, height);
 	}
 
 	void VulkanRenderer::CheckForResizeQueries()
@@ -368,8 +406,6 @@ namespace Czuch
 			if (it->allNotHandledByWindowSizeChanged)
 			{
 				m_Device->AwaitDevice();
-				m_CurrentFrameGraph.ResizeRenderPasses(it->width, it->height, false);
-
 				if (m_ActiveScene != nullptr)
 				{
 					m_ActiveScene->OnResize(it->width, it->height, false);
@@ -377,22 +413,14 @@ namespace Czuch
 			}
 			else
 			{
-				auto renderPass = GetRenderPassByType(it->type);
-				if (renderPass != nullptr)
+				if (m_ActiveScene != nullptr)
 				{
-					renderPass->Resize(it->width, it->height);
+					m_ActiveScene->OnResizeRenderPassType(it->type,it->width, it->height);
 				}
 			}
 		}
 		m_RenderPassResizeQueries.clear();
 	}
-
-
-	RenderPassControl* VulkanRenderer::GetRenderPassByType(RenderPassType type)
-	{
-		return m_CurrentFrameGraph.GetRenderPassControlByType(type);
-	}
-
 
 	void VulkanRenderer::OnPreRenderUpdateContexts(Camera* cam, int width, int height, RenderContextFillParams* fillParams)
 	{
@@ -437,313 +465,25 @@ namespace Czuch
 
 	}
 
-	RenderPassControl* VulkanRenderer::RegisterRenderPassControl(RenderPassControl* control)
+	void* VulkanRenderer::GetFrameGraphFinalResult(Camera* cam)
 	{
-		m_RenderPassControls.push_back(control);
-		return control;
-	}
-
-	void VulkanRenderer::UnRegisterRenderPassControl(RenderPassControl* control)
-	{
-		auto it = std::find(m_RenderPassControls.begin(), m_RenderPassControls.end(), control);
-		if (it != m_RenderPassControls.end())
+		CZUCH_BE_ASSERT(m_ActiveScene != nullptr, "Active scene is null, cannot get frame graph final result.");
+		auto frameGraph = m_ActiveScene->GetFrameGraphControl(cam);
+		if (frameGraph == nullptr)
 		{
-			m_RenderPassControls.erase(it);
+			LOG_BE_ERROR("[Vulkan]GetFrameGraphFinalResult: Frame graph is null for camera.");
+			return nullptr;
 		}
-	}
-
-	RenderPassHandle VulkanRenderer::GetNativeRenderPassHandle(RenderPassType type)
-	{
-		for (auto control : m_RenderPassControls)
-		{
-			if (control->GetType() == type)
-			{
-				return control->GetNativeRenderPassHandle();
-			}
-		}
-		return INVALID_HANDLE(RenderPassHandle);
-	}
-
-	void* VulkanRenderer::GetFrameGraphFinalResult()
-	{
-		return m_CurrentFrameGraph.GetFinalRenderPassResult();
+		return frameGraph->GetFrameGraphFinalResult();
 	}
 
 	void VulkanRenderer::CreateFrameGraphs()
-	{
-		//here we will use frame graph builder to create frame graphs
-		//and we will take info of what kind of graph we need from render settings
-		//or use can provide his own frame graph in the future
-		m_FrameGraphBuilder.Init(m_Device, this);
-
-		//create basic frame graph with main render pass and depth prepass
-
-
-		//Color node
-
-		/////////////DOFPass
-		/*FrameGraphResourceInputCreation dofDepthInput;
-		dofDepthInput.name = "Depth";
-		dofDepthInput.type = FrameGraphResourceType::Reference;
-
-		FrameGraphResourceInputCreation dofLightingInput;
-		dofLightingInput.name = "Lighting";
-		dofLightingInput.type = FrameGraphResourceType::Reference;
-
-
-		FrameGraphResourceOutputCreation mainRenderPassOutput;
-		mainRenderPassOutput.name = "Final";
-		mainRenderPassOutput.type = FrameGraphResourceType::Attachment;
-		mainRenderPassOutput.resource_info.texture.format = Format::R8G8B8A8_UNORM;
-		mainRenderPassOutput.resource_info.texture.width = m_Device->GetSwapchainWidth();
-		mainRenderPassOutput.resource_info.texture.height = m_Device->GetSwapchainHeight();
-		mainRenderPassOutput.resource_info.texture.depth = 1;
-		mainRenderPassOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
-
-
-		m_FrameGraphBuilder.BeginNewNode("DOFPass");
-		m_FrameGraphBuilder.AddInput(dofDepthInput);
-		m_FrameGraphBuilder.AddInput(dofLightingInput);
-		m_FrameGraphBuilder.SetRenderPassControl(nullptr);
-		m_FrameGraphBuilder.AddOutput(mainRenderPassOutput);
-		m_FrameGraphBuilder.EndNode();
-		/////////////////////////
-
-		///////////////Depth node
-		FrameGraphResourceOutputCreation depthPrepassOutput;
-		depthPrepassOutput.name = "Depth";
-		depthPrepassOutput.type = FrameGraphResourceType::Attachment;
-		depthPrepassOutput.resource_info.texture.format = Format::D24_UNORM_S8_UINT;
-		depthPrepassOutput.resource_info.texture.width = m_Device->GetSwapchainWidth();
-		depthPrepassOutput.resource_info.texture.height = m_Device->GetSwapchainHeight();
-		depthPrepassOutput.resource_info.texture.depth = 1;
-		depthPrepassOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
-
-		m_FrameGraphBuilder.BeginNewNode("DepthPrepass");
-		m_FrameGraphBuilder.AddOutput(depthPrepassOutput);
-		m_FrameGraphBuilder.EndNode();
-		//////////////////////////
-
-		///////////////GBuffer pass
-		FrameGraphResourceInputCreation gBufferDepthInput;
-		gBufferDepthInput.name = "Depth";
-		gBufferDepthInput.type = FrameGraphResourceType::Attachment;
-
-		FrameGraphResourceOutputCreation gBufferOutput;
-		gBufferOutput.name = "GBuffer_Color";
-		gBufferOutput.type = FrameGraphResourceType::Attachment;
-		gBufferOutput.resource_info.texture.format = Format::R8G8B8A8_UNORM;
-		gBufferOutput.resource_info.texture.width = m_Device->GetSwapchainWidth();
-		gBufferOutput.resource_info.texture.height = m_Device->GetSwapchainHeight();
-		gBufferOutput.resource_info.texture.depth = 1;
-		gBufferOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
-
-		FrameGraphResourceOutputCreation gBufferNormalOutput;
-		gBufferNormalOutput.name = "GBuffer_Normal";
-		gBufferNormalOutput.type = FrameGraphResourceType::Attachment;
-		gBufferNormalOutput.resource_info.texture.format = Format::R16G16B16A16_FLOAT;
-		gBufferNormalOutput.resource_info.texture.width = m_Device->GetSwapchainWidth();
-		gBufferNormalOutput.resource_info.texture.height = m_Device->GetSwapchainHeight();
-		gBufferNormalOutput.resource_info.texture.depth = 1;
-		gBufferNormalOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
-
-		FrameGraphResourceOutputCreation gBufferPositionOutput;
-		gBufferPositionOutput.name = "GBuffer_Position";
-		gBufferPositionOutput.type = FrameGraphResourceType::Attachment;
-		gBufferPositionOutput.resource_info.texture.format = Format::R16G16B16A16_FLOAT;
-		gBufferPositionOutput.resource_info.texture.width = m_Device->GetSwapchainWidth();
-		gBufferPositionOutput.resource_info.texture.height = m_Device->GetSwapchainHeight();
-		gBufferPositionOutput.resource_info.texture.depth = 1;
-
-		m_FrameGraphBuilder.BeginNewNode("GBufferPass");
-		m_FrameGraphBuilder.AddInput(gBufferDepthInput);
-		m_FrameGraphBuilder.AddOutput(gBufferOutput);
-		m_FrameGraphBuilder.AddOutput(gBufferNormalOutput);
-		m_FrameGraphBuilder.AddOutput(gBufferPositionOutput);
-		m_FrameGraphBuilder.EndNode();
-		//////////////////////////
-
-		///////////////Lighting pass
-		FrameGraphResourceInputCreation colorInput;
-		colorInput.name = "GBuffer_Color";
-		colorInput.type = FrameGraphResourceType::Texture;
-
-		FrameGraphResourceInputCreation normalInput;
-		normalInput.name = "GBuffer_Normal";
-		normalInput.type = FrameGraphResourceType::Texture;
-
-		FrameGraphResourceInputCreation positionInput;
-		positionInput.name = "GBuffer_Position";
-		positionInput.type = FrameGraphResourceType::Texture;
-
-		FrameGraphResourceOutputCreation lightingOutput;
-		lightingOutput.name = "Lighting";
-		lightingOutput.type = FrameGraphResourceType::Attachment;
-		lightingOutput.resource_info.texture.format = Format::R8G8B8A8_UNORM;
-		lightingOutput.resource_info.texture.width = m_Device->GetSwapchainWidth();
-		lightingOutput.resource_info.texture.height = m_Device->GetSwapchainHeight();
-		lightingOutput.resource_info.texture.depth = 1;
-		lightingOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
-
-		m_FrameGraphBuilder.BeginNewNode("LightingPass");
-		m_FrameGraphBuilder.AddInput(colorInput);
-		m_FrameGraphBuilder.AddInput(normalInput);
-		m_FrameGraphBuilder.AddInput(positionInput);
-		m_FrameGraphBuilder.AddOutput(lightingOutput);
-		m_FrameGraphBuilder.EndNode();
-		//////////////////////////
-
-		///////////////Lighting transparent pass
-		FrameGraphResourceInputCreation lightInputTransparent;
-		lightInputTransparent.name = "Lighting";
-		lightInputTransparent.type = FrameGraphResourceType::Attachment;
-
-		FrameGraphResourceInputCreation depthInputTransparent;
-		depthInputTransparent.name = "Depth";
-		depthInputTransparent.type = FrameGraphResourceType::Attachment;
-
-		FrameGraphResourceOutputCreation lightingOutputTransparent;
-		lightingOutputTransparent.name = "Lighting";
-		lightingOutputTransparent.type = FrameGraphResourceType::Reference;
-
-		m_FrameGraphBuilder.BeginNewNode("LightingTransparentPass");
-		m_FrameGraphBuilder.AddInput(lightInputTransparent);
-		m_FrameGraphBuilder.AddInput(depthInputTransparent);
-		m_FrameGraphBuilder.AddOutput(lightingOutputTransparent);
-		m_FrameGraphBuilder.EndNode();
-		//////////////////////////
-
-		m_FrameGraphBuilder.Build(m_CurrentFrameGraph);*/
-
-		bool handleWindowResize = !m_RenderSettings->RenderingTargetSizeExternallySet();
-		U32 startWidth = handleWindowResize ? m_Device->GetSwapchainWidth() : m_RenderSettings->targetWidth;
-		U32 startHeight = handleWindowResize ? m_Device->GetSwapchainHeight() : m_RenderSettings->targetHeight;
-
-		///////////////Depth node
-		FrameGraphResourceOutputCreation depthPrepassOutput;
-		depthPrepassOutput.name = "Depth";
-		depthPrepassOutput.type = FrameGraphResourceType::Attachment;
-		depthPrepassOutput.resource_info.texture.format = ConvertVkFormat(m_Device->GetDepthFormat());
-		depthPrepassOutput.resource_info.texture.width = startWidth;
-		depthPrepassOutput.resource_info.texture.height = startHeight;
-		depthPrepassOutput.resource_info.texture.depth = 1;
-		depthPrepassOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
-		depthPrepassOutput.resource_info.texture.usage = ImageUsageFlag::DEPTH_STENCIL_ATTACHMENT;
-
-		m_FrameGraphBuilder.BeginNewNode("DepthPrepass");
-		m_FrameGraphBuilder.AddOutput(depthPrepassOutput);
-		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(new VulkanDepthPrepassRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize)));
-		m_FrameGraphBuilder.SetClearColor(Vec3(0.0f));
-		m_FrameGraphBuilder.EndNode();
-		//////////////////////////
-
-		///////////////Depth to linear pass
-
-		FrameGraphResourceInputCreation depthAsTextureInput;
-		depthAsTextureInput.type = FrameGraphResourceType::Texture;
-		depthAsTextureInput.name = "Depth";
-
-		FrameGraphResourceOutputCreation depthLinearPrepassOutput;
-		depthLinearPrepassOutput.name = "DepthLinear";
-		depthLinearPrepassOutput.type = FrameGraphResourceType::Attachment;
-		depthLinearPrepassOutput.resource_info.texture.format = Format::R8G8B8A8_UNORM;
-		depthLinearPrepassOutput.resource_info.texture.width = startWidth;
-		depthLinearPrepassOutput.resource_info.texture.height = startHeight;
-		depthLinearPrepassOutput.resource_info.texture.depth = 1;
-		depthLinearPrepassOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
-		depthLinearPrepassOutput.resource_info.texture.usage = ImageUsageFlag::COLOR_ATTACHMENT;
-
-		m_FrameGraphBuilder.BeginNewNode("DepthLinearPrepass");
-		m_FrameGraphBuilder.AddInput(depthAsTextureInput);
-		m_FrameGraphBuilder.SetClearColor(Vec3(0.0f, 0.0f, 1.0f));
-		m_FrameGraphBuilder.AddOutput(depthLinearPrepassOutput);
-		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(new VulkanDepthLinearPrepassRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize)));
-		m_FrameGraphBuilder.EndNode();
-		/////////////////////////////
-
-
-		///////////////Lighting pass
-
-		FrameGraphResourceInputCreation depthInput;
-		depthInput.type = FrameGraphResourceType::Attachment;
-		depthInput.name = "Depth";
-
-		FrameGraphResourceOutputCreation lightingOutput;
-		lightingOutput.name = "Lighting";
-		lightingOutput.type = FrameGraphResourceType::Attachment;
-		lightingOutput.resource_info.texture.format = Format::R16G16B16A16_FLOAT;//VK_FORMAT_R16G16B16A16_SFLOAT
-		lightingOutput.resource_info.texture.width = startWidth;
-		lightingOutput.resource_info.texture.height = startHeight;
-		lightingOutput.resource_info.texture.depth = 1;
-		lightingOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
-		lightingOutput.resource_info.texture.usage = ImageUsageFlag::COLOR_ATTACHMENT;
-
-		auto lightingPass = new VulkanDefaultForwardLightingRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize);
-		m_FrameGraphBuilder.BeginNewNode("LightingPass");
-		m_FrameGraphBuilder.AddInput(depthInput);
-		m_FrameGraphBuilder.AddOutput(lightingOutput);
-		m_FrameGraphBuilder.SetClearColor(Vec3(0.0f, 0.0f, 0.0f));
-		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(lightingPass));
-		m_FrameGraphBuilder.EndNode();
-		//////////////////////////
-
-		///////////////Transparent Lighting pass
-
-		FrameGraphResourceInputCreation depthInputTransparent;
-		depthInputTransparent.type = FrameGraphResourceType::Attachment;
-		depthInputTransparent.name = "Depth";
-
-		FrameGraphResourceInputCreation lightingInputTransparent;
-		lightingInputTransparent.type = FrameGraphResourceType::Attachment;
-		lightingInputTransparent.name = "Lighting";
-
-
-		auto lightingPassTransparent = new VulkanDefaultForwardTransparentLightingRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize);
-
-		m_FrameGraphBuilder.BeginNewNode("LightingPassTransparent");
-		m_FrameGraphBuilder.AddInput(depthInputTransparent);
-		m_FrameGraphBuilder.AddInput(lightingInputTransparent);
-		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(lightingPassTransparent));
-		m_FrameGraphBuilder.EndNode();
-
-
-		//////////////////
-
-		/////////////////////////Debug Render Pass
-
-		FrameGraphResourceInputCreation depthInputDebug;
-		depthInputDebug.type = FrameGraphResourceType::Attachment;
-		depthInputDebug.name = "Depth";
-
-		FrameGraphResourceInputCreation lightingInputDebug;
-		lightingInputDebug.type = FrameGraphResourceType::Attachment;
-		lightingInputDebug.name = "Lighting";
-
-		auto debugDrawPass = new VulkanDebugDrawRenderPass(this, m_Device, startWidth, startHeight, handleWindowResize);
-
-		m_FrameGraphBuilder.BeginNewNode("DebugDrawPass");
-		m_FrameGraphBuilder.AddInput(depthInputDebug);
-		m_FrameGraphBuilder.AddInput(lightingInputDebug);
-		m_FrameGraphBuilder.SetRenderPassControl(RegisterRenderPassControl(debugDrawPass));
-		m_FrameGraphBuilder.EndNode();
-
-
-
-		////////////////
-
-		m_CurrentFrameGraph.Init(m_Device, this);
-		m_FrameGraphBuilder.Build(&m_CurrentFrameGraph);
-
+	{	
 		//create main render pass control
 		m_FinalRenderPass = new VulkanMainRenderPass(m_Device, this);
 		m_FinalRenderPass->SetNativeRenderPassHandle(m_Device->GetSwapChainRenderPass());
-		RegisterRenderPassControl(m_FinalRenderPass);
-	}
 
-	void VulkanRenderer::ReleaseFrameGraphs()
-	{
-		m_FrameGraphBuilder.Release();
-		m_CurrentFrameGraph.Release();
+		m_FullScreenRenderPass = new VulkanFullScreenRenderPass(m_Device, this);
 	}
 
 	void VulkanRenderer::FrameData::Reset()

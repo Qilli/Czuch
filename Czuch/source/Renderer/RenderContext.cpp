@@ -9,6 +9,15 @@
 #include "Subsystems/Scenes/Components/NativeBehaviourComponent.h"
 #include "Subsystems/Assets/AssetsManager.h"
 #include "Subsystems/Scenes/Components/NativeBehaviourComponent.h"
+#include"Renderer/RenderPassControl.h"
+#include"Renderer/FrameGraph/FrameGraphBuilderHelper.h"
+
+#include"Renderer/Vulkan/RenderPass/VulkanDepthPrepassRenderPass.h"
+#include"Renderer/Vulkan/RenderPass/VulkanDefaultForwardLightingRenderPass.h"
+#include"Renderer/Vulkan/RenderPass/VulkanDepthLinearPrepassRenderPass.h"
+#include"Renderer/Vulkan/RenderPass/VulkanDefaultForwardTransparentLightingRenderPass.h"
+#include"Renderer/Vulkan/RenderPass/VulkanDebugDrawRenderPass.h"
+
 
 namespace Czuch
 {
@@ -53,7 +62,7 @@ namespace Czuch
 
 	void DefaultRenderContext::FillRenderList(GraphicsDevice* device, Camera* cam, RenderObjectsContainer& allObjects, RenderContextFillParams& fillParams)
 	{
-		ClearRenderList();
+		//ClearRenderList(); // Not needeed probably, we are clearing render lists at the end of frame if necessary
 
 		U32 id = 0;
 
@@ -117,7 +126,7 @@ namespace Czuch
 
 	void DebugRenderContext::FillRenderList(GraphicsDevice* device, Camera* cam, RenderObjectsContainer& allObjects, RenderContextFillParams& fillParams)
 	{
-		ClearRenderList();
+		//ClearRenderList(); // Not needeed probably, we are clearing render lists at the end of frame if necessary
 
 		MeshHandle meshH;
 		meshH.handle = 4998;
@@ -153,13 +162,20 @@ namespace Czuch
 
 	void SceneCameraControl::Release(GraphicsDevice* device)
 	{
+		frameGraphControl.ReleaseFrameGraph();
 		visibleRenderObjects.Clear();
 		ReleaseRenderContexts();
 		cameraRendering.Release(device);
 	}
 
-	void SceneCameraControl::OnSceneActive(GraphicsDevice* device, IScene* scene)
+	void SceneCameraControl::OnSceneActive(Renderer* renderer, GraphicsDevice* device, IScene* scene)
 	{
+		bool handleWindowResize = !EngineRoot::GetEngineSettings().RenderingTargetSizeExternallySet();
+		U32 startWidth = handleWindowResize ? device->GetSwapchainWidth() : EngineRoot::GetEngineSettings().targetWidth;
+		U32 startHeight = handleWindowResize ? device->GetSwapchainHeight() : EngineRoot::GetEngineSettings().targetHeight;
+
+		frameGraphControl.CreateFrameGraph(camera,device, renderer, Vec2(startWidth, startHeight), handleWindowResize);
+		frameGraphControl.Init();
 		cameraRendering.OnSceneActive(camera, device, scene);
 		currentScene = scene;
 	}
@@ -167,6 +183,7 @@ namespace Czuch
 	void SceneCameraControl::OnResize(GraphicsDevice* device, U32 width, U32 height, bool windowSizeChanged)
 	{
 		cameraRendering.cameraControl.InitTilesBuffer(device, true, width, height);
+		frameGraphControl.OnResize(width, height, windowSizeChanged);
 	}
 
 	SceneDataBuffers SceneCameraControl::GetSceneDataBuffers(U32 frame)
@@ -318,7 +335,7 @@ namespace Czuch
 
 				if (entity->HasComponent<LightComponent>())
 				{
-					auto &transform = entity->GetComponent<TransformComponent>();
+					auto& transform = entity->GetComponent<TransformComponent>();
 					auto& lightComp = entity->GetComponent<LightComponent>();
 					if (lightComp.IsEnabled())
 					{
@@ -341,9 +358,9 @@ namespace Czuch
 							for (int i = 0; i < 360; i += 30)
 							{
 								float angle = glm::radians(static_cast<float>(i));
-								Vec3 localPosition = Vec3(cos(angle),0, sin(angle))*0.2f;
+								Vec3 localPosition = Vec3(cos(angle), 0, sin(angle)) * 0.2f;
 								Vec3 targetPos = forwardSpace[0] * localPosition.x + forwardSpace[1] * localPosition.z;
-								rendering.DrawLine(transform.GetWorldPosition()+targetPos, transform.GetWorldPosition() + targetPos + transform.GetWorldForward() * 0.5f, Colors::Yellow);
+								rendering.DrawLine(transform.GetWorldPosition() + targetPos, transform.GetWorldPosition() + targetPos + transform.GetWorldForward() * 0.5f, Colors::Yellow);
 							}
 
 							break;
@@ -530,7 +547,7 @@ namespace Czuch
 	void SceneCameraRenderingControl::UpdateSceneDataBuffers(IScene* scene, GraphicsDevice* device, RenderObjectsContainer& visibleObjects, U32 frame, DeletionQueue& deletionQueue)
 	{
 		buffer[frame] = device->CreateBuffer(&bufferDesc);
-		deletionQueue.PushFunction([=,this]() {
+		deletionQueue.PushFunction([=, this]() {
 			if (HANDLE_IS_VALID(buffer[frame]))
 			{
 				device->Release(buffer[frame]);
@@ -700,7 +717,7 @@ namespace Czuch
 
 	void DefaultDepthPrePassRenderContext::FillRenderList(GraphicsDevice* device, Camera* cam, RenderObjectsContainer& allObjects, RenderContextFillParams& fillParams)
 	{
-		ClearRenderList();
+		//ClearRenderList(); // Not needeed probably, we are clearing render lists at the end of frame if necessary
 
 		U32 id = 0;
 
@@ -1099,7 +1116,7 @@ namespace Czuch
 	{
 		if (m_Points.size() < MAX_DEBUG_POINTS_IN_SCENE)
 		{
-			m_Points.push_back(PointInstanceData(point, color,size));
+			m_Points.push_back(PointInstanceData(point, color, size));
 		}
 		else
 		{
@@ -1113,7 +1130,7 @@ namespace Czuch
 
 	void SceneCameraDebugRenderingControl::DrawQuad(const Vec3& center, const Vec3& normal, float size, const Color& color)
 	{
-		Vec3 normalIn= glm::normalize(normal);
+		Vec3 normalIn = glm::normalize(normal);
 		Vec3 right;
 		if (glm::abs(glm::dot(normal, Vec3(0, 1.0f, 0))) > 0.99f)
 		{
@@ -1134,12 +1151,12 @@ namespace Czuch
 		DrawTriangle(a, c, d, color);
 	}
 
-	void SceneCameraDebugRenderingControl::DrawCircle(const Vec3& center,const Vec3& normal, float radius, const Color& color)
+	void SceneCameraDebugRenderingControl::DrawCircle(const Vec3& center, const Vec3& normal, float radius, const Color& color)
 	{
 		//compute axes in the plane of the circle
 		Vec3 normalIn = glm::normalize(normal);
 		Vec3 right;
-		if (glm::abs(glm::dot(normalIn,Vec3(0,1.0f,0)))>0.99f)
+		if (glm::abs(glm::dot(normalIn, Vec3(0, 1.0f, 0))) > 0.99f)
 		{
 			right = Vec3(1, 0, 0);
 		}
@@ -1167,7 +1184,7 @@ namespace Czuch
 			Vec3 point2 = worldPosition + nextX * right + nextY * up;
 
 			// Draw the line between the two points
-			DrawLine(point1, point2, color);	
+			DrawLine(point1, point2, color);
 		}
 	}
 
@@ -1187,7 +1204,7 @@ namespace Czuch
 		Vec3 baseCenter = position + forward * range;
 		float radius = range * tan(angle);
 
-		Vec3 targetRight = baseCenter +right * radius;
+		Vec3 targetRight = baseCenter + right * radius;
 		Vec3 targetUp = baseCenter + up * radius;
 		Vec3 targetLeft = baseCenter - right * radius;
 		Vec3 targetDown = baseCenter - up * radius;
@@ -1199,6 +1216,240 @@ namespace Czuch
 		DrawLine(position, targetDown, color);
 
 		DrawCircle(baseCenter, -forward, radius, color);
+	}
+
+	void FrameGraphControl::CreateFrameGraph(Camera* camera,GraphicsDevice* device, Renderer* renderer, Vec2 targetSize, bool handleWindowResize)
+	{
+		m_FrameGraphBuilder = new FrameGraphBuilderHelper();
+		//here we will use frame graph builder to create frame graphs
+		//and we will take info of what kind of graph we need from render settings
+		//or use can provide his own frame graph in the future
+		m_FrameGraphBuilder->Init(device, renderer);
+
+		U32 startWidth = targetSize.x;
+		U32 startHeight = targetSize.y;
+
+		///////////////Depth node
+		FrameGraphResourceOutputCreation depthPrepassOutput;
+		depthPrepassOutput.name = "Depth";
+		depthPrepassOutput.type = FrameGraphResourceType::Attachment;
+		depthPrepassOutput.resource_info.texture.format = device->GetDepthFormat();
+		depthPrepassOutput.resource_info.texture.width = startWidth;
+		depthPrepassOutput.resource_info.texture.height = startHeight;
+		depthPrepassOutput.resource_info.texture.depth = 1;
+		depthPrepassOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
+		depthPrepassOutput.resource_info.texture.usage = ImageUsageFlag::DEPTH_STENCIL_ATTACHMENT;
+
+		m_FrameGraphBuilder->BeginNewNode("DepthPrepass");
+		m_FrameGraphBuilder->AddOutput(depthPrepassOutput);
+		m_FrameGraphBuilder->SetRenderPassControl(RegisterRenderPassControl(new VulkanDepthPrepassRenderPass((VulkanRenderer*)renderer, (VulkanDevice*)device, startWidth, startHeight, handleWindowResize)));
+		m_FrameGraphBuilder->SetClearColor(Vec3(0.0f));
+		m_FrameGraphBuilder->EndNode();
+		//////////////////////////
+
+		///////////////Depth to linear pass
+
+		FrameGraphResourceInputCreation depthAsTextureInput;
+		depthAsTextureInput.type = FrameGraphResourceType::Texture;
+		depthAsTextureInput.name = "Depth";
+
+		FrameGraphResourceOutputCreation depthLinearPrepassOutput;
+		depthLinearPrepassOutput.name = "DepthLinear";
+		depthLinearPrepassOutput.type = FrameGraphResourceType::Attachment;
+		depthLinearPrepassOutput.resource_info.texture.format = Format::R8G8B8A8_UNORM;
+		depthLinearPrepassOutput.resource_info.texture.width = startWidth;
+		depthLinearPrepassOutput.resource_info.texture.height = startHeight;
+		depthLinearPrepassOutput.resource_info.texture.depth = 1;
+		depthLinearPrepassOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
+		depthLinearPrepassOutput.resource_info.texture.usage = ImageUsageFlag::COLOR_ATTACHMENT;
+
+		m_FrameGraphBuilder->BeginNewNode("DepthLinearPrepass");
+		m_FrameGraphBuilder->AddInput(depthAsTextureInput);
+		m_FrameGraphBuilder->SetClearColor(Vec3(0.0f, 0.0f, 1.0f));
+		m_FrameGraphBuilder->AddOutput(depthLinearPrepassOutput);
+		m_FrameGraphBuilder->SetRenderPassControl(RegisterRenderPassControl(new VulkanDepthLinearPrepassRenderPass((VulkanRenderer*)renderer, (VulkanDevice*)device, startWidth, startHeight, handleWindowResize)));
+		m_FrameGraphBuilder->EndNode();
+		/////////////////////////////
+
+
+		///////////////Lighting pass
+
+		FrameGraphResourceInputCreation depthInput;
+		depthInput.type = FrameGraphResourceType::Attachment;
+		depthInput.name = "Depth";
+
+		FrameGraphResourceOutputCreation lightingOutput;
+		lightingOutput.name = "Lighting";
+		lightingOutput.type = FrameGraphResourceType::Attachment;
+		lightingOutput.resource_info.texture.format = Format::R16G16B16A16_FLOAT;//VK_FORMAT_R16G16B16A16_SFLOAT
+		lightingOutput.resource_info.texture.width = startWidth;
+		lightingOutput.resource_info.texture.height = startHeight;
+		lightingOutput.resource_info.texture.depth = 1;
+		lightingOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
+		lightingOutput.resource_info.texture.usage = ImageUsageFlag::COLOR_ATTACHMENT;
+
+		auto lightingPass = new VulkanDefaultForwardLightingRenderPass((VulkanRenderer*)renderer, (VulkanDevice*)device, startWidth, startHeight, handleWindowResize);
+		m_FrameGraphBuilder->BeginNewNode("LightingPass");
+		m_FrameGraphBuilder->AddInput(depthInput);
+		m_FrameGraphBuilder->AddOutput(lightingOutput);
+		m_FrameGraphBuilder->SetClearColor(Vec3(0.0f, 0.0f, 0.0f));
+		m_FrameGraphBuilder->SetRenderPassControl(RegisterRenderPassControl(lightingPass));
+		m_FrameGraphBuilder->EndNode();
+		//////////////////////////
+
+		///////////////Transparent Lighting pass
+
+		FrameGraphResourceInputCreation depthInputTransparent;
+		depthInputTransparent.type = FrameGraphResourceType::Attachment;
+		depthInputTransparent.name = "Depth";
+
+		FrameGraphResourceInputCreation lightingInputTransparent;
+		lightingInputTransparent.type = FrameGraphResourceType::Attachment;
+		lightingInputTransparent.name = "Lighting";
+		lightingInputTransparent.resource_info.texture.format = Format::R16G16B16A16_FLOAT;
+
+
+		auto lightingPassTransparent = new VulkanDefaultForwardTransparentLightingRenderPass((VulkanRenderer*)renderer, (VulkanDevice*)device, startWidth, startHeight, handleWindowResize);
+
+		m_FrameGraphBuilder->BeginNewNode("LightingPassTransparent");
+		m_FrameGraphBuilder->AddInput(depthInputTransparent);
+		m_FrameGraphBuilder->AddInput(lightingInputTransparent);
+		m_FrameGraphBuilder->SetRenderPassControl(RegisterRenderPassControl(lightingPassTransparent));
+		m_FrameGraphBuilder->EndNode();
+
+
+		//////////////////
+
+		/////////////////////////Debug Render Pass
+
+		FrameGraphResourceInputCreation depthInputDebug;
+		depthInputDebug.type = FrameGraphResourceType::Attachment;
+		depthInputDebug.name = "Depth";
+
+		FrameGraphResourceInputCreation lightingInputDebug;
+		lightingInputDebug.type = FrameGraphResourceType::Attachment;
+		lightingInputDebug.name = "Lighting";
+
+		auto debugDrawPass = new VulkanDebugDrawRenderPass((VulkanRenderer*)renderer, (VulkanDevice*)device, startWidth, startHeight, handleWindowResize);
+
+		m_FrameGraphBuilder->BeginNewNode("DebugDrawPass");
+		m_FrameGraphBuilder->AddInput(depthInputDebug);
+		m_FrameGraphBuilder->AddInput(lightingInputDebug);
+		m_FrameGraphBuilder->SetRenderPassControl(RegisterRenderPassControl(debugDrawPass));
+		m_FrameGraphBuilder->EndNode();
+
+		m_FrameGraphBuilder->SetFrameGraphBuildCamera(camera);
+
+
+		////////////////
+		m_FrameGraph = new FrameGraph();
+		m_FrameGraph->Init(camera,device, renderer);
+		m_FrameGraphBuilder->Build(m_FrameGraph);
+	}
+
+	void FrameGraphControl::ReleaseFrameGraph()
+	{
+		m_FrameGraphBuilder->Release();
+		m_FrameGraph->Release();
+		delete m_FrameGraphBuilder;
+		delete m_FrameGraph;
+		m_FrameGraphBuilder = nullptr;
+		m_FrameGraph = nullptr;
+	}
+
+	RenderPassControl* FrameGraphControl::RegisterRenderPassControl(RenderPassControl* control)
+	{
+		m_RenderPassControls.push_back(control);
+		return control;
+	}
+
+	void FrameGraphControl::UnRegisterRenderPassControl(RenderPassControl* control)
+	{
+		auto it = std::find(m_RenderPassControls.begin(), m_RenderPassControls.end(), control);
+		if (it != m_RenderPassControls.end())
+		{
+			m_RenderPassControls.erase(it);
+		}
+	}
+
+	void* FrameGraphControl::GetFrameGraphFinalResult()
+	{
+		return m_FrameGraph->GetFinalRenderPassResult();
+	}
+
+	RenderPassControl* FrameGraphControl::GetRenderPassControlByType(RenderPassType type) const
+	{
+		return m_FrameGraph->GetRenderPassControlByType(type);
+	}
+
+
+	bool FrameGraphControl::HasRenderPass(RenderPassType type)
+	{
+		for (auto& control : m_RenderPassControls)
+		{
+			if (control->GetType() == type)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void FrameGraphControl::OnResize(U32 width, U32 height, bool windowSizeChanged)
+	{
+		m_FrameGraph->ResizeRenderPasses(width, height, windowSizeChanged);
+	}
+
+	void FrameGraphControl::ResizeRenderPassType(RenderPassType type, U32 width, U32 height)
+	{
+		for (auto& control : m_RenderPassControls)
+		{
+			if (control->GetType() == type)
+			{
+				control->Resize(width, height);
+				return;
+			}
+		}
+		LOG_BE_ERROR("Render pass control for type " + std::to_string((U32)type) + " not found");
+	}
+
+	void FrameGraphControl::Init()
+	{
+		m_FrameGraph->AfterSystemInit();
+	}
+
+	void FrameGraphControl::BeforeFrameGraphExecute(CommandBuffer* cmdBuffer)
+	{
+		m_FrameGraph->BeforeFrameGraphExecute(cmdBuffer);
+	}
+
+	void FrameGraphControl::AfterFrameGraphExecute(CommandBuffer* cmdBuffer)
+	{
+		m_FrameGraph->AfterFrameGraphExecute(cmdBuffer);
+	}
+
+	void FrameGraphControl::Execute(GraphicsDevice* device, CommandBuffer* cmdBuffer)
+	{
+		if (m_FrameGraph == nullptr)
+		{
+			LOG_BE_ERROR("Frame graph is not initialized");
+			return;
+		}
+		m_FrameGraph->Execute(device, cmdBuffer);
+	}
+
+	Camera* FrameGraphControl::GetCamera() const
+	{
+		return m_FrameGraph->GetCamera();
+	}
+
+	FinalFrameGraphNodeInfo FrameGraphControl::GetFinalFrameGraphNodeInfo() const
+	{
+		FinalFrameGraphNodeInfo info;
+		info.finalTexture = m_FrameGraph->GetFinalTexture();
+		info.finalDepthTexture = m_FrameGraph->GetFinalDepthTexture();
+		info.finalRenderPass = m_FrameGraph->GetFinalRenderPassHandle();
+		return info;
 	}
 
 }

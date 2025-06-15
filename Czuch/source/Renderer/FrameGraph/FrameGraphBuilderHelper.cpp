@@ -184,9 +184,10 @@ namespace Czuch
 			}
 		}
 
-		//create render passes and framebuffers
+		//create render passes, camera and framebuffers
 		for (U32 i = 0; i < m_FrameGraph->m_SortedNodes.size(); ++i) {
 			FrameGraphNode* node = &m_FrameGraph->GetNode(m_FrameGraph->m_SortedNodes[i]);
+			node->renderPassControl->SetCamera(m_Camera);
 			if (!HANDLE_IS_VALID((node->renderPass)))
 			{
 				CreateRenderPass(node);

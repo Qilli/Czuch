@@ -9,6 +9,7 @@
 namespace Czuch
 {
 	class VulkanMainRenderPass;
+	class VulkanFullScreenRenderPass;
 	class VulkanDevice;
 	class VulkanCommandBuffer;
 	class Window;
@@ -23,7 +24,7 @@ namespace Czuch
 	public:
 		static RendererAPI GetUsedAPI() { return RendererAPI::Vulkan; }
 	public:
-		VulkanRenderer(Window* window, EngineSettings* renderSettings);
+		VulkanRenderer(Window* window);
 		~VulkanRenderer() override;
 
 		void Init() override;
@@ -40,11 +41,10 @@ namespace Czuch
 		void DrawScene(VulkanCommandBuffer* cmdBuffer, Camera* camera,RenderContextFillParams* params);
 		void DrawDebugData(VulkanCommandBuffer* cmdBuffer, Camera* camera, RenderContextFillParams* params);
 		void DrawFullScreenQuad(VulkanCommandBuffer* cmdBuffer, MaterialInstanceHandle material);
-		void* GetRenderPassResult(RenderPassType type) override;
-		bool HasRenderPass(RenderPassType type) override;
+		void* GetRenderPassResult(Camera* cam,RenderPassType type) override;
+		bool HasRenderPass(Camera* cam,RenderPassType type) override;
 	public:
 		void RegisterRenderPassResizeEventResponse(U32 width, U32 height, bool handleAll,std::function<void(U32,U32)>* onResize) override;
-		inline FrameGraph* GetFrameGraph() override { return &m_CurrentFrameGraph; }
 	private:
 		void CreateSyncObjects();
 		void ReleaseSyncObjects();
@@ -56,7 +56,6 @@ namespace Czuch
 	protected:
 		void OnWindowResize(uint32_t width, uint32_t height) override;
 		void CheckForResizeQueries();
-		RenderPassControl* GetRenderPassByType(RenderPassType type);
 	private:
 
 		struct FrameData
@@ -99,19 +98,12 @@ namespace Czuch
 		void OnPostRenderUpdateContexts(Camera* cam,RenderContextFillParams* fillParams) override;
 		void OnPreRenderUpdateDebugDrawElements(Camera* cam, RenderContextFillParams* fillParams) override;
 	public:
-		//render pass contorl helpers
-		RenderPassControl* RegisterRenderPassControl(RenderPassControl* control) override;
-		void UnRegisterRenderPassControl(RenderPassControl* control) override;
-		RenderPassHandle GetNativeRenderPassHandle(RenderPassType type) override;
-		void* GetFrameGraphFinalResult() override;
+		void* GetFrameGraphFinalResult(Camera* cam) override;
 	private: //frame graph control
 		void CreateFrameGraphs();
-		void ReleaseFrameGraphs();
-		FrameGraphBuilderHelper m_FrameGraphBuilder;
-		FrameGraph m_CurrentFrameGraph;
 	private:
-		Array<RenderPassControl*> m_RenderPassControls;
 		VulkanMainRenderPass* m_FinalRenderPass;
+		VulkanFullScreenRenderPass* m_FullScreenRenderPass;
 		std::vector<RenderPassResizeQuery> m_RenderPassResizeQueries;
 		FrameData m_FramesData[MAX_FRAMES_IN_FLIGHT];
 		ImmediateSubmitData m_ImmediateSubmitData;

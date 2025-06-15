@@ -7,6 +7,7 @@ namespace Czuch
 	CameraComponent::CameraComponent(Entity owner) :Component(owner),m_Camera(45.0f, (float)WindowInfo::Width/(float)WindowInfo::Height, 0.1f, 1000.0f)
 	{
 		m_Camera.SetTransform(&m_Owner.GetComponent<TransformComponent>());
+		m_Primary = false;
 	}
 
 	void Camera::Recalculate()

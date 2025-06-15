@@ -22,6 +22,14 @@ namespace Czuch
 		void SetAspectRatio(float aspectRatio);
 		void Set(float fov, float aspectRatio, float nearPlane, float farPlane);
 
+		inline Viewport& GetViewport() { return m_Viewport; }
+		inline void SetViewport(float x, float y, float width, float height) {
+			m_Viewport.x = x;
+			m_Viewport.y = y;
+			m_Viewport.width = width;
+			m_Viewport.height = height;
+		}
+
 		Mat4x4 GetProjectionMatrix();
 		Mat4x4 GetViewMatrix();
 		Mat4x4 GetInverseViewMatrix();
@@ -31,6 +39,7 @@ namespace Czuch
 	private:
 		TransformComponent *m_Transform;
 		Mat4x4  m_ProjectionMatrix;
+		Viewport m_Viewport;
 		float m_VerticalFov;
 		float m_AspectRatio;
 		float m_NearPlane;
@@ -54,7 +63,8 @@ namespace Czuch
 		inline void SetPrimaryFlag(bool primary) {
 			m_Primary = primary;
 		}
-		inline void SetAsPrimary() { m_Owner.GetScene()->SetPrimaryCamera(this); }
+
+		inline void SetAsPrimary() {m_Owner.GetScene()->SetPrimaryCamera(this); }
 		void SetAsEditorCamera() { m_Owner.GetScene()->SetEditorCamera(this); }
 		inline bool IsPrimary() { return m_Primary; }
 		inline void SetType(CameraType type) { m_Type = type; }

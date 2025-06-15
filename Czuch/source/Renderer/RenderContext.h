@@ -11,8 +11,13 @@ namespace Czuch
 	struct MeshRendererComponent;
 	struct LightComponent;
 	struct Camera;
+	struct FrameGraphBuilderHelper;
+	struct FrameGraph;
+	class Renderer;
 	class RenderContext;
 	class IScene;
+	class RenderPassControl;
+	class CommandBuffer;
 
 	struct RenderContextFillParams
 	{
@@ -204,11 +209,11 @@ namespace Czuch
 		Camera* m_Camera;
 	public:
 		void UpdateSceneDataBuffer(IScene* scene, GraphicsDevice* device, U32 frame);
-		void OnSceneActive(Camera* cam,GraphicsDevice* device);
+		void OnSceneActive(Camera* cam, GraphicsDevice* device);
 		void Release(GraphicsDevice* device);
-		bool FillDebugBuffersData(GraphicsDevice* device,U32 frame);
+		bool FillDebugBuffersData(GraphicsDevice* device, U32 frame);
 		void UpdateDebugMaterialInfo();
-		IndirectDrawForCommandBufferData& FillAndGetIndirectDrawDataForDebugLinesDrawing(MaterialInstanceHandle material,U32 frame);
+		IndirectDrawForCommandBufferData& FillAndGetIndirectDrawDataForDebugLinesDrawing(MaterialInstanceHandle material, U32 frame);
 		IndirectDrawForCommandBufferData& FillAndGetIndirectDrawDataForDebugTrianglesDrawing(MaterialInstanceHandle material, U32 frame);
 		IndirectDrawForCommandBufferData& FillAndGetIndirectDrawDataForDebugPointsDrawing(MaterialInstanceHandle material, U32 frame);
 	public:
@@ -234,12 +239,49 @@ namespace Czuch
 		/// </summary>
 		void DrawLine(const Vec3& start, const Vec3& end, const Color& color) override;
 		void DrawTriangle(const Vec3& a, const Vec3& b, const Vec3& c, const Color& color) override;
-		void DrawPoint(const Vec3& point, const Color& color,const float size) override;
+		void DrawPoint(const Vec3& point, const Color& color, const float size) override;
 		void DrawMesh(const AssetHandle mesh, const Mat4x4& transform, const Color& color) override;
 		void DrawQuad(const Vec3& center, const Vec3& normal, float size, const Color& color) override;
-		void DrawCircle(const Vec3& center,const Vec3& normal, float radius, const Color& color) override;
+		void DrawCircle(const Vec3& center, const Vec3& normal, float radius, const Color& color) override;
 		void DrawLinesSphere(const Vec3& center, float radius, const Color& color) override;
 		void DrawCone(const Vec3& position, const Vec3& direction, float range, float angle, const Color& color) override;
+	};
+
+
+	struct FinalFrameGraphNodeInfo
+	{
+		TextureHandle finalTexture;
+		TextureHandle finalDepthTexture;
+		RenderPassHandle finalRenderPass;
+	};
+
+	struct FrameGraphControl
+	{
+	private:
+		FrameGraphBuilderHelper* m_FrameGraphBuilder;
+		FrameGraph* m_FrameGraph;
+		Array<RenderPassControl*> m_RenderPassControls;
+	public:
+		void CreateFrameGraph(Camera* camera,GraphicsDevice* device, Renderer* renderer, Vec2 targetSize, bool handleWindowResize);
+		void ReleaseFrameGraph();
+		RenderPassControl* RegisterRenderPassControl(RenderPassControl* control);
+		void UnRegisterRenderPassControl(RenderPassControl* control);
+		void* GetFrameGraphFinalResult();
+		RenderPassControl* GetRenderPassControlByType(RenderPassType type) const;
+		bool HasRenderPass(RenderPassType type);
+		void OnResize(U32 width, U32 height, bool windowSizeChanged);
+		void ResizeRenderPassType(RenderPassType type, U32 width, U32 height);
+		void Init();
+		/// <summary>
+		/// Before new frame is renderered we call this method to prepare frame graph
+		/// </summary>
+		/// <param name="cmdBuffer"></param>
+		void BeforeFrameGraphExecute(CommandBuffer* cmdBuffer);
+		void AfterFrameGraphExecute(CommandBuffer* cmdBuffer);
+		void Execute(GraphicsDevice* device, CommandBuffer* cmdBuffer);
+		Camera* GetCamera() const;
+
+		FinalFrameGraphNodeInfo GetFinalFrameGraphNodeInfo() const;
 	};
 
 
@@ -251,7 +293,6 @@ namespace Czuch
 
 		void Release(GraphicsDevice* device);
 		void OnSceneActive(Camera* camera, GraphicsDevice* device, IScene* scene);
-
 	};
 
 
@@ -263,7 +304,7 @@ namespace Czuch
 		bool isPrimaryCamera;
 		Array<RenderContextControl> renderContexts;
 		RenderObjectsContainer visibleRenderObjects;
-
+		FrameGraphControl frameGraphControl;
 		/// <summary>
 		/// Release is called when we are leaving the scene or when the scene is destroyed or when camera is removed
 		/// We clear all render data for current camera
@@ -272,9 +313,10 @@ namespace Czuch
 		/// <summary>
 		///This method is called when the scene is activated. Here we need to prepare the camera control for rendering
 		/// </summary>
+		/// <param name="renderer"></param>
 		/// <param name="device"></param>
 		/// <param name="scene"></param>
-		void OnSceneActive(GraphicsDevice* device, IScene* scene);
+		void OnSceneActive(Renderer* renderer, GraphicsDevice* device, IScene* scene);
 		void OnResize(GraphicsDevice* device, U32 width, U32 height, bool windowSizeChanged);
 		SceneDataBuffers GetSceneDataBuffers(U32 frame);
 		void UpdateSceneDataBuffers(GraphicsDevice* device, U32 frame, DeletionQueue& deletionQueue);
@@ -284,14 +326,13 @@ namespace Czuch
 		bool IsPrimaryCamera() const { return isPrimaryCamera; }
 		RenderContext* FillRenderList(GraphicsDevice* device, RenderContextFillParams& fillParams);
 		void FillDebugDrawElements(GraphicsDevice* device, RenderContextFillParams& fillParams);
-		IndirectDrawForCommandBufferData& GetIndirectDrawDataForDebugDrawingLines(RenderContextFillParams& fillParams,U32 frame);
+		IndirectDrawForCommandBufferData& GetIndirectDrawDataForDebugDrawingLines(RenderContextFillParams& fillParams, U32 frame);
 		IndirectDrawForCommandBufferData& GetIndirectDrawDataForDebugDrawingTriangles(RenderContextFillParams& fillParams, U32 frame);
 		IndirectDrawForCommandBufferData& GetIndirectDrawDataForDebugDrawingPoints(RenderContextFillParams& fillParams, U32 frame);
 		/// <summary>
 		/// make contexts dirty so we can update them at the beginning of the next frame
 		/// </summary>
 		void OnPostRender();
-
 		void UpdateVisibleObjects(RenderObjectsContainer& allObjects);
 
 	private:

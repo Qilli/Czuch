@@ -31,6 +31,7 @@ namespace Czuch
 		virtual void PostDraw(CommandBuffer* cmd,Renderer* renderer);
 		virtual void BeforeFrameGraphExecute(CommandBuffer* cmd, Renderer* renderer);
 		virtual void AfterFrameGraphExecute(CommandBuffer* cmd, Renderer* renderer);
+		virtual void SetCamera(Camera* cam) { m_Camera = cam; }
 		virtual void Execute(CommandBuffer* cmd) = 0;
 		virtual void* GetRenderPassResult() { return nullptr; }
 		virtual void ReleaseDependencies() = 0;

@@ -6,6 +6,5 @@ layout(set = 0, binding = 0) uniform sampler2D texSampler;
 
 void main()
 {
- vec4 temp=texture(texSampler,inUV);
- outColor=vec4(temp.xyz,1);
+outColor = vec4(texture(texSampler,inUV).xyz, 1.0);
 }

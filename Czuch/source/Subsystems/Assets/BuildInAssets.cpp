@@ -96,10 +96,15 @@ namespace Czuch
 
 	void BuildInAssets::BuildAndLoad()
 	{
+		if (m_IsBuilt)
+		{
+			return;
+		}
 		CreateDefaultTextures();
 		CreateDefaultMaterials();
 		CreateDefaultModels();
 		LoadUIAssets();
+		m_IsBuilt = true;
 	}
 
 

@@ -3,6 +3,7 @@
 #include "Core/Math.h"
 #include"Subsystems/Assets/Asset/Asset.h"
 
+
 namespace Czuch
 {
 
@@ -89,24 +90,25 @@ namespace Czuch
 	public:
 		Handle handle;
 		ResourceHandle(int val) :handle(val) {}
-		ResourceHandle() { handle = Invalid_Handle_Id; }	
+		ResourceHandle() { handle = Invalid_Handle_Id; }
 	};
 
 	enum CZUCH_API RenderPassType : U32
 	{
 		MainForward = 0,
 		Shadow = 1,
-		PostProcess = 1<<1,
-		OffscreenTexture = 1<<2,
-		UI = 1<<3,
-		Final = 1<<4,
-		DepthPrePass = 1<<5,
-		ForwardLighting = 1<<7,
+		PostProcess = 1 << 1,
+		OffscreenTexture = 1 << 2,
+		UI = 1 << 3,
+		Final = 1 << 4,
+		DepthPrePass = 1 << 5,
+		ForwardLighting = 1 << 7,
 		DepthLinearPrePass = 1 << 8,
 		ForwardLightingTransparent = 1 << 9,
 		DebugDraw = 1 << 10,
 		ShadowMap = 1 << 11,
-		Custom = 1<<12
+		FullScreenPass = 1 << 12,
+		Custom = 1 << 13
 	};
 
 
@@ -120,7 +122,7 @@ namespace Czuch
 		AssetHandle assetHandle;
 		ResourceHandleWithAsset(I32 handle, I32 assetHandleId) :ResourceHandle(handle), assetHandle(assetHandleId)
 		{
-		
+
 		}
 
 		ResourceHandleWithAsset(I32 handle, AssetHandle assetHandle) :ResourceHandle(handle)
@@ -358,7 +360,7 @@ namespace Czuch
 		SHADING_RATE = 1 << 7,
 		UNIFORM_BUFFER = 1 << 8,
 		STORAGE_BUFFER = 1 << 9,
-		INDIRECT_BUFFER = 1 <<10,
+		INDIRECT_BUFFER = 1 << 10,
 	};
 
 	enum CZUCH_API DescriptorType
@@ -693,7 +695,7 @@ namespace Czuch
 		ImageLayout currentFormat = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
 		ImageLayout lastFormat = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
 		ImageLayout initFormat = ImageLayout::UNDEFINED;
-	
+
 		bool TryToTransitionTo(ImageLayout newLayout)
 		{
 			if (currentFormat == newLayout)
@@ -757,12 +759,29 @@ namespace Czuch
 	{
 		virtual ~RenderPassDesc() = default;
 		U16 attachmentsCount = 0;
+		size_t hashCache = 0;
 
 		struct RenderPassColorAttachment
 		{
 			Format format = Format::UNKNOWN;
 			ImageLayout layout = ImageLayout::UNDEFINED;
 			AttachmentLoadOp loadOp = AttachmentLoadOp::LOAD;
+
+			bool operator==(const RenderPassColorAttachment& other) const
+			{
+				return format == other.format &&
+					layout == other.layout &&
+					loadOp == other.loadOp;
+			}
+
+			size_t GetHash() const
+			{
+				size_t h = 0;
+				h = std::hash<U16>{}(static_cast<U16>(format));
+				h = h * 31 + std::hash<U16>{}(static_cast<U16>(layout));
+				h = h * 31 + std::hash<U16>{}(static_cast<U16>(loadOp));
+				return h;
+			}
 		};
 
 		RenderPassColorAttachment colorAttachments[k_max_image_outputs];
@@ -782,6 +801,80 @@ namespace Czuch
 		RenderPassDesc& SetName(const char* rpName);
 		RenderPassDesc& SetDepthAndStencilLoadOp(AttachmentLoadOp depth, AttachmentLoadOp stencil);
 
+		size_t GetHash() const
+		{
+			if (hashCache != 0) // If hash is already computed, return it
+			{
+				return hashCache;
+			}
+
+			size_t h = 0;
+
+			// Hash attachmentsCount
+			h = std::hash<U16>{}(attachmentsCount);
+
+			// Hash colorAttachments
+			for (U16 i = 0; i < attachmentsCount; ++i)
+			{
+				h = h * 31 + colorAttachments[i].GetHash();
+			}
+
+			// Hash depth and stencil parameters
+			h = h * 31 + std::hash<U16>{}(static_cast<U16>(depthStencilFormat));
+			h = h * 31 + std::hash<U16>{}(static_cast<U16>(depthStencilFinalLayout));
+			h = h * 31 + std::hash<U16>{}(static_cast<U16>(depthLoadOp));
+			h = h * 31 + std::hash<U16>{}(static_cast<U16>(stencilLoadOp));
+
+			// Hash type
+			h = h * 31 + std::hash<U16>{}(static_cast<U16>(type));
+
+			return h;
+		}
+
+		bool operator==(const RenderPassDesc& other) const
+		{
+			// First, quickly compare hashes if available and reasonable
+			// This is an optimization. If hashes are different, the objects are definitely different.
+			// However, if hashes are the same, you still need to do a full comparison to handle collisions.
+			if (GetHash() != other.GetHash())
+			{
+				return false;
+			}
+
+			// Full comparison (necessary even if hashes match due to potential collisions)
+			if (attachmentsCount != other.attachmentsCount) return false;
+
+			for (U16 i = 0; i < attachmentsCount; ++i)
+			{
+				if (!(colorAttachments[i] == other.colorAttachments[i])) return false;
+			}
+
+			if (depthStencilFormat != other.depthStencilFormat)
+			{
+				return false;
+			}
+
+			if (depthStencilFinalLayout != other.depthStencilFinalLayout)
+			{
+				return false;
+			}
+
+			if (depthLoadOp != other.depthLoadOp)
+			{
+				return false;
+			}
+			if (stencilLoadOp != other.stencilLoadOp)
+			{
+				return false;
+			}
+
+			if (type != other.type) 
+			{
+				return false;
+			}
+
+			return true;
+		}
 	};
 
 
@@ -845,7 +938,7 @@ namespace Czuch
 
 		void AddElement(U32 offset, U32 size, UBOElementType elemType, StringID name)
 		{
-			CZUCH_BE_ASSERT(elementsCount < s_max_descriptors_per_set,"UBO size overflow");
+			CZUCH_BE_ASSERT(elementsCount < s_max_descriptors_per_set, "UBO size overflow");
 			elements[elementsCount].offset = offset;
 			elements[elementsCount].size = size;
 			elements[elementsCount].elementType = elemType;
@@ -902,7 +995,7 @@ namespace Czuch
 
 	struct BufferDesc
 	{
-		UBO *ubo;
+		UBO* ubo;
 		U64 size = 0;
 		U64 elementsCount = 0;
 		Usage usage = Usage::DEFAULT;
@@ -953,7 +1046,7 @@ namespace Czuch
 		Binding* GetBindingWithTag(DescriptorBindingTagType tag);
 
 		DescriptorSetLayoutDesc& Reset();
-		DescriptorSetLayoutDesc& AddBinding(CzuchStr name, DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool internalParam,DescriptorBindingTagType tagType = DescriptorBindingTagType::NONE);
+		DescriptorSetLayoutDesc& AddBinding(CzuchStr name, DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool internalParam, DescriptorBindingTagType tagType = DescriptorBindingTagType::NONE);
 		DescriptorSetLayoutDesc& SetUBOLayout(UBOLayout& layout);
 		UBOLayout* GetUBOLayoutForBinding(const StringID& name);
 	};
@@ -1229,7 +1322,7 @@ namespace Czuch
 	struct CZUCH_API MaterialDefinitionPassesContainer
 	{
 		Array<MaterialPassDesc> passes;
-		
+
 		MaterialDefinitionPassesContainer() = default;
 
 		MaterialDefinitionPassesContainer& operator=(MaterialDefinitionPassesContainer&& other) noexcept
@@ -1314,7 +1407,7 @@ namespace Czuch
 			}
 			return nullptr;
 		}
-		
+
 
 	};
 
@@ -1397,7 +1490,7 @@ namespace Czuch
 			{
 				for (U32 j = 0; j < passesContainer.passes[i].layoutsCount; j++)
 				{
-					auto layout=passesContainer.passes[i].layouts[j].GetUBOLayoutForBinding(name);
+					auto layout = passesContainer.passes[i].layouts[j].GetUBOLayoutForBinding(name);
 					if (layout)
 					{
 						return layout;
@@ -1436,13 +1529,13 @@ namespace Czuch
 			Reset();
 		}
 
-		void GetAllTexturesDependencies(Array<TextureHandle> & dependencies);
+		void GetAllTexturesDependencies(Array<TextureHandle>& dependencies);
 
 		MaterialInstanceDesc& Reset();
-		MaterialInstanceDesc& AddBuffer(const CzuchStr& name,UBO&& data);
+		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, UBO&& data);
 		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, BufferHandle buffer);
 		MaterialInstanceDesc& AddStorageBuffer(const CzuchStr& name, BufferHandle buffer);
-		MaterialInstanceDesc& AddSampler(const CzuchStr& name, TextureHandle color_texture,bool isInternal);
+		MaterialInstanceDesc& AddSampler(const CzuchStr& name, TextureHandle color_texture, bool isInternal);
 		void SetTransparent(bool value) { isTransparent = value; }
 
 		MaterialInstanceDesc Clone();
@@ -1460,7 +1553,7 @@ namespace Czuch
 		MaterialInstanceParams& Reset();
 		MaterialInstanceParams& AddBuffer(int set, CzuchStr& name, BufferHandle buffer, U16 binding);
 		MaterialInstanceParams& AddSampler(int set, CzuchStr& name, TextureHandle color_texture, U16 binding);
-		void SetSampler(int set,TextureHandle color_texture);
+		void SetSampler(int set, TextureHandle color_texture);
 		void SetSampler(StringID& name, TextureHandle texture);
 		void SetUniformBuffer(StringID& name, BufferHandle buffer);
 		TextureHandle GetTextureHandleForName(StringID& name);
@@ -1651,7 +1744,7 @@ namespace Czuch
 		U32 passesCount = 0;
 		bool IsTransparent() const { return desc->isTransparent; }
 		constexpr const MaterialInstanceDesc& GetDesc() const { return *desc; }
-		void SetSampler(StringID &name, TextureHandle texture);
+		void SetSampler(StringID& name, TextureHandle texture);
 		void SetUniformBuffer(StringID& name, BufferHandle buffer);
 		TextureHandle GetTextureHandleForName(StringID& name);
 	};
@@ -1712,7 +1805,14 @@ namespace Czuch
 	};
 
 #pragma endregion 
+}
 
-
-
+namespace std {
+	// Refer to Czuch::RenderPassDesc explicitly
+	template <>
+	struct hash<Czuch::RenderPassDesc> {
+		size_t operator()(const Czuch::RenderPassDesc& rpDesc) const {
+			return rpDesc.GetHash(); // Calls the const GetHash() method of Czuch::RenderPassDesc
+		}
+	};
 }

@@ -152,6 +152,10 @@ int main()
 	//lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 100.0f, 2.0f);
 	lightEntity.AddDirectionalLight(Czuch::Colors::White, 1.0f);
 
+	Czuch::Entity additionalCameraEntity = scene->CreateEntity("AdditionalCameraObject");
+	auto& cameraAdditional=additionalCameraEntity.AddComponent<Czuch::CameraComponent>();
+	cameraAdditional.GetCamera().SetViewport(0.7f, 0.0f, 0.3f, 0.3f);
+
 
 	root->Run();
 	root->Shutdown();

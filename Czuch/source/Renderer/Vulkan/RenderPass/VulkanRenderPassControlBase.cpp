@@ -56,7 +56,7 @@ namespace Czuch
 
 	void VulkanRenderPassControlBase::SetAsTextureSource()
 	{
-		if (m_Renderer->GetRenderSettings().engineMode == EngineMode::Runtime)
+		if (EngineRoot::GetEngineSettings().engineMode == EngineMode::Runtime)
 		{
 			return;
 		}
@@ -76,7 +76,6 @@ namespace Czuch
 		{
 			m_Device->Release(m_NativeRenderPassHandle);
 		}
-		m_Renderer->UnRegisterRenderPassControl(this);
 
 		if (m_TextureSource != nullptr)
 		{

@@ -35,7 +35,7 @@ namespace Czuch
 		//create default game mode camera
 		Entity cameraEntity = CreateEntity("MainCamera", m_RootEntity);
 		auto& cam = cameraEntity.AddComponent<CameraComponent>();
-		cam.SetPrimaryFlag(true);
+		cam.SetAsPrimary();
 		cam.SetType(CameraType::GameCamera);
 		cameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
 
@@ -57,6 +57,12 @@ namespace Czuch
 
 	void Scene::OnUpdate(TimeDelta delta)
 	{
+		if (IsDirty())
+		{
+			UpdateAllCameras();
+			m_isDirty = false;
+		}
+
 		auto view = m_Registry.view<NativeBehaviourComponent, ActiveComponent>();
 		for (auto entity : view)
 		{
@@ -139,9 +145,12 @@ namespace Czuch
 		return nullptr;
 	}
 
-	void Scene::AfterFrameGraphExecute()
+	void Scene::AfterFrameGraphExecute(CommandBufferHandle cmdBuffer)
 	{
-		
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			cameraControl.frameGraphControl.AfterFrameGraphExecute(m_Device->AccessCommandBuffer(cmdBuffer));
+		}
 	}
 
 	void Scene::FillDebugDrawElements(Camera* cam, Renderer* renderer, RenderContextFillParams& fillParams)
@@ -284,12 +293,13 @@ namespace Czuch
 		m_RootEntity.AddComponent<GUIDComponent>(GUID());
 	}
 
-	void Scene::OnSceneActive(GraphicsDevice* device)
+	void Scene::OnSceneActive(Renderer* renderer,GraphicsDevice* device)
 	{
 		m_Device = device;
+		m_Renderer = renderer;
 		for (auto& cameraControl : m_CamerasControl)
 		{
-			cameraControl.OnSceneActive(m_Device,this);
+			cameraControl.OnSceneActive(renderer,m_Device,this);
 		}
 	}
 
@@ -307,11 +317,12 @@ namespace Czuch
 		}
 	}
 
-	void Scene::BeforeFrameGraphExecute(U32 currentFrame, DeletionQueue& deletionQueue)
+	void Scene::BeforeFrameGraphExecute(CommandBufferHandle cmdBuffer,U32 currentFrame, DeletionQueue& deletionQueue)
 	{
 		for (auto& cameraControl : m_CamerasControl)
 		{
 			cameraControl.UpdateSceneDataBuffers(m_Device,currentFrame, deletionQueue);
+			cameraControl.frameGraphControl.BeforeFrameGraphExecute(m_Device->AccessCommandBuffer(cmdBuffer));
 		}
 	}
 
@@ -448,7 +459,6 @@ namespace Czuch
 		}
 		camera->SetPrimaryFlag(true);
 		m_CurrentFrameCamera = &camera->GetCamera();
-		UpdateAllCameras();
 		Dirty();
 	}
 
@@ -461,24 +471,22 @@ namespace Czuch
 			camera.SetType(CameraType::GameCamera);
 		}
 		camera->SetType(CameraType::EditorCamera);
-
-		UpdateAllCameras();
 		Dirty();
 	}
 
 	void Scene::CameraEnabledChanged(CameraComponent* camera)
 	{
-		UpdateAllCameras();
+		Dirty();
 	}
 
 	void Scene::CameraAdded(CameraComponent* camera)
 	{
-		UpdateAllCameras();
+		Dirty();
 	}
 
 	void Scene::CameraRemoved(CameraComponent* camera)
 	{
-		UpdateAllCameras();
+		Dirty();
 	}
 
 	RenderContext* Scene::GetRenderContext(RenderPassType type, Camera* camera)
@@ -497,6 +505,39 @@ namespace Czuch
 		}
 		LOG_BE_ERROR("[Scene] Scene does not have camera control for the camera in GerRenderContext.");
 		return nullptr;
+	}
+
+	FrameGraphControl* Scene::GetFrameGraphControl(Camera* camera)
+	{
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			if (cameraControl.camera == camera)
+			{
+				return &cameraControl.frameGraphControl;
+			}
+		}
+	}
+
+	FrameGraphControl* Scene::GetFrameGraphControl(int index)
+	{
+		CZUCH_BE_ASSERT(index >= 0 && index < m_CamerasControl.size(), "Index out of range in GetFrameGraphControl");
+		return &m_CamerasControl[index].frameGraphControl;
+	}
+
+	void Scene::OnResizeRenderPassType(RenderPassType type, int width, int height)
+	{
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			cameraControl.frameGraphControl.ResizeRenderPassType(type, width, height);
+		}
+	}
+
+	void Scene::InitFrameGraphsControls()
+	{
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			cameraControl.frameGraphControl.Init();
+		}
 	}
 
 	void Scene::DestroyMarkedEntities()
@@ -560,7 +601,7 @@ namespace Czuch
 		SceneCameraControl cameraControl;
 		cameraControl.camera = m_CurrentFrameCamera;
 		cameraControl.isPrimaryCamera = true;
-		cameraControl.OnSceneActive(m_Device, this);
+		cameraControl.OnSceneActive(m_Renderer,m_Device, this);
 		m_CamerasControl.push_back(std::move(cameraControl));
 		for (auto entity : view)
 		{
@@ -572,6 +613,7 @@ namespace Czuch
 			SceneCameraControl cameraControl;
 			cameraControl.camera = &camera.GetCamera();
 			cameraControl.isPrimaryCamera = false;
+			cameraControl.OnSceneActive(m_Renderer, m_Device, this);
 			m_CamerasControl.push_back(std::move(cameraControl));
 		}
 	}

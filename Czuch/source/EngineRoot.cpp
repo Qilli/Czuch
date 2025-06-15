@@ -52,7 +52,7 @@ namespace Czuch
 		m_Window = Window::Create(wndParams);
 
 		//create renderer
-		m_Renderer = new VulkanRenderer(m_Window.get(), &m_EngineSettings);
+		m_Renderer = new VulkanRenderer(m_Window.get());
 		m_Renderer->Init();
 		m_Renderer->CreateRenderGraph();
 
@@ -82,7 +82,6 @@ namespace Czuch
 
 		//create default assetse
 		m_DefaultAssets = new BuildInAssets(m_Renderer->GetDevice(), m_ResourcesMgr, m_EngineSettings.engineMode);
-		m_DefaultAssets->BuildAndLoad();
 
 		//init all resources managers
 		m_ResourcesMgr->InitManagers();
@@ -147,6 +146,11 @@ namespace Czuch
 			m_ScenesMgr->OnFinishFrame();
 		}
 		m_Renderer->AwaitDeviceIdle();
+	}
+
+	void EngineRoot::TryBuildDefaultAssets()
+	{
+		m_DefaultAssets->BuildAndLoad();
 	}
 
 	TimeDelta EngineRoot::UpdateDeltaTime(Czuch::TimeDiffCounter& counter)

@@ -120,6 +120,7 @@ namespace Czuch
 		GraphicsDevice* m_Device;
 		AssetsManager* m_AssetsMgr;
 		EngineMode m_Mode;
+		bool m_IsBuilt = false;
 	};
 
 }

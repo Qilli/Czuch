@@ -47,6 +47,7 @@ namespace Czuch
 		void SetEngineStateMode(EngineStateMode mode) { m_EngineStateMode = mode; }
 		UpdateMode GetUpdateMode() const { return m_UpdateMode; }
 		void SetUpdateMode(UpdateMode mode) { m_UpdateMode = mode; }
+		void TryBuildDefaultAssets();
 	public:
 		static EngineSettings& GetEngineSettings() { return m_EngineSettings; }
 	private:

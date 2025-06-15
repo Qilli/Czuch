@@ -27,10 +27,10 @@ if(MSVC)
 endif()
 
 # Find all required packages from vcpkg
-find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(fmt REQUIRED)
 find_package(spdlog CONFIG REQUIRED)

@@ -32,7 +32,9 @@ namespace Czuch
 		float GetSwapchainWidth() const override { return m_SwapChainData.swapChainExtent.width; }
 		float GetSwapchainHeight() const override { return m_SwapChainData.swapChainExtent.height; }
 		VkFormat* GetSwapchainFormat() { return &m_SwapChainData.swapChainImageFormat; }
-		VkFormat GetDepthFormat() { return m_DepthImage.depthFormat; }
+		VkFormat GetNativeDepthFormat() { return m_DepthImage.depthFormat; }
+
+		Format GetDepthFormat() const override;
 
 		void DrawUI(CommandBuffer* commandBuffer) override;
 		void PreDrawFrame();
@@ -221,6 +223,8 @@ namespace Czuch
 		DepthImage m_DepthImage;
 	private:
 		VkDescriptorPool m_ImguiPool;
+	private:
+		RenderPassHandle GetRenderPassWithDescIfExist(const RenderPassDesc* desc);
 	private:
 		bool CreateVulkanInstance();
 		bool CreateSurface();

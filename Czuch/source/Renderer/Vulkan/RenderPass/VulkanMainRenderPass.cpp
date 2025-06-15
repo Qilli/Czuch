@@ -27,7 +27,7 @@ namespace Czuch
 		cmdBuffer->SetDepthStencil(1.0f, 0);
 
 
-		if (renderer->GetRenderSettings().dynamicRendering)
+		if (EngineRoot::GetEngineSettings().dynamicRendering)
 		{
 			m_Device->TransitionSwapChainImageLayoutPreDraw(cmdBuffer, imageIndex);
 			m_Device->StartDynamicRenderPass(cmdBuffer, imageIndex);
@@ -38,12 +38,12 @@ namespace Czuch
 		}
 
 		ViewportDesc vpdesc{};
-		vpdesc.x = 0;
-		vpdesc.y = 0;
+		vpdesc.x = m_Viewport.x;
+		vpdesc.y = m_Viewport.y;
 		vpdesc.minDepth = 0.0f;
 		vpdesc.maxDepth = 1.0f;
-		vpdesc.width = (U32)m_Device->GetSwapchainWidth();
-		vpdesc.height = (U32)m_Device->GetSwapchainHeight();
+		vpdesc.width = (U32)m_Device->GetSwapchainWidth()*m_Viewport.width;
+		vpdesc.height = (U32)m_Device->GetSwapchainHeight()*m_Viewport.height;
 		cmdBuffer->SetViewport(vpdesc);
 
 		ScissorsDesc scissors{};
@@ -59,7 +59,7 @@ namespace Czuch
 		RenderPassControl::PostDraw(cmd, renderer);
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
 
-		if (renderer->GetRenderSettings().dynamicRendering)
+		if (EngineRoot::GetEngineSettings().dynamicRendering)
 		{
 			cmdBuffer->EndDynamicRenderPassForMainPass();
 			m_Device->TransitionSwapChainImageLayoutPostDraw(cmdBuffer, m_Device->GetCurrentImageIndex());
@@ -74,7 +74,7 @@ namespace Czuch
 	void VulkanMainRenderPass::Execute(CommandBuffer* cmd)
 	{
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
-		if (m_Renderer->GetRenderSettings().engineMode == EngineMode::Editor)
+		if (EngineRoot::GetEngineSettings().engineMode == EngineMode::Editor)
 		{
 			//m_Renderer->DrawScene((VulkanCommandBuffer*)cmdBuffer);
 			m_Device->DrawUI(cmdBuffer);
@@ -96,6 +96,11 @@ namespace Czuch
 			MaterialInstance* mat = m_Device->AccessMaterialInstance(DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);
 			mat->params[0].SetSampler(0,texture);
 		}
+	}
+
+	void VulkanMainRenderPass::SetViewportAndScissor(Camera* camera)
+	{
+		m_Viewport = camera->GetViewport();
 	}
 
 	void* VulkanMainRenderPass::GetFinalTexture()

@@ -79,6 +79,7 @@ namespace Czuch
 		virtual bool UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size) = 0;
 		virtual bool UploadCurrentDataToBuffer(BufferHandle buffer) = 0;
 		virtual void* GetMappedBufferDataPtr(BufferHandle buffer) = 0;
+		virtual Format GetDepthFormat() const = 0;
 
 	};
 

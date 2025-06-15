@@ -134,5 +134,12 @@ namespace Czuch
 		glm::vec3 rgbGamma = glm::pow(glm::vec3(colorLinear), glm::vec3(1.0f / 2.2f));
 		return glm::vec4(rgbGamma, colorLinear.a);
 	}
+
+	struct Viewport
+	{
+		float x, y, width, height;// 0.0f - 1.0f range
+		Viewport(float x = 0.0f, float y = 0.0f, float width = 1.0f, float height = 1.0f)
+			: x(x), y(y), width(width), height(height) {}
+	};
 }
 
