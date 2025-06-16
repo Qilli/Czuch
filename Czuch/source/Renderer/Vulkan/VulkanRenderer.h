@@ -43,6 +43,7 @@ namespace Czuch
 		void DrawFullScreenQuad(VulkanCommandBuffer* cmdBuffer, MaterialInstanceHandle material);
 		void* GetRenderPassResult(Camera* cam,RenderPassType type) override;
 		bool HasRenderPass(Camera* cam,RenderPassType type) override;
+		void FlushDeletionQueue() override;
 	public:
 		void RegisterRenderPassResizeEventResponse(U32 width, U32 height, bool handleAll,std::function<void(U32,U32)>* onResize) override;
 	private:

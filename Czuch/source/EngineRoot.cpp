@@ -100,6 +100,7 @@ namespace Czuch
 
 	void EngineRoot::Shutdown()
 	{
+		m_Renderer->FlushDeletionQueue();
 		m_ScenesMgr->Shutdown();
 		delete m_ScenesMgr;
 		delete m_DefaultAssets;

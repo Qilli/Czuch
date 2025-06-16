@@ -72,6 +72,7 @@ namespace Czuch
 	{
 		for (auto scene : m_Scenes)
 		{
+			scene->OnDettached();
 			delete scene;
 		}
 		m_Scenes.clear();

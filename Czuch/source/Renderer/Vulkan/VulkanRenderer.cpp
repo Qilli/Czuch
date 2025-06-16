@@ -55,16 +55,8 @@ namespace Czuch
 			m_FramesData[a].frameDeletionQueue.Flush();
 		}
 
-		if (m_ActiveScene != nullptr)
-		{
-			m_ActiveScene->OnDettached();
-			m_ActiveScene = nullptr;
-		}
 
-		m_FullScreenRenderPass->Release();
 		delete m_FullScreenRenderPass;
-
-		m_FinalRenderPass->Release();
 		delete m_FinalRenderPass;
 
 		m_ImmediateSubmitData.Release(m_Device);
@@ -195,7 +187,8 @@ namespace Czuch
 
 	void VulkanRenderer::ReleaseDependencies()
 	{
-		
+		m_FullScreenRenderPass->Release();
+		m_FinalRenderPass->Release();
 	}
 
 	GraphicsDevice* VulkanRenderer::GetDevice()
@@ -306,6 +299,14 @@ namespace Czuch
 			return false;
 		}
 		return frameGraph->HasRenderPass(type);
+	}
+
+	void VulkanRenderer::FlushDeletionQueue()
+	{
+		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		{
+			m_FramesData[a].frameDeletionQueue.Flush();
+		}
 	}
 
 

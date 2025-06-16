@@ -42,6 +42,7 @@ namespace Czuch
 		virtual void OnPostRenderUpdateContexts(Camera* camera,RenderContextFillParams* fillParams)=0;
 		virtual void OnPreRenderUpdateDebugDrawElements(Camera* camera, RenderContextFillParams* fillParams) = 0;
 		virtual void* GetFrameGraphFinalResult(Camera* cam) = 0;
+		virtual void FlushDeletionQueue() = 0;
 	
 	protected:
 		void OnEvent(Event& e) override;
