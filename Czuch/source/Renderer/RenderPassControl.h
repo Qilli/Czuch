@@ -70,6 +70,8 @@ namespace Czuch
 		void SetNativeRenderPassHandle(RenderPassHandle handle) { m_NativeRenderPassHandle = handle; }
 		RenderPassHandle GetNativeRenderPassHandle() const { return m_NativeRenderPassHandle; }
 		void AddMaterialForInputBinding(MaterialInstanceHandle material);
+		void ForceSingleMaterialForAll(MaterialInstanceHandle material,bool ignoreTransparent);
+		void ClearForceSingleMaterialForAll();
 	protected:
 		MaterialsForInputBinding m_MaterialsForInputBinding;
 		RenderContextFillParams m_FillParams;

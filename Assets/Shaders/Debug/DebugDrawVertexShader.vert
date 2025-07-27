@@ -9,7 +9,7 @@ layout(location=3) in vec3 inNormal;
 
 layout(location=0) out vec4 outColor;
 layout(location=1) out vec4 outUV;
-layout(location=3) out vec3 outNormal;
+layout(location=2) out vec3 outNormal;
 
 void main() {
      gl_Position = PushConstants.worldViewProj * vec4(inPosition.xyz, 1.0);

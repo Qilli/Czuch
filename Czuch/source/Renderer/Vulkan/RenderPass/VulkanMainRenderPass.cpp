@@ -82,6 +82,7 @@ namespace Czuch
 		else
 		{
 			m_Renderer->DrawFullScreenQuad((VulkanCommandBuffer*)cmdBuffer, DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);
+			m_Device->DrawUI(cmdBuffer);
 		}
 	}
 

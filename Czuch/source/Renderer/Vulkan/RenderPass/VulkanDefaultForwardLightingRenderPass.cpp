@@ -10,7 +10,7 @@ namespace Czuch
 {
 	VulkanDefaultForwardLightingRenderPass::VulkanDefaultForwardLightingRenderPass(VulkanRenderer* renderer, VulkanDevice* device, U32 width, U32 height, bool handleWindowResize) :VulkanRenderPassControlBase(device,renderer,nullptr, width, height, RenderPassType::ForwardLighting, handleWindowResize)
 	{
-
+		
 	}
 
 }

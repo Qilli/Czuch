@@ -31,6 +31,11 @@ namespace Czuch
 #define INVALIDATE_HANDLE(h)h.handle=-1; 
 	class GraphicsDevice;
 
+	enum DebugRenderingFlag : U32
+	{
+		MaterialIndexAsColor = 1 << 0,
+	};
+
 	struct PositionVertex
 	{
 		Vec3 position;
@@ -69,6 +74,7 @@ namespace Czuch
 	{
 		Mat4x4 localToWorldTransformation;
 		Mat4x4 invTransposeToWorldMatrix;
+		glm::ivec4 materialAndFlags; // material index and flags
 	};
 
 	struct LightData
@@ -173,7 +179,8 @@ namespace Czuch
 
 	struct BufferHandle : public ResourceHandle
 	{
-
+		I32 offset = -1; // if -1 then this is exclusive buffer, otherwise its part of bigger buffer
+		I32 size = 0;
 	};
 
 	struct TextureHandle : public ResourceHandleWithAsset
@@ -371,6 +378,17 @@ namespace Czuch
 		UNIFORM_BUFFER_DYNAMIC = 3,
 		STORAGE_BUFFER_DYNAMIC = 4,
 		INPUT_ATTACHMENT = 5,
+	};
+
+	enum BufferType
+	{
+		CUSTOM =0,
+		POSITION =1,
+		NORMAL =2,
+		UV0 =3,
+		UV1 = 4,
+		COLOR =5,
+		INDICES =6,
 	};
 
 	enum ResourceState
@@ -1000,10 +1018,60 @@ namespace Czuch
 		U64 elementsCount = 0;
 		Usage usage = Usage::DEFAULT;
 		BindFlag bind_flags = BindFlag::NONE;
+		BufferType bufferType = BufferType::CUSTOM;
 		U32 stride = 0;
 		Format format = Format::UNKNOWN;
 		bool persistentMapped = false;
+		bool exclusiveBuffer = true;
 		void* initData = nullptr;
+	};
+
+	struct IDrawDebugImGuiWindow {
+		virtual void DrawDebugWindow() = 0;
+	};
+
+	struct MultipleBuffer
+	{
+		BufferDesc desc;
+		BufferHandle handle;
+		U32 currentOffset;
+		U32 parts;
+
+		BufferHandle AddNewBufferPart(const BufferDesc& descIn)
+		{
+			CZUCH_BE_ASSERT(descIn.size > 0, "Buffer size must be greater than 0");
+			CZUCH_BE_ASSERT(descIn.bind_flags != BindFlag::NONE, "Buffer must have at least one bind flag set");
+			CZUCH_BE_ASSERT(descIn.usage != Usage::DEFAULT, "Buffer usage must be specified");
+
+			if (currentOffset + descIn.size > desc.size)
+			{
+				CZUCH_BE_ASSERT(false, "Not enough space in buffer to add new part");
+				return { Invalid_Handle_Id, 0 };
+			}
+
+			BufferHandle newHandle = { handle.handle, currentOffset };
+			currentOffset += descIn.size;
+			parts++;
+			return newHandle;
+		}
+
+		bool ReleasePart(BufferHandle& handle)
+		{
+			CZUCH_BE_ASSERT(handle.handle == this->handle.handle, "Buffer handle mismatch");
+			CZUCH_BE_ASSERT(handle.offset < currentOffset, "Buffer offset out of range");
+			CZUCH_BE_ASSERT(parts > 0, "No parts to release");
+			parts--;
+			return parts <= 0;
+		}
+	};
+
+	struct MultiplerBufferContainer: public IDrawDebugImGuiWindow
+	{
+		Array<MultipleBuffer> multipleBuffers;
+		BufferHandle GetBuffer(const BufferDesc& desc);
+		bool Release(BufferHandle handle);
+		BufferHandle CreateBuffer(const BufferDesc& desc,GraphicsDevice* device, U32 capacity);
+		void DrawDebugWindow();
 	};
 
 	enum class DescriptorBindingTagType

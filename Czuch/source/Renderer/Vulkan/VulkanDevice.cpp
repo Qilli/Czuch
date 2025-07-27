@@ -64,6 +64,10 @@ namespace Czuch
 			ImGui::RenderPlatformWindowsDefault();
 			glfwMakeContextCurrent(backup_current_context);
 		}
+		else
+		{
+			ImGui::UpdatePlatformWindows();
+		}
 	}
 
 	void VulkanDevice::PreDrawFrame()
@@ -800,6 +804,8 @@ namespace Czuch
 		vbDesc.usage = Usage::DEFAULT;
 		vbDesc.bind_flags = BindFlag::VERTEX_BUFFER;
 		vbDesc.initData = (void*)mesh->data->positions.data();
+		vbDesc.exclusiveBuffer = false;
+		vbDesc.bufferType = BufferType::POSITION;
 
 		mesh->positionsHandle = CreateBuffer(&vbDesc);
 
@@ -807,11 +813,13 @@ namespace Czuch
 		{
 			BufferDesc nDesc;
 			nDesc.elementsCount = mesh->data->normals.size();
-			nDesc.size = nDesc.elementsCount * sizeof(float) * 3;
-			nDesc.stride = 3 * sizeof(float);
+			nDesc.size = nDesc.elementsCount * sizeof(float) * 4;
+			nDesc.stride = 4 * sizeof(float);
 			nDesc.usage = Usage::DEFAULT;
 			nDesc.bind_flags = BindFlag::VERTEX_BUFFER;
 			nDesc.initData = (void*)mesh->data->normals.data();
+			nDesc.exclusiveBuffer = false;
+			nDesc.bufferType = BufferType::NORMAL;
 
 			mesh->normalsHandle = CreateBuffer(&nDesc);
 		}
@@ -825,6 +833,8 @@ namespace Czuch
 			cDesc.usage = Usage::DEFAULT;
 			cDesc.bind_flags = BindFlag::VERTEX_BUFFER;
 			cDesc.initData = (void*)mesh->data->colors.data();
+			cDesc.exclusiveBuffer = false;
+			cDesc.bufferType = BufferType::COLOR;
 
 			mesh->colorsHandle = CreateBuffer(&cDesc);
 		}
@@ -838,6 +848,8 @@ namespace Czuch
 			uvDesc.usage = Usage::DEFAULT;
 			uvDesc.bind_flags = BindFlag::VERTEX_BUFFER;
 			uvDesc.initData = (void*)mesh->data->uvs0.data();
+			uvDesc.exclusiveBuffer = false;
+			uvDesc.bufferType = BufferType::UV0;
 
 			mesh->uvs0Handle = CreateBuffer(&uvDesc);
 		}
@@ -849,6 +861,8 @@ namespace Czuch
 		indicesDesc.usage = Usage::DEFAULT;
 		indicesDesc.bind_flags = BindFlag::INDEX_BUFFER;
 		indicesDesc.initData = (void*)mesh->data->indices.data();
+		indicesDesc.exclusiveBuffer = false;
+		indicesDesc.bufferType = BufferType::INDICES;
 
 		mesh->indicesHandle = CreateBuffer(&indicesDesc);
 
@@ -921,6 +935,7 @@ namespace Czuch
 		bufferDesc.elementsCount = 1;
 		bufferDesc.bind_flags = BindFlag::UNIFORM_BUFFER;
 		bufferDesc.initData =ubo->GetData();
+		bufferDesc.exclusiveBuffer = true;
 
 		bufferDesc.ubo = ubo;
 		return CreateBuffer(&bufferDesc);
@@ -936,13 +951,65 @@ namespace Czuch
 		bufferDesc.bind_flags = BindFlag::STORAGE_BUFFER;
 		bufferDesc.persistentMapped = permaMapped;
 		bufferDesc.initData = nullptr;
+		bufferDesc.exclusiveBuffer = true;
 
 		return CreateBuffer(&bufferDesc);
+	}
+
+	bool VulkanDevice::CopyDataToBuffer(Buffer_Vulkan* bufferVulkan, const void* dataIn, U32 size, U32 offset) const
+	{
+		BufferInternalSettings settingsStageBuffer{};
+		settingsStageBuffer.inSize = size;
+		settingsStageBuffer.inFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		settingsStageBuffer.inStagingBuffer = true;
+		settingsStageBuffer.inCreateMapped = false;
+		settingsStageBuffer.inUsage = Usage::MEMORY_USAGE_CPU_ONLY;
+
+		if (!CreateBuffer_Internal(settingsStageBuffer))
+		{
+			LOG_BE_ERROR("{0} Failed to create new vulkan staging buffer", Tag);
+			return false;
+		}
+
+		//map memory
+		void* data = nullptr;
+		vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
+		memcpy(data, dataIn, size);
+		vmaUnmapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc);
+
+		if (!CopyBuffer(settingsStageBuffer.outBuffer, bufferVulkan->buffer, settingsStageBuffer.inSize,offset))
+		{
+			LOG_BE_ERROR("{0} Failed to copy data from staging buffer", Tag);
+			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
+			return false;
+		}
+		vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
+		return true;
 	}
 
 	BufferHandle VulkanDevice::CreateBuffer(const BufferDesc* desc)
 	{
 		CZUCH_BE_ASSERT(desc != nullptr, "Invalid buffer desc.");
+
+		if (desc->exclusiveBuffer == false && desc->persistentMapped == false)
+		{
+			//check if buffer already exists
+			auto handle = m_MultipleBuffers.GetBuffer(*desc);
+			if (HANDLE_IS_VALID(handle))
+			{
+				auto buffer=AccessBuffer(handle);
+				CopyDataToBuffer(Internal_to_Buffer(buffer), desc->initData, desc->size, handle.offset);
+				handle.size = desc->size;
+				return handle;
+			}
+
+			//if not, create new one
+			auto handleBuffer=m_MultipleBuffers.CreateBuffer(*desc,this,1000000);
+			auto bufferVulkan = AccessBuffer(handleBuffer);
+			CopyDataToBuffer(Internal_to_Buffer(bufferVulkan), desc->initData, desc->size, handleBuffer.offset);
+			handleBuffer.size = desc->size;
+			return handleBuffer;
+		}
 
 		Buffer* buffer = new Buffer();
 		buffer->desc = *desc;
@@ -1012,61 +1079,11 @@ namespace Czuch
 
 		if ((HasFlag(desc->bind_flags, BindFlag::VERTEX_BUFFER) || HasFlag(desc->bind_flags, BindFlag::INDEX_BUFFER)) && desc->initData != nullptr)
 		{
-			BufferInternalSettings settingsStageBuffer{};
-			settingsStageBuffer.inSize = bufferVulkan->size;
-			settingsStageBuffer.inFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-			settingsStageBuffer.inStagingBuffer = true;
-			settingsStageBuffer.inCreateMapped = false;
-			settingsStageBuffer.inUsage = Usage::MEMORY_USAGE_CPU_ONLY;
-
-			if (!CreateBuffer_Internal(settingsStageBuffer))
-			{
-				LOG_BE_ERROR("{0} Failed to create new vulkan staging buffer", Tag);
-				return INVALID_HANDLE(BufferHandle);
-			}
-
-			//map memory
-			void* data = nullptr;
-			vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
-			memcpy(data, desc->initData, desc->size);
-			vmaUnmapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc);
-
-			if (!CopyBuffer(settingsStageBuffer.outBuffer, bufferVulkan->buffer, settingsStageBuffer.inSize))
-			{
-				LOG_BE_ERROR("{0} Failed to copy data from staging buffer", Tag);
-				vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
-				return INVALID_HANDLE(BufferHandle);
-			}
-			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
+			CopyDataToBuffer(bufferVulkan, desc->initData, desc->size, 0);
 		}
 		else if (desc->persistentMapped==false && desc->initData!=nullptr)
 		{
-			BufferInternalSettings settingsStageBuffer{};
-			settingsStageBuffer.inSize = bufferVulkan->size;
-			settingsStageBuffer.inFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-			settingsStageBuffer.inStagingBuffer = true;
-			settingsStageBuffer.inCreateMapped = false;
-			settingsStageBuffer.inUsage = Usage::MEMORY_USAGE_CPU_ONLY;
-
-			if (!CreateBuffer_Internal(settingsStageBuffer))
-			{
-				LOG_BE_ERROR("{0} Failed to create new vulkan staging buffer for uniform buffer transfer", Tag);
-				return INVALID_HANDLE(BufferHandle);
-			}
-
-			//map memory
-			void* data = nullptr;
-			vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
-			memcpy(data, desc->initData, desc->size);
-			vmaUnmapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc);
-
-			if (!CopyBuffer(settingsStageBuffer.outBuffer, bufferVulkan->buffer, settingsStageBuffer.inSize))
-			{
-				LOG_BE_ERROR("{0} Failed to copy data from staging buffer to uniform buffer", Tag);
-				vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
-				return INVALID_HANDLE(BufferHandle);
-			}
-			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
+			CopyDataToBuffer(bufferVulkan, desc->initData, desc->size, 0);
 		}
 		else if (desc->persistentMapped == true && desc->initData != nullptr)
 		{
@@ -1075,6 +1092,7 @@ namespace Czuch
 
 		BufferHandle h;
 		h.handle = m_ResContainer.buffers.Add(buffer);
+		h.size = desc->size;
 		return h;
 	}
 
@@ -1341,6 +1359,13 @@ namespace Czuch
 	bool VulkanDevice::Release(BufferHandle& buffer)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(buffer), "Invalid buffer passed to release.");
+
+		if (m_MultipleBuffers.Release(buffer))
+		{
+			INVALIDATE_HANDLE(buffer)
+			return true;
+		}
+
 		Buffer* b = nullptr;
 		bool result = m_ResContainer.buffers.Get(buffer.handle, &b);
 		m_ResContainer.buffers.Remove(buffer.handle);
@@ -1601,6 +1626,11 @@ namespace Czuch
 	bool VulkanDevice::HasDynamicRenderingEnabled() const
 	{
 		return m_RenderSettings->dynamicRendering;
+	}
+
+	void VulkanDevice::DrawDebugWindows()
+	{
+		m_MultipleBuffers.DrawDebugWindow();
 	}
 
 	void VulkanDevice::SubmitToGraphicsQueue(VkSubmitInfo info, VkFence fence)
@@ -2005,13 +2035,13 @@ namespace Czuch
 		return commandBuffer;
 	}
 
-	bool VulkanDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const
+	bool VulkanDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size,VkDeviceSize dstOffset) const
 	{
 		auto cmd = BeginSingleTimeCommands();
 
 		VkBufferCopy copyRegion{};
 		copyRegion.srcOffset = 0; // Optional
-		copyRegion.dstOffset = 0; // Optional
+		copyRegion.dstOffset = dstOffset; // Optional
 		copyRegion.size = size;
 		vkCmdCopyBuffer(cmd, srcBuffer, dstBuffer, 1, &copyRegion);
 
@@ -2019,6 +2049,7 @@ namespace Czuch
 
 		return true;
 	}
+
 
 	bool VulkanDevice::RecreateSwapChain()
 	{
@@ -2970,7 +3001,7 @@ namespace Czuch
 		return false;
 	}
 
-	bool VulkanDevice::UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size)
+	bool VulkanDevice::UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size,U32 offset)
 	{
 		auto bufferPtr = AccessBuffer(buffer);
 		if (bufferPtr == nullptr)
@@ -2981,40 +3012,7 @@ namespace Czuch
 
 		auto bufferVulkan = Internal_to_Buffer(bufferPtr);
 
-		//check if we need stagind buffer or if buffer is persitent mapped
-		if (bufferVulkan->persistentMapping)
-		{
-			memcpy(bufferVulkan->GetMappedData(),dataIn, size);
-			return true;
-		}
-
-		BufferInternalSettings settingsStageBuffer{};
-		settingsStageBuffer.inSize = bufferVulkan->size;
-		settingsStageBuffer.inFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-		settingsStageBuffer.inStagingBuffer = true;
-		settingsStageBuffer.inCreateMapped = false;
-		settingsStageBuffer.inUsage = Usage::MEMORY_USAGE_CPU_ONLY;
-
-		if (!CreateBuffer_Internal(settingsStageBuffer))
-		{
-			LOG_BE_ERROR("{0} Failed to create new vulkan staging buffer for uniform buffer Upload", Tag);
-			return false;
-		}
-
-		//map memory
-		void* data = nullptr;
-		vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
-		memcpy(data, dataIn, size);
-		vmaUnmapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc);
-
-		if (!CopyBuffer(settingsStageBuffer.outBuffer, bufferVulkan->buffer, settingsStageBuffer.inSize))
-		{
-			LOG_BE_ERROR("{0} Failed to copy data from staging buffer to uniform buffer in upload method", Tag);
-			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
-			return false;
-		}
-		vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
-		return true;
+		return CopyDataToBuffer(bufferVulkan, dataIn, size, offset);
 	}
 
 	bool VulkanDevice::UploadCurrentDataToBuffer(BufferHandle buffer)
@@ -3027,7 +3025,7 @@ namespace Czuch
 		}
 
 		void* data = bufferPtr->desc.ubo->GetData();
-		return UploadDataToBuffer(buffer, data, bufferPtr->desc.ubo->GetSize());
+		return UploadDataToBuffer(buffer, data, bufferPtr->desc.ubo->GetSize(),0);
 	}
 
 	void* VulkanDevice::GetMappedBufferDataPtr(BufferHandle buffer)

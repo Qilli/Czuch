@@ -12,6 +12,7 @@ namespace Czuch
 		Vulkan
 	};
 
+
 	class GraphicsDevice;
 	struct RenderContextCreateInfo;
 	class RenderContext;
@@ -43,9 +44,30 @@ namespace Czuch
 		virtual void OnPreRenderUpdateDebugDrawElements(Camera* camera, RenderContextFillParams* fillParams) = 0;
 		virtual void* GetFrameGraphFinalResult(Camera* cam) = 0;
 		virtual void FlushDeletionQueue() = 0;
+		virtual void SetDebugRenderingFlag(DebugRenderingFlag flag,bool enable)
+		{
+			bool isSet = (m_DebugRenderingFlags & flag) != 0;
+			if ( (enable&&!isSet) || (!enable&&isSet))
+			{
+				ApplyDebugFlagChange(flag);
+			}
+		}
+		U32 GetDebugRenderingFlags() const { return m_DebugRenderingFlags; }
 	
 	protected:
 		void OnEvent(Event& e) override;
 		virtual void OnWindowResize(uint32_t width, uint32_t height) = 0;
+		virtual void OnDebugRenderingFlagsChanged(U32 lastFlags,bool forceSetCurrentFlags) = 0;
+		U32 CurrentDebugRenderingFlags() const { return m_DebugRenderingFlags; }
+	private:
+		void ApplyDebugFlagChange(U32 flag)
+		{
+			U32 lastFlags = m_DebugRenderingFlags;
+			m_DebugRenderingFlags = m_DebugRenderingFlags ^ flag;
+			OnDebugRenderingFlagsChanged(lastFlags,false);
+		}
+
+	private:
+		U32 m_DebugRenderingFlags = 0;
 	};
 }

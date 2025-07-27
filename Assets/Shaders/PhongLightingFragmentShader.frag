@@ -7,7 +7,7 @@
 layout(location=0)in vec4 inColor;
 layout(location=1)in vec4 inUV;
 layout(location=2)in vec4 inPos;
-layout(location=3)in vec3 inNormal;
+layout(location=3)in vec4 inNormal;
 layout(location=0)out vec4 outColor;
 
 
@@ -34,13 +34,12 @@ void main()
 	 vec4 diffuseTex=texture(texSampler,inUV.xy);
 	 ivec2 tileCoord = ivec2( gl_FragCoord.xy/vec2(TILE_SIZE_X , TILE_SIZE_Y));
 	 int tileIndex = tileCoord.x+tileCoord.y * screenSize.z;
-
 	 ivec2 lightListRange = ivec2(tiles[tileIndex].startIndex,tiles[tileIndex].lightCount);
-
-	 outColor=diffuseTex*colorData.color*sceneData.ambientColor;
-	 //do lighting calculations
+	 outColor=diffuseTex*sceneData.ambientColor;
 	 int count=lightListRange.x+lightListRange.y;
 	 vec3 normal =normalize(inNormal.xyz);
+
+
 	 for( int i = lightListRange.x; i < count; ++i )
 	{
 		LightData lightData=lights[lightIndices[i]];

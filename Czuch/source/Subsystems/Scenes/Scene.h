@@ -110,8 +110,8 @@ namespace Czuch
 		FrameGraphControl* GetFrameGraphControl(int index) override;
 		void OnResizeRenderPassType(RenderPassType type, int width, int height);
 		void InitFrameGraphsControls();
-		int GetActiveFrameGraphsCount() const { return m_CamerasControl.size(); 
-		}
+		int GetActiveFrameGraphsCount() const { return m_CamerasControl.size(); }
+		void ForEachFrameGraph(std::function<void(FrameGraphControl*)> func);
 	private:
 		void DestroyMarkedEntities();
 		void CheckAndAddStartCamera();

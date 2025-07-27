@@ -56,6 +56,12 @@ namespace Czuch
 		{
 			vkEndCommandBuffer(m_Cmd);
 			m_isRecording = false;
+
+			INVALIDATE_HANDLE(m_CurrentColorBuffer);
+			INVALIDATE_HANDLE(m_CurrentIndexBuffer);
+			INVALIDATE_HANDLE(m_CurrentNormalBuffer);
+			INVALIDATE_HANDLE(m_CurrentPositionBuffer);
+			INVALIDATE_HANDLE(m_CurrentTexCoordBuffer);
 		}
 	}
 
@@ -128,35 +134,38 @@ namespace Czuch
 				BindDescriptorSet(descriptor, a, 1, nullptr, 0);
 			}
 
-			BindVertexBuffer(meshInstance->positionsHandle, 0, 0);
-			int bindIndex = 1;
-
-			if (meshInstance->IsValid() == false)
-			{
-				CZUCH_BE_ASSERT(false, "Mesh instance is invalid");
-			}
-
-			if (meshInstance->HasColors())
-			{
-				BindVertexBuffer(meshInstance->colorsHandle, 1, 0);
-			}
-
-			if (meshInstance->HasUV0())
-			{
-				BindVertexBuffer(meshInstance->uvs0Handle, 2, 0);
-			}
-
-			if (meshInstance->HasNormals())
-			{
-				BindVertexBuffer(meshInstance->normalsHandle, 3, 0);
-			}
+			TryBindMeshInstanceBuffers(meshInstance);
 
 			auto vulkanPipeline = Internal_To_Pipeline(pipelinePtr);
 			vkCmdPushConstants(m_Cmd, vulkanPipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, PUSH_CONSTANTS_SIZE, (void*)&renderElement.localToClipSpaceTransformation);
+			auto indicesBuffer = m_Device->AccessBuffer(meshInstance->indicesHandle);
+			if (indicesBuffer == nullptr)
+			{
+				LOG_BE_ERROR("{0} Failed to access indices buffer for mesh instance.", Tag);
+				return;
+			}
 
-			BindIndexBuffer(meshInstance->indicesHandle, 0);
-			DrawIndexed(m_Device->AccessBuffer(meshInstance->indicesHandle)->desc.elementsCount);
+			auto indicesOffset = meshInstance->indicesHandle.offset >= 0 ? meshInstance->indicesHandle.offset : 0;
+			indicesOffset /= sizeof(U32); // Vulkan uses indices offset in U32 units
+			auto firstVertex = meshInstance->positionsHandle.offset >= 0 ? meshInstance->positionsHandle.offset : 0;
+			firstVertex /= sizeof(float) * 3; // Vulkan uses vertex offset in float3 units
+			DrawIndexed(meshInstance->indicesHandle.size/sizeof(U32), indicesOffset, 1, 0,firstVertex);
 		}
+	}
+	
+
+	void VulkanCommandBuffer::TryBindMeshInstanceBuffers(Czuch::Mesh* meshInstance)
+	{
+		BindBuffer(meshInstance->positionsHandle, 0, 0,&m_CurrentPositionBuffer);
+		if (meshInstance->IsValid() == false)
+		{
+			CZUCH_BE_ASSERT(false, "Mesh instance is invalid");
+		}
+
+		BindBuffer(meshInstance->colorsHandle, 1, 0,&m_CurrentColorBuffer);
+		BindBuffer(meshInstance->uvs0Handle, 2, 0,&m_CurrentTexCoordBuffer);
+		BindBuffer(meshInstance->normalsHandle, 3, 0,&m_CurrentNormalBuffer);
+		BindIndexBuffer(meshInstance->indicesHandle, 0);
 	}
 
 	void VulkanCommandBuffer::DrawFullScreenQuad(MaterialInstanceHandle mat, DescriptorAllocator* allocator)
@@ -347,8 +356,18 @@ namespace Czuch
 		m_CurrentPipeline = pipeline;
 	}
 
-	void VulkanCommandBuffer::BindVertexBuffer(BufferHandle buffer, U32 binding = 0, U32 offset = 0)
+	void VulkanCommandBuffer::BindBuffer(BufferHandle buffer, U32 binding, U32 offset, BufferHandle* prevBuffer)
 	{
+		CZUCH_BE_ASSERT(buffer.handle != Invalid_Handle_Id, "Trying to bind invalid buffer!");
+	
+		if (prevBuffer != nullptr)
+		{
+			if (prevBuffer->handle == buffer.handle)
+			{
+				return;
+			}
+			*prevBuffer = buffer;
+		}
 		VkBuffer vertexBuffers[] = { Internal_to_Buffer(m_Device->AccessBuffer(buffer))->buffer };
 		VkDeviceSize offsets[] = { offset };
 		vkCmdBindVertexBuffers(m_Cmd, binding, 1, vertexBuffers, offsets);
@@ -356,7 +375,12 @@ namespace Czuch
 
 	void VulkanCommandBuffer::BindIndexBuffer(BufferHandle buffer, U32 offset = 0)
 	{
-		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(m_Device->AccessBuffer(buffer))->buffer, offset, VK_INDEX_TYPE_UINT32);
+		if (buffer.handle == m_CurrentIndexBuffer.handle)
+		{
+			return;
+		}
+		m_CurrentIndexBuffer = buffer;
+		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(m_Device->AccessBuffer(buffer))->buffer,0, VK_INDEX_TYPE_UINT32);
 	}
 
 	void VulkanCommandBuffer::BindDescriptorSet(DescriptorSet* descriptor, U16 setIndex, U32 num, U32* offsets, U32 num_offsets)
@@ -475,7 +499,7 @@ namespace Czuch
 		}
 
 		//set vertex and index buffer
-		BindVertexBuffer(data->vertexBuffer, 0, 0);
+		BindBuffer(data->vertexBuffer, 0, 0,nullptr);
 
 		if (HANDLE_IS_VALID(data->indexBuffer))
 		{

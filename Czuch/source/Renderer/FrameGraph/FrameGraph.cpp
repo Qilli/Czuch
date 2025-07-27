@@ -8,10 +8,10 @@
 
 namespace Czuch
 {
-	void FrameGraph::Init(Camera* camera,GraphicsDevice* device,Renderer* renderer )
+	void FrameGraph::Init(Camera* camera, GraphicsDevice* device, Renderer* renderer)
 	{
 		m_Device = device;
-		m_Renderer= renderer;
+		m_Renderer = renderer;
 		m_Nodes.Init(device);
 		m_Resources.Init(device);
 		m_Camera = camera;
@@ -73,7 +73,7 @@ namespace Czuch
 
 				if (input.type == FrameGraphResourceType::Texture)
 				{
-					auto &res = GetResource(input.output_target);
+					auto& res = GetResource(input.output_target);
 					auto texture = device->AccessTexture(res.info.texture.texture);
 					bool isDepth = IsDepthFormat(res.info.texture.format);
 					auto targetLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
@@ -98,7 +98,7 @@ namespace Czuch
 				auto& output = m_Resources.GetResource(node.outputs[a]);
 
 				if (output.type == FrameGraphResourceType::Attachment)
-				{ 
+				{
 					auto texture = device->AccessTexture(output.info.texture.texture);
 					width = texture->desc.width;
 					height = texture->desc.height;
@@ -211,7 +211,7 @@ namespace Czuch
 
 	void FrameGraph::ResizeRenderPasses(U32 width, U32 height, bool windowSizeChanged)
 	{
-		LOG_BE_INFO("Resizing render passes to {0}x{1} , window size changed: {2}", width, height , windowSizeChanged);
+		LOG_BE_INFO("Resizing render passes to {0}x{1} , window size changed: {2}", width, height, windowSizeChanged);
 
 		//resize every node render pass control
 		for (int i = 0; i < m_Nodes.m_Nodes.size(); i++)
@@ -237,7 +237,7 @@ namespace Czuch
 		//return last color attachment
 		FrameGraphNode* node = nullptr;
 
-		for (int i = m_Nodes.m_Nodes.size()-1; i>=0; i--)
+		for (int i = m_Nodes.m_Nodes.size() - 1; i >= 0; i--)
 		{
 			auto& n = m_Nodes.m_Nodes[i];
 			if (n.renderPassControl->IsActive())
@@ -268,6 +268,30 @@ namespace Czuch
 
 		CZUCH_BE_ASSERT(node, "Final render pass not found");
 		return node->GetDepthAttachment(this);
+	}
+
+	void FrameGraph::SetDebugRenderFlag(DebugRenderingFlag flag, bool enable)
+	{
+
+		if (flag == DebugRenderingFlag::MaterialIndexAsColor)
+		{
+
+			for (auto& node : m_Nodes.m_Nodes)
+			{
+				if (node.renderPassControl->GetType() == RenderPassType::ForwardLighting || node.renderPassControl->GetType() == RenderPassType::ForwardLightingTransparent)
+				{
+					if (enable)
+					{
+						node.renderPassControl->ForceSingleMaterialForAll(DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_INSTANCE, false);
+					}
+					else
+					{
+						node.renderPassControl->ClearForceSingleMaterialForAll();
+					}
+				}
+			}
+
+		}
 	}
 
 	void FrameGraph::ReleaseDependencies()

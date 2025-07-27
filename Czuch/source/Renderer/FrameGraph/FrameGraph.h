@@ -148,6 +148,11 @@ namespace Czuch
 		/// <param name="cmd"></param>
 		void AfterFrameGraphExecute(CommandBuffer* cmd);
 		//[TODO] we need to add option to init offscreen node with size from UI
+
+		//Set debug render flag, depending on the flag
+		//it may require different action, for instance for material index debug flag
+		//we change lighting main shader to debug version where each pixel has a different color depending on the used material
+		void SetDebugRenderFlag(DebugRenderingFlag flag,bool enable);
 	private:
 		void ReleaseDependencies();
 	private:
@@ -157,8 +162,8 @@ namespace Czuch
 		Camera* m_Camera;
 		GraphicsDevice* m_Device;
 		Renderer* m_Renderer;
-		bool m_HasUI = false;
 		Color m_ClearColor;
+		bool m_HasUI = false;
 		bool m_UseClearColor = false;
 		friend class FrameGraphBuilderHelper;
 	};

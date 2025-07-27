@@ -18,10 +18,11 @@ namespace Czuch
 		void End() override;
 		void EndCurrentRenderPass() override;
 		void DrawMesh(const RenderObjectInstance& renderElement, DescriptorAllocator* allocator) override;
+		void TryBindMeshInstanceBuffers(Czuch::Mesh* meshInstance);
 		void DrawFullScreenQuad(MaterialInstanceHandle material, DescriptorAllocator* allocator) override;
 		void BindPass(RenderPassHandle renderpass, FrameBufferHandle framebuffer) override;
 		void BindPipeline(PipelineHandle pipeline) override;
-		void BindVertexBuffer(BufferHandle buffer, U32 binding, U32 offset) override;
+		void BindBuffer(BufferHandle buffer, U32 binding, U32 offset, BufferHandle *prevBuffer) override;
 		void BindIndexBuffer(BufferHandle buffer, U32 offset) override;
 		void BindDescriptorSet(DescriptorSet* descriptor,U16 setIndex, U32 num, U32* offsets, U32 num_offsets) override;
 		void SetClearColor(float r, float g, float b, float a) override;
@@ -48,6 +49,13 @@ namespace Czuch
 		ViewportDesc m_CurrentViewport;
 		ScissorsDesc m_CurrentScissors;
 		Array<VkRenderingAttachmentInfoKHR> m_ColorAttachmentsInfo;
+	private:
+		BufferHandle m_CurrentIndexBuffer;
+		BufferHandle m_CurrentPositionBuffer;
+		BufferHandle m_CurrentColorBuffer;
+		BufferHandle m_CurrentNormalBuffer;
+		BufferHandle m_CurrentTexCoordBuffer;
+
 	};
 
 }

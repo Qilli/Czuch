@@ -1,0 +1,2 @@
+cmake .. -DCMAKE_TOOLCHAIN_FILE="/path/to/your/vcpkg/scripts/buildsystems/vcpkg.cmake" -G "Visual Studio 17 2022" 
+cmake .. -DCMAKE_TOOLCHAIN_FILE="F:/VCPKG/vcpkg/scripts/buildsystems/vcpkg.cmake" -G "Visual Studio 17 2022" 

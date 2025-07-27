@@ -6,6 +6,13 @@ struct LightData
 	vec4 spotInnerOuterAngle;
 };
 
+struct MaterialData
+{
+	vec4 albedo;
+	vec4 metallicRoughness;
+	vec4 emissive;
+};
+
 struct TileData {
         uint startIndex;
         uint lightCount;
@@ -48,7 +55,7 @@ vec4 ComputeLighting(LightData lightData,vec4 position, vec3 normal)
 		if(delta > lightData.spotInnerOuterAngle.y)
 		{
 			float intensity = min(1.0,(delta - lightData.spotInnerOuterAngle.y) / (lightData.spotInnerOuterAngle.x - lightData.spotInnerOuterAngle.y));
-			diffuse = intensity*max(dot(normal.xyz,fromLightDir), 0.0);;
+			diffuse = intensity*max(dot(normal.xyz,fromLightDir), 0.0);
 			float distance = length(lightData.positionWithType.xyz - position.xyz);
 			diffuse *= ComputeLightAttenuationWithCutoff(distance,lightData.directionWithRange.w); //attenuation
 		}

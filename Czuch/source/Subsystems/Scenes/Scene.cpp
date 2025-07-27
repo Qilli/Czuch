@@ -21,7 +21,7 @@ namespace Czuch
 {
 	const CzuchStr SceneTag = "SceneControl";
 
-	Scene::Scene(const CzuchStr& sceneName,GraphicsDevice* device) : m_SceneName(sceneName), m_Device(device)
+	Scene::Scene(const CzuchStr& sceneName,GraphicsDevice* device) : m_SceneName(sceneName), m_Device(device),m_Renderer(nullptr)
 	{
 		m_RootEntity = Entity{ m_Registry.create(),this };
 		m_RootEntity.AddComponent<HeaderComponent>(sceneName, "Root", Layer{ 0 });
@@ -29,7 +29,7 @@ namespace Czuch
 		m_RootEntity.AddComponent<ActiveComponent>();
 		m_RootEntity.AddComponent<GUIDComponent>(GUID());
 
-		m_AmbientColor = Color(0.3f, 0.3f, 0.3f, 1.0f);
+		m_AmbientColor = Color(0.0f, 0.0f, 0.0f, 1.0f);
 		m_ClearColor = Color(0.0f, 0.0f, 0.0f, 1.0f);
 
 		//create default game mode camera
@@ -301,6 +301,12 @@ namespace Czuch
 		{
 			cameraControl.OnSceneActive(renderer,m_Device,this);
 		}
+		EngineRoot::Get().TryBuildDefaultAssets();
+
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			cameraControl.AfterSceneActive();
+		}
 	}
 
 	void Scene::OnResize(U32 width, U32 height,bool windowSizeChanged)
@@ -540,6 +546,15 @@ namespace Czuch
 		}
 	}
 
+	void Scene::ForEachFrameGraph(std::function<void(FrameGraphControl*)> func)
+	{
+		for (auto& cameraControl : m_CamerasControl)
+		{
+			func(&cameraControl.frameGraphControl);
+		}
+
+	}
+
 	void Scene::DestroyMarkedEntities()
 	{
 		for (auto entity : m_EntitiesToDestroy)
@@ -571,6 +586,7 @@ namespace Czuch
 
 	void Scene::UpdateAllCameras()
 	{
+		m_isDirty = false;
 		auto cam = GetPrimaryCamera();
 
 		if (cam!=nullptr)
@@ -591,31 +607,109 @@ namespace Czuch
 			}
 		}
 
-		for (auto& cameraControl : m_CamerasControl)
-		{
-			cameraControl.Release(m_Device);
-		}
-
-		m_CamerasControl.clear();
+		//cameras changed, but we need to check if we really need to recreate anything or just add new camera control
 		auto view = m_Registry.view<CameraComponent>(entt::exclude<DestroyedComponent>);
-		SceneCameraControl cameraControl;
-		cameraControl.camera = m_CurrentFrameCamera;
-		cameraControl.isPrimaryCamera = true;
-		cameraControl.OnSceneActive(m_Renderer,m_Device, this);
-		m_CamerasControl.push_back(std::move(cameraControl));
+
+		//we need some temp buffers to create a diff
+		Array<CameraComponent*> camerasToAdd;
+		camerasToAdd.reserve(10);
+		Array<Camera*> camerasToRemove;
+		camerasToRemove.reserve(10);
+		U32 camerasCount = 0;
+
+		//fill diffs
 		for (auto entity : view)
 		{
 			auto& camera = view.get<CameraComponent>(entity);
-			if (camera.IsPrimary())
+			camerasCount++;
+
+			bool found = false;
+			for (auto& cameraControl : m_CamerasControl)
 			{
-				continue;
+				if (cameraControl.camera == &camera.GetCamera())
+				{
+					found = true;
+					break;
+				}
 			}
-			SceneCameraControl cameraControl;
-			cameraControl.camera = &camera.GetCamera();
-			cameraControl.isPrimaryCamera = false;
-			cameraControl.OnSceneActive(m_Renderer, m_Device, this);
-			m_CamerasControl.push_back(std::move(cameraControl));
+
+			if (!found)
+			{
+				camerasToAdd.push_back(&camera);
+			}
 		}
+
+		//check if we have cameras to remove
+		//first check camera count, if camera counts == m_CamerasControl.size() + camerasToAdd.size() then we don't need to remove anything
+		if (camerasCount != m_CamerasControl.size() + camerasToAdd.size())
+		{
+			for (auto& cameraControl : m_CamerasControl)
+			{
+				bool found = false;
+				for (auto entity : view)
+				{
+					auto& camera = view.get<CameraComponent>(entity);
+					if (cameraControl.camera == &camera.GetCamera())
+					{
+						found = true;
+						break;
+					}
+				}
+
+				if (!found)
+				{
+					camerasToRemove.push_back(cameraControl.camera);
+				}
+			}
+		}
+
+		//if we have cameras to remove, we need to remove them
+		if (camerasToRemove.size() > 0)
+		{
+			for (auto& camera : camerasToRemove)
+			{
+				for (auto it = m_CamerasControl.begin(); it != m_CamerasControl.end();)
+				{
+					if (it->camera == camera)
+					{
+						it->Release(m_Device);
+						it = m_CamerasControl.erase(it);
+					}
+					else
+					{
+						++it;
+					}
+				}
+			}
+		}
+
+		//if we have cameras to add, we need to add them
+		if (camerasToAdd.size() > 0)
+		{
+			for (auto& camera : camerasToAdd)
+			{
+				SceneCameraControl cameraControl;
+				cameraControl.camera = &camera->GetCamera();
+				cameraControl.isPrimaryCamera = camera->IsPrimary();
+				cameraControl.OnSceneActive(m_Renderer, m_Device, this);
+				cameraControl.AfterSceneActive();
+				if (m_Renderer != nullptr)
+				{
+					U32 debugFlags = m_Renderer->GetDebugRenderingFlags();
+					cameraControl.frameGraphControl.SetDebugRenderFlagsGroup(debugFlags);
+				}
+				m_CamerasControl.push_back(std::move(cameraControl));
+			}
+		}
+
+		//make sure primary camera is first in the list
+		//this sort should use move semantic! should.. [todo] profile it.
+		//dodac profile pamiêci tutaj
+		std::sort(m_CamerasControl.begin(), m_CamerasControl.end(), [](const SceneCameraControl& a, const SceneCameraControl& b)
+			{
+				return a.isPrimaryCamera > b.isPrimaryCamera;
+			});
+
 	}
 
 	void Scene::OnDettached()

@@ -53,9 +53,9 @@ namespace Czuch
 			currentScene = nullptr;
 		}
 
+		m_Device->DrawDebugWindows();
+
 		ImGui::EndFrame();
-		ImGui::UpdatePlatformWindows();
-		ImGui::Render();
 	}
 
 	void ImGUIManager::Shutdown()

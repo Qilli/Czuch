@@ -141,8 +141,9 @@ namespace Czuch
 			m_Window->Update();
 			m_ScenesMgr->Update(deltaTime);
 			m_EditorSubsystem->Update(deltaTime);
-			m_UIBaseMgr->SetSceneForUI(m_ScenesMgr->GetActiveScene());
 			m_UIBaseMgr->Update(deltaTime);
+
+			m_UIBaseMgr->SetSceneForUI(m_ScenesMgr->GetActiveScene());
 			m_Renderer->DrawFrame();
 			m_ScenesMgr->OnFinishFrame();
 		}

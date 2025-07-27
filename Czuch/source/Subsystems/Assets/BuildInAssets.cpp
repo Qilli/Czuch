@@ -61,6 +61,10 @@ namespace Czuch
 	AssetHandle DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE_ASSET;
 	AssetHandle DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_ASSET;
 
+	AssetHandle DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_ASSET;
+	MaterialHandle DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL;
+	MaterialInstanceHandle DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_INSTANCE;
+
 	TextureHandle DefaultAssets::WHITE_TEXTURE;
 	AssetHandle DefaultAssets::WHITE_TEXTURE_ASSET;
 
@@ -78,8 +82,8 @@ namespace Czuch
 	AssetHandle DefaultAssets::EDITOR_ICON_SHADER;
 	AssetHandle DefaultAssets::EDITOR_ICON_MATERIAL_INSTANCE;
 
-	AssetHandle DefaultAssets::DEFAULT_VS_SHADER_ASSET;
-	AssetHandle DefaultAssets::DEFAULT_PS_SHADER_ASSET;
+	AssetHandle DefaultAssets::PHONG_VS_SHADER_ASSET;
+	AssetHandle DefaultAssets::PHONG_PS_SHADER_ASSET;
 
 	AssetHandle DefaultAssets::DEBUG_DRAW_VS_SHADER_ASSET;
 	AssetHandle DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET;
@@ -87,6 +91,7 @@ namespace Czuch
 	AssetHandle DefaultAssets::DEBUG_DRAW_VS_INSTANCED_LINES_ASSET;
 	AssetHandle DefaultAssets::DEBUG_DRAW_VS_INSTANCED_TRIANGLES_ASSET;
 	AssetHandle DefaultAssets::DEBUG_DRAW_VS_INSTANCED_POINTS_ASSET;
+	AssetHandle DefaultAssets::DEBUG_DRAW_PS_MATERIAL_INDEX_SHADER_ASSET;
 
 
 	BuildInAssets::BuildInAssets(GraphicsDevice* device, AssetsManager* mgr, EngineMode mode) :m_Device(device), m_AssetsMgr(mgr)
@@ -164,13 +169,13 @@ namespace Czuch
 	void BuildInAssets::CreateDefaultMaterials()
 	{
 		//Simple material
-		auto handleVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\vertShader.vert", {});
-		auto handlePS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\fragShader.frag", {});
+		auto handleVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\PhongLightingVertexShader.vert", {});
+		auto handlePS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\PhongLightingFragmentShader.frag", {});
 		//debug draw shader
-		DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawFragmentShader.frag", {});
+		DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugDrawFragmentShader.frag", {});
 
-		DefaultAssets::DEFAULT_VS_SHADER_ASSET = handleVS;
-		DefaultAssets::DEFAULT_PS_SHADER_ASSET = handlePS;
+		DefaultAssets::PHONG_VS_SHADER_ASSET = handleVS;
+		DefaultAssets::PHONG_PS_SHADER_ASSET = handlePS;
 
 		MaterialPassDesc desc;
 		desc.vs = handleVS;
@@ -187,12 +192,12 @@ namespace Czuch
 		desc.passType = RenderPassType::ForwardLighting;
 
 		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
+		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 
 		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
+		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32_FLOAT });
 		desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
 		desc.il.AddAttribute({ .location = 3,.binding = 3,.offset = 0,.format = Format::R32G32B32_FLOAT });
 
@@ -614,8 +619,8 @@ namespace Czuch
 	void BuildInAssets::CreateDefaultSimpleTransparentMaterial()
 	{
 		MaterialPassDesc desc;
-		desc.vs = DefaultAssets::DEFAULT_VS_SHADER_ASSET;
-		desc.ps = DefaultAssets::DEFAULT_PS_SHADER_ASSET;
+		desc.vs = DefaultAssets::PHONG_VS_SHADER_ASSET;
+		desc.ps = DefaultAssets::PHONG_PS_SHADER_ASSET;
 		desc.pt = PrimitiveTopology::TRIANGLELIST;
 		desc.rs.cull_mode = CullMode::BACK;
 		desc.rs.fill_mode = PolygonMode::SOLID;
@@ -629,12 +634,12 @@ namespace Czuch
 		desc.bs.SetAlphaBlend();
 
 		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
+		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 
 		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
+		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32_FLOAT });
 		desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
 		desc.il.AddAttribute({ .location = 3,.binding = 3,.offset = 0,.format = Format::R32G32B32_FLOAT });
 
@@ -696,7 +701,7 @@ namespace Czuch
 
 	void BuildInAssets::CreateDebugDrawMaterials()
 	{
-		DefaultAssets::DEBUG_DRAW_VS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawVertexShader.vert", {});
+		DefaultAssets::DEBUG_DRAW_VS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugDrawVertexShader.vert", {});
 
 		//Debug material for standard debug meshes
 		MaterialPassDesc desc;
@@ -714,12 +719,12 @@ namespace Czuch
 		desc.passType = RenderPassType::DebugDraw;
 
 		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
+		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
 		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
 
 		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
+		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32_FLOAT });
 		desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
 		desc.il.AddAttribute({ .location = 3,.binding = 3,.offset = 0,.format = Format::R32G32B32_FLOAT });
 
@@ -791,10 +796,11 @@ namespace Czuch
 		CreateDebugLinesMaterial();
 		CreateDebugTrianglesMaterial();
 		CreateDebugPointsMaterial();
+		CreateDebugDrawMaterialIndexMaterial();
 	}
 	void BuildInAssets::CreateDebugLinesMaterial()
 	{
-		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_LINES_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawIndirectLinesVertexShader.vert", {});
+		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_LINES_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugDrawIndirectLinesVertexShader.vert", {});
 		DefaultAssets::DEFAULT_SIMPLE_COLOR_PS_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\SimpleColorFragmentShader.frag", {});
 
 		//Debug material for standard debug lines/points/tris
@@ -851,7 +857,7 @@ namespace Czuch
 	}
 	void BuildInAssets::CreateDebugTrianglesMaterial()
 	{
-		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_TRIANGLES_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawIndirectTrianglesVertexShader.vert", {});
+		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_TRIANGLES_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugDrawIndirectTrianglesVertexShader.vert", {});
 
 		//Debug material for standard debug lines/points/tris
 		MaterialPassDesc descDebug;
@@ -908,7 +914,7 @@ namespace Czuch
 	}
 	void BuildInAssets::CreateDebugPointsMaterial()
 	{
-		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_POINTS_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DebugDrawIndirectPointsVertexShader.vert", {});
+		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_POINTS_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugDrawIndirectPointsVertexShader.vert", {});
 
 		//Debug material for standard debug lines/points/tris
 		MaterialPassDesc descDebug;
@@ -961,5 +967,70 @@ namespace Czuch
 		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instancePointsCreateSettings.materialInstanceName, instancePointsCreateSettings);
 		MaterialInstanceAsset* instanceLinesAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
 		DefaultAssets::DEBUG_DRAW_POINTS_MATERIAL_INSTANCE = instanceLinesAsset->GetMaterialInstanceResourceHandle();
+	}
+
+	void BuildInAssets::CreateDebugDrawMaterialIndexMaterial()
+	{
+		DefaultAssets::DEBUG_DRAW_PS_MATERIAL_INDEX_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugPhongLightingFragmentShaderMaterialIndex.frag", {});
+
+		MaterialPassDesc desc;
+		desc.vs = DefaultAssets::PHONG_VS_SHADER_ASSET;
+		desc.ps = DefaultAssets::DEBUG_DRAW_PS_MATERIAL_INDEX_SHADER_ASSET;
+		desc.pt = PrimitiveTopology::TRIANGLELIST;
+		desc.rs.cull_mode = CullMode::BACK;
+		desc.rs.fill_mode = PolygonMode::SOLID;
+		desc.dss.depth_enable = true;
+		desc.dss.depth_func = CompFunc::EQUAL;
+		desc.dss.depth_write_mask = DepthWriteMask::ZERO;
+		desc.dss.depth_write_enable = false;
+		desc.dss.stencil_enable = false;
+		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
+		desc.passType = RenderPassType::ForwardLighting;
+
+		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
+		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
+		desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
+		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
+
+		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
+		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32_FLOAT });
+		desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
+		desc.il.AddAttribute({ .location = 3,.binding = 3,.offset = 0,.format = Format::R32G32B32_FLOAT });
+
+		DescriptorSetLayoutDesc desc_SceneData{};
+		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
+		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, INIT_MAX_RENDER_OBJECTS, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
+
+		DescriptorSetLayoutDesc desc_LightBuffers{};
+		desc_LightBuffers.shaderStage = (U32)ShaderStage::PS;
+		desc_LightBuffers.AddBinding("LightBuffer", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(LightData), true, DescriptorBindingTagType::LIGHTS_CONTAINER);
+		desc_LightBuffers.AddBinding("LightIndexBuffer", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(LightsTileData), true, DescriptorBindingTagType::LIGHTS_INDEXES);
+		desc_LightBuffers.AddBinding("TileDataBuffer", DescriptorType::STORAGE_BUFFER, 2, 1, sizeof(U32), true, DescriptorBindingTagType::LIGHTS_TILES);
+
+		desc.AddLayout(desc_SceneData);
+		desc.AddLayout(desc_LightBuffers);
+
+		MaterialDefinitionDesc matDesc(1);
+		matDesc.EmplacePass(desc);
+		matDesc.materialName = "DebugMaterialIndexMaterial";
+
+
+		MaterialCreateSettings createSettings;
+		createSettings.desc = std::move(matDesc);
+
+		DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_ASSET = m_AssetsMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createSettings.desc.materialName, createSettings);
+		auto materialAsset = m_AssetsMgr->GetAsset<MaterialAsset>(DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_ASSET);
+		materialAsset->SetPersistentStatus(true);
+		DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL = materialAsset->GetMaterialResourceHandle();
+
+		MaterialInstanceCreateSettings instanceCreateSettings{};
+		instanceCreateSettings.materialInstanceName = "DebugDrawMaterialIndexMaterialInstance";
+		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_ASSET;
+		instanceCreateSettings.desc.isTransparent = false;
+
+		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
+		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
+		DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
 	}
 }

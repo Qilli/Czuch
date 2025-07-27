@@ -11,6 +11,7 @@ namespace Czuch
 	class DescriptorLayoutCache;
 	class DescriptorAllocator;
 	struct BufferInternalSettings;
+	struct Buffer_Vulkan;
 	class VulkanCommandBuffer;
 
 
@@ -98,7 +99,7 @@ namespace Czuch
 		void TransitionImageLayout(CommandBuffer* cmd,TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) override;
 		bool TryTransitionImageLayout(CommandBuffer* cmd, TextureHandle texture, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount) override;
 	public:
-		bool UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size) override;
+		bool UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size,U32 offset) override;
 		bool UploadCurrentDataToBuffer(BufferHandle buffer) override;
 		void* GetMappedBufferDataPtr(BufferHandle buffer) override;
 	public:
@@ -122,6 +123,8 @@ namespace Czuch
 		void StartDynamicRenderPass(VulkanCommandBuffer* cmdBuffer, uint32_t imageIndex);
 		bool HasDynamicRenderingEnabled() const;
 		RenderPassHandle GetSwapChainRenderPass() const { return m_SwapChainRenderPass; }
+	public:
+		void DrawDebugWindows();
 	public:
 
 	private:
@@ -195,6 +198,7 @@ namespace Czuch
 
 	private:
 		ResourcesContainer m_ResContainer;
+		MultiplerBufferContainer m_MultipleBuffers;
 	private:
 		Window* m_AttachedWindow;
 		int m_CurrentImageIndex;
@@ -242,7 +246,8 @@ namespace Czuch
 		U32 FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags properties) const;
 		VkDeviceMemory AllocateBufferMemory(VkBuffer buffer,VkMemoryPropertyFlags memoryProperty) const;
 		bool CreateBuffer_Internal(BufferInternalSettings& settings) const;
-		bool CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
+		bool CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize dstOffset) const;
+		bool CopyDataToBuffer(Buffer_Vulkan* buffer, const void* dataIn, U32 size, U32 offset) const;
 		void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, U32 w, U32 h) const;
 		void TransitionImageLayout(VkCommandBuffer cmd ,VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) const;
 		void DoImageMemoryBarrier(VkCommandBuffer cmdbuffer,

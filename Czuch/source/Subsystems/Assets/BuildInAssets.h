@@ -65,6 +65,12 @@ namespace Czuch
 		static AssetHandle DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE_ASSET;
 		static MaterialInstanceHandle DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE;
 
+		//material for debug draw material index
+		static MaterialHandle DEBUG_DRAW_MATERIAL_INDEX_MATERIAL;
+		static AssetHandle DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_ASSET;
+		static MaterialInstanceHandle DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_INSTANCE;
+
+
 
 		static TextureHandle WHITE_TEXTURE;
 		static AssetHandle WHITE_TEXTURE_ASSET;
@@ -87,14 +93,15 @@ namespace Czuch
 
 
 		//shader assets
-		static AssetHandle DEFAULT_VS_SHADER_ASSET;
-		static AssetHandle DEFAULT_PS_SHADER_ASSET;
+		static AssetHandle PHONG_VS_SHADER_ASSET;
+		static AssetHandle PHONG_PS_SHADER_ASSET;
 		static AssetHandle DEFAULT_SIMPLE_COLOR_PS_ASSET;
 		static AssetHandle DEBUG_DRAW_VS_SHADER_ASSET;
 		static AssetHandle DEBUG_DRAW_PS_SHADER_ASSET;
 		static AssetHandle DEBUG_DRAW_VS_INSTANCED_LINES_ASSET;
 		static AssetHandle DEBUG_DRAW_VS_INSTANCED_TRIANGLES_ASSET;
 		static AssetHandle DEBUG_DRAW_VS_INSTANCED_POINTS_ASSET;
+		static AssetHandle DEBUG_DRAW_PS_MATERIAL_INDEX_SHADER_ASSET;
 	};
 
 	class BuildInAssets
@@ -116,6 +123,7 @@ namespace Czuch
 		void CreateDebugLinesMaterial();
 		void CreateDebugTrianglesMaterial();
 		void CreateDebugPointsMaterial();
+		void CreateDebugDrawMaterialIndexMaterial();
 	private:
 		GraphicsDevice* m_Device;
 		AssetsManager* m_AssetsMgr;

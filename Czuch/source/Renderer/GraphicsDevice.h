@@ -76,10 +76,11 @@ namespace Czuch
 		virtual void ResizeTexture(TextureHandle handle, U32 width, U32 height) = 0;
 		virtual void ResizeFrameBuffer(FrameBufferHandle handle, U32 width, U32 height) = 0;
 		virtual bool TryTransitionImageLayout(CommandBuffer* cmd,TextureHandle texture,ImageLayout newLayout, U32 baseMipLevel, U32 mipCount) = 0;
-		virtual bool UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size) = 0;
+		virtual bool UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size,U32 offset) = 0;
 		virtual bool UploadCurrentDataToBuffer(BufferHandle buffer) = 0;
 		virtual void* GetMappedBufferDataPtr(BufferHandle buffer) = 0;
 		virtual Format GetDepthFormat() const = 0;
+		virtual void DrawDebugWindows() = 0;
 
 	};
 

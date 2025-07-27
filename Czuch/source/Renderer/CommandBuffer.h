@@ -19,7 +19,7 @@ namespace Czuch
 		virtual void DrawMesh(const RenderObjectInstance& renderElement,DescriptorAllocator* allocator)=0;
 		virtual void DrawFullScreenQuad(MaterialInstanceHandle material, DescriptorAllocator* allocator) = 0;
 		virtual void BindPipeline(PipelineHandle pipeline)=0;
-		virtual void BindVertexBuffer(BufferHandle buffer, U32 binding, U32 offset)=0;
+		virtual void BindBuffer(BufferHandle buffer, U32 binding, U32 offset,BufferHandle *prevBuffer)=0;
 		virtual void BindIndexBuffer(BufferHandle buffer, U32 offset)=0;
 		virtual void BindDescriptorSet(DescriptorSet* descriptor,U16 setIndex, U32 num, U32* offsets, U32 num_offsets)=0;
 		virtual void SetClearColor(float r, float g, float b, float a) = 0;

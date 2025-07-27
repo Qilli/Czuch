@@ -23,7 +23,7 @@ namespace Czuch
 	{
 		MaterialInstanceHandle forcedMaterial;
 		RenderPassType renderPassType;
-		bool forceMaterialForAll;
+		bool forceMaterialForAll = false;
 		bool ignoreTransparent = false;
 	};
 
@@ -282,6 +282,8 @@ namespace Czuch
 		Camera* GetCamera() const;
 
 		FinalFrameGraphNodeInfo GetFinalFrameGraphNodeInfo() const;
+		void SetDebugRenderFlag(DebugRenderingFlag flag, bool enable);
+		void SetDebugRenderFlagsGroup(U32 flags);
 	};
 
 
@@ -298,6 +300,13 @@ namespace Czuch
 
 	struct SceneCameraControl
 	{
+		SceneCameraControl()
+		{
+			camera = nullptr;
+			currentScene = nullptr;
+			isPrimaryCamera = false;
+		}
+
 		Camera* camera;
 		IScene* currentScene;
 		SceneCameraRendering cameraRendering;
@@ -317,6 +326,7 @@ namespace Czuch
 		/// <param name="device"></param>
 		/// <param name="scene"></param>
 		void OnSceneActive(Renderer* renderer, GraphicsDevice* device, IScene* scene);
+		void AfterSceneActive();
 		void OnResize(GraphicsDevice* device, U32 width, U32 height, bool windowSizeChanged);
 		SceneDataBuffers GetSceneDataBuffers(U32 frame);
 		void UpdateSceneDataBuffers(GraphicsDevice* device, U32 frame, DeletionQueue& deletionQueue);

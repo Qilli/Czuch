@@ -57,6 +57,7 @@ namespace Czuch
 	protected:
 		void OnWindowResize(uint32_t width, uint32_t height) override;
 		void CheckForResizeQueries();
+		void OnDebugRenderingFlagsChanged(U32 oldFlags, bool forceSetCurrentFlag) override;
 	private:
 
 		struct FrameData

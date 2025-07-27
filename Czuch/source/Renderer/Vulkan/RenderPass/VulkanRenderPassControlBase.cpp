@@ -8,7 +8,6 @@ namespace Czuch
 	VulkanRenderPassControlBase::VulkanRenderPassControlBase(VulkanDevice* device, VulkanRenderer* renderer, Camera* cam, U32 width, U32 height, RenderPassType type, bool handleWindowResize) :RenderPassControl(cam, width, height, type, handleWindowResize, false), m_Renderer(renderer), m_Device(device)
 	{
 		m_FillParams.renderPassType = type;
-		m_FillParams.forceMaterialForAll = false;
 		m_TextureSource = nullptr;
 	}
 	VulkanRenderPassControlBase::~VulkanRenderPassControlBase()

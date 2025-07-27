@@ -34,6 +34,11 @@ namespace Czuch
 			assert(m_Target);
 			return m_Target;
 		}
+
+		static bool IsValid(void)
+		{
+			return m_Target != nullptr;
+		}
 	};
 
 	template <class T> T* Singleton<T>::m_Target;

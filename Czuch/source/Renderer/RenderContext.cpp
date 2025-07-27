@@ -170,14 +170,32 @@ namespace Czuch
 
 	void SceneCameraControl::OnSceneActive(Renderer* renderer, GraphicsDevice* device, IScene* scene)
 	{
+		if (renderer == nullptr)
+		{
+			return; // this is a call from first scene initialization,scene is not yet active so the renderer is not valid
+		}
+
+		if (currentScene == scene)
+		{
+			LOG_BE_INFO("SceneCameraControl::OnSceneActive: Scene is already active, skipping initialization.");
+			return;
+		}
 		bool handleWindowResize = !EngineRoot::GetEngineSettings().RenderingTargetSizeExternallySet();
 		U32 startWidth = handleWindowResize ? device->GetSwapchainWidth() : EngineRoot::GetEngineSettings().targetWidth;
 		U32 startHeight = handleWindowResize ? device->GetSwapchainHeight() : EngineRoot::GetEngineSettings().targetHeight;
 
 		frameGraphControl.CreateFrameGraph(camera,device, renderer, Vec2(startWidth, startHeight), handleWindowResize);
-		frameGraphControl.Init();
 		cameraRendering.OnSceneActive(camera, device, scene);
 		currentScene = scene;
+	}
+
+	void SceneCameraControl::AfterSceneActive()
+	{
+		if(currentScene ==nullptr)
+		{ 
+			return; // this is a call from first scene initialization,scene is not yet active so the renderer is not valid
+		}
+		frameGraphControl.Init();
 	}
 
 	void SceneCameraControl::OnResize(GraphicsDevice* device, U32 width, U32 height, bool windowSizeChanged)
@@ -467,7 +485,7 @@ namespace Czuch
 		InitTilesBuffer(device, false, 0, 0);
 		InitRenderObjectsBuffer(device, false, INIT_MAX_RENDER_OBJECTS);
 
-		data.ambientColor = Vec4(1, 1, 1, 1);
+		data.ambientColor = Vec4(0.0f, 0.0f,0.0f, 1);
 
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
@@ -571,7 +589,7 @@ namespace Czuch
 			}
 		}
 
-		device->UploadDataToBuffer(buffer[frame], &data, sizeof(SceneData));
+		device->UploadDataToBuffer(buffer[frame], &data, sizeof(SceneData),0);
 	}
 
 
@@ -692,6 +710,7 @@ namespace Czuch
 			RenderObjectGPUData renderObjectData;
 			renderObjectData.localToWorldTransformation = obj.transform->GetLocalToWorld();
 			renderObjectData.invTransposeToWorldMatrix = glm::inverse(glm::transpose((renderObjectData.localToWorldTransformation)));
+			renderObjectData.materialAndFlags.x = obj.meshRenderer->GetOverrideMaterial().handle;
 			renderObjectsData.push_back(std::move(renderObjectData));
 		}
 
@@ -1450,6 +1469,33 @@ namespace Czuch
 		info.finalDepthTexture = m_FrameGraph->GetFinalDepthTexture();
 		info.finalRenderPass = m_FrameGraph->GetFinalRenderPassHandle();
 		return info;
+	}
+
+	void FrameGraphControl::SetDebugRenderFlag(DebugRenderingFlag flag, bool enable)
+	{
+		if (m_FrameGraph)
+		{
+			m_FrameGraph->SetDebugRenderFlag(flag, enable);
+		}
+		else
+		{
+			LOG_BE_ERROR("Frame graph is not initialized, cannot set debug render flag");
+		}
+	}
+
+	void FrameGraphControl::SetDebugRenderFlagsGroup(U32 flags)
+	{
+		if (m_FrameGraph)
+		{
+			if (flags & DebugRenderingFlag::MaterialIndexAsColor)
+			{
+				m_FrameGraph->SetDebugRenderFlag(DebugRenderingFlag::MaterialIndexAsColor, true);
+			}
+		}
+		else
+		{
+			LOG_BE_ERROR("Frame graph is not initialized, cannot set debug render flags group");
+		}
 	}
 
 }

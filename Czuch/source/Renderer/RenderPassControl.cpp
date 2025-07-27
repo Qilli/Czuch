@@ -55,6 +55,20 @@ namespace Czuch
 		m_MaterialsForInputBinding.AddMaterial(material);
 	}
 
+	void RenderPassControl::ForceSingleMaterialForAll(MaterialInstanceHandle material, bool ignoreTransparent)
+	{
+		m_FillParams.forcedMaterial = material;
+		m_FillParams.forceMaterialForAll = true;
+		m_FillParams.ignoreTransparent = ignoreTransparent;
+	}
+
+	void RenderPassControl::ClearForceSingleMaterialForAll()
+	{
+		m_FillParams.forcedMaterial = INVALID_HANDLE(MaterialInstanceHandle);
+		m_FillParams.forceMaterialForAll = false;
+		m_FillParams.ignoreTransparent = false;
+	}
+
 
 	void MaterialsForInputBinding::BindTextureForMaterials(GraphicsDevice* device, StringID& texName, TextureHandle texture)
 	{

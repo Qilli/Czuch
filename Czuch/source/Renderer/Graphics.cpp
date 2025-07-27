@@ -1,6 +1,7 @@
 #include"czpch.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
+#include"imgui.h"
 
 namespace Czuch
 {
@@ -505,6 +506,103 @@ namespace Czuch
 			aabb.min = glm::min(aabb.min, positions[a]);
 			aabb.max = glm::max(aabb.max, positions[a]);
 		}
+	}
+
+	BufferHandle MultiplerBufferContainer::GetBuffer(const BufferDesc& desc)
+	{
+		//check if buffer with this desc already exists
+		for (auto& buffer : multipleBuffers)
+		{
+			if(buffer.desc.bufferType == desc.bufferType && buffer.desc.format == desc.format && buffer.desc.stride == desc.stride && buffer.desc.usage == desc.usage && (buffer.currentOffset + desc.size) < buffer.desc.size)
+			{
+				return buffer.AddNewBufferPart(desc);
+			}
+		}
+	
+		return BufferHandle();
+	}
+
+	bool MultiplerBufferContainer::Release(BufferHandle handle)
+	{
+		for (auto& buffer : multipleBuffers)
+		{
+			if (buffer.handle.handle == handle.handle)
+			{
+				return buffer.ReleasePart(handle);
+			}
+		}
+		return false;
+	}
+
+	BufferHandle MultiplerBufferContainer::CreateBuffer(const BufferDesc& desc, GraphicsDevice* device, U32 capacity)
+	{
+		BufferDesc mDesc;
+		mDesc.bind_flags = desc.bind_flags;
+		mDesc.usage = desc.usage;
+		mDesc.format = desc.format;
+		mDesc.stride = desc.stride;
+		mDesc.size = capacity;
+		mDesc.persistentMapped = desc.persistentMapped;
+		mDesc.initData = nullptr;
+		mDesc.exclusiveBuffer = true;
+		mDesc.bufferType = desc.bufferType;
+		
+		BufferHandle handle = device->CreateBuffer(&mDesc);
+
+		if (HANDLE_IS_VALID(handle))
+		{
+			MultipleBuffer newBuffer;
+			newBuffer.handle = handle;
+			newBuffer.desc = mDesc;
+			newBuffer.currentOffset = 0;
+			newBuffer.parts = 0;
+			multipleBuffers.push_back(std::move(newBuffer));
+			return GetBuffer(desc);
+		}
+		LOG_BE_ERROR("[MultiplerBufferContainer]Failed to create buffer");
+		return BufferHandle();
+	}
+
+	void MultiplerBufferContainer::DrawDebugWindow()
+	{
+		ImGui::Begin("Multiple Buffer Statistics");
+
+		ImGui::Text("Total Multiple Buffers: %zu", multipleBuffers.size());
+		ImGui::Separator();
+
+		U32 totalSubAllocations = 0;
+		U32 totalSpaceOccupied = 0;
+
+		if (ImGui::CollapsingHeader("Individual Buffers"))
+		{
+			for (size_t i = 0; i < multipleBuffers.size(); ++i)
+			{
+				MultipleBuffer& mb = multipleBuffers[i];
+				totalSubAllocations += mb.parts;
+				totalSpaceOccupied += mb.currentOffset;
+
+				ImGui::PushID(i); // Unique ID for each buffer in the loop
+
+				float spaceUsedPercent = (mb.desc.size > 0) ? (static_cast<float>(mb.currentOffset) / mb.desc.size) * 100.0f : 0.0f;
+
+				ImGui::Text("Buffer %zu (Handle ID: %u, Offset: %u)", i, mb.handle.handle, mb.handle.offset);
+				ImGui::Indent();
+				ImGui::Text("Capacity: %u bytes", mb.desc.size);
+				ImGui::Text("Used Space: %u bytes", mb.currentOffset);
+				ImGui::Text("Sub-allocations: %u", mb.parts);
+				ImGui::Text("Space Used: %.2f%%", spaceUsedPercent);
+				ImGui::Unindent();
+				ImGui::Separator();
+				ImGui::PopID();
+			}
+		}
+
+		ImGui::Separator();
+		ImGui::Text("Overall Statistics:");
+		ImGui::Text("Total Sub-allocations Across All Buffers: %u", totalSubAllocations);
+		ImGui::Text("Total Space Currently Occupied (Sum of currentOffset): %u bytes", totalSpaceOccupied);
+
+		ImGui::End();
 	}
 
 }

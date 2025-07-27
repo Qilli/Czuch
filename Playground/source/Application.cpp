@@ -85,6 +85,7 @@ int main()
 	settings.debugSettings.SetDebugDrawNormalForMeshesEnabled(true);
 
 	Czuch::Scene* scene = new Czuch::Scene("MainScene", root->GetRenderer().GetDevice());
+	scene->SetAmbientColor(Vec4(0.1f, 0.1f, 0.1f, 1.0f));
 
 	auto& sceneMgr = root->GetScenesManager();
 	sceneMgr.AddScene(scene, true);
@@ -99,7 +100,7 @@ int main()
 
 	Czuch::MaterialInstanceCreateSettings instanceCreateSettings{};
 	instanceCreateSettings.materialInstanceName = "DefaultAncientMaterial";
-	instanceCreateSettings.desc.AddSampler("MainTexture", texHandle, false);
+	instanceCreateSettings.desc.AddSampler("MainTexture", Czuch::DefaultAssets::WHITE_TEXTURE, false);
 	Czuch::ColorUBO colorUBO;
 	colorUBO.color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	instanceCreateSettings.desc.AddBuffer("Color", Czuch::UBO((void*)&colorUBO, sizeof(Czuch::ColorUBO)));
@@ -113,7 +114,9 @@ int main()
 	RotateAround& rotateAround = scripts.AddNativeBehaviour<RotateAround>();
 	rotateAround.SetEnabled(true);
 	Czuch::NativeFree3DCameraController& camController = scripts.AddNativeBehaviour<Czuch::NativeFree3DCameraController>();
-	settings.debugSettings.SetDebugDrawSelectedEntityID(cubeEntity.GetID());
+
+
+	//settings.debugSettings.SetDebugDrawSelectedEntityID(cubeEntity.GetID());
 
 
 
@@ -128,16 +131,16 @@ int main()
 	debugLines.transform = &planeEntity.Transform();
 
 	//add simple entity with spot light
-	Czuch::Entity spotLightEntity = scene->CreateEntity("SpotLightObject");
-	spotLightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 2.0f, -2.0f));
+	/*Czuch::Entity spotLightEntity = scene->CreateEntity("SpotLightObject");
+	spotLightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 1.0f, -6.0f));
 	spotLightEntity.Transform().Rotate(DEG2RAD * 45.0f, RIGHT);
 
 	auto& spot = spotLightEntity.AddComponent<Czuch::LightComponent>();
 	spot.SetLightType(Czuch::LightType::Spot);
 	spot.SetColor(Czuch::Colors::White);
 	spot.SetLightRange(10.0f);
-	spot.SetInnerAngle(20.0f);
-	spot.SetOuterAngle(25.0f);
+	spot.SetInnerAngle(30.0f);
+	spot.SetOuterAngle(35.0f);*/
 
 
 
@@ -147,14 +150,17 @@ int main()
 	debugLines.cameraTransform = camTransform;
 
 	Czuch::Entity lightEntity = scene->CreateEntity("LightObject");
-	lightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 2.0f, 2.0f));
+	lightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 0.1f, -2.0f));
 	lightEntity.Transform().Rotate(0.0f);
-	//lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 100.0f, 2.0f);
-	lightEntity.AddDirectionalLight(Czuch::Colors::White, 1.0f);
+	lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 300.0f, 2.0f);
+	//lightEntity.AddDirectionalLight(Czuch::Colors::White, 1.0f);
 
 	/*Czuch::Entity additionalCameraEntity = scene->CreateEntity("AdditionalCameraObject");
 	auto& cameraAdditional = additionalCameraEntity.AddComponent<Czuch::CameraComponent>();
 	cameraAdditional.GetCamera().SetViewport(0.7f, 0.0f, 0.3f, 0.3f);*/
+
+	//TODO : we need to refresh all rendering flags when new camera is added
+	//root->GetRenderer().SetDebugRenderingFlag(Czuch::DebugRenderingFlag::MaterialIndexAsColor, true);
 
 
 	root->Run();

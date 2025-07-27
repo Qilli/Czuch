@@ -144,7 +144,7 @@ namespace Czuch
 			auto mainFrameGraph = m_ActiveScene->GetFrameGraphControl(0);
 			mainFrameGraph->Execute(m_Device, cmdBuffer);
 			auto finalInfo = mainFrameGraph->GetFinalFrameGraphNodeInfo();
-			m_FullScreenRenderPass->SetSourceTexture(cmdBuffer, finalInfo.finalTexture,finalInfo.finalDepthTexture,finalInfo.finalRenderPass);
+			m_FullScreenRenderPass->SetSourceTexture(cmdBuffer, finalInfo.finalTexture, finalInfo.finalDepthTexture, finalInfo.finalRenderPass);
 
 			for (int a = 1; a < m_ActiveScene->GetActiveFrameGraphsCount(); ++a)
 			{
@@ -199,14 +199,12 @@ namespace Czuch
 
 	void VulkanRenderer::SetActiveScene(Scene* scene)
 	{
-		EngineRoot::Get().TryBuildDefaultAssets();
-
 		if (m_ActiveScene == scene)
 		{
 			return;
 		}
 		m_ActiveScene = scene;
-		scene->OnSceneActive(this,m_Device);
+		scene->OnSceneActive(this, m_Device);
 	}
 
 	void VulkanRenderer::ImmediateSubmitWithCommandBuffer(std::function<void(CommandBuffer* cmd)>&& processor)
@@ -223,14 +221,14 @@ namespace Czuch
 		m_Device->ImmediateSubmitToGraphicsQueueWithCommandBuffer(cmdBuffer->GetNativeBuffer(), m_ImmediateSubmitData.fence);
 	}
 
-	void VulkanRenderer::DrawScene(VulkanCommandBuffer* cmdBuffer,Camera* camera, RenderContextFillParams* params)
+	void VulkanRenderer::DrawScene(VulkanCommandBuffer* cmdBuffer, Camera* camera, RenderContextFillParams* params)
 	{
 		if (m_ActiveScene == nullptr)
 		{
 			return;
 		}
 
-		auto context=m_ActiveScene->GetRenderContext(params->renderPassType, camera);
+		auto context = m_ActiveScene->GetRenderContext(params->renderPassType, camera);
 
 		if (context == nullptr)
 		{
@@ -251,13 +249,13 @@ namespace Czuch
 			return;
 		}
 
-		auto &camerasControl=m_ActiveScene->GetCamerasControl();
+		auto& camerasControl = m_ActiveScene->GetCamerasControl();
 
 		for (auto& cameraControl : camerasControl)
 		{
-			if (cameraControl.camera == camera || camera==nullptr)
+			if (cameraControl.camera == camera || camera == nullptr)
 			{
-				auto& data=cameraControl.GetIndirectDrawDataForDebugDrawingLines(params[0], m_CurrentFrame);
+				auto& data = cameraControl.GetIndirectDrawDataForDebugDrawingLines(params[0], m_CurrentFrame);
 				cmdBuffer->DrawIndirectIndexedWithData(&data, GetCurrentFrame().descriptorAllocator);
 				auto& dataTris = cameraControl.GetIndirectDrawDataForDebugDrawingTriangles(params[1], m_CurrentFrame);
 				cmdBuffer->DrawIndirectIndexedWithData(&dataTris, GetCurrentFrame().descriptorAllocator);
@@ -267,7 +265,7 @@ namespace Czuch
 			}
 		}
 
-		LOG_BE_ERROR("[Vulkan]DrawDebugData: Camera not found in scene cameras control.");	
+		LOG_BE_ERROR("[Vulkan]DrawDebugData: Camera not found in scene cameras control.");
 	}
 
 	void VulkanRenderer::DrawFullScreenQuad(VulkanCommandBuffer* cmdBuffer, MaterialInstanceHandle material)
@@ -275,11 +273,11 @@ namespace Czuch
 		cmdBuffer->DrawFullScreenQuad(material, GetCurrentFrame().descriptorAllocator);
 	}
 
-	void* VulkanRenderer::GetRenderPassResult(Camera* cam,RenderPassType type)
+	void* VulkanRenderer::GetRenderPassResult(Camera* cam, RenderPassType type)
 	{
 		CZUCH_BE_ASSERT(m_ActiveScene != nullptr, "Active scene is null, cannot get render pass result.");
 
-		auto frameGraph=m_ActiveScene->GetFrameGraphControl(cam);
+		auto frameGraph = m_ActiveScene->GetFrameGraphControl(cam);
 		if (frameGraph == nullptr)
 		{
 			LOG_BE_ERROR("[Vulkan]GetRenderPassResult: Frame graph is null for camera.");
@@ -289,7 +287,7 @@ namespace Czuch
 		return frameGraph->GetRenderPassControlByType(type);
 	}
 
-	bool VulkanRenderer::HasRenderPass(Camera* cam,RenderPassType type)
+	bool VulkanRenderer::HasRenderPass(Camera* cam, RenderPassType type)
 	{
 		CZUCH_BE_ASSERT(m_ActiveScene != nullptr, "Active scene is null, cannot check render pass existence.");
 		auto frameGraph = m_ActiveScene->GetFrameGraphControl(cam);
@@ -370,7 +368,7 @@ namespace Czuch
 	{
 		if (m_ActiveScene != nullptr)
 		{
-			m_ActiveScene->BeforeFrameGraphExecute(GetCurrentFrame().commandBuffer,m_CurrentFrame, m_FramesData[m_CurrentFrame].frameDeletionQueue);
+			m_ActiveScene->BeforeFrameGraphExecute(GetCurrentFrame().commandBuffer, m_CurrentFrame, m_FramesData[m_CurrentFrame].frameDeletionQueue);
 		}
 	}
 
@@ -393,7 +391,7 @@ namespace Czuch
 	{
 		if (m_ActiveScene != nullptr)
 		{
-			m_ActiveScene->OnResize(width, height,true);
+			m_ActiveScene->OnResize(width, height, true);
 		};
 		m_FinalRenderPass->Resize(width, height);
 		m_FullScreenRenderPass->Resize(width, height);
@@ -416,11 +414,38 @@ namespace Czuch
 			{
 				if (m_ActiveScene != nullptr)
 				{
-					m_ActiveScene->OnResizeRenderPassType(it->type,it->width, it->height);
+					m_ActiveScene->OnResizeRenderPassType(it->type, it->width, it->height);
 				}
 			}
 		}
 		m_RenderPassResizeQueries.clear();
+	}
+
+	void VulkanRenderer::OnDebugRenderingFlagsChanged(U32 oldFlags, bool forceSetCurrentFlag)
+	{
+		auto activeScene = m_ActiveScene;
+
+		if (activeScene == nullptr)
+		{
+			LOG_BE_ERROR("[Vulkan]OnDebugRenderingFlagsChanged: Active scene is null, cannot update debug rendering flags.");
+			return;
+		}
+
+		auto currentFlags = CurrentDebugRenderingFlags();
+
+		auto wantMaterialIndexEnabled = (currentFlags & DebugRenderingFlag::MaterialIndexAsColor) != 0;
+		auto currentlyMaterialIndexEnabled = (oldFlags & DebugRenderingFlag::MaterialIndexAsColor) != 0;
+
+		if (wantMaterialIndexEnabled != currentlyMaterialIndexEnabled || forceSetCurrentFlag)
+		{
+			activeScene->ForEachFrameGraph([wantMaterialIndexEnabled](FrameGraphControl* frameGraph) {
+				if (frameGraph != nullptr)
+				{
+					frameGraph->SetDebugRenderFlag(DebugRenderingFlag::MaterialIndexAsColor, wantMaterialIndexEnabled);
+				}
+				});
+		}
+
 	}
 
 	void VulkanRenderer::OnPreRenderUpdateContexts(Camera* cam, int width, int height, RenderContextFillParams* fillParams)
@@ -432,10 +457,10 @@ namespace Czuch
 
 		if (m_ActiveScene != nullptr)
 		{
-			RenderContext* ctx=m_ActiveScene->FillRenderContexts(cam, this, width, height, *fillParams);
+			RenderContext* ctx = m_ActiveScene->FillRenderContexts(cam, this, width, height, *fillParams);
 
 			auto& renderList = ctx->GetRenderObjectsList();
-			auto sceneDataBuffers = m_ActiveScene->GetSceneDataBuffers(cam, m_CurrentFrame,fillParams->renderPassType);
+			auto sceneDataBuffers = m_ActiveScene->GetSceneDataBuffers(cam, m_CurrentFrame, fillParams->renderPassType);
 			for (auto& renderElement : renderList)
 			{
 				renderElement.UpdateSceneDataIfRequired(m_Device, sceneDataBuffers, *fillParams);
@@ -461,7 +486,7 @@ namespace Czuch
 
 		if (m_ActiveScene != nullptr)
 		{
-			m_ActiveScene->FillDebugDrawElements(cam, this,*fillParams);
+			m_ActiveScene->FillDebugDrawElements(cam, this, *fillParams);
 		}
 
 	}
@@ -479,7 +504,7 @@ namespace Czuch
 	}
 
 	void VulkanRenderer::CreateFrameGraphs()
-	{	
+	{
 		//create main render pass control
 		m_FinalRenderPass = new VulkanMainRenderPass(m_Device, this);
 		m_FinalRenderPass->SetNativeRenderPassHandle(m_Device->GetSwapChainRenderPass());
