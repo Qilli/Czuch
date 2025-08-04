@@ -146,6 +146,36 @@ namespace Czuch
 		return *this;
 	}
 
+	ShaderParamsSet& ShaderParamsSet::AddStorageBuffer(CzuchStr name, BufferHandle buffer, U16 binding, DescriptorBindingTagType tag)
+	{
+		if (descriptorsCount >= s_max_descriptors_per_set)
+		{
+			return *this;
+		}
+		descriptors[descriptorsCount].paramName = StringID::MakeStringID(name);
+		descriptors[descriptorsCount].binding = binding;
+		descriptors[descriptorsCount].resource = buffer.handle;
+		descriptors[descriptorsCount].tag = tag;
+		descriptors[descriptorsCount++].type = DescriptorType::STORAGE_BUFFER;
+
+		return *this;
+	}
+
+	ShaderParamsSet& ShaderParamsSet::AddStorageBufferWithData(CzuchStr name, MaterialCustomBufferData* customData, U16 binding, DescriptorBindingTagType tag)
+	{
+		if (descriptorsCount >= s_max_descriptors_per_set)
+		{
+			return *this;
+		}
+		descriptors[descriptorsCount].paramName = StringID::MakeStringID(name);
+		descriptors[descriptorsCount].binding = binding;
+		descriptors[descriptorsCount].customData = customData;
+		descriptors[descriptorsCount].tag = tag;
+		descriptors[descriptorsCount++].type = DescriptorType::STORAGE_BUFFER;
+
+		return *this;
+	}
+
 	void ShaderParamsSet::SetSampler(int descriptor, TextureHandle color_texture)
 	{
 		if (descriptor < descriptorsCount && descriptors[descriptor].type == DescriptorType::SAMPLER)
@@ -231,7 +261,7 @@ namespace Czuch
 		setsCount = 0;
 		return *this;
 	}
-	MaterialInstanceParams& MaterialInstanceParams::AddBuffer(int set, CzuchStr& name, BufferHandle buffer, U16 binding)
+	MaterialInstanceParams& MaterialInstanceParams::AddBuffer(int set,const CzuchStr& name, BufferHandle buffer, U16 binding)
 	{
 		if (set >= k_max_descriptor_set_layouts)
 		{
@@ -243,7 +273,27 @@ namespace Czuch
 		return *this;
 
 	}
-	MaterialInstanceParams& MaterialInstanceParams::AddSampler(int set, CzuchStr& name, TextureHandle color_texture, U16 binding)
+	MaterialInstanceParams& MaterialInstanceParams::AddStorageBuffer(int set,const CzuchStr& name, BufferHandle buffer, U16 binding, DescriptorBindingTagType tag)
+	{
+		if (set >= k_max_descriptor_set_layouts)
+		{
+			return *this;
+		}
+		setsCount = std::max(set + 1, this->setsCount);
+		shaderParamsDesc[set].AddStorageBuffer(name, buffer, binding, tag);
+		return *this;
+	}
+	MaterialInstanceParams& MaterialInstanceParams::AddStorageBufferWithData(int set, const CzuchStr& name, MaterialCustomBufferData* customData, U16 binding, DescriptorBindingTagType tag)
+	{
+		if (set >= k_max_descriptor_set_layouts)
+		{
+			return *this;
+		}
+		setsCount = std::max(set + 1, this->setsCount);
+		shaderParamsDesc[set].AddStorageBufferWithData(name, customData, binding, tag);
+		return *this;
+	}
+	MaterialInstanceParams& MaterialInstanceParams::AddSampler(int set, const CzuchStr& name, TextureHandle color_texture, U16 binding)
 	{
 		if (set >= k_max_descriptor_set_layouts)
 		{
@@ -255,13 +305,13 @@ namespace Czuch
 		return *this;
 	}
 
-	void MaterialInstanceParams::SetSampler(int set, TextureHandle color_texture)
+	void MaterialInstanceParams::SetSampler(int set, TextureHandle color_texture, int descriptor)
 	{
 		if (set >= k_max_descriptor_set_layouts)
 		{
 			return;
 		}
-		shaderParamsDesc[set].SetSampler(0, color_texture);
+		shaderParamsDesc[set].SetSampler(descriptor, color_texture);
 	}
 
 	void MaterialInstanceParams::SetSampler(StringID& name, TextureHandle texture)
@@ -283,6 +333,56 @@ namespace Czuch
 			{
 				return;
 			}
+		}
+	}
+
+	void MaterialInstanceParams::SetUniformBuffer(int set, BufferHandle buffer, int descriptor)
+	{
+		if (set >= k_max_descriptor_set_layouts)
+		{
+			return;
+		}
+		if (descriptor < shaderParamsDesc[set].descriptorsCount)
+		{
+			shaderParamsDesc[set].descriptors[descriptor].resource = buffer.handle;
+		}
+		else
+		{
+			LOG_BE_ERROR("[MaterialInstanceParams] SetUniformBuffer: Descriptor index {0} is out of bounds for set {1}.", descriptor, set);
+		}
+	}
+
+	void MaterialInstanceParams::SetStorageBuffer(int set, BufferHandle buffer, int descriptor, DescriptorBindingTagType tag)
+	{
+		if (set >= k_max_descriptor_set_layouts)
+		{
+			return;
+		}
+		if (descriptor < shaderParamsDesc[set].descriptorsCount)
+		{
+			shaderParamsDesc[set].descriptors[descriptor].resource = buffer.handle;
+			shaderParamsDesc[set].descriptors[descriptor].tag = tag;
+		}
+		else
+		{
+			LOG_BE_ERROR("[MaterialInstanceParams] SetStorageBuffer: Descriptor index {0} is out of bounds for set {1}.", descriptor, set);
+		}
+	}
+
+	void MaterialInstanceParams::SetStorageBufferWithData(int set, MaterialCustomBufferData* customData, int descriptor, DescriptorBindingTagType tag)
+	{
+		if (set >= k_max_descriptor_set_layouts)
+		{
+			return;
+		}
+		if (descriptor < shaderParamsDesc[set].descriptorsCount)
+		{
+			shaderParamsDesc[set].descriptors[descriptor].customData = customData;
+			shaderParamsDesc[set].descriptors[descriptor].tag = tag;
+		}
+		else
+		{
+			LOG_BE_ERROR("[MaterialInstanceParams] SetStorageBufferWithData: Descriptor index {0} is out of bounds for set {1}.", descriptor, set);
 		}
 	}
 
@@ -317,24 +417,31 @@ namespace Czuch
 		INVALIDATE_HANDLE(materialAsset);
 		return *this;
 	}
-	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name, UBO&& data)
+	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name, MaterialCustomBufferData&& data)
 	{
-		paramsDesc.push_back({ .name = name,.uboData = std::move(data),.type = DescriptorType::UNIFORM_BUFFER,.resource = Invalid_Handle_Id,.isInternal = false });
+		paramsDesc.push_back({ .name = name,.data = std::move(data),.type = DescriptorType::UNIFORM_BUFFER,.resource = Invalid_Handle_Id,.isInternal = false });
 		return *this;
 	}
+
+	MaterialInstanceDesc& MaterialInstanceDesc::AddStorageBufferSingleData(const CzuchStr& name, MaterialCustomBufferData&& data)
+	{
+		paramsDesc.push_back({ .name = name,.data = std::move(data),.type = DescriptorType::STORAGE_BUFFER_SINGLE_DATA,.resource = Invalid_Handle_Id,.isInternal = false });
+		return *this;
+	}
+
 	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name, BufferHandle handle)
 	{
-		paramsDesc.push_back({ .name = name,.uboData = UBO(),.type = DescriptorType::UNIFORM_BUFFER,.resource = handle.handle,.isInternal = true });
+		paramsDesc.push_back({ .name = name,.data = MaterialCustomBufferData(),.type = DescriptorType::UNIFORM_BUFFER,.resource = handle.handle,.isInternal = true });
 		return *this;
 	}
 	MaterialInstanceDesc& MaterialInstanceDesc::AddStorageBuffer(const CzuchStr& name, BufferHandle handle)
 	{
-		paramsDesc.push_back({ .name = name,.uboData = UBO(),.type = DescriptorType::STORAGE_BUFFER,.resource = handle.handle,.isInternal = true });
+		paramsDesc.push_back({ .name = name,.data = MaterialCustomBufferData(),.type = DescriptorType::STORAGE_BUFFER,.resource = handle.handle,.isInternal = true });
 		return *this;
 	}
 	MaterialInstanceDesc& MaterialInstanceDesc::AddSampler(const CzuchStr& name, TextureHandle color_texture, bool isInternal)
 	{
-		paramsDesc.push_back({ .name = name,.uboData = UBO(),.type = DescriptorType::SAMPLER,.resourceAsset = color_texture.assetHandle.handle,.resource = color_texture.handle,.isInternal = isInternal });
+		paramsDesc.push_back({ .name = name,.data = MaterialCustomBufferData(),.type = DescriptorType::SAMPLER,.resourceAsset = color_texture.assetHandle.handle,.resource = color_texture.handle,.isInternal = isInternal });
 		return *this;
 	}
 
@@ -350,7 +457,7 @@ namespace Czuch
 			}
 			else if (param.type == DescriptorType::UNIFORM_BUFFER)
 			{
-				UBO uboCopy(param.uboData.GetData(), param.uboData.GetSize());
+				MaterialCustomBufferData uboCopy(param.data.GetData(), param.data.GetSize(), DescriptorBindingTagType::NONE);
 				desc.AddBuffer(param.name, std::move(uboCopy));
 			}
 		}
@@ -361,6 +468,31 @@ namespace Czuch
 
 	void MaterialPassDesc::SetParams(MaterialInstanceDesc& desc, MaterialInstanceParams& params)
 	{
+		for (int i = 0; i < layoutsCount; ++i)
+		{
+			auto& current = layouts[i];
+			for (int b = 0; b < current.bindingsCount; ++b)
+			{
+				auto& binding = current.bindings[b];
+				if (binding.type == DescriptorType::SAMPLER)
+				{
+					params.AddSampler(i, binding.bindingName.GetStrName(), TextureHandle(), b);
+				}
+				else if (binding.type == DescriptorType::UNIFORM_BUFFER)
+				{
+					params.AddBuffer(i, binding.bindingName.GetStrName(), BufferHandle(), b);
+				}
+				else if (binding.type == DescriptorType::STORAGE_BUFFER)
+				{
+					params.AddStorageBuffer(i, binding.bindingName.GetStrName(), BufferHandle(), b, binding.tag);
+				}
+				else if (binding.type == DescriptorType::STORAGE_BUFFER_SINGLE_DATA)
+				{
+					params.AddStorageBufferWithData(i, binding.bindingName.GetStrName(), nullptr, b, binding.tag);
+				}
+			}
+		}
+
 		for (int a = 0; a < desc.paramsDesc.size(); ++a)
 		{
 			auto& param = desc.paramsDesc[a];
@@ -375,12 +507,19 @@ namespace Czuch
 					{
 						if (param.type == DescriptorType::SAMPLER)
 						{
-							TextureHandle texture = { param.resource,param.resourceAsset };
-							params.AddSampler(i, param.name, texture, b);
+							params.SetSampler(i, TextureHandle(param.resource, param.resourceAsset), b);
 						}
 						else if (param.type == DescriptorType::UNIFORM_BUFFER)
 						{
-							params.AddBuffer(i, param.name, BufferHandle(param.resource), b);
+							params.SetUniformBuffer(i,BufferHandle(param.resource), b);
+						}
+						else if (param.type == DescriptorType::STORAGE_BUFFER)
+						{
+							params.SetStorageBuffer(i,BufferHandle(param.resource), b, param.data.tagType);
+						}
+						else if (param.type == DescriptorType::STORAGE_BUFFER_SINGLE_DATA)
+						{
+							params.SetStorageBufferWithData(i, &param.data, b, param.data.tagType);
 						}
 					}
 				}
@@ -495,6 +634,108 @@ namespace Czuch
 		}
 	}
 
+	MaterialCustomBufferData* MaterialInstance::GetDataForTag(DescriptorBindingTagType tag, int pass)
+	{
+		for (U32 j = 0; j < params[pass].setsCount; j++)
+		{
+			auto& set = params[pass].shaderParamsDesc[j];
+			for (U32 k = 0; k < set.descriptorsCount; k++)
+			{
+				if (set.descriptors[k].tag == tag)
+				{
+					return set.descriptors[k].customData ? set.descriptors[k].customData : nullptr;
+				}
+			}
+		}
+		return nullptr;
+	}
+
+	I32 MaterialInstance::UpdateCustomDataWithTag(DescriptorBindingTagType tag, void* data, U32 size, int pass)
+	{
+		for (U32 j = 0; j < params[pass].setsCount; j++)
+		{
+			auto& set = params[pass].shaderParamsDesc[j];
+			for (U32 k = 0; k < set.descriptorsCount; k++)
+			{
+				if (set.descriptors[k].tag == tag)
+				{
+					auto current = set.descriptors[k].customData;
+					if (current == nullptr)
+					{
+						LOG_BE_ERROR("[MaterialInstance] UpdateCustomDataWithTag: No custom data found in pass {0}.", pass);
+						return -1;
+					}
+					else
+					{
+						current->SetData(data, size);
+						return set.descriptors[k].assetHandle; // Return the index of the buffer in the storage buffer container
+					}
+				}
+			}
+		}
+		LOG_BE_ERROR("[MaterialInsance] UpdateCustomDataWithTag: No descriptor found in pass {0}.", pass);
+		return -1;
+	}
+
+	I32 MaterialInstance::GetIndexForInternalBufferForTag(DescriptorBindingTagType tag, int pass) const
+	{
+		for (U32 j = 0; j < params[pass].setsCount; j++)
+		{
+			auto& set = params[pass].shaderParamsDesc[j];
+			for (U32 k = 0; k < set.descriptorsCount; k++)
+			{
+				if (set.descriptors[k].tag == tag)
+				{
+					return set.descriptors[k].assetHandle;
+				}
+			}
+		}
+		return -1;
+	}
+
+	void MaterialInstance::SetIndexAndBufferForInternalBufferForTag(DescriptorBindingTagType tag, I32 index, BufferHandle buffer, int pass)
+	{
+		for (U32 j = 0; j < params[pass].setsCount; j++)
+		{
+			auto& set = params[pass].shaderParamsDesc[j];
+			for (U32 k = 0; k < set.descriptorsCount; k++)
+			{
+				if (set.descriptors[k].tag == tag)
+				{
+					set.descriptors[k].resource = buffer.handle;
+					set.descriptors[k].assetHandle = index;
+					return;
+				}
+			}
+		}
+	}
+
+	StorageBufferTagInfo MaterialInstance::GetInfoForDescriptorTag(DescriptorBindingTagType tag, int pass)
+	{
+		StorageBufferTagInfo info;
+		info.tag = tag;
+		info.descriptorIndex = -1;
+		info.index = -1;
+
+
+		for (U32 j = 0; j < params[pass].setsCount; j++)
+		{
+			auto& set = params[pass].shaderParamsDesc[j];
+			for (U32 k = 0; k < set.descriptorsCount; k++)
+			{
+				if (set.descriptors[k].tag == tag)
+				{
+					info.tag = tag;
+					info.descriptorIndex = j;
+					info.index = k;
+					return info;
+				}
+			}
+		}
+
+		return info;
+	}
+
 
 	void MeshData::ComputeAABB()
 	{
@@ -513,12 +754,12 @@ namespace Czuch
 		//check if buffer with this desc already exists
 		for (auto& buffer : multipleBuffers)
 		{
-			if(buffer.desc.bufferType == desc.bufferType && buffer.desc.format == desc.format && buffer.desc.stride == desc.stride && buffer.desc.usage == desc.usage && (buffer.currentOffset + desc.size) < buffer.desc.size)
+			if (buffer.desc.bufferType == desc.bufferType && buffer.desc.format == desc.format && buffer.desc.stride == desc.stride && buffer.desc.usage == desc.usage && (buffer.currentOffset + desc.size) < buffer.desc.size)
 			{
 				return buffer.AddNewBufferPart(desc);
 			}
 		}
-	
+
 		return BufferHandle();
 	}
 
@@ -546,7 +787,7 @@ namespace Czuch
 		mDesc.initData = nullptr;
 		mDesc.exclusiveBuffer = true;
 		mDesc.bufferType = desc.bufferType;
-		
+
 		BufferHandle handle = device->CreateBuffer(&mDesc);
 
 		if (HANDLE_IS_VALID(handle))

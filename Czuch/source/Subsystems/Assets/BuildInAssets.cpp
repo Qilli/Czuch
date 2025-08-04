@@ -166,6 +166,15 @@ namespace Czuch
 		DefaultAssets::PINK_TEXTURE.assetHandle = DefaultAssets::PINK_TEXTURE_ASSET;
 	}
 
+	void BuildInAssets::FillLightingLayoutDesc(Czuch::DescriptorSetLayoutDesc& desc_LightBuffers)
+	{
+		desc_LightBuffers.shaderStage = (U32)ShaderStage::PS;
+		desc_LightBuffers.AddBinding("LightBuffer", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(LightData), true, DescriptorBindingTagType::LIGHTS_CONTAINER);
+		desc_LightBuffers.AddBinding("LightIndexBuffer", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(LightsTileData), true, DescriptorBindingTagType::LIGHTS_INDEXES);
+		desc_LightBuffers.AddBinding("TileDataBuffer", DescriptorType::STORAGE_BUFFER, 2, 1, sizeof(U32), true, DescriptorBindingTagType::LIGHTS_TILES);
+		desc_LightBuffers.AddBinding("MaterialsData", DescriptorType::STORAGE_BUFFER, 3, MAX_MATERIALS_OBJECTS, sizeof(MaterialObjectGPUData), true, DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
+	}
+
 	void BuildInAssets::CreateDefaultMaterials()
 	{
 		//Simple material
@@ -207,10 +216,7 @@ namespace Czuch
 		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, INIT_MAX_RENDER_OBJECTS, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
 
 		DescriptorSetLayoutDesc desc_LightBuffers{};
-		desc_LightBuffers.shaderStage = (U32)ShaderStage::PS;
-		desc_LightBuffers.AddBinding("LightBuffer", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(LightData), true, DescriptorBindingTagType::LIGHTS_CONTAINER);
-		desc_LightBuffers.AddBinding("LightIndexBuffer", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(LightsTileData), true, DescriptorBindingTagType::LIGHTS_INDEXES);
-		desc_LightBuffers.AddBinding("TileDataBuffer", DescriptorType::STORAGE_BUFFER, 2, 1, sizeof(U32), true, DescriptorBindingTagType::LIGHTS_TILES);
+		FillLightingLayoutDesc(desc_LightBuffers);
 
 
 		DescriptorSetLayoutDesc desc_tex{};
@@ -247,7 +253,15 @@ namespace Czuch
 		ColorUBO colorUbo;
 		colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
 
-		instanceCreateSettings.desc.AddBuffer("Color", Czuch::UBO((void*)&colorUbo, sizeof(ColorUBO)));
+		instanceCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorUbo, sizeof(ColorUBO),DescriptorBindingTagType::NONE));
+
+		MaterialObjectGPUData materialGPUData;
+		materialGPUData.diffuseColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialGPUData.specularColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
+
+		instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
+
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = false;
 
@@ -649,10 +663,7 @@ namespace Czuch
 		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
 
 		DescriptorSetLayoutDesc desc_LightBuffers{};
-		desc_LightBuffers.shaderStage = (U32)ShaderStage::PS;
-		desc_LightBuffers.AddBinding("LightBuffer", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(LightData), true, DescriptorBindingTagType::LIGHTS_CONTAINER);
-		desc_LightBuffers.AddBinding("LightIndexBuffer", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(LightsTileData), true, DescriptorBindingTagType::LIGHTS_INDEXES);
-		desc_LightBuffers.AddBinding("TileDataBuffer", DescriptorType::STORAGE_BUFFER, 2, 1, sizeof(U32), true, DescriptorBindingTagType::LIGHTS_TILES);
+		FillLightingLayoutDesc(desc_LightBuffers);
 
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
@@ -689,9 +700,16 @@ namespace Czuch
 		ColorUBO colorUbo;
 		colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
 
-		instanceCreateSettings.desc.AddBuffer("Color", Czuch::UBO((void*)&colorUbo, sizeof(ColorUBO)));
+		instanceCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorUbo, sizeof(ColorUBO), DescriptorBindingTagType::NONE));
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEFAULT_SIMPLE_TRANSPARENT_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = true;
+
+		MaterialObjectGPUData materialGPUData;
+		materialGPUData.diffuseColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialGPUData.specularColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
+
+		instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
 
 		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
 		DefaultAssets::DEFAULT_SIMPLE_TRANSPARENT_MATERIAL_INSTANCE_ASSET = instanceAssetHandle;
@@ -766,7 +784,7 @@ namespace Czuch
 		ColorUBO colorUbo;
 		colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
 
-		instanceCreateSettings.desc.AddBuffer("Color", Czuch::UBO((void*)&colorUbo, sizeof(ColorUBO)));
+		instanceCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorUbo, sizeof(ColorUBO), DescriptorBindingTagType::NONE));
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEBUG_DRAW_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = false;
 
@@ -783,7 +801,7 @@ namespace Czuch
 		ColorUBO colorLightUbo;
 		colorLightUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
 
-		instanceLightCreateSettings.desc.AddBuffer("Color", Czuch::UBO((void*)&colorLightUbo, sizeof(ColorUBO)));
+		instanceLightCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorLightUbo, sizeof(ColorUBO), DescriptorBindingTagType::NONE));
 		instanceLightCreateSettings.desc.materialAsset = DefaultAssets::DEBUG_DRAW_MATERIAL_ASSET;
 		instanceLightCreateSettings.desc.isTransparent = false;
 
@@ -1003,10 +1021,7 @@ namespace Czuch
 		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, INIT_MAX_RENDER_OBJECTS, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
 
 		DescriptorSetLayoutDesc desc_LightBuffers{};
-		desc_LightBuffers.shaderStage = (U32)ShaderStage::PS;
-		desc_LightBuffers.AddBinding("LightBuffer", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(LightData), true, DescriptorBindingTagType::LIGHTS_CONTAINER);
-		desc_LightBuffers.AddBinding("LightIndexBuffer", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(LightsTileData), true, DescriptorBindingTagType::LIGHTS_INDEXES);
-		desc_LightBuffers.AddBinding("TileDataBuffer", DescriptorType::STORAGE_BUFFER, 2, 1, sizeof(U32), true, DescriptorBindingTagType::LIGHTS_TILES);
+		FillLightingLayoutDesc(desc_LightBuffers);
 
 		desc.AddLayout(desc_SceneData);
 		desc.AddLayout(desc_LightBuffers);

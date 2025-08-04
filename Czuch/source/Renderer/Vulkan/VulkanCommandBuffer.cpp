@@ -121,12 +121,15 @@ namespace Czuch
 					}
 					else if (binding.type == DescriptorType::STORAGE_BUFFER)
 					{
-
-						auto buffer=m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource));
-						if (buffer != nullptr)
+						if (paramsDesc[a].descriptors[b].resource != -1)
 						{
-							writer.WriteBuffer(binding.index, buffer, binding.size, 0, binding.type);
+							auto buffer = m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource));
+							if (buffer != nullptr)
+							{
+								writer.WriteBuffer(binding.index, buffer, binding.size, 0, binding.type);
+							}
 						}
+					
 					}
 					writer.UpdateSet(m_Device, descriptor);
 				}

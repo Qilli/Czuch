@@ -5,6 +5,7 @@
 namespace Czuch
 {
     class GraphicsDevice;
+    class MaterialInstanceAssetManager;
 
 	class CZUCH_API MaterialInstanceAsset: public Asset
 	{
@@ -26,9 +27,14 @@ namespace Czuch
         std::tuple<Buffer*, UBOLayout*> GetUBOBufferAtIndex(int index) const;
 		void UpdateUBOBufferAtIndex(int index);
 		void SetTextureParameterAtIndex(int index,AssetHandle asset,I32 resource);
+        StorageBufferTagInfo GetInfoDescriptorTag(DescriptorBindingTagType tag,int pass) const;
+        void ChangeDataForDescriptorWithTag(DescriptorBindingTagType tag, void* data, U32 size);
 		U32 GetParametersCount() const;
     public:
 		MaterialInstanceAsset* CloneMaterialInstance();
+		void* GetParameterDataWithInfo(StorageBufferTagInfo& info);
+        void SetGlobalIndexAndBufferForDescriptorAtIndex(DescriptorBindingTagType tag, I32 index,BufferHandle handle);
+		void SetMaterialInstanceAssetManager(MaterialInstanceAssetManager* manager) { m_AssetManager = manager; }
     private:
 		void LoadDependencies();
 		void UnloadDependencies();
@@ -37,6 +43,7 @@ namespace Czuch
 		MaterialInstanceDesc m_MaterialInstanceDesc;
         MaterialInstanceHandle m_MaterialInstanceResource;
 		MaterialInstance* m_MaterialInstance;
+		MaterialInstanceAssetManager* m_AssetManager;
         MaterialInstanceCreateSettings m_MaterialCreateSettings;
         MaterialInstanceLoadSettings m_MaterialLoadSettings;
         Array<char> m_MaterialInstanceBuffer;

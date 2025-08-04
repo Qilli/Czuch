@@ -813,8 +813,8 @@ namespace Czuch
 		{
 			BufferDesc nDesc;
 			nDesc.elementsCount = mesh->data->normals.size();
-			nDesc.size = nDesc.elementsCount * sizeof(float) * 4;
-			nDesc.stride = 4 * sizeof(float);
+			nDesc.size = nDesc.elementsCount * sizeof(float) * 3;
+			nDesc.stride = 3 * sizeof(float);
 			nDesc.usage = Usage::DEFAULT;
 			nDesc.bind_flags = BindFlag::VERTEX_BUFFER;
 			nDesc.initData = (void*)mesh->data->normals.data();
@@ -908,7 +908,7 @@ namespace Czuch
 			{
 				if (paramDesc.resource == Invalid_Handle_Id)
 				{
-					auto buffer = CreateUBOBuffer(&paramDesc.uboData);
+					auto buffer = CreateUBOBuffer(&paramDesc.data);
 					paramDesc.resource = buffer.handle;
 				}
 			}
@@ -925,7 +925,7 @@ namespace Czuch
 		return h;
 	}
 
-	BufferHandle VulkanDevice::CreateUBOBuffer(UBO* ubo)
+	BufferHandle VulkanDevice::CreateUBOBuffer(MaterialCustomBufferData* ubo)
 	{
 		BufferDesc bufferDesc{};
 		bufferDesc.size = ubo->GetSize();
@@ -937,7 +937,7 @@ namespace Czuch
 		bufferDesc.initData =ubo->GetData();
 		bufferDesc.exclusiveBuffer = true;
 
-		bufferDesc.ubo = ubo;
+		bufferDesc.customData = ubo;
 		return CreateBuffer(&bufferDesc);
 	}
 
@@ -971,18 +971,30 @@ namespace Czuch
 			return false;
 		}
 
-		//map memory
+		// Map memory and check for success
 		void* data = nullptr;
-		vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
+		VkResult result = vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
+
+		if (result != VK_SUCCESS)
+		{
+			LOG_BE_ERROR("{0} Failed to map memory for staging buffer with result: {1}", Tag, VkResultToString(result));
+			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
+			return false;
+		}
+
+		// Memcpy can now be performed safely
 		memcpy(data, dataIn, size);
+
+		// Unmap memory
 		vmaUnmapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc);
 
-		if (!CopyBuffer(settingsStageBuffer.outBuffer, bufferVulkan->buffer, settingsStageBuffer.inSize,offset))
+		if (!CopyBuffer(settingsStageBuffer.outBuffer, bufferVulkan->buffer, settingsStageBuffer.inSize, offset))
 		{
 			LOG_BE_ERROR("{0} Failed to copy data from staging buffer", Tag);
 			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
 			return false;
 		}
+
 		vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
 		return true;
 	}
@@ -3024,8 +3036,8 @@ namespace Czuch
 			return false;
 		}
 
-		void* data = bufferPtr->desc.ubo->GetData();
-		return UploadDataToBuffer(buffer, data, bufferPtr->desc.ubo->GetSize(),0);
+		void* data = bufferPtr->desc.customData->GetData();
+		return UploadDataToBuffer(buffer, data, bufferPtr->desc.customData->GetSize(), 0);
 	}
 
 	void* VulkanDevice::GetMappedBufferDataPtr(BufferHandle buffer)

@@ -89,7 +89,7 @@ namespace Czuch
 		{
 			m_Device->TryTransitionImageLayout(cmd, m_TargetTexture, ImageLayout::SHADER_READ_ONLY_OPTIMAL, 0, 1);
 			MaterialInstance* mat = m_Device->AccessMaterialInstance(m_MaterialInstanceHandle);
-			mat->params[0].SetSampler(0, m_TargetTexture);
+			mat->params[0].SetSampler(0, m_TargetTexture,0);
 		}
 	}
 

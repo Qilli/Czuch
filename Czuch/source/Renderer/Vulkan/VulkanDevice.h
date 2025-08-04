@@ -52,7 +52,7 @@ namespace Czuch
 		MeshHandle CreateMesh(MeshData& meshData) override;
 		MaterialHandle CreateMaterial(MaterialDefinitionDesc* materialData) override;
 		MaterialInstanceHandle CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc) override;
-		BufferHandle CreateUBOBuffer(UBO* ubo) override;
+		BufferHandle CreateUBOBuffer(MaterialCustomBufferData* ubo) override;
 		BufferHandle CreateSSBOBuffer(U32 elementsCount, U32 elemSize, bool permaMapped = true) override;
 
 

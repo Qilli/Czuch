@@ -111,6 +111,7 @@ namespace Czuch
 		void BuildAndLoad();
 	private:
 		void CreateDefaultTextures();
+		void FillLightingLayoutDesc(Czuch::DescriptorSetLayoutDesc& desc_LightBuffers);
 		void CreateDefaultMaterials();
 		void CreateDefaultModels();
 		void LoadUIAssets();

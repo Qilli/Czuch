@@ -410,10 +410,18 @@ namespace Czuch
 				instanceCreateSettings.materialInstanceName = std::move(name);
 				instanceCreateSettings.desc.AddSampler("MainTexture", textureHandle, false);
 
+				MaterialObjectGPUData materialGPUData;
+				materialGPUData.diffuseColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				materialGPUData.specularColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
+
+				instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
+
 				ColorUBO colorUbo;
 				colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-				instanceCreateSettings.desc.AddBuffer("Color", UBO((void*)&colorUbo, (U32)sizeof(ColorUBO)));
+				instanceCreateSettings.desc.AddBuffer("Color",MaterialCustomBufferData((void*)&colorUbo, (U32)sizeof(ColorUBO),DescriptorBindingTagType::NONE));
+
 
 				if (IsMaterialTransparent(material) || m_LoadedMaterials.size() <= 1)
 				{

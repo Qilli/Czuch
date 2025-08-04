@@ -95,7 +95,7 @@ namespace Czuch
 		if (setForMaterial)
 		{
 			MaterialInstance* mat = m_Device->AccessMaterialInstance(DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);
-			mat->params[0].SetSampler(0,texture);
+			mat->params[0].SetSampler(0,texture,0);
 		}
 	}
 

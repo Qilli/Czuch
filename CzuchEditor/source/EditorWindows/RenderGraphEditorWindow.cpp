@@ -39,6 +39,6 @@ namespace Czuch
 
 	void RenderGraphEditorWindow::Init(EngineRoot* root)
 	{
-		m_FrameGraph = root->GetRenderer().GetFrameGraph();
+		m_FrameGraph = root->GetScenesManager().GetActiveScene()->GetFrameGraphControl(0)->GetFrameGraph();
 	}
 }

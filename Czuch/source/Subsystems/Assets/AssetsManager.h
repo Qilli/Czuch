@@ -72,7 +72,7 @@ namespace Czuch
 		TextureHandle Load2DTexture(const CzuchStr& path);
 		AssetHandle CreateMaterialInstance(MaterialInstanceCreateSettings& settings);
 		AssetHandle CreateMaterialInstance(const CzuchStr& matName, AssetHandle materialSource);
-		void UpdateLightingMaterialsLightInfo(U32 lightsCount, U32 lightsIndexRangesCount, U32 lightTilesCount);
+		void UpdateLightingMaterialsLightInfo(U32 lightsCount, U32 lightsIndexRangesCount, U32 lightTilesCount, U32 materialsCount);
 		void UpdateRenderObjectsInfo(U32 renderObjectsCount);
 	private:
 		//Get manager of type T, where T is not manager type but Asset type it handles for for MaterialManager is MaterialAsset

@@ -5,6 +5,8 @@
 #include "./Subsystems/Assets/AssetsManager.h"
 #include "./Subsystems/Assets/Asset/TextureAsset.h"
 #include "./Subsystems/Assets/Asset/MaterialAsset.h"
+#include "./Subsystems/Assets/AssetManagersTypes/MaterialInstanceAssetManager.h"
+
 
 namespace Czuch
 {
@@ -219,6 +221,23 @@ namespace Czuch
 		}
 	}
 
+	StorageBufferTagInfo MaterialInstanceAsset::GetInfoDescriptorTag(DescriptorBindingTagType tag,int pass) const
+	{
+		return m_MaterialInstance->GetInfoForDescriptorTag(tag,pass);
+	}
+
+	void MaterialInstanceAsset::ChangeDataForDescriptorWithTag(DescriptorBindingTagType tag, void* data, U32 size)
+	{
+		I32 index=m_MaterialInstance->UpdateCustomDataWithTag(tag, data, size,0);
+		if (index < 0)
+		{
+			LOG_BE_ERROR("[MaterialInstanceAsset] Failed to update data for descriptor tag: {0}", static_cast<int>(tag));
+			return;
+		}
+		auto targetData = m_MaterialInstance->GetDataForTag(tag, 0);
+		m_AssetManager->UpdateDataForGlobalStorage(index,*targetData);
+	}
+
 	U32 MaterialInstanceAsset::GetParametersCount() const
 	{
 		return m_MaterialInstanceDesc.paramsDesc.size();
@@ -231,7 +250,7 @@ namespace Czuch
 			auto asset = AssetsManager::GetPtr()->GetAsset<TextureAsset>(dep.assetHandle,true);
 			if (asset==nullptr || !asset->IsLoaded())
 			{
-				LOG_BE_ERROR("{0} Failed to load texture dependency: {1}", "[MaterialInstanceAsset]", dep.assetHandle.handle);
+				LOG_BE_ERROR("[MaterialInstanceAsset] Failed to load texture dependency: {0}",dep.assetHandle.handle);
 			}
 		}
 	}
@@ -262,5 +281,18 @@ namespace Czuch
 	
 		auto asset = AssetsManager::GetPtr()->CreateMaterialInstance(settings);
 		return (MaterialInstanceAsset*)AssetsManager::GetPtr()->GetAsset<MaterialInstanceAsset>(asset, true);
+	}
+	void* MaterialInstanceAsset::GetParameterDataWithInfo(StorageBufferTagInfo& info)
+	{
+		auto data = m_MaterialInstance->GetDataForTag(info.tag, 0);
+		if (data != nullptr)
+		{
+			return data->dataRaw.data();
+		}
+		return nullptr;
+	}
+	void MaterialInstanceAsset::SetGlobalIndexAndBufferForDescriptorAtIndex(DescriptorBindingTagType tag, I32 index, BufferHandle handle)
+	{
+		m_MaterialInstance->SetIndexAndBufferForInternalBufferForTag(tag, index, handle,0);
 	}
 }

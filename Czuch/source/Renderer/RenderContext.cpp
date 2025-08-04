@@ -49,7 +49,6 @@ namespace Czuch
 				if (fillParams.renderPassType == RenderPassType::ForwardLighting || fillParams.renderPassType == RenderPassType::ForwardLightingTransparent)
 				{
 					m->params[passIndex].shaderParamsDesc[0].descriptors[1].resource = sceneDataBuffers.renderObjectsBuffer; //render objects buffer
-
 					m->params[passIndex].shaderParamsDesc[1].descriptors[0].resource = sceneDataBuffers.lightsDataBuffer; //lights data buffer
 					m->params[passIndex].shaderParamsDesc[1].descriptors[1].resource = sceneDataBuffers.lightsIndexListBuffer; //lights index buffer
 					m->params[passIndex].shaderParamsDesc[1].descriptors[2].resource = sceneDataBuffers.tilesDataBuffer; //tiles data buffer	
@@ -65,6 +64,7 @@ namespace Czuch
 		//ClearRenderList(); // Not needeed probably, we are clearing render lists at the end of frame if necessary
 
 		U32 id = 0;
+		U32 counter = 0;
 
 		for (auto& obj : allObjects.allObjects)
 		{
@@ -85,7 +85,7 @@ namespace Czuch
 
 				renderObjectInstance.localToClipSpaceTransformation = cam->GetViewProjectionMatrix() * obj.transform->GetLocalToWorld();
 				renderObjectInstance.worldPosition = obj.transform->GetWorldPosition();
-				renderObjectInstance.paramData.x = id++;
+				renderObjectInstance.paramData.x =counter++;
 				renderObjectInstance.mesh = obj.mesh->GetMesh();
 				renderObjectInstance.overrideMaterial = material;
 				renderObjectInstance.passIndex = index;
@@ -625,7 +625,7 @@ namespace Czuch
 
 	void SceneCameraRenderingControl::UpdateMaterialsLightsInfo()
 	{
-		AssetsManager::Get().UpdateLightingMaterialsLightInfo(MAX_LIGHTS_IN_SCENE, MAX_LIGHTS_IN_TILE * tiles_count, tiles_count);
+		AssetsManager::Get().UpdateLightingMaterialsLightInfo(MAX_LIGHTS_IN_SCENE, MAX_LIGHTS_IN_TILE * tiles_count, tiles_count, MATERIAL_DATA_CAPACITY);
 	}
 
 	void SceneCameraRenderingControl::UpdateMaterialsRenderObjectsInfo()
@@ -695,7 +695,7 @@ namespace Czuch
 		return localLightsChanged;
 	}
 
-	bool SceneCameraRenderingControl::FillRenderObjectsData(GraphicsDevice* device, const RenderObjectsContainer& allObjects, U32 frame)
+	bool SceneCameraRenderingControl::FillRenderObjectsData(GraphicsDevice* device, RenderObjectsContainer& allObjects, U32 frame)
 	{
 		bool changed = false;
 		if (renderObjectsData.capacity() < allObjects.allObjects.size())
@@ -705,19 +705,21 @@ namespace Czuch
 		}
 
 		renderObjectsData.clear();
+
 		for (auto& obj : allObjects.allObjects)
 		{
+			MaterialInstance* materialInstance = device->AccessMaterialInstance(obj.meshRenderer->GetOverrideMaterial());
 			RenderObjectGPUData renderObjectData;
 			renderObjectData.localToWorldTransformation = obj.transform->GetLocalToWorld();
 			renderObjectData.invTransposeToWorldMatrix = glm::inverse(glm::transpose((renderObjectData.localToWorldTransformation)));
-			renderObjectData.materialAndFlags.x = obj.meshRenderer->GetOverrideMaterial().handle;
+			renderObjectData.materialAndFlags.x = materialInstance->GetIndexForInternalBufferForTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA,0);
 			renderObjectsData.push_back(std::move(renderObjectData));
 		}
 
 		auto bufferVulkan = device->GetMappedBufferDataPtr(renderObjectsBuffer[frame]);
 		uint8_t* byteData = static_cast<uint8_t*>(bufferVulkan);
 		memcpy(byteData, renderObjectsData.data(), sizeof(RenderObjectGPUData) * renderObjectsData.size());
-		return changed;
+		return true;
 	}
 
 	bool RenderContext::SupportRenderPass(RenderPassType type) const
@@ -765,7 +767,7 @@ namespace Czuch
 
 				renderObjectInstance.localToClipSpaceTransformation = cam->GetViewProjectionMatrix() * obj.transform->GetLocalToWorld();
 				renderObjectInstance.worldPosition = obj.transform->GetWorldPosition();
-				renderObjectInstance.paramData.x = id++;
+				renderObjectInstance.paramData.x = 0;
 				renderObjectInstance.mesh = obj.mesh->GetMesh();
 				renderObjectInstance.overrideMaterial = material;
 				renderObjectInstance.passIndex = index;

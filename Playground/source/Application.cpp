@@ -35,7 +35,7 @@ public:
 	void OnUpdate(Czuch::TimeDelta delta) override
 	{
 		auto& transform = GetComponent<Czuch::TransformComponent>();
-		angle += 30.0f * delta.GetDeltaTime();
+		angle += 300.0f * delta.GetDeltaTime();
 		transform.SetLocalEulerAngles(glm::vec3(glm::radians(0.0f), glm::radians(angle), 0.0f));
 	}
 private:
@@ -93,8 +93,8 @@ int main()
 	auto& assetMgr = Czuch::AssetsManager::Get();
 
 	//load sponza
-	auto sponzaHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Sponza\\sponza.gltf");
-	// auto sponzaEntity = scene->AddModelToScene(sponzaHandle, "SponzaObject");
+	//auto sponzaHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Sponza\\sponza.gltf");
+	//auto sponzaEntity = scene->AddModelToScene(sponzaHandle, "SponzaObject");
 
 	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("Textures\\texture.jpg");
 
@@ -103,9 +103,25 @@ int main()
 	instanceCreateSettings.desc.AddSampler("MainTexture", Czuch::DefaultAssets::WHITE_TEXTURE, false);
 	Czuch::ColorUBO colorUBO;
 	colorUBO.color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	instanceCreateSettings.desc.AddBuffer("Color", Czuch::UBO((void*)&colorUBO, sizeof(Czuch::ColorUBO)));
+	instanceCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorUBO, sizeof(Czuch::ColorUBO),Czuch::DescriptorBindingTagType::NONE));
+
+
+	Czuch::MaterialObjectGPUData materialGPUData;
+	materialGPUData.diffuseColor = Vec4(1.0f, 0.0f, 0.0f, 0.0f);
+	materialGPUData.specularColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(Czuch::MaterialObjectGPUData), Czuch::DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
+
+	instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
+
 	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
 	auto matInstanceHandle = Czuch::AssetsManager::GetPtr()->CreateMaterialInstance(instanceCreateSettings);
+
+
+	Czuch::Entity planeEntity = scene->CreateEntity("PlaneObject");
+	planeEntity.AddRenderable(Czuch::DefaultAssets::PLANE_ASSET, Czuch::DefaultAssets::PLANE_HANDLE, Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET);
+	planeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, -2.0f, -5.0f));
+	planeEntity.Transform().SetLocalScale(glm::vec3(10.0f, 1.0f, 10.0f));
+	planeEntity.Transform().SetLocalEulerAngles(Vec3(15, 0, 0));
 
 	Czuch::Entity cubeEntity = scene->CreateEntity("CubeObject");
 	cubeEntity.AddRenderable(Czuch::DefaultAssets::CUBE_ASSET, Czuch::DefaultAssets::CUBE_HANDLE, matInstanceHandle);
@@ -115,20 +131,26 @@ int main()
 	rotateAround.SetEnabled(true);
 	Czuch::NativeFree3DCameraController& camController = scripts.AddNativeBehaviour<Czuch::NativeFree3DCameraController>();
 
+	Czuch::Entity cubeEntity2= scene->CreateEntity("CubeObject2");
+	cubeEntity2.AddRenderable(Czuch::DefaultAssets::CUBE_ASSET, Czuch::DefaultAssets::CUBE_HANDLE, Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET);
+	cubeEntity2.Transform().SetLocalPosition(glm::vec3(0.0f, 0.0f, -5.0f));
 
-	//settings.debugSettings.SetDebugDrawSelectedEntityID(cubeEntity.GetID());
+	Czuch::Entity planeEntity2 = scene->CreateEntity("PlaneObject2");
+	planeEntity2.AddRenderable(Czuch::DefaultAssets::PLANE_ASSET, Czuch::DefaultAssets::PLANE_HANDLE, matInstanceHandle);
+	planeEntity2.Transform().SetLocalPosition(glm::vec3(0.0f, 2.0f, 2.0f));
+	planeEntity2.Transform().SetLocalScale(glm::vec3(5.0f, 1.0f,5.0f));
+	planeEntity2.Transform().SetLocalEulerAngles(Vec3(-120, 0, 0));
+
+
+	settings.debugSettings.SetDebugDrawSelectedEntityID(cubeEntity.GetID());
 
 
 
-	Czuch::Entity planeEntity = scene->CreateEntity("PlaneObject");
-	planeEntity.AddRenderable(Czuch::DefaultAssets::PLANE_ASSET, Czuch::DefaultAssets::PLANE_HANDLE, matInstanceHandle);
-	planeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, -1.0f, -5.0f));
-	planeEntity.Transform().SetLocalScale(glm::vec3(10.0f, 1.0f, 10.0f));
 	//planeEntity.Transform().LookAt(glm::vec3(0.0f, 10.0f, 0.0f));
 	//planeEntity.Transform().Rotate(DEG2RAD* 90.0f,RIGHT);
 
-	auto& debugLines = planeEntity.AddComponent<Czuch::NativeBehaviourComponent>().AddNativeBehaviour<DrawDebugLines>();
-	debugLines.transform = &planeEntity.Transform();
+	//auto& debugLines = planeEntity.AddComponent<Czuch::NativeBehaviourComponent>().AddNativeBehaviour<DrawDebugLines>();
+	//debugLines.transform = &planeEntity.Transform();
 
 	//add simple entity with spot light
 	/*Czuch::Entity spotLightEntity = scene->CreateEntity("SpotLightObject");
@@ -147,12 +169,12 @@ int main()
 	auto camComponent = scene->GetPrimaryCamera();
 	auto camTransform = &camComponent->GetEntity().Transform();
 
-	debugLines.cameraTransform = camTransform;
+	//debugLines.cameraTransform = camTransform;
 
 	Czuch::Entity lightEntity = scene->CreateEntity("LightObject");
 	lightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 0.1f, -2.0f));
 	lightEntity.Transform().Rotate(0.0f);
-	lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 300.0f, 2.0f);
+	lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 300.0f, 7.0f);
 	//lightEntity.AddDirectionalLight(Czuch::Colors::White, 1.0f);
 
 	/*Czuch::Entity additionalCameraEntity = scene->CreateEntity("AdditionalCameraObject");

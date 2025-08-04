@@ -138,7 +138,8 @@ namespace Czuch
 		{
 			if (cameraControl.camera == currentCamera)
 			{
-				return cameraControl.FillRenderList(renderer->GetDevice(),fillParams);
+				RenderContext* context= cameraControl.FillRenderList(renderer->GetDevice(),fillParams);
+				return context;
 			}
 		}
 		LOG_BE_ERROR("[Scene] Scene does not have camera control for the camera in FillRenderContexts.");
@@ -515,6 +516,11 @@ namespace Czuch
 
 	FrameGraphControl* Scene::GetFrameGraphControl(Camera* camera)
 	{
+		if (camera == nullptr)
+		{
+			camera = m_CurrentFrameCamera;
+		}
+
 		for (auto& cameraControl : m_CamerasControl)
 		{
 			if (cameraControl.camera == camera)

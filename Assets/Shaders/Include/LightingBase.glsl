@@ -10,7 +10,6 @@ struct MaterialData
 {
 	vec4 albedo;
 	vec4 metallicRoughness;
-	vec4 emissive;
 };
 
 struct TileData {
@@ -21,6 +20,25 @@ struct TileData {
 const int TILE_SIZE_X = 32;
 const int TILE_SIZE_Y = 32;
 const float LINEAR_ATTENUATION = 0.45;
+
+layout(std430, binding = 0, set = 1) readonly buffer LightBuffer {
+    LightData lights[];
+};
+
+layout(std430, binding = 1, set = 1) readonly buffer LightIndexBuffer {
+	ivec4 screenSize;
+    uint lightIndices[];
+};
+
+layout(std430, binding = 2, set = 1) readonly buffer TileDataBuffer {
+    TileData tiles[];
+};
+
+layout(std430, binding = 3, set = 1) readonly buffer MaterialsDataBuffer {
+    MaterialData materials[];
+};
+
+
 
 float ComputeNormalLightAttenuation(float distance, float range)
 {
@@ -33,7 +51,7 @@ float ComputeLightAttenuationWithCutoff(float distance, float range)
 	return attenuation * max(0,(1.0 - distance/range));
 }
 
-vec4 ComputeLighting(LightData lightData,vec4 position, vec3 normal)
+vec4 ComputeLighting(LightData lightData,MaterialData material, vec4 position, vec3 normal)
 {
 	float diffuse = 0.0;
 	if(lightData.positionWithType.w == 0.0) //directional light
@@ -64,5 +82,5 @@ vec4 ComputeLighting(LightData lightData,vec4 position, vec3 normal)
 			diffuse = 0.0;
 		}
 	}
-	return vec4(lightData.color.xyz * diffuse, 1.0);
+	return vec4(lightData.color.xyz*material.albedo.rgb*vec3(diffuse,diffuse,diffuse), 1.0);
 }

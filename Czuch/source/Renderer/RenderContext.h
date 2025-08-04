@@ -25,6 +25,7 @@ namespace Czuch
 		RenderPassType renderPassType;
 		bool forceMaterialForAll = false;
 		bool ignoreTransparent = false;
+		bool isLightPass = false;
 	};
 
 	struct RenderContextControl
@@ -53,11 +54,15 @@ namespace Czuch
 	{
 		Array<RenderObjectInfo> allObjects;
 		Array<LightObjectInfo> allLights;
+		Array<RenderObjectGPUData> *renderObjectsData;
+		BufferHandle currentRenderObjectsBuffer;
 
 		void Clear()
 		{
 			allObjects.clear();
 			allLights.clear();
+			currentRenderObjectsBuffer = BufferHandle();
+			renderObjectsData = nullptr;
 		}
 	};
 
@@ -139,7 +144,7 @@ namespace Czuch
 		/// <param name="device"></param>
 		/// <param name="allObjects"></param>
 		/// <param name="frame"></param>
-		bool FillRenderObjectsData(GraphicsDevice* device, const RenderObjectsContainer& allObjects, U32 frame);
+		bool FillRenderObjectsData(GraphicsDevice* device, RenderObjectsContainer& allObjects, U32 frame);
 		/// <summary>
 		/// Init render objects buffer, resize if needed
 		/// </summary>
@@ -284,6 +289,8 @@ namespace Czuch
 		FinalFrameGraphNodeInfo GetFinalFrameGraphNodeInfo() const;
 		void SetDebugRenderFlag(DebugRenderingFlag flag, bool enable);
 		void SetDebugRenderFlagsGroup(U32 flags);
+
+		FrameGraph* GetFrameGraph() const { return m_FrameGraph; }
 	};
 
 

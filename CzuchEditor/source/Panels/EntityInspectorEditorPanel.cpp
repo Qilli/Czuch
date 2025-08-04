@@ -383,7 +383,7 @@ namespace Czuch
 							auto element = layout->GetElement(j);
 							if (element.elementType == UBOElementType::VectorType)
 							{
-								auto vec = buffer->desc.ubo->GetVec4(element.offset);
+								auto vec = buffer->desc.customData->GetVec4(element.offset);
 								if (ImGui::DragFloat4(element.name.GetStrName().c_str(), &vec->x, 0.1f))
 								{
 									changed = true;
@@ -391,7 +391,7 @@ namespace Czuch
 							}
 							else if(element.elementType == UBOElementType::ColorType)
 							{
-								auto vec = buffer->desc.ubo->GetVec4(element.offset);
+								auto vec = buffer->desc.customData->GetVec4(element.offset);
 								if (CustomDrawers::DrawLinearColor(element.name.GetStrName().c_str(), vec))
 								{
 									changed = true;

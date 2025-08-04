@@ -38,7 +38,7 @@ namespace Czuch
 	public:
 		EditorControl();
 		virtual ~EditorControl();
-		virtual void Init(void* context, RenderSettings* renderSettings) override;
+		virtual void Init(void* context, EngineSettings* renderSettings) override;
 		virtual void AfterSystemInit() override;
 		virtual void Shutdown() override;
 		virtual void Update(TimeDelta timeDelta) override;

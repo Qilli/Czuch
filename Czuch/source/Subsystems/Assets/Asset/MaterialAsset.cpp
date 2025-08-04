@@ -93,6 +93,12 @@ namespace Czuch
 		return mat->desc->passesContainer.GetBindingWithTag(tag);
 	}
 
+	bool MaterialAsset::HasBindingWithTag(DescriptorBindingTagType tag) const
+	{
+		auto mat = m_Device->AccessMaterial(m_MaterialResource);
+		return mat->desc->passesContainer.GetBindingWithTag(tag)!=nullptr;
+	}
+
 	CzuchStr MaterialAsset::GetAssetLoadInfo() const
 	{
 		return "MaterialAsset: " +AssetName() + "Ref count: "+m_RefCounter.GetCountString()+" State: "+ (m_State==AssetInnerState::LOADED? " Loaded" : "Unloaded");

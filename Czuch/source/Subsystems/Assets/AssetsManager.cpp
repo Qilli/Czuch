@@ -189,7 +189,7 @@ namespace Czuch
 	}
 
 	//here we update all materials which are from lighting pass, so we have correct amount of lights for storage buffers
-	void AssetsManager::UpdateLightingMaterialsLightInfo(U32 lightsCount, U32 lightsIndexRangesCount, U32 lightTilesCount)
+	void AssetsManager::UpdateLightingMaterialsLightInfo(U32 lightsCount, U32 lightsIndexRangesCount, U32 lightTilesCount, U32 materialsCount)
 	{
 		//find all material with lighting pass
 		MaterialAssetManager* mgr = GetManagerOfType<MaterialAssetManager,MaterialAsset>();
@@ -214,6 +214,7 @@ namespace Czuch
 			auto* bindingLightsContainer = mat->GetBindingWithTag(DescriptorBindingTagType::LIGHTS_CONTAINER);
 			auto* bindingLightsIndexRanges = mat->GetBindingWithTag(DescriptorBindingTagType::LIGHTS_INDEXES);
 			auto* bindingLightsTiles = mat->GetBindingWithTag(DescriptorBindingTagType::LIGHTS_TILES);
+			auto* bindingLightMaterials = mat->GetBindingWithTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
 			if (bindingLightsContainer)
 			{
@@ -228,6 +229,11 @@ namespace Czuch
 			if (bindingLightsTiles)
 			{
 				bindingLightsTiles->size = lightTilesCount * sizeof(LightsTileData);
+			}
+
+			if (bindingLightMaterials)
+			{
+				bindingLightMaterials->size = materialsCount * sizeof(MaterialObjectGPUData);
 			}
 		}
 	}

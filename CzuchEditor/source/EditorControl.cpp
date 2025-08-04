@@ -93,7 +93,7 @@ namespace Czuch
 		delete m_SceneHierarchyPanel;
 		delete m_EntityInspectorPanel;
 	}
-	void EditorControl::Init(void* context, RenderSettings* renderSettings)
+	void EditorControl::Init(void* context, EngineSettings* renderSettings)
 	{
 		ImGui::SetCurrentContext((ImGuiContext*)context);
 		ImGuizmo::Enable(true);
@@ -178,7 +178,7 @@ namespace Czuch
 
 		if (UpdateOffscreenPass((U32)targetViewportSize.x, (U32)targetViewportSize.y))
 		{
-			ImGui::Image((ImTextureID)m_Root->GetRenderer().GetFrameGraphFinalResult(), ImGui::GetContentRegionAvail());
+			ImGui::Image((ImTextureID)m_Root->GetRenderer().GetFrameGraphFinalResult(nullptr), ImGui::GetContentRegionAvail());
 		}
 
 		// Define the correct rendering rectangle

@@ -23,6 +23,7 @@ namespace Czuch
 		UBOLayout* GetUBOLayoutForName(const StringID & name) const;
         bool HasPassType(RenderPassType type);
         DescriptorSetLayoutDesc::Binding* GetBindingWithTag(DescriptorBindingTagType tag);
+		bool HasBindingWithTag(DescriptorBindingTagType tag) const;
     public:
         CzuchStr GetAssetLoadInfo() const override;
         ShortAssetInfo* GetShortAssetInfo() override;

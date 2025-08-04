@@ -20,6 +20,6 @@ void main() {
     outColor = inColor;
     outUV = inUV;
     RenderObject obj = renderObjects[PushConstants.paramsIDObject.x];
-    outNormal = vec4(normalize(obj.invTransposeToWorldMatrix*vec4(inNormal.xyz,1.0)).xyz, obj.materialIndexAndFlags.x);
+    outNormal = vec4(normalize(obj.invTransposeToWorldMatrix*vec4(inNormal.xyz,1.0)).xyz,obj.materialIndexAndFlags.x);
     outPos = obj.localToWorldTransformation*vec4(inPosition.xyz,1.0);
 }
