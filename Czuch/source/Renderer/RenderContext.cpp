@@ -44,14 +44,22 @@ namespace Czuch
 
 			if (m != nullptr)
 			{
-				m->params[passIndex].shaderParamsDesc[0].descriptors[0].resource = sceneDataBuffers.sceneDataBuffer;
+				//m->params[passIndex].shaderParamsDesc[0].descriptors[0].resource = sceneDataBuffers.sceneDataBuffer;
+				if (m->params[passIndex].setsCount > 0)
+				{
+					m->params[passIndex].SetUniformBuffer(0, sceneDataBuffers.sceneDataBuffer, 0); //scene data buffer
+				}
 
 				if (fillParams.renderPassType == RenderPassType::ForwardLighting || fillParams.renderPassType == RenderPassType::ForwardLightingTransparent)
 				{
-					m->params[passIndex].shaderParamsDesc[0].descriptors[1].resource = sceneDataBuffers.renderObjectsBuffer; //render objects buffer
-					m->params[passIndex].shaderParamsDesc[1].descriptors[0].resource = sceneDataBuffers.lightsDataBuffer; //lights data buffer
-					m->params[passIndex].shaderParamsDesc[1].descriptors[1].resource = sceneDataBuffers.lightsIndexListBuffer; //lights index buffer
-					m->params[passIndex].shaderParamsDesc[1].descriptors[2].resource = sceneDataBuffers.tilesDataBuffer; //tiles data buffer	
+					//m->params[passIndex].shaderParamsDesc[0].descriptors[1].resource = sceneDataBuffers.renderObjectsBuffer; //render objects buffer
+					m->params[passIndex].SetStorageBuffer(0, sceneDataBuffers.renderObjectsBuffer, 1); //render objects buffer
+					//m->params[passIndex].shaderParamsDesc[1].descriptors[0].resource = sceneDataBuffers.lightsDataBuffer; //lights data buffer
+					m->params[passIndex].SetStorageBuffer(1, sceneDataBuffers.lightsDataBuffer, 0); //lights data buffer
+					//m->params[passIndex].shaderParamsDesc[1].descriptors[1].resource = sceneDataBuffers.lightsIndexListBuffer; //lights index buffer
+					m->params[passIndex].SetStorageBuffer(1, sceneDataBuffers.lightsIndexListBuffer, 1); //lights index buffer
+					//m->params[passIndex].shaderParamsDesc[1].descriptors[2].resource = sceneDataBuffers.tilesDataBuffer; //tiles data buffer	
+					m->params[passIndex].SetStorageBuffer(1, sceneDataBuffers.tilesDataBuffer, 2); //tiles data buffer
 				}
 
 			}
@@ -470,11 +478,11 @@ namespace Czuch
 
 	void SceneCameraRenderingControl::OnSceneActive(GraphicsDevice* device)
 	{
-		bufferDesc.persistentMapped = true;
-		bufferDesc.elementsCount = 1;
-		bufferDesc.bind_flags = BindFlag::UNIFORM_BUFFER;
-		bufferDesc.size = sizeof(SceneData);
-		bufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
+		sceneDataBufferDesc.persistentMapped = true;
+		sceneDataBufferDesc.elementsCount = 1;
+		sceneDataBufferDesc.bind_flags = BindFlag::UNIFORM_BUFFER;
+		sceneDataBufferDesc.size = sizeof(SceneData);
+		sceneDataBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
 
 		lightsBufferDesc.persistentMapped = true;
 		lightsBufferDesc.elementsCount = MAX_LIGHTS_IN_SCENE;
@@ -485,13 +493,14 @@ namespace Czuch
 		InitTilesBuffer(device, false, 0, 0);
 		InitRenderObjectsBuffer(device, false, INIT_MAX_RENDER_OBJECTS);
 
-		data.ambientColor = Vec4(0.0f, 0.0f,0.0f, 1);
+		sceneData.ambientColor = Vec4(0.0f, 0.0f,0.0f, 1);
 
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
-			device->Release(buffer[a]);
-			INVALIDATE_HANDLE(buffer[a]);
+			device->Release(sceneDataBuffer[a]);
+			device->Release(lightsBuffer[a]);
 			lightsBuffer[a] = device->CreateBuffer(&lightsBufferDesc);
+			sceneDataBuffer[a] = device->CreateBuffer(&sceneDataBufferDesc);
 		}
 	}
 
@@ -555,27 +564,17 @@ namespace Czuch
 	SceneDataBuffers SceneCameraRenderingControl::GetSceneDataBuffers(U32 frame)
 	{
 		return {
-			buffer[frame].handle,
-			lightsBuffer[frame].handle,
-			lightsListBuffer[frame].handle,
-			tilesBuffer[frame].handle,
-			renderObjectsBuffer[frame].handle };
+			sceneDataBuffer[frame],
+			lightsBuffer[frame],
+			lightsListBuffer[frame],
+			tilesBuffer[frame],
+			renderObjectsBuffer[frame]};
 	}
 
 	void SceneCameraRenderingControl::UpdateSceneDataBuffers(IScene* scene, GraphicsDevice* device, RenderObjectsContainer& visibleObjects, U32 frame, DeletionQueue& deletionQueue)
 	{
-		buffer[frame] = device->CreateBuffer(&bufferDesc);
-		deletionQueue.PushFunction([=, this]() {
-			if (HANDLE_IS_VALID(buffer[frame]))
-			{
-				device->Release(buffer[frame]);
-			}
-			});
-
 		if (scene != nullptr)
 		{
-			data.ambientColor = scene->GetAmbientColor();
-
 			auto& lights = scene->GetAllLightObjects();
 			if (FillTilesWithLights(device, lights, frame))
 			{
@@ -587,9 +586,17 @@ namespace Czuch
 				//Update materials render elements info
 				UpdateMaterialsRenderObjectsInfo();
 			}
+
+			sceneData.view = camera->GetViewMatrix();
+			sceneData.proj = camera->GetProjectionMatrix();
+			sceneData.viewproj = camera->GetViewProjectionMatrix();
+			sceneData.cameraWorldPosition = camera->GetWorldPosition();
+			sceneData.ambientColor = scene->GetAmbientColor();
 		}
 
-		device->UploadDataToBuffer(buffer[frame], &data, sizeof(SceneData),0);
+		auto bufferVulkan = device->GetMappedBufferDataPtr(sceneDataBuffer[frame]);
+		uint8_t* byteData = static_cast<uint8_t*>(bufferVulkan);
+		memcpy(byteData, &sceneData, sizeof(SceneData));
 	}
 
 
@@ -939,10 +946,11 @@ namespace Czuch
 	{
 		if (scene != nullptr)
 		{
-			m_SceneData.ambientColor = scene->GetAmbientColor();
 			m_SceneData.view = m_Camera->GetViewMatrix();
 			m_SceneData.proj = m_Camera->GetProjectionMatrix();
 			m_SceneData.viewproj = m_Camera->GetViewProjectionMatrix();
+			m_SceneData.cameraWorldPosition = m_Camera->GetWorldPosition();
+			m_SceneData.ambientColor = scene->GetAmbientColor();
 
 			if (FillDebugBuffersData(device, frame))
 			{

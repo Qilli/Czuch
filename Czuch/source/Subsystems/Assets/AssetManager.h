@@ -29,6 +29,7 @@ namespace Czuch
 		virtual int GetAssetType() const = 0;
 		bool AssetExistAtPath(const CzuchStr& path);
 		const Array<Asset*>& GetAllAssetsWithFilter(std::function<bool(Asset*)> predicate);
+		void ExecuteOnAllAssets(std::function<void(Asset*)> func);
 	public:
 		virtual void Init() = 0;
 	protected:

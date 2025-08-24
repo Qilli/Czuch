@@ -48,6 +48,7 @@ namespace Czuch
 		Mat4x4 view;
 		Mat4x4 proj;
 		Mat4x4 viewproj;
+		Vec4 cameraWorldPosition; // camera position in world space
 		Vec4 ambientColor;
 	};
 
@@ -61,15 +62,6 @@ namespace Czuch
 	{
 		glm::ivec4 screenSize;
 		Array<LightsTileData> tilesData;
-	};
-
-	struct SceneDataBuffers
-	{
-		Handle sceneDataBuffer;
-		Handle lightsDataBuffer;
-		Handle lightsIndexListBuffer;
-		Handle tilesDataBuffer;
-		Handle renderObjectsBuffer;
 	};
 
 	struct RenderObjectGPUData
@@ -190,6 +182,16 @@ namespace Czuch
 		I32 offset = -1; // if -1 then this is exclusive buffer, otherwise its part of bigger buffer
 		I32 size = 0;
 	};
+
+	struct SceneDataBuffers
+	{
+		BufferHandle sceneDataBuffer;
+		BufferHandle lightsDataBuffer;
+		BufferHandle lightsIndexListBuffer;
+		BufferHandle tilesDataBuffer;
+		BufferHandle renderObjectsBuffer;
+	};
+
 
 	struct TextureHandle : public ResourceHandleWithAsset
 	{
@@ -387,6 +389,7 @@ namespace Czuch
 		STORAGE_BUFFER_DYNAMIC = 4,
 		INPUT_ATTACHMENT = 5,
 		STORAGE_BUFFER_SINGLE_DATA = 6,
+		COMBINED_IMAGE_SAMPLER =7,
 	};
 
 	enum BufferType
@@ -1011,6 +1014,7 @@ namespace Czuch
 		DEBUG_TRIANGLES_INSTANCE_DATA,
 		DEBUG_POINTS_INSTANCE_DATA,
 		MATERIALS_LIGHTING_DATA,
+		SCENE_DATA,
 	};
 
 	struct MaterialCustomBufferData
@@ -1125,6 +1129,8 @@ namespace Czuch
 		U32 bindingsCount = 0;
 		U32 setIndex = 0;
 		U32 shaderStage;
+		void* next=nullptr;
+		bool hasCombinedImageSampler=false;
 
 		DescriptorSetLayoutDesc()
 		{
@@ -1140,39 +1146,87 @@ namespace Czuch
 		UBOLayout* GetUBOLayoutForBinding(const StringID& name);
 	};
 
+	struct ShaderParamInfo
+	{
+		StringID paramName;
+		DescriptorBindingTagType tag;
+		MaterialCustomBufferData* customData;
+		I32 resource;
+		I32 assetHandle;
+		I32 size;
+		bool isDirty[MAX_FRAMES_IN_FLIGHT] = { false };
+		DescriptorType type;
+		U16 binding;
+
+		void ClearDirtyAll()
+		{
+			for (U32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+			{
+				isDirty[i] = false;
+			}
+		}
+
+		void SetDirtyExcept(U32 frameIndex)
+		{
+			for (U32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+			{
+				if (i != frameIndex)
+				{
+					isDirty[i] = true;
+				}
+			}
+			isDirty[frameIndex] = false; 
+		}
+	};
+
 
 	struct Buffer;
 	struct DescriptorSetLayout;
+	struct DescriptorSet;
 	struct ShaderParamsSet
 	{
-		struct ShaderParamInfo
-		{
-			StringID paramName;
-			DescriptorBindingTagType tag;
-			MaterialCustomBufferData* customData;
-			I32 resource;
-			I32 assetHandle;
-			DescriptorType type;
-			U16 binding;
-		};
-
 		ShaderParamInfo descriptors[s_max_descriptors_per_set];
 		U16 descriptorsCount;
+		DescriptorSet* currentDescriptor = nullptr;
 
 		ShaderParamsSet()
 		{
 			Reset();
 		}
 
+		~ShaderParamsSet()
+		{
+			Release();
+		}
+
+		void Release()
+		{
+			
+		}
+
 		ShaderParamsSet& Reset();
-		ShaderParamsSet& AddBuffer(CzuchStr name, BufferHandle buffer, U16 binding);
-		ShaderParamsSet& AddSampler(CzuchStr name, TextureHandle color_texture, U16 binding);
-		ShaderParamsSet& AddStorageBuffer(CzuchStr name, BufferHandle buffer, U16 binding, DescriptorBindingTagType tag);
+		ShaderParamsSet& AddBuffer(CzuchStr name, BufferHandle buffer, U16 binding,I32 size=-1);
+		ShaderParamsSet& AddSampler(CzuchStr name, TextureHandle color_texture, U16 binding, DescriptorBindingTagType tag);
+		ShaderParamsSet& AddStorageBuffer(CzuchStr name, BufferHandle buffer, U16 binding, DescriptorBindingTagType tag, I32 size = -1);
 		ShaderParamsSet& AddStorageBufferWithData(CzuchStr name, MaterialCustomBufferData* customData, U16 binding, DescriptorBindingTagType tag);
 		void SetSampler(int descriptor, TextureHandle color_texture);
 		bool TrySetSampler(StringID& name, TextureHandle texture);
 		bool TrySetBuffer(StringID& name, BufferHandle buffer);
+		bool SetBuffer(DescriptorBindingTagType tag, BufferHandle buffer, I32 size = -1);
+		bool SetBuffer(U32 descriptor, BufferHandle buffer, I32 size = -1);
+		bool SetBufferSize(U32 descriptor, I32 size);
+		bool SetBufferSize(DescriptorBindingTagType tag, I32 size);
 		TextureHandle GetTextureHandleForName(StringID& name);
+
+		//void CheckForUpdateAndMakeDirty(Czuch::Handle handle, bool forceFullUpdate, I32 descriptor);
+
+	};
+
+	struct ParamSetUpdateControl
+	{
+		virtual ~ParamSetUpdateControl() {}
+		virtual void UpdateDescriptorSet(ShaderParamInfo& param, bool forceFullUpdate) = 0;
+		virtual U32 GetCurrentFrameIndex() const = 0;
 	};
 
 	union ClearValue
@@ -1344,6 +1398,19 @@ namespace Czuch
 				return;
 			}
 			layouts[layoutsCount++] = std::move(layout);
+		}
+
+		void AddBindlessTexturesLayout()
+		{
+			if (layoutsCount >= k_max_descriptor_set_layouts)
+			{
+				return;
+			}
+			DescriptorSetLayoutDesc desc_tex{};
+			desc_tex.shaderStage = (U32)ShaderStage::PS;
+			desc_tex.AddBinding("BindlessTextures", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, 1, 0, true);
+			desc_tex.hasCombinedImageSampler = true;
+			AddLayout(desc_tex);
 		}
 
 
@@ -1602,6 +1669,7 @@ namespace Czuch
 		PARAM_UNKNOWN
 	};
 
+	//This struct is used when creating an instance, so we have here default values for all parameters
 	struct CZUCH_API MaterialInstanceDesc
 	{
 		struct ShaderParamDesc
@@ -1638,25 +1706,30 @@ namespace Czuch
 
 	struct MaterialInstanceParams
 	{
+	public:
 		ShaderParamsSet shaderParamsDesc[k_max_descriptor_set_layouts];
-		int setsCount = 0;
+	public:
+
+		I32 setsCount = 0;
 		MaterialInstanceParams()
 		{
 			Reset();
 		}
 
 		MaterialInstanceParams& Reset();
-		MaterialInstanceParams& AddBuffer(int set, const CzuchStr& name, BufferHandle buffer, U16 binding);
-		MaterialInstanceParams& AddStorageBuffer(int set, const CzuchStr& name, BufferHandle buffer, U16 binding, DescriptorBindingTagType tag);
-		MaterialInstanceParams& AddStorageBufferWithData(int set,const CzuchStr& name, MaterialCustomBufferData* customData, U16 binding, DescriptorBindingTagType tag);
-		MaterialInstanceParams& AddSampler(int set, const CzuchStr& name, TextureHandle color_texture, U16 binding);
+		MaterialInstanceParams& AddBuffer(I32 set, const CzuchStr& name, BufferHandle buffer, U16 binding, I32 size = -1);
+		MaterialInstanceParams& AddStorageBuffer(I32 set, const CzuchStr& name, BufferHandle buffer, U16 binding, DescriptorBindingTagType tag, I32 size = -1);
+		MaterialInstanceParams& AddStorageBufferWithData(I32 set,const CzuchStr& name, MaterialCustomBufferData* customData, U16 binding, DescriptorBindingTagType tag);
+		MaterialInstanceParams& AddSampler(I32 set, const CzuchStr& name, TextureHandle color_texture, U16 binding);
 
-		void SetSampler(int set, TextureHandle color_texture, int descriptor);
+		void SetSampler(I32 set, TextureHandle color_texture, I32 descriptor);
 		void SetSampler(StringID& name, TextureHandle texture);
 		void SetUniformBuffer(StringID& name, BufferHandle buffer);
-		void SetUniformBuffer(int set, BufferHandle buffer,int descriptor);
-		void SetStorageBuffer(int set, BufferHandle buffer, int descriptor, DescriptorBindingTagType tag = DescriptorBindingTagType::NONE);
-		void SetStorageBufferWithData(int set, MaterialCustomBufferData* customData, int descriptor, DescriptorBindingTagType tag = DescriptorBindingTagType::NONE);
+		void SetUniformBuffer(I32 set, BufferHandle buffer,I32 descriptor,I32 size=-1);
+		void SetStorageBuffer(I32 set, BufferHandle buffer, I32 descriptor, I32 size = -1);
+		void SetStorageBufferWithData(I32 set, MaterialCustomBufferData* customData, I32 descriptor);
+		void UpdateBufferSize(I32 set, I32 descriptor, I32 size);
+		void UpdateBufferSize(DescriptorBindingTagType tag, I32 size);
 		TextureHandle GetTextureHandleForName(StringID& name);
 	};
 
@@ -1844,13 +1917,14 @@ namespace Czuch
 		I32 descriptorIndex;
 		I32 index;
 	};
-
 	struct MaterialInstance : public GraphicsDeviceResource
 	{
 		MaterialInstanceDesc* desc;
 		MaterialInstanceParams params[k_max_render_passes];
+		
 		MaterialHandle handle;
 		U32 passesCount = 0;
+		bool isDirty = true;
 		bool IsTransparent() const { return desc->isTransparent; }
 		constexpr const MaterialInstanceDesc& GetDesc() const { return *desc; }
 		void SetSampler(StringID& name, TextureHandle texture);
@@ -1864,7 +1938,10 @@ namespace Czuch
 		void SetIndexAndBufferForInternalBufferForTag(DescriptorBindingTagType tag, I32 index, BufferHandle buffer, int pass);
 
 		StorageBufferTagInfo GetInfoForDescriptorTag(DescriptorBindingTagType tag, int pass);
-
+		void UpdateSizeForTag(DescriptorBindingTagType tag, I32 size, int pass);
+		void SetAsDirty();
+		bool IsDirty() const { return isDirty; }
+		void ClearDirty() { isDirty = false; }
 	};
 
 	struct Pipeline : public GraphicsDeviceResource

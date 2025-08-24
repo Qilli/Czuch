@@ -31,6 +31,7 @@ namespace Czuch
 		VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
 		VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
 		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+		VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
 	};
 	const std::vector<const char*> validationLayers = {
 "VK_LAYER_KHRONOS_validation"
@@ -108,15 +109,15 @@ namespace Czuch
 		ps->m_desc = std::move(*desc);
 		ps->device = this;
 
-		auto vsAsset = AssetsManager::GetPtr()->GetAsset<ShaderAsset>(desc->vs);
-		auto psAsset = AssetsManager::GetPtr()->GetAsset<ShaderAsset>(desc->ps);
+		auto vsAsset = AssetsManager::GetPtr()->GetAsset<ShaderAsset>(ps->m_desc.vs);
+		auto psAsset = AssetsManager::GetPtr()->GetAsset<ShaderAsset>(ps->m_desc.ps);
 
 		ps->vs = vsAsset->GetShaderAssetHandle();
 		ps->ps = psAsset->GetShaderAssetHandle();
 
-		for (int a = 0; a < desc->layoutsCount; a++)
+		for (int a = 0; a < ps->m_desc.layoutsCount; a++)
 		{
-			ps->AddLayout(CreateDescriptorSetLayout(&desc->layouts[a]));
+			ps->AddLayout(CreateDescriptorSetLayout(&ps->m_desc.layouts[a]));
 		}
 
 		//VkRenderPass renderPass = rp != nullptr ? Internal_to_RenderPass(rp)->renderPass : VK_NULL_HANDLE;
@@ -432,6 +433,11 @@ namespace Czuch
 
 	DescriptorSetLayoutHandle VulkanDevice::CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc)
 	{
+		if (desc->hasCombinedImageSampler && HANDLE_IS_VALID(m_BindlessDescriptorSetLayoutHandle))
+		{
+			return m_BindlessDescriptorSetLayoutHandle;
+		}
+
 		CZUCH_BE_ASSERT(desc != nullptr, "Invalid descriptor set layout desc.");
 
 		DescriptorSetLayout* dsl = new DescriptorSetLayout();
@@ -449,6 +455,18 @@ namespace Czuch
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		layoutInfo.bindingCount = desc->bindingsCount;
 		layoutInfo.pBindings = bindingsArray;
+		layoutInfo.pNext = desc->next;
+		if (desc->next == nullptr && desc->hasCombinedImageSampler)
+		{
+			VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+			VkDescriptorSetLayoutBindingFlagsCreateInfo layoutFlagsCreateInfo = {};
+			layoutFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+			layoutFlagsCreateInfo.bindingCount = 1;
+			layoutFlagsCreateInfo.pBindingFlags = &bindlessFlags;
+
+			layoutInfo.pNext = &layoutFlagsCreateInfo;
+			layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+		}
 
 		DescriptorSetLayout_Vulkan* dslayout = Internal_to_DescriptorSetLayout(dsl);
 		dslayout->device = m_Device;
@@ -891,6 +909,7 @@ namespace Czuch
 	MaterialInstanceHandle VulkanDevice::CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc)
 	{
 		MaterialInstance* matInstance = new MaterialInstance();
+		matInstance->device = this;
 		matInstance->desc = &materialInstanceDesc;
 		auto asset = AssetsManager::GetPtr()->GetAsset<MaterialAsset>(matInstance->desc->materialAsset);
 		matInstance->handle = asset->GetMaterialResourceHandle();
@@ -913,7 +932,6 @@ namespace Czuch
 				}
 			}
 		}
-
 
 		for (int a = 0; a < material->pipelines.size(); a++)
 		{
@@ -2173,7 +2191,7 @@ namespace Czuch
 #pragma endregion
 
 
-	VulkanDevice::VulkanDevice(Window* window) :m_AttachedWindow(window), m_FrameBufferResized(false)
+	VulkanDevice::VulkanDevice(Window* window) :m_AttachedWindow(window), m_FrameBufferResized(false), m_CurrentFrameInFlight(0), m_Surface(nullptr), m_VmaAllocator(nullptr), m_DescriptorLayoutCache(nullptr), m_PersistentDescriptorAllocator(nullptr)
 	{
 
 	}
@@ -2294,6 +2312,26 @@ namespace Czuch
 		m_DescriptorLayoutCache->Init(m_Device);
 
 		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_DeviceProperties);
+
+
+		auto allocator=CreateDescriptorAllocator();
+		if (allocator == nullptr)
+		{
+			LOG_BE_ERROR("{0} Failed to create descriptor allocator", Tag);
+			return false;
+		}
+
+		m_PersistentDescriptorAllocator = allocator;
+
+		if (!HANDLE_IS_VALID(m_BindlessDescriptorSetLayoutHandle))
+		{
+			//create bindless layout
+			DescriptorSetLayoutDesc desc_;
+			desc_.AddBinding("Textures", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, 1, 0, true);
+			desc_.shaderStage = (U32)ShaderStage::PS;
+			desc_.hasCombinedImageSampler = true;
+			m_BindlessDescriptorSetLayoutHandle = CreateDescriptorSetLayout(&desc_);
+		}
 
 		return true;
 	}
@@ -2426,15 +2464,29 @@ namespace Czuch
 			queueInfos.push_back(info);
 		}
 
+		VkPhysicalDeviceFeatures2 features2 = {};
+		features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		features2.features.samplerAnisotropy = VK_TRUE;
 
-		VkPhysicalDeviceFeatures deviceFeatures{};
-		deviceFeatures.samplerAnisotropy = VK_TRUE;
+		VkPhysicalDeviceVulkan12Features features12{};
+		features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		features12.descriptorIndexing = VK_TRUE;
+		features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+		features12.runtimeDescriptorArray = VK_TRUE;
+		features12.descriptorBindingPartiallyBound = VK_TRUE;
+		features12.descriptorBindingVariableDescriptorCount = VK_TRUE;
+		features12.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
+		features12.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+		features12.samplerMirrorClampToEdge = VK_TRUE;
+		features12.pNext = nullptr;
+
+		features2.pNext = &features12;
 
 		VkDeviceCreateInfo deviceCreateInfo{};
 		deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		deviceCreateInfo.pQueueCreateInfos = queueInfos.data();
 		deviceCreateInfo.queueCreateInfoCount = 1;
-		deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+		deviceCreateInfo.pEnabledFeatures = nullptr;
 		deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
@@ -2448,29 +2500,32 @@ namespace Czuch
 			deviceCreateInfo.enabledLayerCount = 0;
 		}
 
+
 		if (m_RenderSettings->dynamicRendering)
 		{
 
 			VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingCreateInfo{};
 			dynamicRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
 			dynamicRenderingCreateInfo.dynamicRendering = VK_TRUE;
+			dynamicRenderingCreateInfo.pNext = nullptr;
 
 			VkPhysicalDeviceSynchronization2Features syncFeatures{};
 			syncFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
 			syncFeatures.synchronization2 = VK_TRUE;
+			syncFeatures.pNext = &dynamicRenderingCreateInfo;
 
-			dynamicRenderingCreateInfo.pNext = &syncFeatures;
-
-			deviceCreateInfo.pNext = &dynamicRenderingCreateInfo;
+			features12.pNext = &dynamicRenderingCreateInfo;
 
 			//shader draw parameters(gl_BaseInstance)
 			VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features = {};
 			shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
-			shader_draw_parameters_features.pNext = nullptr;
 			shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
+			shader_draw_parameters_features.pNext = &syncFeatures;
 
-			dynamicRenderingCreateInfo.pNext = &shader_draw_parameters_features;
+			features12.pNext = &shader_draw_parameters_features;
 		}
+
+		deviceCreateInfo.pNext = &features2;
 
 		if (vkCreateDevice(m_PhysicalDevice, &deviceCreateInfo, nullptr, &m_Device) != VK_SUCCESS)
 		{

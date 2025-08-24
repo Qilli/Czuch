@@ -29,8 +29,7 @@ namespace Czuch
 		m_RootEntity.AddComponent<ActiveComponent>();
 		m_RootEntity.AddComponent<GUIDComponent>(GUID());
 
-		m_AmbientColor = Color(0.0f, 0.0f, 0.0f, 1.0f);
-		m_ClearColor = Color(0.0f, 0.0f, 0.0f, 1.0f);
+		m_ClearColor = Color(1.0f, 1.0f, 1.0f, 1.0f);
 
 		//create default game mode camera
 		Entity cameraEntity = CreateEntity("MainCamera", m_RootEntity);
@@ -94,7 +93,7 @@ namespace Czuch
 			auto& light = lightView.get<LightComponent>(entity);
 			auto& transform = lightView.get<TransformComponent>(entity);
 			auto position = std::move(transform.GetWorldPosition());
-			auto direction = -transform.GetWorldForward();
+			auto direction = transform.GetWorldForward();
 			m_RenderObjects.allLights.push_back({ {.positionWithType=Vec4(position.x,position.y,position.z,light.GetLightType()),
 				.color=light.GetColor(),
 				.directionWithRange=Vec4(direction.x,direction.y,direction.z,light.GetLightRange()),

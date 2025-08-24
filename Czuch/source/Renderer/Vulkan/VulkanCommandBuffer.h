@@ -1,6 +1,6 @@
 #pragma once
 #include"Renderer/CommandBuffer.h"
-#include"VulkanBase.h"
+#include"Renderer/Vulkan/DescriptorAllocator.h"
 namespace Czuch
 {
 	class VulkanDevice;
@@ -22,9 +22,11 @@ namespace Czuch
 		void DrawFullScreenQuad(MaterialInstanceHandle material, DescriptorAllocator* allocator) override;
 		void BindPass(RenderPassHandle renderpass, FrameBufferHandle framebuffer) override;
 		void BindPipeline(PipelineHandle pipeline) override;
+		Pipeline* BindMaterialInstance(MaterialInstanceHandle material, U32 passIndex, DescriptorAllocator* allocator) override;
 		void BindBuffer(BufferHandle buffer, U32 binding, U32 offset, BufferHandle *prevBuffer) override;
 		void BindIndexBuffer(BufferHandle buffer, U32 offset) override;
 		void BindDescriptorSet(DescriptorSet* descriptor,U16 setIndex, U32 num, U32* offsets, U32 num_offsets) override;
+		void BindDescriptorSet(ParamSetUpdateControl* control, U16 setIndex, U32 num, U32* offsets, U32 num_offsets) override;
 		void SetClearColor(float r, float g, float b, float a) override;
 		void SetDepthStencil(float depth, U8 stencil) override;
 		void SetViewport(ViewportDesc viewport) override;
@@ -55,7 +57,8 @@ namespace Czuch
 		BufferHandle m_CurrentColorBuffer;
 		BufferHandle m_CurrentNormalBuffer;
 		BufferHandle m_CurrentTexCoordBuffer;
-
+		MaterialInstanceHandle m_CurrentMaterialHandle;
+		DescriptorWriter m_Writer;
 	};
 
 }

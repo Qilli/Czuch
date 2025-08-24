@@ -3,6 +3,7 @@
 #include"VulkanBase.h"
 #include"./Renderer/Graphics.h"
 #include"./Subsystems/Logging.h"
+#include"./Renderer/Vulkan/DescriptorAllocator.h"
 
 namespace Czuch
 {
@@ -238,6 +239,8 @@ namespace Czuch
 			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		case STORAGE_BUFFER_DYNAMIC:
 			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+		case COMBINED_IMAGE_SAMPLER:
+			return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		default:
 			return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		}
@@ -1049,7 +1052,19 @@ namespace Czuch
 	struct DescriptorSet : public VulkanDeviceRef
 	{
 		VkDescriptorSet descriptorSet;
-		ShaderParamsSet desc;
+		ShaderParamsSet* desc;
 		DescriptorSetLayout* descriptorLayout;
+	};
+
+	class Renderer;
+	struct ParamSetVulkanUpdateControl: public ParamSetUpdateControl
+	{
+		DescriptorSet* descriptorSet[MAX_FRAMES_IN_FLIGHT];
+		DescriptorWriter writer;
+		GraphicsDevice* device;
+		void UpdateDescriptorSet(ShaderParamInfo& param, bool forceFullUpdate) override;
+		U32 GetCurrentFrameIndex() const override;
+
+		~ParamSetVulkanUpdateControl() override;
 	};
 }

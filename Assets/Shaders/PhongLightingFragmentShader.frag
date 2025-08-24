@@ -24,12 +24,14 @@ void main()
 	 outColor=vec4(0,0,0,1);
 	 int count=lightListRange.x+lightListRange.y;
 	 vec3 normal =normalize(inNormal.xyz);
-	 int indexMaterial =int(inNormal.w+0.1f);
+	 int indexMaterial =int(inNormal.w+0.1);
 	 MaterialData materialData = materials[indexMaterial];
 
 	for( int i = lightListRange.x; i < count; ++i )
 	{
 		LightData lightData=lights[lightIndices[i]];
-		outColor+=diffuseTex* ComputeLighting(lightData,materialData,inPos,normal);
+		outColor+=diffuseTex* ComputeLighting(lightData,sceneData.cameraWorldPos,materialData,inPos,normal);
 	}
+
+	outColor = sceneData.ambientColor;
 }

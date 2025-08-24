@@ -5,13 +5,14 @@
 
 namespace Czuch
 {
-	class VulkanDevice;
 	struct DescriptorSet;
 	struct ShaderParamsSet;
 	struct DescriptorSetLayout;
 	enum DescriptorType;
 	struct Buffer;
 	struct Texture;
+
+	class VulkanDevice;
 
 	struct DescriptorWriter
 	{

@@ -12,9 +12,9 @@ namespace Czuch
 
 	void DescriptorLayoutCache::CleanUp()
 	{
-		for (auto pair : m_LayoutCache)
+		for (auto layout : m_LayoutCache)
 		{
-			vkDestroyDescriptorSetLayout(m_Device,pair.second,nullptr);
+			vkDestroyDescriptorSetLayout(m_Device, layout.layout, nullptr);
 		}
 		m_LayoutCache.clear();
 	}
@@ -23,6 +23,7 @@ namespace Czuch
 	{
 		DescriptorLayoutInfo layoutInfo;
 		layoutInfo.bindings.reserve(info->bindingCount);
+		layoutInfo.flags = info->flags;
 		bool isSorted = true;
 		int lastBinding = -1;
 
@@ -48,16 +49,32 @@ namespace Czuch
 				});
 		}
 
-		auto it = m_LayoutCache.find(layoutInfo);
-		if (it != m_LayoutCache.end())
+
+		/*VkDescriptorSetLayout layout;
+		vkCreateDescriptorSetLayout(m_Device, info, nullptr, &layout);
+		//m_LayoutCache[layoutInfo] = layout;
+		m_Layouts.push_back(layout);
+		return layout;*/
+		DescriptorLayoutInfo* infoPtr = nullptr;
+		for (auto& layout : m_LayoutCache)
 		{
-			return it->second;
+			if (layout == layoutInfo)
+			{
+				infoPtr = &layout;
+				break;
+			}
+		}
+
+		if (infoPtr != nullptr)
+		{
+			return infoPtr->layout;
 		}
 		else
 		{
 			VkDescriptorSetLayout layout;
 			vkCreateDescriptorSetLayout(m_Device, info, nullptr, &layout);
-			m_LayoutCache[layoutInfo] = layout;
+			layoutInfo.layout = layout;
+			m_LayoutCache.push_back(std::move(layoutInfo));
 			return layout;
 		}
 	}
@@ -90,6 +107,11 @@ namespace Czuch
 			{
 				return false;
 			}
+
+			if(other.flags != flags)
+			{
+				return false;
+			}
 		}
 		return true;
 	}
@@ -99,13 +121,23 @@ namespace Czuch
 		using std::size_t;
 		using std::hash;
 
+		// A better way to combine hashes
+		auto hash_combine = [](size_t& seed, const size_t& v) {
+			seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			};
+
 		size_t result = hash<size_t>()(bindings.size());
 
 		for (const VkDescriptorSetLayoutBinding& b : bindings)
 		{
-			size_t binding_hash = b.binding | b.descriptorType << 8 | b.descriptorCount << 16 | b.stageFlags << 24;
-			//xor with main hash
-			result ^= hash<size_t>()(binding_hash);
+			// Hash each individual member
+			size_t binding_hash = hash<uint32_t>()(b.binding);
+			hash_combine(binding_hash, hash<VkDescriptorType>()(b.descriptorType));
+			hash_combine(binding_hash, hash<uint32_t>()(b.descriptorCount));
+			hash_combine(binding_hash, hash<VkShaderStageFlags>()(b.stageFlags));
+
+			// Combine the individual binding hash with the total result
+			hash_combine(result, binding_hash);
 		}
 
 		return result;

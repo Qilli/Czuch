@@ -81,6 +81,8 @@ namespace Czuch
 		virtual void* GetMappedBufferDataPtr(BufferHandle buffer) = 0;
 		virtual Format GetDepthFormat() const = 0;
 		virtual void DrawDebugWindows() = 0;
+		virtual void SetCurrentFrameIndex(U32 frameIndex) = 0;
+		virtual U32 GetCurrentFrameIndex() const = 0;
 
 	};
 

@@ -16,6 +16,8 @@ namespace Czuch
 		struct DescriptorLayoutInfo
 		{
 			std::vector<VkDescriptorSetLayoutBinding> bindings;
+			VkDescriptorSetLayout layout;
+			int flags;
 			bool operator==(const DescriptorLayoutInfo& other) const;
 			size_t Hash() const;
 		};
@@ -28,7 +30,7 @@ namespace Czuch
 			}
 		};
 
-		std::unordered_map<DescriptorLayoutInfo, VkDescriptorSetLayout, DescriptorLayoutHash> m_LayoutCache;
+		Array<DescriptorLayoutInfo> m_LayoutCache;
 		VkDevice m_Device;
 	};
 }

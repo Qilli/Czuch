@@ -6,6 +6,7 @@ namespace Czuch
 {
     class GraphicsDevice;
     class MaterialInstanceAssetManager;
+	class MaterialAsset;
 
 	class CZUCH_API MaterialInstanceAsset: public Asset
 	{
@@ -30,6 +31,9 @@ namespace Czuch
         StorageBufferTagInfo GetInfoDescriptorTag(DescriptorBindingTagType tag,int pass) const;
         void ChangeDataForDescriptorWithTag(DescriptorBindingTagType tag, void* data, U32 size);
 		U32 GetParametersCount() const;
+		MaterialAsset* GetMaterialAsset();
+		void UpdateSizeForTag(DescriptorBindingTagType tag, U32 size,int pass=0);
+        void SetAsDirty();
     public:
 		MaterialInstanceAsset* CloneMaterialInstance();
 		void* GetParameterDataWithInfo(StorageBufferTagInfo& info);
@@ -48,6 +52,7 @@ namespace Czuch
         MaterialInstanceLoadSettings m_MaterialLoadSettings;
         Array<char> m_MaterialInstanceBuffer;
 		Array<TextureHandle> m_Dependencies;
+
 	};
 }
 

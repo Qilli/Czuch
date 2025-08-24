@@ -53,11 +53,13 @@ namespace Czuch
 		void SetColor(Color color) { m_Color = color; }
 
 		inline float GetInnerAngle() const { return m_InnerAngle; }
-		inline float GetInnerAngleCos() const { return cosf(m_InnerAngle); }
+		inline float GetInnerAngleCos() const { return cosf(m_InnerAngle*DEG2RAD); }
+		//in degrees
 		void SetInnerAngle(float angle) { m_InnerAngle = angle; }
 
 		inline float GetOuterAngle() const { return m_OuterAngle; }
-		inline float GetOuterAngleCos() const { return cosf(m_OuterAngle); }
+		inline float GetOuterAngleCos() const { return cosf(m_OuterAngle*DEG2RAD); }
+		//in degrees
 		void SetOuterAngle(float angle) { m_OuterAngle = angle; }
 
 		void OnRemoved() override {

@@ -1,7 +1,7 @@
 #include "czpch.h"
 #include "TextureAssetManager.h"
 #include "../BuildInAssets.h"
-
+#include "Renderer/GraphicsDevice.h"
 namespace Czuch
 {
 
@@ -17,4 +17,5 @@ namespace Czuch
 		RegisterAsset(strId, texRes);
 		return texRes;
 	}
+
 }

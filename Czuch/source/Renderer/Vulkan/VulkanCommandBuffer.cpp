@@ -15,6 +15,7 @@ namespace Czuch
 		m_CurrentFrameBuffer = INVALID_HANDLE(FrameBufferHandle);
 		m_CurrentRenderPass = INVALID_HANDLE(RenderPassHandle);
 		m_CurrentPipeline = INVALID_HANDLE(PipelineHandle);
+		m_CurrentMaterialHandle = INVALID_HANDLE(MaterialInstanceHandle);
 	}
 
 	void VulkanCommandBuffer::Init(const GraphicsDevice* gpu)
@@ -62,6 +63,8 @@ namespace Czuch
 			INVALIDATE_HANDLE(m_CurrentNormalBuffer);
 			INVALIDATE_HANDLE(m_CurrentPositionBuffer);
 			INVALIDATE_HANDLE(m_CurrentTexCoordBuffer);
+			INVALIDATE_HANDLE(m_CurrentPipeline);
+			INVALIDATE_HANDLE(m_CurrentMaterialHandle);
 		}
 	}
 
@@ -89,53 +92,7 @@ namespace Czuch
 		Mesh* meshInstance = m_Device->AccessMesh(renderElement.mesh);
 		if (meshInstance != nullptr)
 		{
-			U32 passIndex = renderElement.passIndex;
-			MaterialInstance* materialInstance = m_Device->AccessMaterialInstance(HANDLE_IS_VALID(renderElement.overrideMaterial) ? renderElement.overrideMaterial : meshInstance->materialHandle);
-			Material* material = m_Device->AccessMaterial(materialInstance->handle);
-			auto& paramsDesc = materialInstance->params[passIndex].shaderParamsDesc;
-			auto pipeline = material->pipelines[passIndex];
-			auto& pipelineDesc = material->GetDesc().passesContainer.passes[passIndex];
-			BindPipeline(pipeline);
-
-			auto pipelinePtr = m_Device->AccessPipeline(pipeline);
-			DescriptorWriter writer;
-
-			for (int a = 0; a < pipelineDesc.layoutsCount; a++)
-			{
-				writer.Clear();
-				auto descriptorLayout = pipelinePtr->layouts[a];
-				auto layout = m_Device->AccessDescriptorSetLayout(descriptorLayout);
-				auto &layoutDesc = pipelineDesc.layouts[a];
-				auto descriptor = allocator->Allocate(paramsDesc[a], layout);
-
-				for (int b = 0; b < layoutDesc.bindingsCount; b++)
-				{
-					auto binding = layoutDesc.bindings[b];
-					if (binding.type == DescriptorType::UNIFORM_BUFFER)
-					{
-						writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
-					}
-					else if (binding.type == DescriptorType::SAMPLER)
-					{
-						writer.WriteTexture(binding.index, m_Device->AccessTexture({ paramsDesc[a].descriptors[b].resource,AssetHandle()}), DescriptorType::SAMPLER);
-					}
-					else if (binding.type == DescriptorType::STORAGE_BUFFER)
-					{
-						if (paramsDesc[a].descriptors[b].resource != -1)
-						{
-							auto buffer = m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource));
-							if (buffer != nullptr)
-							{
-								writer.WriteBuffer(binding.index, buffer, binding.size, 0, binding.type);
-							}
-						}
-					
-					}
-					writer.UpdateSet(m_Device, descriptor);
-				}
-
-				BindDescriptorSet(descriptor, a, 1, nullptr, 0);
-			}
+			auto pipelinePtr=BindMaterialInstance(renderElement.overrideMaterial, 0, allocator);
 
 			TryBindMeshInstanceBuffers(meshInstance);
 
@@ -353,10 +310,89 @@ namespace Czuch
 		{
 			return;
 		}
+
+		if (pipeline.handle == m_CurrentPipeline.handle)
+		{
+			return;
+		}
+
+		CZUCH_BE_ASSERT(pipeline.handle != Invalid_Handle_Id, "Trying to bind invalid pipeline!");
+
 		auto pp = m_Device->AccessPipeline(pipeline);
 		VkPipeline pipelineVk = Internal_To_Pipeline(pp)->pipeline;
 		vkCmdBindPipeline(m_Cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineVk);
 		m_CurrentPipeline = pipeline;
+	}
+
+	 Pipeline* VulkanCommandBuffer::BindMaterialInstance(MaterialInstanceHandle materialHandle, U32 passIndex, DescriptorAllocator* allocator)
+	{
+		 MaterialInstance* materialInstance = m_Device->AccessMaterialInstance(materialHandle);
+		 Material* material = m_Device->AccessMaterial(materialInstance->handle);
+		 auto& paramsDesc = materialInstance->params[passIndex].shaderParamsDesc;
+		 auto pipeline = material->pipelines[passIndex];
+		 auto pipelinePtr = m_Device->AccessPipeline(pipeline);
+
+		if(m_CurrentMaterialHandle.handle== materialHandle.handle)
+		{
+			return pipelinePtr;
+		}
+		m_CurrentMaterialHandle = materialHandle;;
+		auto& pipelineDesc = material->GetDesc().passesContainer.passes[passIndex];
+		BindPipeline(pipeline);
+
+		bool isDirty = materialInstance->IsDirty();
+		materialInstance->ClearDirty();
+
+		for (int a = 0; a < pipelineDesc.layoutsCount; a++)
+		{
+			if (paramsDesc[a].descriptorsCount <= 0)
+			{
+				continue;
+			}
+
+			auto descriptorLayout = pipelinePtr->layouts[a];
+			auto layout = m_Device->AccessDescriptorSetLayout(descriptorLayout);
+			auto& layoutDesc = pipelineDesc.layouts[a];
+
+
+			if (paramsDesc[a].currentDescriptor == nullptr)
+			{
+				paramsDesc[a].currentDescriptor = allocator->Allocate(paramsDesc[a], layout);
+			}
+
+			if (isDirty)
+			{
+				m_Writer.Clear();
+				for (int b = 0; b < layoutDesc.bindingsCount; b++)
+				{
+					auto binding = layoutDesc.bindings[b];
+					if (binding.type == DescriptorType::UNIFORM_BUFFER)
+					{
+						m_Writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), paramsDesc[a].descriptors[b].size, 0, binding.type);
+					}
+					else if (binding.type == DescriptorType::SAMPLER)
+					{
+						m_Writer.WriteTexture(binding.index, m_Device->AccessTexture({ paramsDesc[a].descriptors[b].resource,AssetHandle() }), DescriptorType::SAMPLER);
+					}
+					else if (binding.type == DescriptorType::STORAGE_BUFFER)
+					{
+						if (paramsDesc[a].descriptors[b].resource != -1)
+						{
+							auto buffer = m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource));
+							if (buffer != nullptr)
+							{
+								m_Writer.WriteBuffer(binding.index, buffer, paramsDesc[a].descriptors[b].size, 0, binding.type);
+							}
+						}
+
+					}
+					m_Writer.UpdateSet(m_Device, paramsDesc[a].currentDescriptor);
+				}
+			}
+
+			BindDescriptorSet(paramsDesc[a].currentDescriptor, a, 1, nullptr, 0);
+		}
+		return pipelinePtr;
 	}
 
 	void VulkanCommandBuffer::BindBuffer(BufferHandle buffer, U32 binding, U32 offset, BufferHandle* prevBuffer)
@@ -394,8 +430,19 @@ namespace Czuch
 			LOG_BE_ERROR("{0} Failed to bind descriptor set, pipeline is invalid", Tag);
 			return;
 		}
+		CZUCH_BE_ASSERT(pp != nullptr, "No pipeline bound to command buffer");
+		CZUCH_BE_ASSERT(descriptor != nullptr, "Descriptor set passed to command buffer is null")
+		CZUCH_BE_ASSERT(descriptor->descriptorSet != VK_NULL_HANDLE, "Descriptor set handle is VK_NULL_HANDLE");
+
 		auto vulkanPipeline = Internal_To_Pipeline(pp);
 		vkCmdBindDescriptorSets(m_Cmd, ConvertBindPoint(pp->m_desc.bindPoint), vulkanPipeline->pipelineLayout, setIndex, num, &descriptor->descriptorSet, num_offsets, offsets);
+	}
+
+	void VulkanCommandBuffer::BindDescriptorSet(ParamSetUpdateControl* control, U16 setIndex, U32 num, U32* offsets, U32 num_offsets)
+	{
+		CZUCH_BE_ASSERT(control != nullptr, "ParamSetUpdateControl is null");
+		ParamSetVulkanUpdateControl* vulkanControl = static_cast<ParamSetVulkanUpdateControl*>(control);
+		BindDescriptorSet(vulkanControl->descriptorSet[vulkanControl->GetCurrentFrameIndex()], setIndex, num, offsets, num_offsets);
 	}
 
 	void VulkanCommandBuffer::SetClearColor(float r, float g, float b, float a)
@@ -463,6 +510,7 @@ namespace Czuch
 
 		//set scene data for material
 		paramsDesc[0].descriptors[0].resource = data->sceneDataBuffer.handle;
+		
 		//set instances count in material
 		paramsDesc[data->set].descriptors[data->binding].resource = data->instancesBuffer.handle;
 

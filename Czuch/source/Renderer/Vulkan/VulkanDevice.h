@@ -41,12 +41,12 @@ namespace Czuch
 		void PreDrawFrame();
 		void* CreatePointerForUITexture(TextureHandle tex) override;
 
-		PipelineHandle CreatePipelineState(const MaterialPassDesc* desc,RenderPass* rpass, bool dynamicRendering = false) override;
+		PipelineHandle CreatePipelineState(const MaterialPassDesc* desc, RenderPass* rpass, bool dynamicRendering = false) override;
 		ShaderHandle CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize)override;
 		RenderPassHandle CreateRenderPass(const RenderPassDesc* desc) override;
 		DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc)  override;
 		FrameBufferHandle CreateFrameBuffer(const FrameBufferDesc* desc, bool resize = false, FrameBufferHandle handle = INVALID_HANDLE(FrameBufferHandle)) override;
-		CommandBufferHandle CreateCommandBuffer(bool isPrimary,void* pool=nullptr) override;
+		CommandBufferHandle CreateCommandBuffer(bool isPrimary, void* pool = nullptr) override;
 		BufferHandle CreateBuffer(const BufferDesc* desc) override;
 		TextureHandle CreateTexture(const TextureDesc* desc, bool resize = false, TextureHandle handle = INVALID_HANDLE(TextureHandle)) override;
 		MeshHandle CreateMesh(MeshData& meshData) override;
@@ -57,7 +57,7 @@ namespace Czuch
 
 
 		DescriptorAllocator* CreateDescriptorAllocator();
-		
+
 		void AwaitDevice() const;
 
 		void ReleaseDescriptorAllocator(DescriptorAllocator* allocator);
@@ -73,6 +73,12 @@ namespace Czuch
 		bool Release(MaterialHandle& material) override;
 		bool Release(MaterialInstanceHandle& materialInstance) override;
 
+		void SetCurrentFrameIndex(U32 frameIndex) {
+			m_CurrentFrameInFlight = frameIndex;
+		}
+
+		U32 GetCurrentFrameIndex() const override { return m_CurrentFrameInFlight; }
+
 
 		Pipeline* AccessPipeline(PipelineHandle handle) override;
 		RenderPass* AccessRenderPass(RenderPassHandle handle) override;
@@ -87,7 +93,7 @@ namespace Czuch
 		Material* AccessMaterial(MaterialHandle handle) override;
 		MaterialInstance* AccessMaterialInstance(MaterialInstanceHandle handle) override;
 
-		void ResizeTexture(TextureHandle texture,U32 width, U32 height) override;
+		void ResizeTexture(TextureHandle texture, U32 width, U32 height) override;
 		void ResizeFrameBuffer(FrameBufferHandle handle, U32 width, U32 height) override;
 	public:
 		void TransitionSwapChainImageLayoutPreDraw(VulkanCommandBuffer* cmd, uint32_t imageIndex);
@@ -95,11 +101,11 @@ namespace Czuch
 	public:
 		void* InitImGUI();
 		void ShutdownImGUI();
-		void TransitionImageLayoutImmediate(TextureHandle handle,ImageLayout oldLayout,ImageLayout newLayout,U32 baseMipLevel, U32 mipCount, bool isDepth) override;
-		void TransitionImageLayout(CommandBuffer* cmd,TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) override;
+		void TransitionImageLayoutImmediate(TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) override;
+		void TransitionImageLayout(CommandBuffer* cmd, TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) override;
 		bool TryTransitionImageLayout(CommandBuffer* cmd, TextureHandle texture, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount) override;
 	public:
-		bool UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size,U32 offset) override;
+		bool UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size, U32 offset) override;
 		bool UploadCurrentDataToBuffer(BufferHandle buffer) override;
 		void* GetMappedBufferDataPtr(BufferHandle buffer) override;
 	public:
@@ -108,13 +114,13 @@ namespace Czuch
 		int GetCurrentImageIndex() const { return m_CurrentImageIndex; }
 		VkSemaphore CreateNewSemaphore();
 		void ReleaseSemaphore(VkSemaphore sem);
-		VkFence CreateNewFence(bool signaledState=false);
+		VkFence CreateNewFence(bool signaledState = false);
 		void ReleaseFence(VkFence fence);
 		VkCommandPool CreateCommandPool(bool isTransient, bool isResettable);
 		VkCommandBufferSubmitInfo CreateCommandBufferSubmitInfo(VkCommandBuffer cmdBuffer);
-		VkSubmitInfo2 CreateSubmitInfo(VkCommandBufferSubmitInfo* cmdBufferSubmitInfo, VkSemaphoreSubmitInfo* signalSemaphoreInfo,VkSemaphoreSubmitInfo* waitSemaphoreInfo);
+		VkSubmitInfo2 CreateSubmitInfo(VkCommandBufferSubmitInfo* cmdBufferSubmitInfo, VkSemaphoreSubmitInfo* signalSemaphoreInfo, VkSemaphoreSubmitInfo* waitSemaphoreInfo);
 		void ReleaseCommandPool(VkCommandPool pool);
-		uint32_t AcquireNextSwapChainImage(VkSemaphore sem,bool& aquireFailed);
+		uint32_t AcquireNextSwapChainImage(VkSemaphore sem, bool& aquireFailed);
 		void SubmitToGraphicsQueue(VkSubmitInfo info, VkFence fence);
 		void ImmediateSubmitToGraphicsQueueWithCommandBuffer(VkCommandBuffer cmdBuffer, VkFence fence);
 		void Present(uint32_t imageIndex, VkSemaphore semaphore);
@@ -136,7 +142,7 @@ namespace Czuch
 			VkImageView depthImageView;
 			VkFormat depthFormat;
 
-			void Release(VkDevice device,VmaAllocator allocator);
+			void Release(VkDevice device, VmaAllocator allocator);
 		};
 
 		struct SwapChainData
@@ -152,7 +158,7 @@ namespace Czuch
 			{
 				for (uint32_t i = 0; i < swapChainImageViews.size(); ++i)
 				{
-					vkDestroyImageView(device,swapChainImageViews[i],nullptr);
+					vkDestroyImageView(device, swapChainImageViews[i], nullptr);
 				}
 				vkDestroySwapchainKHR(device, swapChain, nullptr);
 
@@ -182,7 +188,7 @@ namespace Czuch
 
 		struct ResourcesContainer
 		{
-			GraphicsResourceAccessContainer<Texture,TextureHandle> textures= GraphicsResourceAccessContainer<Texture, TextureHandle>(k_max_resources);
+			GraphicsResourceAccessContainer<Texture, TextureHandle> textures = GraphicsResourceAccessContainer<Texture, TextureHandle>(k_max_resources);
 			GraphicsResourceAccessContainer<Buffer, BufferHandle> buffers = GraphicsResourceAccessContainer<Buffer, BufferHandle>(k_max_resources);
 			GraphicsResourceAccessContainer<CommandBuffer, CommandBufferHandle> commandBuffers = GraphicsResourceAccessContainer<CommandBuffer, CommandBufferHandle>(k_max_resources);
 			GraphicsResourceAccessContainer<Pipeline, PipelineHandle> pipelines = GraphicsResourceAccessContainer<Pipeline, PipelineHandle>(k_max_resources);
@@ -225,6 +231,9 @@ namespace Czuch
 		VkPhysicalDeviceProperties m_DeviceProperties;
 
 		DepthImage m_DepthImage;
+		U32 m_CurrentFrameInFlight;
+	private:
+		DescriptorSetLayoutHandle m_BindlessDescriptorSetLayoutHandle;
 	private:
 		VkDescriptorPool m_ImguiPool;
 	private:
@@ -240,16 +249,16 @@ namespace Czuch
 	private:
 		bool CreateDepthImage();
 		bool CreateSwapChain();
-		bool CreateSwapChainFrameBuffers(bool createRenderPass=true);
+		bool CreateSwapChainFrameBuffers(bool createRenderPass = true);
 		bool RecreateSwapChain();
 	private:
 		U32 FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags properties) const;
-		VkDeviceMemory AllocateBufferMemory(VkBuffer buffer,VkMemoryPropertyFlags memoryProperty) const;
+		VkDeviceMemory AllocateBufferMemory(VkBuffer buffer, VkMemoryPropertyFlags memoryProperty) const;
 		bool CreateBuffer_Internal(BufferInternalSettings& settings) const;
 		bool CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize dstOffset) const;
 		bool CopyDataToBuffer(Buffer_Vulkan* buffer, const void* dataIn, U32 size, U32 offset) const;
 		void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, U32 w, U32 h) const;
-		void TransitionImageLayout(VkCommandBuffer cmd ,VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) const;
+		void TransitionImageLayout(VkCommandBuffer cmd, VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) const;
 		void DoImageMemoryBarrier(VkCommandBuffer cmdbuffer,
 			VkImage image,
 			VkAccessFlags srcAccessMask,
@@ -263,12 +272,12 @@ namespace Czuch
 		void EndSingleTimeCommands(VkCommandBuffer cmd) const;
 	private:
 		void GenerateMipmaps(VkImage image, VkFormat imageFormat, U32 texWidth, U32 texHeight, U32 mipLevels);
-		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,int mipsCount) const;
-		ImageWithAllocation CreateImage(TextureDesc::Type type,U32 width, U32 height, U32 mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageLayout initLayout, VkSharingMode sharingMode) const;
+		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, int mipsCount) const;
+		ImageWithAllocation CreateImage(TextureDesc::Type type, U32 width, U32 height, U32 mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageLayout initLayout, VkSharingMode sharingMode) const;
 		VkSampler CreateImageSampler(const SamplerDesc& desc) const;
 	private:
 		virtual void OnEvent(Czuch::Event& e) override;
-		
+
 	private:
 		bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface);
 		bool HasValidationLayerSupport();

@@ -28,11 +28,16 @@ namespace Czuch
 	void WriteDescriptor(DescriptorWriter& writer,VulkanDevice* device, DescriptorSet* descriptor)
 	{
 		writer.Clear();
-		for (int i = 0; i < descriptor->desc.descriptorsCount; ++i)
+		for (int i = 0; i < descriptor->desc->descriptorsCount; ++i)
 		{
-			auto& current = descriptor->desc.descriptors[i];
+			auto& current = descriptor->desc->descriptors[i];
 			if (current.type == DescriptorType::UNIFORM_BUFFER || current.type == DescriptorType::UNIFORM_BUFFER_DYNAMIC || current.type == DescriptorType::STORAGE_BUFFER || current.type == DescriptorType::STORAGE_BUFFER_DYNAMIC)
 			{
+				auto handle = BufferHandle(current.resource);
+				if (!HANDLE_IS_VALID(handle))
+				{
+					return;
+				}
 				Buffer* buffer = (Buffer*)device->AccessBuffer(BufferHandle(current.resource));
 				if (buffer == nullptr)
 				{
@@ -50,7 +55,8 @@ namespace Czuch
 				}
 				else
 				{
-					LOG_BE_ERROR("[DescriptorAllocator] Failed to access texture for descriptor set with id: {0}", current.resource);
+					return;
+					//LOG_BE_ERROR("[DescriptorAllocator] Failed to access texture for descriptor set with id: {0}", current.resource);
 				}
 			}
 		}
@@ -77,10 +83,12 @@ namespace Czuch
 
 		DescriptorSet *descSet = new DescriptorSet();;
 		descSet->descriptorLayout = layout;
-		descSet->desc = desc;
+		descSet->desc = &desc;
 		m_Descriptors.push_back(descSet);
 
 		VkResult result = vkAllocateDescriptorSets(m_Device->GetNativeDevice(), &allocInfo, &descSet->descriptorSet);
+
+		CZUCH_BE_ASSERT(result == VK_SUCCESS || result == VK_ERROR_FRAGMENTED_POOL || result == VK_ERROR_OUT_OF_POOL_MEMORY, "Failed to allocate descriptor set!");
 
 		switch (result)
 		{
@@ -146,7 +154,7 @@ namespace Czuch
 		}
 		else
 		{
-			return CreatePool(m_Device->GetNativeDevice(), m_DescriptorSizes, 1000, 0);
+			return CreatePool(m_Device->GetNativeDevice(), m_DescriptorSizes, 1000, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 		}
 	}
 

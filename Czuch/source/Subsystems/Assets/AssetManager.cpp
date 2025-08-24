@@ -181,6 +181,14 @@ namespace Czuch
 		return m_filterArray;
 	}
 
+	void AssetManager::ExecuteOnAllAssets(std::function<void(Asset*)> func)
+	{
+		for (auto& asset : m_Assets)
+		{
+			func(asset.second);
+		}
+	}
+
 	void AssetManager::RegisterAsset(StringID& strId, Asset* createdRes)
 	{
 		m_Assets.insert({ strId.GetGuid(), createdRes });

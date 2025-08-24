@@ -21,6 +21,7 @@ namespace Czuch
 		inline float GetAspectRatio()const { return m_AspectRatio; }
 		void SetAspectRatio(float aspectRatio);
 		void Set(float fov, float aspectRatio, float nearPlane, float farPlane);
+		Vec4 GetWorldPosition() const;
 
 		inline Viewport& GetViewport() { return m_Viewport; }
 		inline void SetViewport(float x, float y, float width, float height) {

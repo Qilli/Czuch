@@ -118,6 +118,7 @@ namespace Czuch
 			return;
 		}
 
+		m_Device->SetCurrentFrameIndex(m_CurrentFrame);
 		GetCurrentFrame().Reset();
 		GetCurrentFrame().frameDeletionQueue.Flush();
 

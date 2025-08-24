@@ -68,6 +68,11 @@ namespace Czuch
 		Recalculate();
 	}
 
+	Vec4 Camera::GetWorldPosition() const
+	{
+		return Vec4(m_Transform->GetWorldPosition(),1.0f);
+	}
+
 	Mat4x4 Camera::GetProjectionMatrix()
 	{
 		return m_ProjectionMatrix;

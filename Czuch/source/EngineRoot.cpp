@@ -137,6 +137,7 @@ namespace Czuch
 			//Update events
 			auto deltaTime = UpdateDeltaTime(counter);
 			Time::m_TimeFromStart += deltaTime.GetDeltaTimeInMilliseconds();
+			m_ResourcesMgr->Update(deltaTime);
 			m_EventsMgr->Update(deltaTime);
 			m_Window->Update();
 			m_ScenesMgr->Update(deltaTime);

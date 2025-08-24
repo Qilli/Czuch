@@ -34,6 +34,7 @@ namespace Czuch
 		void AwaitDeviceIdle() override;
 		void ReleaseDependencies() override;
 		GraphicsDevice* GetDevice() override;
+		U32 GetCurrentFrameIndex() const override { return m_CurrentFrame; }
 	public:
 		void SetActiveScene(Scene* scene) override;
 	public:

@@ -44,6 +44,7 @@ namespace Czuch
 		virtual void OnPreRenderUpdateDebugDrawElements(Camera* camera, RenderContextFillParams* fillParams) = 0;
 		virtual void* GetFrameGraphFinalResult(Camera* cam) = 0;
 		virtual void FlushDeletionQueue() = 0;
+		virtual U32 GetCurrentFrameIndex() const = 0;
 		virtual void SetDebugRenderingFlag(DebugRenderingFlag flag,bool enable)
 		{
 			bool isSet = (m_DebugRenderingFlags & flag) != 0;

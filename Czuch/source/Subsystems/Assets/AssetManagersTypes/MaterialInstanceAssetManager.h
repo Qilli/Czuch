@@ -52,6 +52,7 @@ namespace Czuch
 		}
 
 		void UpdateDataForGlobalStorage(I32 index,MaterialCustomBufferData& data);
+		void DirtyAllMaterials();
 
 	protected:
 		Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) override;
@@ -90,6 +91,18 @@ namespace Czuch
 		CZUCH_BE_ASSERT(false, "MaterialInstanceAssetManager::UpdateDataForGlobalStorage: No container found for the given data tag.");
 	}
 
+	inline void MaterialInstanceAssetManager::DirtyAllMaterials()
+	{
+		ExecuteOnAllAssets([](Asset* asset) 
+			{
+				MaterialInstanceAsset* matInst = dynamic_cast<MaterialInstanceAsset*>(asset);
+				if (matInst)
+				{
+					matInst->SetAsDirty();
+				}
+			});
+	}
+
 	inline Asset* MaterialInstanceAssetManager::CreateAsset(const CzuchStr& path, BaseCreateSettings& settings)
 	{
 		StringID strId = StringID::MakeStringID(path);
@@ -104,15 +117,15 @@ namespace Czuch
 		{
 			// Add material data to the container
 			auto info = matRes->GetInfoDescriptorTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA,0);
-			if (info.index>=0)
+			if (info.index >= 0)//if less than 0 then it means that material does not have this tag, so we do not need to add data
 			{
 				void* gpuData = matRes->GetParameterDataWithInfo(info);
 				if (gpuData != nullptr)
 				{
 
-					U32 dataIndex = AddDataForDescriptorWithTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA, gpuData, sizeof(MaterialObjectGPUData));
-					BufferHandle handle = GetStorageBufferHandleForDescriptorTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
-					matRes->SetGlobalIndexAndBufferForDescriptorAtIndex(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA, dataIndex, handle);
+					U32 dataIndex = AddDataForDescriptorWithTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA, gpuData, sizeof(MaterialObjectGPUData)); //this add data to the container and returns index of data in the container(one big buffer)
+					BufferHandle handle = GetStorageBufferHandleForDescriptorTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);//global buffer handle for this tag
+					matRes->SetGlobalIndexAndBufferForDescriptorAtIndex(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA, dataIndex, handle);//set index and buffer handle for this tag in the material instance asset
 				}
 			}
 		}

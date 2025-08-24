@@ -6,6 +6,7 @@
 #include "Asset/MaterialInstanceAsset.h"
 #include "Asset/MaterialAsset.h"
 #include "./Subsystems/Assets/AssetManagersTypes/MaterialAssetManager.h"
+#include "./Subsystems/Assets/AssetManagersTypes/MaterialInstanceAssetManager.h"
 
 
 namespace Czuch
@@ -37,6 +38,8 @@ namespace Czuch
 
 	void AssetsManager::Update(TimeDelta timeDelta)
 	{
+		MaterialInstanceAssetManager* mgr = GetManagerOfType<MaterialInstanceAssetManager, MaterialInstanceAsset>();
+		mgr->DirtyAllMaterials();
 	}
 
 	void AssetsManager::RegisterManager(AssetManager* newMgr, std::type_index type)
@@ -192,17 +195,18 @@ namespace Czuch
 	void AssetsManager::UpdateLightingMaterialsLightInfo(U32 lightsCount, U32 lightsIndexRangesCount, U32 lightTilesCount, U32 materialsCount)
 	{
 		//find all material with lighting pass
-		MaterialAssetManager* mgr = GetManagerOfType<MaterialAssetManager,MaterialAsset>();
+		MaterialInstanceAssetManager* mgr = GetManagerOfType<MaterialInstanceAssetManager,MaterialInstanceAsset>();
 
 		if (mgr == nullptr)
 		{
-			LOG_BE_ERROR("{0} Failed to find material asset manager", "[AssetsManager]");
+			LOG_BE_ERROR("{0} Failed to find material instance asset manager", "[AssetsManager]");
 			return;
 		}
 
 		auto &filtered=mgr->GetAllAssetsWithFilter([](Asset* asset)-> bool {
-			MaterialAsset* mat = static_cast<MaterialAsset*>(asset);
-			if(mat->HasPassType(RenderPassType::ForwardLighting)|| mat->HasPassType(RenderPassType::ForwardLightingTransparent))
+			MaterialInstanceAsset* mat = static_cast<MaterialInstanceAsset*>(asset);
+			MaterialAsset* matAsset = mat->GetMaterialAsset();
+			if(matAsset->HasPassType(RenderPassType::ForwardLighting)|| matAsset->HasPassType(RenderPassType::ForwardLightingTransparent))
 			{
 				return true;
 			}
@@ -210,47 +214,27 @@ namespace Czuch
 
 		for (auto asset : filtered)
 		{
-			MaterialAsset* mat = static_cast<MaterialAsset*>(asset);
-			auto* bindingLightsContainer = mat->GetBindingWithTag(DescriptorBindingTagType::LIGHTS_CONTAINER);
-			auto* bindingLightsIndexRanges = mat->GetBindingWithTag(DescriptorBindingTagType::LIGHTS_INDEXES);
-			auto* bindingLightsTiles = mat->GetBindingWithTag(DescriptorBindingTagType::LIGHTS_TILES);
-			auto* bindingLightMaterials = mat->GetBindingWithTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
-
-			if (bindingLightsContainer)
-			{
-				bindingLightsContainer->size = lightsCount * sizeof(LightData);
-			}
-
-			if (bindingLightsIndexRanges)
-			{
-				bindingLightsIndexRanges->size = lightsIndexRangesCount * sizeof(U32);
-			}
-
-			if (bindingLightsTiles)
-			{
-				bindingLightsTiles->size = lightTilesCount * sizeof(LightsTileData);
-			}
-
-			if (bindingLightMaterials)
-			{
-				bindingLightMaterials->size = materialsCount * sizeof(MaterialObjectGPUData);
-			}
+			MaterialInstanceAsset* mat = static_cast<MaterialInstanceAsset*>(asset);
+			mat->UpdateSizeForTag(DescriptorBindingTagType::LIGHTS_CONTAINER, lightsCount * sizeof(LightData));
+			mat->UpdateSizeForTag(DescriptorBindingTagType::LIGHTS_INDEXES, lightsIndexRangesCount * sizeof(U32));
+			mat->UpdateSizeForTag(DescriptorBindingTagType::LIGHTS_TILES, lightTilesCount * sizeof(LightsTileData));
+			mat->UpdateSizeForTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA, materialsCount * sizeof(MaterialObjectGPUData));
 		}
 	}
 
 	void AssetsManager::UpdateRenderObjectsInfo(U32 renderObjectsCount)
 	{
-		MaterialAssetManager* mgr = GetManagerOfType<MaterialAssetManager, MaterialAsset>();
-
+		MaterialInstanceAssetManager* mgr = GetManagerOfType<MaterialInstanceAssetManager, MaterialInstanceAsset>();
 		if (mgr == nullptr)
 		{
-			LOG_BE_ERROR("{0} Failed to find material asset manager", "[AssetsManager]");
+			LOG_BE_ERROR("{0} Failed to find material instance asset manager", "[AssetsInstanceManager]");
 			return;
 		}
 
 		auto& filtered = mgr->GetAllAssetsWithFilter([](Asset* asset)-> bool {
-			MaterialAsset* mat = static_cast<MaterialAsset*>(asset);
-			if (mat->HasPassType(RenderPassType::ForwardLighting) || mat->HasPassType(RenderPassType::ForwardLightingTransparent))
+			MaterialInstanceAsset* mat = static_cast<MaterialInstanceAsset*>(asset);
+			MaterialAsset* matAsset = mat->GetMaterialAsset();
+			if (matAsset->HasPassType(RenderPassType::ForwardLighting) || matAsset->HasPassType(RenderPassType::ForwardLightingTransparent))
 			{
 				return true;
 			}
@@ -258,13 +242,8 @@ namespace Czuch
 
 		for (auto asset : filtered)
 		{
-			MaterialAsset* mat = static_cast<MaterialAsset*>(asset);
-			auto* bindingRenderObjectsContainer = mat->GetBindingWithTag(DescriptorBindingTagType::RENDER_OBJECTS);
-
-			if (bindingRenderObjectsContainer)
-			{
-				bindingRenderObjectsContainer->size = renderObjectsCount * sizeof(RenderObjectGPUData);
-			}
+			MaterialInstanceAsset* mat = static_cast<MaterialInstanceAsset*>(asset);
+			mat->UpdateSizeForTag(DescriptorBindingTagType::RENDER_OBJECTS, renderObjectsCount * sizeof(RenderObjectGPUData));
 		}
 	}
 

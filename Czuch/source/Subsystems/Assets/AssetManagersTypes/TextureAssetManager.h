@@ -4,6 +4,7 @@
 
 namespace Czuch
 {
+	class GraphicsDevice;
     class TextureAssetManager :public AssetManager
 	{
 	public:
@@ -26,6 +27,8 @@ namespace Czuch
 	inline Asset* TextureAssetManager::CreateAsset(const CzuchStr& path, BaseLoadSettings& settings)
 	{
 		TextureAsset* texRes = new TextureAsset(path, (TextureLoadSettings&)settings, m_Device,AssetsManager::GetPtr());
+		StringID strId = StringID::MakeStringID(path);
+		RegisterAsset(strId, texRes);
 		return texRes;
 	}
 
@@ -33,6 +36,8 @@ namespace Czuch
 	{
 		TextureLoadSettings settings;
 		TextureAsset* texRes = new TextureAsset(path, settings, m_Device, AssetsManager::GetPtr());
+		StringID strId = StringID::MakeStringID(path);
+		RegisterAsset(strId, texRes);
 		return texRes;
 	}
 

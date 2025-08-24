@@ -29,6 +29,26 @@ namespace Czuch
 		UnloadAsset();
 	}
 
+	MaterialAsset* MaterialInstanceAsset::GetMaterialAsset()
+	{
+		if (m_MaterialInstanceDesc.materialAsset.IsValid())
+		{
+			return AssetsManager::GetPtr()->GetAsset<MaterialAsset>(m_MaterialInstanceDesc.materialAsset, false);
+		}
+		return nullptr;
+	}
+
+	void MaterialInstanceAsset::UpdateSizeForTag(DescriptorBindingTagType tag, U32 size,int pass)
+	{
+		m_MaterialInstance->UpdateSizeForTag(tag, size,pass);
+	}
+
+	void MaterialInstanceAsset::SetAsDirty()
+	{
+		m_MaterialInstance->SetAsDirty();
+	}
+
+
 	bool MaterialInstanceAsset::LoadAsset()
 	{
 		if (Asset::LoadAsset())

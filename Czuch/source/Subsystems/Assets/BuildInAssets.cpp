@@ -212,7 +212,7 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
-		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true,DescriptorBindingTagType::SCENE_DATA);
 		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, INIT_MAX_RENDER_OBJECTS, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
 
 		DescriptorSetLayoutDesc desc_LightBuffers{};
@@ -232,6 +232,7 @@ namespace Czuch
 		desc.AddLayout(desc_SceneData);
 		desc.AddLayout(desc_LightBuffers);
 		desc.AddLayout(desc_tex);
+		desc.AddBindlessTexturesLayout();
 
 		MaterialDefinitionDesc matDesc(1);
 		matDesc.EmplacePass(desc);
@@ -503,7 +504,6 @@ namespace Czuch
 		desc.passType = RenderPassType::DepthPrePass;
 
 		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-
 		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
 
 
@@ -659,7 +659,7 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
-		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true, DescriptorBindingTagType::SCENE_DATA);
 		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
 
 		DescriptorSetLayoutDesc desc_LightBuffers{};
@@ -678,6 +678,7 @@ namespace Czuch
 		desc.AddLayout(desc_SceneData);
 		desc.AddLayout(desc_LightBuffers);
 		desc.AddLayout(desc_tex);
+		desc.AddBindlessTexturesLayout();
 
 
 		MaterialDefinitionDesc matDesc(1);
@@ -748,7 +749,7 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
-		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true, DescriptorBindingTagType::SCENE_DATA);
 
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
@@ -841,7 +842,7 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::VS;
-		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true, DescriptorBindingTagType::SCENE_DATA);
 
 		DescriptorSetLayoutDesc desc_data{};
 		desc_data.shaderStage = (U32)ShaderStage::VS;
@@ -898,7 +899,7 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::VS;
-		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true, DescriptorBindingTagType::SCENE_DATA);
 
 		DescriptorSetLayoutDesc desc_data{};
 		desc_data.shaderStage = (U32)ShaderStage::VS;
@@ -954,7 +955,7 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::VS;
-		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
+		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true, DescriptorBindingTagType::SCENE_DATA);
 
 		DescriptorSetLayoutDesc desc_data{};
 		desc_data.shaderStage = (U32)ShaderStage::VS;

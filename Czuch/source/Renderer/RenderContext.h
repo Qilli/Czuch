@@ -110,13 +110,13 @@ namespace Czuch
 	struct SceneCameraRenderingControl
 	{
 		Camera* camera;
-		SceneData data;
-		BufferDesc bufferDesc;
+		SceneData sceneData;
+		BufferDesc sceneDataBufferDesc;
 		BufferDesc lightsBufferDesc;
 		BufferDesc tilesBufferDesc;
 		BufferDesc lightsListBufferDesc;
 		BufferDesc renderObjectsBufferDesc;
-		BufferHandle buffer[MAX_FRAMES_IN_FLIGHT];
+		BufferHandle sceneDataBuffer[MAX_FRAMES_IN_FLIGHT];
 		BufferHandle lightsBuffer[MAX_FRAMES_IN_FLIGHT];
 		BufferHandle tilesBuffer[MAX_FRAMES_IN_FLIGHT];
 		BufferHandle lightsListBuffer[MAX_FRAMES_IN_FLIGHT];
