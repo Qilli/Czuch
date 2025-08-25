@@ -49,7 +49,7 @@ namespace Czuch
 		inline float GetLightRange() const { return m_LightRange; }
 		void SetLightRange(float range) { m_LightRange = range; }
 
-		inline Color GetColor() const { return m_Color; }
+		inline Color GetColor() const { return GammaToLinear(m_Color); }
 		void SetColor(Color color) { m_Color = color; }
 
 		inline float GetInnerAngle() const { return m_InnerAngle; }

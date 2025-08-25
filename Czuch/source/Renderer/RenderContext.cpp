@@ -1335,7 +1335,7 @@ namespace Czuch
 		FrameGraphResourceInputCreation lightingInputTransparent;
 		lightingInputTransparent.type = FrameGraphResourceType::Attachment;
 		lightingInputTransparent.name = "Lighting";
-		lightingInputTransparent.resource_info.texture.format = Format::R16G16B16A16_FLOAT;
+		//lightingInputTransparent.resource_info.texture.format = Format::R16G16B16A16_FLOAT;
 
 
 		auto lightingPassTransparent = new VulkanDefaultForwardTransparentLightingRenderPass((VulkanRenderer*)renderer, (VulkanDevice*)device, startWidth, startHeight, handleWindowResize);

@@ -23,7 +23,7 @@ namespace Czuch
 		VulkanCommandBuffer* cmdBuffer = (VulkanCommandBuffer*)cmd;
 		int imageIndex = m_Device->GetCurrentImageIndex();
 
-		cmdBuffer->SetClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+		cmdBuffer->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		cmdBuffer->SetDepthStencil(1.0f, 0);
 
 
