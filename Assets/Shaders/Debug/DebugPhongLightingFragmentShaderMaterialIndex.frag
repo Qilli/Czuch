@@ -1,5 +1,6 @@
 #version 460
 #extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_nonuniform_qualifier : require
 #include "Common.glsl"
 #include "CommonInput.glsl"
 #include "LightingBase.glsl"
@@ -13,7 +14,8 @@ layout(location=0)out vec4 outColor;
 
 void main()
 {
-    float materialIndex = inNormal.w; // Use the w component of the normal to store the material index
+    RenderObject obj = renderObjects[PushConstants.paramsIDObject.x];
+	float materialIndex=obj.materialIndexAndFlags.x;
     float brightness = materialIndex / 255.0; // Normalize the material index to a range of 0.0 to 1.0
     outColor = vec4(1.0-brightness, brightness, brightness, 1.0); // Output the color to show debug information about current material index
 }

@@ -1,7 +1,6 @@
 #pragma once
 #include"../AssetsManager.h"
 #include "../Asset/TextureAsset.h"
-
 namespace Czuch
 {
 	class GraphicsDevice;
@@ -26,7 +25,8 @@ namespace Czuch
 
 	inline Asset* TextureAssetManager::CreateAsset(const CzuchStr& path, BaseLoadSettings& settings)
 	{
-		TextureAsset* texRes = new TextureAsset(path, (TextureLoadSettings&)settings, m_Device,AssetsManager::GetPtr());
+		auto& settingsTyped = static_cast<TextureLoadSettings&>(settings);
+		TextureAsset* texRes = new TextureAsset(path, settingsTyped, m_Device,AssetsManager::GetPtr());
 		StringID strId = StringID::MakeStringID(path);
 		RegisterAsset(strId, texRes);
 		return texRes;

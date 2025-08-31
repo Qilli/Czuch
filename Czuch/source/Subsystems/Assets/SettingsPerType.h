@@ -35,6 +35,7 @@ namespace Czuch
 	{
 		TextureDesc::Type type= TextureDesc::Type::TEXTURE_2D;
 		bool isUITexture = false;
+		bool isBindlessTexture = true;
 	};
 
 	struct TextureCreateSettings: BaseCreateSettings

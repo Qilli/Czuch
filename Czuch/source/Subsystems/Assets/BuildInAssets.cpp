@@ -218,20 +218,8 @@ namespace Czuch
 		DescriptorSetLayoutDesc desc_LightBuffers{};
 		FillLightingLayoutDesc(desc_LightBuffers);
 
-
-		DescriptorSetLayoutDesc desc_tex{};
-		desc_tex.shaderStage = (U32)ShaderStage::PS;
-		desc_tex.AddBinding("MainTexture", DescriptorType::SAMPLER, 0, 1, 0, false);
-		desc_tex.AddBinding("Color", DescriptorType::UNIFORM_BUFFER, 1, 1, sizeof(ColorUBO), false);
-
-
-		UBOLayout uboLayout{};
-		uboLayout.AddElement(0, sizeof(ColorUBO), UBOElementType::ColorType, StringID::MakeStringID("Color"));
-		desc_tex.SetUBOLayout(uboLayout);
-
 		desc.AddLayout(desc_SceneData);
 		desc.AddLayout(desc_LightBuffers);
-		desc.AddLayout(desc_tex);
 		desc.AddBindlessTexturesLayout();
 
 		MaterialDefinitionDesc matDesc(1);
@@ -257,8 +245,9 @@ namespace Czuch
 		instanceCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorUbo, sizeof(ColorUBO),DescriptorBindingTagType::NONE));
 
 		MaterialObjectGPUData materialGPUData;
-		materialGPUData.diffuseColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialGPUData.specularColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialGPUData.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialGPUData.metallicColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialGPUData.albedoMetallicTextures = iVec4(DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), -1, -1, -1);
 		Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
 		instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
@@ -665,19 +654,8 @@ namespace Czuch
 		DescriptorSetLayoutDesc desc_LightBuffers{};
 		FillLightingLayoutDesc(desc_LightBuffers);
 
-		DescriptorSetLayoutDesc desc_tex{};
-		desc_tex.shaderStage = (U32)ShaderStage::PS;
-		desc_tex.AddBinding("MainTexture", DescriptorType::SAMPLER, 0, 1, 0, false);
-		desc_tex.AddBinding("Color", DescriptorType::UNIFORM_BUFFER, 1, 1, sizeof(ColorUBO), false);
-
-
-		UBOLayout uboLayout{};
-		uboLayout.AddElement(0, sizeof(ColorUBO), UBOElementType::ColorType, StringID::MakeStringID("Color"));
-		desc_tex.SetUBOLayout(uboLayout);
-
 		desc.AddLayout(desc_SceneData);
 		desc.AddLayout(desc_LightBuffers);
-		desc.AddLayout(desc_tex);
 		desc.AddBindlessTexturesLayout();
 
 
@@ -706,8 +684,9 @@ namespace Czuch
 		instanceCreateSettings.desc.isTransparent = true;
 
 		MaterialObjectGPUData materialGPUData;
-		materialGPUData.diffuseColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialGPUData.specularColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialGPUData.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialGPUData.metallicColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialGPUData.albedoMetallicTextures = iVec4(DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), -1, -1, -1);
 		Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
 		instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));

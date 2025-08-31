@@ -16,6 +16,7 @@ namespace Czuch
 
 	static constexpr U32 MAX_LIGHTS_IN_SCENE = 1024;
 	static constexpr U32 MATERIAL_DATA_CAPACITY = 200;
+	static constexpr U32 MAX_BINDLESS_TEXTURES = 1024;
 	static constexpr U32 MAX_LIGHTS_IN_TILE = 32;
 	static constexpr U32 TILE_SIZE = 32;
 
@@ -73,8 +74,9 @@ namespace Czuch
 
 	struct MaterialObjectGPUData
 	{
-		Vec4 diffuseColor;
-		Vec4 specularColor;
+		Vec4 albedoColor;
+		Vec4 metallicColor;
+		iVec4 albedoMetallicTextures;
 	};
 
 	struct LightData
@@ -195,10 +197,12 @@ namespace Czuch
 
 	struct TextureHandle : public ResourceHandleWithAsset
 	{
+		I32 globalIndex = -1; // index in bindless array, -1 if not in bindless array
 		TextureHandle() :ResourceHandleWithAsset(Invalid_Handle_Id) {}
 		TextureHandle(I32 handle, I32 assetHandle) :ResourceHandleWithAsset(handle, assetHandle) {}
 		TextureHandle(I32 handle, AssetHandle assetHandle) :ResourceHandleWithAsset(handle, assetHandle) {}
 		TextureHandle(I32 handle) :ResourceHandleWithAsset(handle) {}
+		I32 ToGlobalIndex() const { return globalIndex; }
 	};
 
 	struct MaterialHandle : public ResourceHandle
@@ -1015,6 +1019,7 @@ namespace Czuch
 		DEBUG_POINTS_INSTANCE_DATA,
 		MATERIALS_LIGHTING_DATA,
 		SCENE_DATA,
+		BINDLESS_TEXTURES,
 	};
 
 	struct MaterialCustomBufferData
@@ -1110,7 +1115,6 @@ namespace Czuch
 		void DrawDebugWindow();
 	};
 
-
 	struct DescriptorSetLayoutDesc
 	{
 		struct Binding
@@ -1188,6 +1192,7 @@ namespace Czuch
 		ShaderParamInfo descriptors[s_max_descriptors_per_set];
 		U16 descriptorsCount;
 		DescriptorSet* currentDescriptor = nullptr;
+		bool isBindlessTexturesSet = false;
 
 		ShaderParamsSet()
 		{
@@ -1408,7 +1413,7 @@ namespace Czuch
 			}
 			DescriptorSetLayoutDesc desc_tex{};
 			desc_tex.shaderStage = (U32)ShaderStage::PS;
-			desc_tex.AddBinding("BindlessTextures", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, 1, 0, true);
+			desc_tex.AddBinding("BindlessTextures", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, 1, 0, true, DescriptorBindingTagType::BINDLESS_TEXTURES);
 			desc_tex.hasCombinedImageSampler = true;
 			AddLayout(desc_tex);
 		}
@@ -1721,6 +1726,7 @@ namespace Czuch
 		MaterialInstanceParams& AddStorageBuffer(I32 set, const CzuchStr& name, BufferHandle buffer, U16 binding, DescriptorBindingTagType tag, I32 size = -1);
 		MaterialInstanceParams& AddStorageBufferWithData(I32 set,const CzuchStr& name, MaterialCustomBufferData* customData, U16 binding, DescriptorBindingTagType tag);
 		MaterialInstanceParams& AddSampler(I32 set, const CzuchStr& name, TextureHandle color_texture, U16 binding);
+		void SetAsTextureBindlessSet(int set);
 
 		void SetSampler(I32 set, TextureHandle color_texture, I32 descriptor);
 		void SetSampler(StringID& name, TextureHandle texture);

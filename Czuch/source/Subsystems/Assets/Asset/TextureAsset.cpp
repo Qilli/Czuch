@@ -101,6 +101,11 @@ namespace Czuch
 			InitUITexturePtr();
 		}
 
+		if (IsLoaded())
+		{
+			m_TextureResource=m_Device->BindGlobalTexture(m_TextureResource);
+		}
+
 		m_RefCounter.Up();
 
 		LOG_BE_INFO("Loaded new texture with path: {0}", AssetPath());
@@ -169,6 +174,11 @@ namespace Czuch
 			InitUITexturePtr();
 		}
 		m_RefCounter.Up();
+
+		if (IsLoaded())
+		{
+			m_TextureResource = m_Device->BindGlobalTexture(m_TextureResource);
+		}
 
 		return true;
 	}

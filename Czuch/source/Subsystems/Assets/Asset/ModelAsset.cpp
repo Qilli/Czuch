@@ -397,6 +397,7 @@ namespace Czuch
 		else
 		{
 			AssetHandle diffuseTextureHandle = CheckAndLoadTexture(material, aiTextureType_DIFFUSE, 0);
+			//AssetHandle specularTextureHandle = CheckAndLoadTexture(material, aiTextureType_SPECULAR, 0);
 			if (diffuseTextureHandle.IsValid())
 			{
 				const char* nameMat = material->GetName().C_Str();
@@ -408,19 +409,14 @@ namespace Czuch
 
 				MaterialInstanceCreateSettings instanceCreateSettings{};
 				instanceCreateSettings.materialInstanceName = std::move(name);
-				instanceCreateSettings.desc.AddSampler("MainTexture", textureHandle, false);
 
 				MaterialObjectGPUData materialGPUData;
-				materialGPUData.diffuseColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-				materialGPUData.specularColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				materialGPUData.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				materialGPUData.metallicColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				materialGPUData.albedoMetallicTextures = iVec4(textureHandle.ToGlobalIndex(), -1, -1, -1);
 				Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
 				instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
-
-				ColorUBO colorUbo;
-				colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-				instanceCreateSettings.desc.AddBuffer("Color",MaterialCustomBufferData((void*)&colorUbo, (U32)sizeof(ColorUBO),DescriptorBindingTagType::NONE));
 
 
 				if (IsMaterialTransparent(material) || m_LoadedMaterials.size() <= 1)

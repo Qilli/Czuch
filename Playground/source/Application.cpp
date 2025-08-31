@@ -100,19 +100,14 @@ int main()
 
 	Czuch::MaterialInstanceCreateSettings instanceCreateSettings{};
 	instanceCreateSettings.materialInstanceName = "DefaultAncientMaterial";
-	instanceCreateSettings.desc.AddSampler("MainTexture", texHandle, false);
-	Czuch::ColorUBO colorUBO;
-	colorUBO.color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	instanceCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorUBO, sizeof(Czuch::ColorUBO),Czuch::DescriptorBindingTagType::NONE));
-
 
 	Czuch::MaterialObjectGPUData materialGPUData;
-	materialGPUData.diffuseColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	materialGPUData.specularColor = Vec4(1.0f, 1.0f, 1.0f, 256.0f);
+	materialGPUData.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	materialGPUData.metallicColor = Vec4(1.0f, 1.0f, 1.0f, 256.0f);
+	materialGPUData.albedoMetallicTextures = iVec4(texHandle.ToGlobalIndex(), -1, -1, -1);
 	Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(Czuch::MaterialObjectGPUData), Czuch::DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
 	instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
-
 	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
 	auto matInstanceHandle = Czuch::AssetsManager::GetPtr()->CreateMaterialInstance(instanceCreateSettings);
 

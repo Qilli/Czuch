@@ -23,6 +23,7 @@ namespace Czuch
 #define Vec4 glm::vec4
 #define Vec3 glm::vec3
 #define Vec2 glm::vec2
+#define iVec4 glm::ivec4
 #define Color Vec4
 
 #define EPSILON 0.001f

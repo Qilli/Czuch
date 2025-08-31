@@ -23,9 +23,9 @@ namespace Czuch
 		setIndex = 0;
 		return *this;
 	}
-	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(CzuchStr name, DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool I32ernalParam, DescriptorBindingTagType tagType)
+	DescriptorSetLayoutDesc& DescriptorSetLayoutDesc::AddBinding(CzuchStr name, DescriptorType type, U32 bindingIndex, U32 count, U32 size, bool InternalParam, DescriptorBindingTagType tagType)
 	{
-		bindings[bindingsCount++] = { StringID::MakeStringID(name),type,tagType,size,(U16)bindingIndex, (U16)count,I32ernalParam };
+		bindings[bindingsCount++] = { StringID::MakeStringID(name),type,tagType,size,(U16)bindingIndex, (U16)count,InternalParam };
 		return *this;
 	}
 
@@ -390,6 +390,15 @@ namespace Czuch
 		return *this;
 	}
 
+	void MaterialInstanceParams::SetAsTextureBindlessSet(int set)
+	{
+		if (set >= k_max_descriptor_set_layouts)
+		{
+			return;
+		}
+		shaderParamsDesc[set].isBindlessTexturesSet = true;
+	}
+
 	void MaterialInstanceParams::SetSampler(I32 set, TextureHandle color_texture, I32 descriptor)
 	{
 		if (set >= k_max_descriptor_set_layouts)
@@ -600,6 +609,10 @@ namespace Czuch
 				else if (binding.type == DescriptorType::STORAGE_BUFFER_SINGLE_DATA)
 				{
 					params.AddStorageBufferWithData(i, binding.bindingName.GetStrName(), nullptr, b, binding.tag);
+				}
+				else if (binding.type == DescriptorType::COMBINED_IMAGE_SAMPLER)
+				{
+					params.SetAsTextureBindlessSet(i);
 				}
 			}
 		}

@@ -18,6 +18,7 @@ namespace Czuch
 	{
 		void WriteBuffer(int binding, Buffer* buffer, size_t size, size_t offset, DescriptorType type);
 		void WriteTexture(int binding, Texture* color_texture, DescriptorType type);
+		void WriteAndUpdateGlobalTexture(int binding, Texture* tex, VulkanDevice* device, DescriptorSet* descriptorSet, I32 index);
 		void Clear();
 		void UpdateSet(VulkanDevice* device,DescriptorSet* descriptorSet);
 
@@ -34,7 +35,7 @@ namespace Czuch
 			std::vector<std::pair<VkDescriptorType, float>> sizes =
 			{
 				{ VK_DESCRIPTOR_TYPE_SAMPLER, 0.5f },
-				{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4.f },
+				{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1.0f },
 				{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4.f },
 				{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1.f },
 				{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1.f },

@@ -25,7 +25,7 @@ namespace Czuch
 		m_CurrentPool = VK_NULL_HANDLE;
 	}
 
-	void WriteDescriptor(DescriptorWriter& writer,VulkanDevice* device, DescriptorSet* descriptor)
+	void WriteDescriptor(DescriptorWriter& writer, VulkanDevice* device, DescriptorSet* descriptor)
 	{
 		writer.Clear();
 		for (int i = 0; i < descriptor->desc->descriptorsCount; ++i)
@@ -48,7 +48,7 @@ namespace Czuch
 			}
 			else
 			{
-				Texture* tex = (Texture*)device->AccessTexture({current.resource,AssetHandle()});
+				Texture* tex = (Texture*)device->AccessTexture({ current.resource,AssetHandle() });
 				if (tex != nullptr)
 				{
 					writer.WriteTexture(current.binding, tex, current.type);
@@ -81,7 +81,17 @@ namespace Czuch
 		allocInfo.descriptorPool = m_CurrentPool;
 		allocInfo.descriptorSetCount = 1;
 
-		DescriptorSet *descSet = new DescriptorSet();;
+		if (layout->desc.hasCombinedImageSampler)
+		{
+			VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count_info = {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO,
+			.descriptorSetCount = 1,
+			.pDescriptorCounts = &MAX_BINDLESS_TEXTURES,
+			};
+			allocInfo.pNext = &variable_count_info;
+		}
+
+		DescriptorSet* descSet = new DescriptorSet();;
 		descSet->descriptorLayout = layout;
 		descSet->desc = &desc;
 		m_Descriptors.push_back(descSet);
@@ -93,7 +103,7 @@ namespace Czuch
 		switch (result)
 		{
 		case VK_SUCCESS:
-			WriteDescriptor(m_Writer,m_Device, descSet);
+			WriteDescriptor(m_Writer, m_Device, descSet);
 			return descSet;
 		case VK_ERROR_FRAGMENTED_POOL:
 		case VK_ERROR_OUT_OF_POOL_MEMORY:
@@ -105,14 +115,14 @@ namespace Czuch
 		m_CurrentPool = GrabPool();
 		m_UsedPools.push_back(m_CurrentPool);
 
-		result=vkAllocateDescriptorSets(m_Device->GetNativeDevice(), &allocInfo, &descSet->descriptorSet);
+		result = vkAllocateDescriptorSets(m_Device->GetNativeDevice(), &allocInfo, &descSet->descriptorSet);
 
 		if (result != VK_SUCCESS)
 		{
 			LOG_BE_ERROR("[DescriptorAllocator] Failed to allocate new descriptor set");
 		}
 
-		WriteDescriptor(m_Writer, m_Device,descSet);
+		WriteDescriptor(m_Writer, m_Device, descSet);
 		return descSet;
 	}
 
@@ -154,7 +164,7 @@ namespace Czuch
 		}
 		else
 		{
-			return CreatePool(m_Device->GetNativeDevice(), m_DescriptorSizes, 1000, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+			return CreatePool(m_Device->GetNativeDevice(), m_DescriptorSizes, 1024, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 		}
 	}
 
@@ -192,11 +202,11 @@ namespace Czuch
 	void DescriptorWriter::WriteBuffer(int binding, Buffer* buffer, size_t size, size_t offset, DescriptorType type)
 	{
 		VkDescriptorBufferInfo& info = bufferInfos.emplace_back(VkDescriptorBufferInfo{
-			.buffer=Internal_to_Buffer(buffer)->buffer,
-			.offset=offset,
-			.range=size});
+			.buffer = Internal_to_Buffer(buffer)->buffer,
+			.offset = offset,
+			.range = size });
 
-		VkWriteDescriptorSet write = {.sType=VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+		VkWriteDescriptorSet write = { .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 
 		write.dstSet = VK_NULL_HANDLE;
 		write.descriptorCount = 1;
@@ -215,12 +225,12 @@ namespace Czuch
 		}
 
 		auto vulkanTex = Internal_to_Texture(color_texture);
-		VkDescriptorImageInfo& imageInfo = imageInfos.emplace_back(VkDescriptorImageInfo {
+		VkDescriptorImageInfo& imageInfo = imageInfos.emplace_back(VkDescriptorImageInfo{
 			.sampler = vulkanTex->sampler,
 			.imageView = vulkanTex->imageView,
 			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		});
-	
+			});
+
 		VkWriteDescriptorSet write = { .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 
 		write.dstSet = VK_NULL_HANDLE;
@@ -229,6 +239,32 @@ namespace Czuch
 		write.descriptorType = ConvertDescriptorType(type);
 		write.pImageInfo = &imageInfo;
 		writes.push_back(write);
+	}
+
+	void DescriptorWriter::WriteAndUpdateGlobalTexture(int binding, Texture* tex, VulkanDevice* device, DescriptorSet* descriptorSet, I32 index)
+	{
+		if (tex == nullptr)
+		{
+			LOG_BE_ERROR("[DescriptorWriter] Failed to write and update global texture to descriptor set");
+			return;
+		}
+
+		auto vulkanTex = Internal_to_Texture(tex);
+		VkDescriptorImageInfo imageInfo = VkDescriptorImageInfo{
+			.sampler = vulkanTex->sampler,
+			.imageView = vulkanTex->imageView,
+			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			};
+
+		VkWriteDescriptorSet write = { .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+
+		write.dstSet = descriptorSet->descriptorSet;;
+		write.descriptorCount = 1;
+		write.dstBinding = binding;
+		write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		write.pImageInfo = &imageInfo;
+		write.dstArrayElement = index;
+		vkUpdateDescriptorSets(device->GetNativeDevice(), 1, &write, 0, nullptr);
 	}
 
 	void DescriptorWriter::Clear()

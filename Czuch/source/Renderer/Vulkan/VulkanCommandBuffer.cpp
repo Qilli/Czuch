@@ -345,6 +345,16 @@ namespace Czuch
 
 		for (int a = 0; a < pipelineDesc.layoutsCount; a++)
 		{
+			if (paramsDesc[a].isBindlessTexturesSet)
+			{
+				//Bind bindless descriptor set
+				auto descriptorLayout = pipelinePtr->layouts[a];
+				auto layout = m_Device->AccessDescriptorSetLayout(descriptorLayout);
+
+				BindDescriptorSet(m_Device->GetBindlessTexturesDescriptorSet(), a, 1, nullptr, 0);
+				continue;
+			}
+
 			if (paramsDesc[a].descriptorsCount <= 0)
 			{
 				continue;
@@ -392,6 +402,7 @@ namespace Czuch
 
 			BindDescriptorSet(paramsDesc[a].currentDescriptor, a, 1, nullptr, 0);
 		}
+
 		return pipelinePtr;
 	}
 

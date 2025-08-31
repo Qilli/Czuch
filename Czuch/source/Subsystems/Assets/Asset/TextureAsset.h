@@ -22,6 +22,8 @@ namespace Czuch
         ShortAssetInfo* GetShortAssetInfo() override;
         inline void* GetUITextureIDPtr() const { return m_UITextureIDPtr; }
         CzuchStr GetAssetLoadInfo() const override;
+    public:
+		void UpdateHandle(TextureHandle newHandle) { m_TextureResource = newHandle; }
     private:
         void InitUITexturePtr();
     private:

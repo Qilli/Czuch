@@ -3,6 +3,7 @@
 #include"VulkanBase.h"
 #include"Events/IEventsListener.h"
 #include"Renderer/GraphicsResourceAccessContainer.h"
+#include "DescriptorAllocator.h"
 #include<optional>
 
 namespace Czuch
@@ -129,6 +130,8 @@ namespace Czuch
 		void StartDynamicRenderPass(VulkanCommandBuffer* cmdBuffer, uint32_t imageIndex);
 		bool HasDynamicRenderingEnabled() const;
 		RenderPassHandle GetSwapChainRenderPass() const { return m_SwapChainRenderPass; }
+		DescriptorSetLayoutHandle GetBindlessDescriptorSetLayout() const { return m_BindlessDescriptorSetLayoutHandle; }
+		DescriptorSet* GetBindlessTexturesDescriptorSet() const { return m_TexturesBindlessDescriptorSet; }
 	public:
 		void DrawDebugWindows();
 	public:
@@ -234,6 +237,11 @@ namespace Czuch
 		U32 m_CurrentFrameInFlight;
 	private:
 		DescriptorSetLayoutHandle m_BindlessDescriptorSetLayoutHandle;
+		DescriptorSet* m_TexturesBindlessDescriptorSet;
+		DescriptorWriter m_BindlessDescriptorSetWriter;
+		U32 m_GlobalTexturesCount;
+	public:
+		TextureHandle BindGlobalTexture(TextureHandle texture) override;
 	private:
 		VkDescriptorPool m_ImguiPool;
 	private:

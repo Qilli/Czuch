@@ -2199,6 +2199,9 @@ namespace Czuch
 
 	VulkanDevice::~VulkanDevice()
 	{
+		m_PersistentDescriptorAllocator->CleanUp();
+		delete m_PersistentDescriptorAllocator;
+
 		m_DescriptorLayoutCache->CleanUp();
 		delete m_DescriptorLayoutCache;
 
@@ -2223,6 +2226,7 @@ namespace Czuch
 	bool VulkanDevice::InitDevice(EngineSettings* settings)
 	{
 		m_RenderSettings = settings;
+		m_GlobalTexturesCount = 0;
 
 		if (CreateVulkanInstance() == false)
 		{
@@ -2327,10 +2331,12 @@ namespace Czuch
 		{
 			//create bindless layout
 			DescriptorSetLayoutDesc desc_;
-			desc_.AddBinding("Textures", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, 1, 0, true);
+			desc_.AddBinding("BindlessTextures", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, MAX_BINDLESS_TEXTURES, 0, true);
 			desc_.shaderStage = (U32)ShaderStage::PS;
 			desc_.hasCombinedImageSampler = true;
 			m_BindlessDescriptorSetLayoutHandle = CreateDescriptorSetLayout(&desc_);
+			ShaderParamsSet set;
+			m_TexturesBindlessDescriptorSet=m_PersistentDescriptorAllocator->Allocate(set, AccessDescriptorSetLayout(m_BindlessDescriptorSetLayoutHandle));
 		}
 
 		return true;
@@ -2345,6 +2351,14 @@ namespace Czuch
 		std::cerr << "Validation Layer: " << pCallbackData->pMessage << std::endl;
 		LOG_BE_ERROR("{0} Vulkan Problem: {1}", Tag, pCallbackData->pMessage);
 		return VK_FALSE;
+	}
+
+	TextureHandle VulkanDevice::BindGlobalTexture(TextureHandle texture)
+	{
+		auto tex=AccessTexture(texture);
+		m_BindlessDescriptorSetWriter.WriteAndUpdateGlobalTexture(0, tex,this, m_TexturesBindlessDescriptorSet,m_GlobalTexturesCount);
+		texture.globalIndex = m_GlobalTexturesCount++;
+		return texture;
 	}
 
 	RenderPassHandle VulkanDevice::GetRenderPassWithDescIfExist(const RenderPassDesc* desc)

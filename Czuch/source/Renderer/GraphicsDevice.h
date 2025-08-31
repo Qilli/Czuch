@@ -84,6 +84,8 @@ namespace Czuch
 		virtual void SetCurrentFrameIndex(U32 frameIndex) = 0;
 		virtual U32 GetCurrentFrameIndex() const = 0;
 
+		virtual TextureHandle BindGlobalTexture(TextureHandle texture) = 0;
+
 	};
 
 }
