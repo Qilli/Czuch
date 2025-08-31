@@ -200,7 +200,7 @@ namespace Czuch
 
 	CzuchStr TextureAsset::GetAssetLoadInfo() const
 	{
-		return "TextureAsset: " + AssetName() + " Ref count: " + m_RefCounter.GetCountString() + " State: " + (m_State == AssetInnerState::LOADED ? " Loaded" : "Unloaded");
+		return "TextureAsset: " + AssetName() + " Ref count: " + m_RefCounter.GetCountString() + " State: " + (m_State == AssetInnerState::LOADED ? " Loaded" : "Unloaded")+ "Global index: "+ std::to_string(m_TextureResource.globalIndex);
 	}
 	void TextureAsset::InitUITexturePtr()
 	{

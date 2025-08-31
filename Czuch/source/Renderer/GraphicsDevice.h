@@ -85,6 +85,7 @@ namespace Czuch
 		virtual U32 GetCurrentFrameIndex() const = 0;
 
 		virtual TextureHandle BindGlobalTexture(TextureHandle texture) = 0;
+		virtual void AddDebugWindow(DrawDebugBaseGuiWindow* window) = 0;
 
 	};
 

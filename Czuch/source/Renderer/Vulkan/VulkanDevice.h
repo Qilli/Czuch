@@ -134,7 +134,16 @@ namespace Czuch
 		DescriptorSet* GetBindlessTexturesDescriptorSet() const { return m_TexturesBindlessDescriptorSet; }
 	public:
 		void DrawDebugWindows();
-	public:
+		void AddDebugWindow(DrawDebugBaseGuiWindow* window) override;
+	private:
+
+		struct DebugWindowsContainer
+		{
+			Array<DrawDebugBaseGuiWindow*> windows;
+			void DrawAll();
+		};
+
+		DebugWindowsContainer m_DebugWindows;
 
 	private:
 

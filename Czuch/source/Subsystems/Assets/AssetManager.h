@@ -30,6 +30,7 @@ namespace Czuch
 		bool AssetExistAtPath(const CzuchStr& path);
 		const Array<Asset*>& GetAllAssetsWithFilter(std::function<bool(Asset*)> predicate);
 		void ExecuteOnAllAssets(std::function<void(Asset*)> func);
+		U32 GetAllAssetsCount() const { return (U32)m_Assets.size(); }
 	public:
 		virtual void Init() = 0;
 	protected:

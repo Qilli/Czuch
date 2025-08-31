@@ -1660,7 +1660,12 @@ namespace Czuch
 
 	void VulkanDevice::DrawDebugWindows()
 	{
-		m_MultipleBuffers.DrawDebugWindow();
+		m_DebugWindows.DrawAll();
+	}
+
+	void VulkanDevice::AddDebugWindow(DrawDebugBaseGuiWindow* window)
+	{
+		m_DebugWindows.windows.push_back(window);
 	}
 
 	void VulkanDevice::SubmitToGraphicsQueue(VkSubmitInfo info, VkFence fence)
@@ -2338,6 +2343,8 @@ namespace Czuch
 			ShaderParamsSet set;
 			m_TexturesBindlessDescriptorSet=m_PersistentDescriptorAllocator->Allocate(set, AccessDescriptorSetLayout(m_BindlessDescriptorSetLayoutHandle));
 		}
+
+		AddDebugWindow(&m_MultipleBuffers);
 
 		return true;
 	}
@@ -3204,5 +3211,29 @@ namespace Czuch
 		vmaDestroyImage(allocator, depthImage, allocation);
 	}
 
+
+	void VulkanDevice::DebugWindowsContainer::DrawAll()
+	{
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu("Windows"))
+			{
+				for (auto& window : windows)
+				{
+					ImGui::MenuItem(window->GetWindowName().c_str(), NULL, window->IsWindowOpen());
+				}
+				ImGui::EndMenu();
+			}
+			ImGui::EndMainMenuBar();
+		}
+
+		for(auto& window : windows)
+		{
+			if(*window->IsWindowOpen())
+			{
+				window->DrawDebugWindow();
+			}
+		}
+	}
 
 }

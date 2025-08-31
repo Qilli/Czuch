@@ -965,7 +965,8 @@ namespace Czuch
 
 	void MultiplerBufferContainer::DrawDebugWindow()
 	{
-		ImGui::Begin("Multiple Buffer Statistics");
+		windowName = "Multiple Buffer Statistics";
+		ImGui::Begin("Multiple Buffer Statistics",&windowOpen);
 
 		ImGui::Text("Total Multiple Buffers: %zu", multipleBuffers.size());
 		ImGui::Separator();

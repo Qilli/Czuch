@@ -6,6 +6,13 @@ namespace Czuch
 	class GraphicsDevice;
     class TextureAssetManager :public AssetManager
 	{
+
+		struct DynamicGlobalTexturesDebugWindow : public DrawDebugBaseGuiWindow
+		{
+			TextureAssetManager* mgr;
+			void DrawDebugWindow() override;
+		};
+
 	public:
 		TextureAssetManager(GraphicsDevice* device);
 		bool IsFormatSupported(const char* format)const override { return strcmp(format, ".png") == 0 || strcmp(format, ".jpg") == 0 || strcmp(format, ".jpeg") == 0 || strcmp(format, "bmp") == 0 || strcmp(format, "tga") == 0; }
@@ -17,11 +24,9 @@ namespace Czuch
 		Asset* CreateLoadableAsset(const CzuchStr& path) override;
 	private:
 		GraphicsDevice* m_Device;
+		DynamicGlobalTexturesDebugWindow m_DebugWindow;
 	};
 
-	inline TextureAssetManager::TextureAssetManager(GraphicsDevice* device) :m_Device(device)
-	{
-	}
 
 	inline Asset* TextureAssetManager::CreateAsset(const CzuchStr& path, BaseLoadSettings& settings)
 	{

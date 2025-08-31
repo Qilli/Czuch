@@ -1069,6 +1069,16 @@ namespace Czuch
 
 	struct IDrawDebugImGuiWindow {
 		virtual void DrawDebugWindow() = 0;
+		virtual bool* IsWindowOpen() = 0;
+		virtual CzuchStr& GetWindowName() = 0;
+	};
+
+	struct DrawDebugBaseGuiWindow : public IDrawDebugImGuiWindow
+	{
+		bool windowOpen = false;
+		CzuchStr windowName = "BaseWindow";
+		virtual bool* IsWindowOpen() { return &windowOpen; }
+		virtual CzuchStr& GetWindowName() { return windowName; }
 	};
 
 	struct MultipleBuffer
@@ -1106,7 +1116,7 @@ namespace Czuch
 		}
 	};
 
-	struct MultiplerBufferContainer : public IDrawDebugImGuiWindow
+	struct MultiplerBufferContainer : public DrawDebugBaseGuiWindow
 	{
 		Array<MultipleBuffer> multipleBuffers;
 		BufferHandle GetBuffer(const BufferDesc& desc);
