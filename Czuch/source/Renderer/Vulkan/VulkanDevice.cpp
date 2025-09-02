@@ -816,61 +816,16 @@ namespace Czuch
 		mesh->data->ComputeAABB();
 
 		BufferDesc vbDesc;
-		vbDesc.elementsCount = mesh->data->positions.size();
-		vbDesc.size = vbDesc.elementsCount * sizeof(float) * 3;
-		vbDesc.stride = 3 * sizeof(float);
+		vbDesc.elementsCount = mesh->data->vertices.size();
+		vbDesc.size = vbDesc.elementsCount * sizeof(Vertex);
+		vbDesc.stride = sizeof(Vertex);
 		vbDesc.usage = Usage::DEFAULT;
 		vbDesc.bind_flags = BindFlag::VERTEX_BUFFER;
-		vbDesc.initData = (void*)mesh->data->positions.data();
+		vbDesc.initData = (void*)mesh->data->vertices.data();
 		vbDesc.exclusiveBuffer = false;
-		vbDesc.bufferType = BufferType::POSITION;
+		vbDesc.bufferType = BufferType::VERTEX;
 
-		mesh->positionsHandle = CreateBuffer(&vbDesc);
-
-		if (mesh->HasNormals())
-		{
-			BufferDesc nDesc;
-			nDesc.elementsCount = mesh->data->normals.size();
-			nDesc.size = nDesc.elementsCount * sizeof(float) * 3;
-			nDesc.stride = 3 * sizeof(float);
-			nDesc.usage = Usage::DEFAULT;
-			nDesc.bind_flags = BindFlag::VERTEX_BUFFER;
-			nDesc.initData = (void*)mesh->data->normals.data();
-			nDesc.exclusiveBuffer = false;
-			nDesc.bufferType = BufferType::NORMAL;
-
-			mesh->normalsHandle = CreateBuffer(&nDesc);
-		}
-
-		if (mesh->HasColors())
-		{
-			BufferDesc cDesc;
-			cDesc.elementsCount = mesh->data->colors.size();
-			cDesc.size = cDesc.elementsCount * sizeof(float) * 4;
-			cDesc.stride = 4 * sizeof(float);
-			cDesc.usage = Usage::DEFAULT;
-			cDesc.bind_flags = BindFlag::VERTEX_BUFFER;
-			cDesc.initData = (void*)mesh->data->colors.data();
-			cDesc.exclusiveBuffer = false;
-			cDesc.bufferType = BufferType::COLOR;
-
-			mesh->colorsHandle = CreateBuffer(&cDesc);
-		}
-
-		if (mesh->HasUV0())
-		{
-			BufferDesc uvDesc;
-			uvDesc.elementsCount = mesh->data->uvs0.size();
-			uvDesc.size = uvDesc.elementsCount * sizeof(float) * 4;
-			uvDesc.stride = 4 * sizeof(float);
-			uvDesc.usage = Usage::DEFAULT;
-			uvDesc.bind_flags = BindFlag::VERTEX_BUFFER;
-			uvDesc.initData = (void*)mesh->data->uvs0.data();
-			uvDesc.exclusiveBuffer = false;
-			uvDesc.bufferType = BufferType::UV0;
-
-			mesh->uvs0Handle = CreateBuffer(&uvDesc);
-		}
+		mesh->vertexBufferHandle = CreateBuffer(&vbDesc);
 
 		BufferDesc indicesDesc;
 		indicesDesc.elementsCount = mesh->data->indices.size();
@@ -1034,7 +989,7 @@ namespace Czuch
 			}
 
 			//if not, create new one
-			auto handleBuffer=m_MultipleBuffers.CreateBuffer(*desc,this,1000000);
+			auto handleBuffer=m_MultipleBuffers.CreateBuffer(*desc,this,MAX_SINGLE_BUFFER_SIZE);
 			auto bufferVulkan = AccessBuffer(handleBuffer);
 			CopyDataToBuffer(Internal_to_Buffer(bufferVulkan), desc->initData, desc->size, handleBuffer.offset);
 			handleBuffer.size = desc->size;

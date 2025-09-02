@@ -200,15 +200,7 @@ namespace Czuch
 		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
 		desc.passType = RenderPassType::ForwardLighting;
 
-		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-
-		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
-		desc.il.AddAttribute({ .location = 3,.binding = 3,.offset = 0,.format = Format::R32G32B32_FLOAT });
+		FillVertexStreamwithAttributes(desc);
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
@@ -239,14 +231,10 @@ namespace Czuch
 		instanceCreateSettings.materialInstanceName = "DefaultMaterialInstance";
 		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
 
-		ColorUBO colorUbo;
-		colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
-
-		instanceCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorUbo, sizeof(ColorUBO),DescriptorBindingTagType::NONE));
-
 		MaterialObjectGPUData materialGPUData;
 		materialGPUData.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		materialGPUData.metallicColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		
 		materialGPUData.albedoMetallicTextures = iVec4(DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), -1, -1, -1);
 		Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
@@ -265,6 +253,18 @@ namespace Czuch
 		CreateFinalPassMaterial();
 		CreateDepthLinearPrePassMaterial();
 		CreateDebugDrawMaterials();
+	}
+
+	void BuildInAssets::FillVertexStreamwithAttributes(Czuch::MaterialPassDesc& desc)
+	{
+		desc.il.AddStream({ .binding = 0,.stride = sizeof(Vertex),.input_rate = InputClassification::PER_VERTEX_DATA});
+
+		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = offsetof(Vertex, position),.format = Format::R32G32B32_FLOAT });//pos
+		desc.il.AddAttribute({ .location = 1,.binding = 0,.offset = offsetof(Vertex, normal),.format = Format::R32G32B32_FLOAT});//normal
+		desc.il.AddAttribute({ .location = 2,.binding = 0,.offset = offsetof(Vertex, color),.format = Format::R32G32B32A32_FLOAT });//color
+		desc.il.AddAttribute({ .location = 3,.binding = 0,.offset = offsetof(Vertex, uv0),.format = Format::R32G32_FLOAT });//uv0
+		desc.il.AddAttribute({ .location = 4,.binding = 0,.offset = offsetof(Vertex, uv1),.format = Format::R32G32_FLOAT });//uv1
+		desc.il.AddAttribute({ .location = 5,.binding = 0,.offset = offsetof(Vertex, tangent),.format = Format::R32G32B32_FLOAT });//tangent
 	}
 
 	std::vector<Vec3> GetCubeMeshPositions(float size) {
@@ -378,82 +378,96 @@ namespace Czuch
 		};
 	}
 
+
+
 	void BuildInAssets::CreateDefaultModels()
 	{
-		//Plane model simple
-		std::vector<Vec3> positions = {
-		   {-0.5f, 0.0f,-0.5f},
-		   {0.5f, 0.0f,-0.5f},
-		   {0.5f, 0.0f,0.5f},
-		   {-0.5f, 0.0f,0.5f},
+		std::vector<Vertex> planeVertices = {
+			{{-0.5f, 0.0f,-0.5f}, {0.0f, 1.0f,0.0f}, {1.0f,0.0f, 0.0f,1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+			{{0.5f, 0.0f,-0.5f}, {0.0f, 1.0f,0.0f}, {1.0f, 0.0f, 0.0f,1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+			{{0.5f, 0.0f,0.5f}, {0.0f, 1.0f,0.0f}, {0.0f, 0.0f, 1.0f,1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+			{{-0.5f, 0.0f,0.5f}, {0.0f, 1.0f,0.0f}, {0.0f, 1.0f, 0.0f,1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}
 		};
 
-		std::vector<Vec3> normals = {
-			{0.0f, 1.0f,0.0f},
-			{0.0f, 1.0f,0.0f},
-			{0.0f, 1.0f,0.0f},
-			{0.0f, 1.0f,0.0f},
-		};
-
-		std::vector<Vec4> colors = {
-			{1.0f,0.0f, 0.0f,1.0f},
-			{1.0f, 0.0f, 0.0f,1.0f},
-			{0.0f, 0.0f, 1.0f,1.0f},
-			{0.0f, 1.0f, 0.0f,1.0f},
-		};
-
-
-		std::vector<Vec4> uvs = {
-			{0.0f, 1.0f,0,0},
-			{1.0f, 1.0f,0,0},
-			{1.0f, 0.0f,0,0},
-			{0.0f, 0.0f,0,0},
-		};
-
-
-		std::vector<U32> indices = { 0, 1, 2, 3, 0, 2 };
+		std::vector<U32> planeIndices = { 0, 1, 2, 3, 0, 2 };
 
 		MeshData planeData;
-		planeData.colors = std::move(colors);
-		planeData.indices = std::move(indices);
-		planeData.positions = std::move(positions);
-		planeData.normals = std::move(normals);
-		planeData.uvs0 = std::move(uvs);
 		planeData.meshName = "PlaneMeshSimple";
 		planeData.materialInstanceAssetHandle = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET;
+		planeData.vertices = std::move(planeVertices);
+		planeData.indices = std::move(planeIndices);
 
 		ModelCreateSettings createSettings{};
 		createSettings.modelName = "PlaneModel";
 		createSettings.permamentAsset = true;
 		createSettings.meshesData.push_back(std::move(planeData));
 
-
 		DefaultAssets::PLANE_ASSET = m_AssetsMgr->CreateAsset<ModelAsset>("Plane", createSettings);
 		auto planeModel = m_AssetsMgr->GetAsset<ModelAsset>(DefaultAssets::PLANE_ASSET);
 		DefaultAssets::PLANE_HANDLE = planeModel->GetMeshHandle(0);
 
-		//Cube mesh
+		// Cube mesh
+		std::vector<Vertex> cubeVertices = {
+			// Front face
+			{{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f,1}, {0.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f,1}, {1.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f,1}, {0.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f,1}, {1.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+
+			// Back face
+			{{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, 0.0f,1}, {0.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, 0.0f,1}, {0.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{-0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, 0.0f,1}, {1.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, 0.0f,1}, {1.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+
+			// Top face
+			{{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f,1}, {0.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f,1}, {1.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f,1}, {1.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f,1}, {0.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+
+			// Bottom face
+			{{-0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f,1}, {0.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f,1}, {0.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f,1}, {1.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f,1}, {1.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+
+			// Right face
+			{{0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 1.0f,1}, {0.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 1.0f,1}, {0.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{0.5f, 0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 1.0f,1}, {1.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 1.0f,1}, {1.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+
+			// Left face
+			{{-0.5f, -0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f,1}, {0.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f,1}, {1.0f, 0.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{-0.5f, 0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f,1}, {1.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}},
+			{{-0.5f, 0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f,1}, {0.0f, 1.0f}, {0.0f,0.0f},{0.0f,0.0f,0.0f}}
+		};
+
+		std::vector<U32> cubeIndices = {
+			0, 1, 2, 2, 1, 3, // Front face
+			4, 5, 6, 4, 6, 7, // Back face
+			8, 9, 10, 8, 10, 11, // Top face
+			12, 13, 14, 12, 14, 15, // Bottom face
+			16, 17, 18, 16, 18, 19, // Right face
+			20, 21, 22, 20, 22, 23 // Left face
+		};
+
 		MeshData cubeData;
-		cubeData.colors = std::move(GetCubeMeshColors());
-		cubeData.indices = std::move(getCubeIndices());
-		cubeData.positions = std::move(GetCubeMeshPositions(0.5f));
-		cubeData.normals = std::move(GetCubeMeshNormals());
-		cubeData.uvs0 = std::move(GetCubeMeshUvs());
+		cubeData.vertices = std::move(cubeVertices);
+		cubeData.indices = std::move(cubeIndices);
 		cubeData.meshName = "CubeMeshSimple";
 		cubeData.materialInstanceAssetHandle = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET;
-
 
 		ModelCreateSettings createSettingsCube{};
 		createSettingsCube.modelName = "CubeModel";
 		createSettingsCube.permamentAsset = true;
 		createSettingsCube.meshesData.push_back(std::move(cubeData));
 
-
 		DefaultAssets::CUBE_ASSET = m_AssetsMgr->CreateAsset<ModelAsset>("Cube", createSettingsCube);
 		auto cubeModel = m_AssetsMgr->GetAsset<ModelAsset>(DefaultAssets::CUBE_ASSET);
 		DefaultAssets::CUBE_HANDLE = cubeModel->GetMeshHandle(0);
-
-
 	}
 
 	void BuildInAssets::LoadUIAssets()
@@ -492,8 +506,7 @@ namespace Czuch
 		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
 		desc.passType = RenderPassType::DepthPrePass;
 
-		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
+		FillVertexStreamwithAttributes(desc);
 
 
 		MaterialDefinitionDesc matDesc(1);
@@ -636,15 +649,7 @@ namespace Czuch
 		desc.passType = RenderPassType::ForwardLightingTransparent;
 		desc.bs.SetAlphaBlend();
 
-		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-
-		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
-		desc.il.AddAttribute({ .location = 3,.binding = 3,.offset = 0,.format = Format::R32G32B32_FLOAT });
+		FillVertexStreamwithAttributes(desc);
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
@@ -716,15 +721,7 @@ namespace Czuch
 		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
 		desc.passType = RenderPassType::DebugDraw;
 
-		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-
-		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
-		desc.il.AddAttribute({ .location = 3,.binding = 3,.offset = 0,.format = Format::R32G32B32_FLOAT });
+		FillVertexStreamwithAttributes(desc);
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
@@ -985,15 +982,7 @@ namespace Czuch
 		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
 		desc.passType = RenderPassType::ForwardLighting;
 
-		desc.il.AddStream({ .binding = 0,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 1,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 2,.stride = sizeof(float) * 4,.input_rate = InputClassification::PER_VERTEX_DATA });
-		desc.il.AddStream({ .binding = 3,.stride = sizeof(float) * 3,.input_rate = InputClassification::PER_VERTEX_DATA });
-
-		desc.il.AddAttribute({ .location = 0,.binding = 0,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 1,.binding = 1,.offset = 0,.format = Format::R32G32B32_FLOAT });
-		desc.il.AddAttribute({ .location = 2,.binding = 2,.offset = 0,.format = Format::R32G32B32A32_FLOAT });
-		desc.il.AddAttribute({ .location = 3,.binding = 3,.offset = 0,.format = Format::R32G32B32_FLOAT });
+		FillVertexStreamwithAttributes(desc);
 
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;

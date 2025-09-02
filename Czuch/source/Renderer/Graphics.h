@@ -20,13 +20,14 @@ namespace Czuch
 	static constexpr U32 MAX_LIGHTS_IN_TILE = 32;
 	static constexpr U32 TILE_SIZE = 32;
 
-	static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-	static constexpr int PUSH_CONSTANTS_SIZE = sizeof(glm::mat4x4) + sizeof(glm::ivec4);
-	static constexpr int INIT_MAX_RENDER_OBJECTS = 2056;
-	static constexpr int MAX_MATERIALS_OBJECTS = 1024;
-	static constexpr int MAX_LINES_IN_SCENE = 10000;
-	static constexpr int MAX_DEBUG_TRIANGLES_IN_SCENE = 10000;
-	static constexpr int MAX_DEBUG_POINTS_IN_SCENE = 10000;
+	static constexpr U32 MAX_FRAMES_IN_FLIGHT = 2;
+	static constexpr U32 PUSH_CONSTANTS_SIZE = sizeof(glm::mat4x4) + sizeof(glm::ivec4);
+	static constexpr U32 INIT_MAX_RENDER_OBJECTS = 2056;
+	static constexpr U32 MAX_MATERIALS_OBJECTS = 1024;
+	static constexpr U32 MAX_LINES_IN_SCENE = 10000;
+	static constexpr U32 MAX_DEBUG_TRIANGLES_IN_SCENE = 10000;
+	static constexpr U32 MAX_DEBUG_POINTS_IN_SCENE = 10000;
+	static constexpr U32 MAX_SINGLE_BUFFER_SIZE = 10000000; // 10 MB
 
 	typedef I32 Handle;
 #define INVALID_HANDLE(Type) Type() 
@@ -42,6 +43,16 @@ namespace Czuch
 	struct PositionVertex
 	{
 		Vec3 position;
+	};
+
+	struct Vertex
+	{
+		Vec3 position; // 12 bytes
+		Vec3 normal;   // 12 bytes
+		Vec4 color;    // 16 bytes
+		Vec2 uv0;      // 8 bytes
+		Vec2 uv1;      // 8 bytes
+		Vec3 tangent;  // 12 bytes
 	};
 
 	struct SceneData
@@ -399,12 +410,13 @@ namespace Czuch
 	enum BufferType
 	{
 		CUSTOM = 0,
-		POSITION = 1,
-		NORMAL = 2,
-		UV0 = 3,
-		UV1 = 4,
-		COLOR = 5,
-		INDICES = 6,
+		VERTEX = 1,
+		POSITION = 2,
+		NORMAL = 3,
+		UV0 = 4,
+		UV1 = 5,
+		COLOR = 6,
+		INDICES = 7,
 	};
 
 	enum ResourceState
@@ -1809,10 +1821,7 @@ namespace Czuch
 
 	struct MeshData
 	{
-		Array<Vec3> positions;
-		Array<Vec3> normals;
-		Array<Vec4> colors;
-		Array<Vec4> uvs0;
+		Array<Vertex> vertices;
 		Array<U32> indices;
 		AABB aabb;
 		AssetHandle materialInstanceAssetHandle;
@@ -1841,10 +1850,7 @@ namespace Czuch
 		{
 			if (&other != this)
 			{
-				this->positions = std::move(other.positions);
-				this->normals = std::move(other.normals);
-				this->colors = std::move(other.colors);
-				this->uvs0 = std::move(other.uvs0);
+				this->vertices = std::move(other.vertices);
 				this->materialInstanceAssetHandle = other.materialInstanceAssetHandle;
 				this->meshName = std::move(other.meshName);
 				this->indices = std::move(other.indices);
@@ -1857,10 +1863,7 @@ namespace Czuch
 		{
 			if (&other != this)
 			{
-				this->positions = other.positions;
-				this->normals = other.normals;
-				this->colors = other.colors;
-				this->uvs0 = other.uvs0;
+				this->vertices = other.vertices;
 				this->materialInstanceAssetHandle = other.materialInstanceAssetHandle;
 				this->meshName = other.meshName;
 				this->indices = other.indices;
@@ -1870,10 +1873,7 @@ namespace Czuch
 
 		void Reserve(U32 count)
 		{
-			positions.reserve(count);
-			normals.reserve(count);
-			colors.reserve(count);
-			uvs0.reserve(count);
+			vertices.reserve(count);
 		}
 	};
 
@@ -1881,29 +1881,19 @@ namespace Czuch
 	{
 		MeshData* data;
 
-		inline bool HasNormals() const { return data->normals.size() > 0; }
-		inline bool HasColors() const { return data->colors.size() > 0; }
-		inline bool HasUV0() const { return data->uvs0.size() > 0; }
-
 		constexpr const MeshData& GetMeshData() const { return *data; }
 		bool IsValid() const { return data != nullptr; }
 
-		BufferHandle positionsHandle;
-		BufferHandle normalsHandle;
-		BufferHandle colorsHandle;
-		BufferHandle uvs0Handle;
+		BufferHandle vertexBufferHandle;
 		BufferHandle indicesHandle;
 		MaterialInstanceHandle materialHandle;
 
 		Mesh()
 		{
 			data = nullptr;
-			positionsHandle = INVALID_HANDLE(BufferHandle);
-			normalsHandle = INVALID_HANDLE(BufferHandle);
-			colorsHandle = INVALID_HANDLE(BufferHandle);
-			uvs0Handle = INVALID_HANDLE(BufferHandle);
-			indicesHandle = INVALID_HANDLE(BufferHandle);
+			vertexBufferHandle = INVALID_HANDLE(BufferHandle);
 			materialHandle = INVALID_HANDLE(MaterialInstanceHandle);
+			indicesHandle = INVALID_HANDLE(BufferHandle);
 		}
 
 		~Mesh();

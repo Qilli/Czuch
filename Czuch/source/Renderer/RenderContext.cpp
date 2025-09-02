@@ -93,12 +93,13 @@ namespace Czuch
 
 				renderObjectInstance.localToClipSpaceTransformation = cam->GetViewProjectionMatrix() * obj.transform->GetLocalToWorld();
 				renderObjectInstance.worldPosition = obj.transform->GetWorldPosition();
-				renderObjectInstance.paramData.x =counter++;
+				renderObjectInstance.paramData.x =counter;
 				renderObjectInstance.mesh = obj.mesh->GetMesh();
 				renderObjectInstance.overrideMaterial = material;
 				renderObjectInstance.passIndex = index;
 				AddToRenderList(renderObjectInstance);
 			}
+			counter++;
 		}
 		m_IsDirty = false;
 	}
@@ -341,15 +342,13 @@ namespace Czuch
 						{
 							auto& rendering = cameraRendering.debugCameraControl;
 							auto mesh = device->AccessMesh(handle);
-							if (mesh != nullptr && mesh->HasNormals())
+							if (mesh != nullptr)
 							{
-								auto& normals = mesh->GetMeshData().normals;
-								auto& positions = mesh->GetMeshData().positions;
 								Mat4x4 localToWorld = transformComp.GetLocalToWorld();
-								for (int a = 0; a < normals.size(); ++a)
+								for (int a = 0; a < mesh->GetMeshData().vertices.size(); ++a)
 								{
-									const Vec3& posLocal = positions[a];
-									const Vec3& normalLocal = normals[a];
+									const Vec3& posLocal = mesh->GetMeshData().vertices[a].position;
+									const Vec3& normalLocal = mesh->GetMeshData().vertices[a].normal;
 									Vec3 position = localToWorld * Vec4(posLocal.x, posLocal.y, posLocal.z, 1.0f);
 									Vec3 normal = transformComp.GetInverseTransposeLocalToWorld() * Vec4(normalLocal.x, normalLocal.y, normalLocal.z, 0.0f);
 									rendering.DrawLine(position, position + normal * 0.2f, Colors::Red);

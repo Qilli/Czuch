@@ -113,6 +113,7 @@ namespace Czuch
 		void CreateDefaultTextures();
 		void FillLightingLayoutDesc(Czuch::DescriptorSetLayoutDesc& desc_LightBuffers);
 		void CreateDefaultMaterials();
+		void FillVertexStreamwithAttributes(Czuch::MaterialPassDesc& desc);
 		void CreateDefaultModels();
 		void LoadUIAssets();
 	private:

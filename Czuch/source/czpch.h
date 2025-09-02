@@ -18,6 +18,7 @@
 
 #include"Subsystems/Logging.h"
 #include"Core/TimeDelta.h"
+#include"Core/Math.h"
 #include<filesystem>
 #include <cmath>   
 #include <algorithm> 

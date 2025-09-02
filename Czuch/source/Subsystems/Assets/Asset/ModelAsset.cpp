@@ -8,6 +8,7 @@
 #include "./Subsystems/Assets/BuildInAssets.h"
 #include "./Subsystems/Scenes/Scene.h"
 #include "./Subsystems/Scenes/Components/TransformComponent.h"
+#include <assimp/GltfMaterial.h>
 
 
 namespace Czuch
@@ -121,7 +122,7 @@ namespace Czuch
 
 
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(AssetPath(), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipWindingOrder | aiProcess_FlipUVs);
+		const aiScene* scene = importer.ReadFile(AssetPath(), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipWindingOrder | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
@@ -266,55 +267,63 @@ namespace Czuch
 	U32 ModelAsset::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 	{
 		MeshData meshData;
-		meshData.Reserve(mesh->mNumVertices);
 		meshData.meshName = mesh->mName.C_Str();
+
+		std::vector<Vertex> unifiedVertices(mesh->mNumVertices);
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 		{
-			meshData.positions.push_back({ mesh->mVertices[i].x,mesh->mVertices[i].y,mesh->mVertices[i].z });
-			meshData.normals.push_back({ mesh->mNormals[i].x,mesh->mNormals[i].y,mesh->mNormals[i].z });
-		}
+			unifiedVertices[i].position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
 
-		if (mesh->HasVertexColors(0))
-		{
-			for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+			if (mesh->HasNormals())
 			{
-				meshData.colors.push_back({ mesh->mColors[0][i].r,mesh->mColors[0][i].g,mesh->mColors[0][i].b,mesh->mColors[0][i].a });
+				unifiedVertices[i].normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
+			}
+			else
+			{
+				unifiedVertices[i].normal = { 0.0f, 0.0f, 0.0f };
+			}
+
+			if (mesh->HasVertexColors(0))
+			{
+				unifiedVertices[i].color = { mesh->mColors[0][i].r, mesh->mColors[0][i].g, mesh->mColors[0][i].b, mesh->mColors[0][i].a };
+			}
+			else
+			{
+				unifiedVertices[i].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+			}
+
+			if (mesh->mTextureCoords[0])
+			{
+				unifiedVertices[i].uv0 = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
+			}
+			else
+			{
+				unifiedVertices[i].uv0 = { 0.0f, 0.0f };
+			}
+
+			if (mesh->mTextureCoords[1])
+			{
+				unifiedVertices[i].uv1 = { mesh->mTextureCoords[1][i].x, mesh->mTextureCoords[1][i].y };
+			}
+			else
+			{
+				unifiedVertices[i].uv1 = { 0.0f, 0.0f };
 			}
 		}
-		else
-		{
-			for (unsigned int i = 0; i < mesh->mNumVertices; i++)
-			{
-				meshData.colors.push_back({ 1.0f,1.0f,1.0f,1.0f });
-			}
-		}
 
-		if (mesh->mTextureCoords[0])
-		{
-
-			for (unsigned int i = 0; i < mesh->mNumVertices; i++)
-			{
-				meshData.uvs0.push_back({ mesh->mTextureCoords[0][i].x,mesh->mTextureCoords[0][i].y,0,0 });
-			}
-		}
-		else
-		{
-			for (unsigned int i = 0; i < mesh->mNumVertices; i++)
-			{
-				meshData.uvs0.push_back({ 0.0f,0.0f,0.0f,0.0f });
-			}
-		}
-
-		meshData.indices.reserve(mesh->mNumFaces * 3);
-
+		std::vector<U32> indices;
+		indices.reserve(mesh->mNumFaces * 3);
 		for (unsigned int i = 0; i < mesh->mNumFaces; i++)
 		{
 			aiFace& face = mesh->mFaces[i];
 			for (unsigned int j = 0; j < face.mNumIndices; j++)
 			{
-				meshData.indices.push_back(face.mIndices[j]);
+				indices.push_back(face.mIndices[j]);
 			}
 		}
+
+		meshData.vertices = std::move(unifiedVertices);
+		meshData.indices = std::move(indices);
 
 		MaterialInfo materialInfo = {};
 		if (mesh->mMaterialIndex >= 0)
@@ -324,7 +333,12 @@ namespace Czuch
 			meshData.materialInstanceAssetHandle = materialInfo.materialAsset;
 		}
 
-		U32 index = m_MeshData.AddMeshData({ std::move(meshData),MeshHandle(),materialInfo.materialInstanceHandle }, Mat4x4(1.0f), nullptr);
+		if (meshData.vertices.size() == 0)
+		{
+			LOG_BE_ERROR("Mesh {0} has no vertices", meshData.meshName);
+		}
+
+		U32 index = m_MeshData.AddMeshData({ std::move(meshData), MeshHandle(), materialInfo.materialInstanceHandle }, Mat4x4(1.0f), nullptr);
 		auto& currentMeshData = m_MeshData.meshesData[index];
 		auto meshHandle = m_Device->CreateMesh(currentMeshData.meshData);
 		m_MeshData.meshesData[index].meshHandle = meshHandle;
@@ -351,7 +365,12 @@ namespace Czuch
 
 		std::filesystem::path localPath = str.C_Str();
 		texPath = GetRelativePath().parent_path().string() + "\\" + localPath.filename().string();
-		return AssetsManager::GetPtr()->LoadAsset<TextureAsset, TextureLoadSettings>(texPath, settings);
+		handle= AssetsManager::GetPtr()->LoadAsset<TextureAsset, TextureLoadSettings>(texPath, settings);
+
+		if (HANDLE_IS_VALID(handle))
+		{
+			return handle;
+		}
 	}
 
 	bool IsMaterialTransparent(aiMaterial* material) {
@@ -366,8 +385,8 @@ namespace Czuch
 		}
 
 		aiString alphaMode;
-		if (material->Get(AI_MATKEY_BLEND_FUNC, alphaMode) == AI_SUCCESS) {
-			if (alphaMode == aiString("BLEND")) {
+		if (material->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS) {
+			if (alphaMode == aiString("BLEND") || alphaMode == aiString("MASK")) {
 				return true;
 			}
 		}
@@ -410,16 +429,26 @@ namespace Czuch
 				MaterialInstanceCreateSettings instanceCreateSettings{};
 				instanceCreateSettings.materialInstanceName = std::move(name);
 
+				aiColor4D diffuseColor(1.0f, 1.0f, 1.0f, 1.0f); 
+				aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuseColor);
+
+				aiColor4D specularColor(1.0f, 1.0f, 1.0f, 1.0f); 
+				aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &specularColor);
+
+				float shininess = 32.0f; 
+				aiGetMaterialFloat(material, AI_MATKEY_SHININESS, &shininess);
+				shininess = Math::Clamp(shininess, 32.0f, 128.0f);
+
 				MaterialObjectGPUData materialGPUData;
-				materialGPUData.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-				materialGPUData.metallicColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				materialGPUData.albedoColor = Vec4(diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a);
+				materialGPUData.metallicColor = Vec4(specularColor.r, specularColor.g, specularColor.b, shininess);
 				materialGPUData.albedoMetallicTextures = iVec4(textureHandle.ToGlobalIndex(), -1, -1, -1);
 				Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
 				instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
 
 
-				if (IsMaterialTransparent(material) || m_LoadedMaterials.size() <= 1)
+				if (IsMaterialTransparent(material))
 				{
 					instanceCreateSettings.desc.materialAsset = DefaultAssets::DEFAULT_SIMPLE_TRANSPARENT_MATERIAL_ASSET;
 					instanceCreateSettings.desc.isTransparent = true;

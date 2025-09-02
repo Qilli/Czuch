@@ -53,10 +53,7 @@ namespace Czuch
 		Array<VkRenderingAttachmentInfoKHR> m_ColorAttachmentsInfo;
 	private:
 		BufferHandle m_CurrentIndexBuffer;
-		BufferHandle m_CurrentPositionBuffer;
-		BufferHandle m_CurrentColorBuffer;
-		BufferHandle m_CurrentNormalBuffer;
-		BufferHandle m_CurrentTexCoordBuffer;
+		BufferHandle m_CurrentVertexBuffer;
 		MaterialInstanceHandle m_CurrentMaterialHandle;
 		DescriptorWriter m_Writer;
 	};

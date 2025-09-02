@@ -142,5 +142,11 @@ namespace Czuch
 		Viewport(float x = 0.0f, float y = 0.0f, float width = 1.0f, float height = 1.0f)
 			: x(x), y(y), width(width), height(height) {}
 	};
+
+	static struct Math
+	{
+		 template <typename T> 
+		 static T Clamp(T value, T min, T max) { return ((value < min) ? min : ((value > max) ? max : value)); }
+	};
 }
 

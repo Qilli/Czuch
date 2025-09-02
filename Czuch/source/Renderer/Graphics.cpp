@@ -311,24 +311,9 @@ namespace Czuch
 
 	Mesh::~Mesh()
 	{
-		if (HANDLE_IS_VALID(positionsHandle))
+		if (HANDLE_IS_VALID(vertexBufferHandle))
 		{
-			device->Release(positionsHandle);
-		}
-
-		if (HANDLE_IS_VALID(normalsHandle))
-		{
-			device->Release(normalsHandle);
-		}
-
-		if (HANDLE_IS_VALID(colorsHandle))
-		{
-			device->Release(colorsHandle);
-		}
-
-		if (HANDLE_IS_VALID(uvs0Handle))
-		{
-			device->Release(uvs0Handle);
+			device->Release(vertexBufferHandle);
 		}
 
 		if (HANDLE_IS_VALID(indicesHandle))
@@ -901,10 +886,10 @@ namespace Czuch
 		//compute aabb from positions
 		aabb.min = Vec3(FLT_MAX);
 		aabb.max = Vec3(-FLT_MAX);
-		for (I32 a = 0; a < positions.size(); ++a)
+		for (I32 a = 0; a < vertices.size(); ++a)
 		{
-			aabb.min = glm::min(aabb.min, positions[a]);
-			aabb.max = glm::max(aabb.max, positions[a]);
+			aabb.min = glm::min(aabb.min, vertices[a].position);
+			aabb.max = glm::max(aabb.max, vertices[a].position);
 		}
 	}
 

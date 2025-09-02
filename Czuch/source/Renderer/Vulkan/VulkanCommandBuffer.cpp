@@ -58,11 +58,8 @@ namespace Czuch
 			vkEndCommandBuffer(m_Cmd);
 			m_isRecording = false;
 
-			INVALIDATE_HANDLE(m_CurrentColorBuffer);
+			INVALIDATE_HANDLE(m_CurrentVertexBuffer);
 			INVALIDATE_HANDLE(m_CurrentIndexBuffer);
-			INVALIDATE_HANDLE(m_CurrentNormalBuffer);
-			INVALIDATE_HANDLE(m_CurrentPositionBuffer);
-			INVALIDATE_HANDLE(m_CurrentTexCoordBuffer);
 			INVALIDATE_HANDLE(m_CurrentPipeline);
 			INVALIDATE_HANDLE(m_CurrentMaterialHandle);
 		}
@@ -107,8 +104,8 @@ namespace Czuch
 
 			auto indicesOffset = meshInstance->indicesHandle.offset >= 0 ? meshInstance->indicesHandle.offset : 0;
 			indicesOffset /= sizeof(U32); // Vulkan uses indices offset in U32 units
-			auto firstVertex = meshInstance->positionsHandle.offset >= 0 ? meshInstance->positionsHandle.offset : 0;
-			firstVertex /= sizeof(float) * 3; // Vulkan uses vertex offset in float3 units
+			auto firstVertex = meshInstance->vertexBufferHandle.offset >= 0 ? meshInstance->vertexBufferHandle.offset : 0;
+			firstVertex /= sizeof(Vertex); // Vulkan uses vertex offset in float3 units
 			DrawIndexed(meshInstance->indicesHandle.size/sizeof(U32), indicesOffset, 1, 0,firstVertex);
 		}
 	}
@@ -116,15 +113,12 @@ namespace Czuch
 
 	void VulkanCommandBuffer::TryBindMeshInstanceBuffers(Czuch::Mesh* meshInstance)
 	{
-		BindBuffer(meshInstance->positionsHandle, 0, 0,&m_CurrentPositionBuffer);
+		BindBuffer(meshInstance->vertexBufferHandle, 0,0,&m_CurrentVertexBuffer);
 		if (meshInstance->IsValid() == false)
 		{
 			CZUCH_BE_ASSERT(false, "Mesh instance is invalid");
 		}
 
-		BindBuffer(meshInstance->colorsHandle, 1, 0,&m_CurrentColorBuffer);
-		BindBuffer(meshInstance->uvs0Handle, 2, 0,&m_CurrentTexCoordBuffer);
-		BindBuffer(meshInstance->normalsHandle, 3, 0,&m_CurrentNormalBuffer);
 		BindIndexBuffer(meshInstance->indicesHandle, 0);
 	}
 
@@ -340,7 +334,7 @@ namespace Czuch
 		auto& pipelineDesc = material->GetDesc().passesContainer.passes[passIndex];
 		BindPipeline(pipeline);
 
-		bool isDirty = materialInstance->IsDirty();
+		bool isDirty =  materialInstance->IsDirty();
 		materialInstance->ClearDirty();
 
 		for (int a = 0; a < pipelineDesc.layoutsCount; a++)
@@ -430,7 +424,8 @@ namespace Czuch
 			return;
 		}
 		m_CurrentIndexBuffer = buffer;
-		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(m_Device->AccessBuffer(buffer))->buffer,0, VK_INDEX_TYPE_UINT32);
+		VkDeviceSize offsets = offset;
+		vkCmdBindIndexBuffer(m_Cmd, Internal_to_Buffer(m_Device->AccessBuffer(buffer))->buffer, offset, VK_INDEX_TYPE_UINT32);
 	}
 
 	void VulkanCommandBuffer::BindDescriptorSet(DescriptorSet* descriptor, U16 setIndex, U32 num, U32* offsets, U32 num_offsets)
