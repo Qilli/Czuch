@@ -95,7 +95,6 @@ namespace Czuch
 
 		//for editor mode add dockspace with editor ui
 		m_UIBaseMgr->EnableEditorMode(m_EngineSettings.engineMode == EngineMode::Editor);
-		m_EditorSubsystem->AfterSystemInit();
 	}
 
 	void EngineRoot::Shutdown()
@@ -154,6 +153,7 @@ namespace Czuch
 	void EngineRoot::TryBuildDefaultAssets()
 	{
 		m_DefaultAssets->BuildAndLoad();
+		m_EditorSubsystem->AfterSystemInit();
 	}
 
 	TimeDelta EngineRoot::UpdateDeltaTime(Czuch::TimeDiffCounter& counter)

@@ -577,6 +577,7 @@ namespace Czuch
 			Entity editorCameraEntity = CreateEntity("EditorCamera", m_RootEntity);
 			auto& editorCam = editorCameraEntity.AddComponent<CameraComponent>();
 			editorCam.SetType(CameraType::EditorCamera);
+			editorCam.SetAsPrimary();
 			editorCameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
 			auto& headerComponent = editorCameraEntity.GetComponent<HeaderComponent>();
 			headerComponent.SetTag("EditorCamera");

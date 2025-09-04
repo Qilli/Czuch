@@ -8,7 +8,7 @@
 
 namespace Czuch
 {
-	EngineEditorSubsystem::EngineEditorSubsystem(EngineEditorControl* editorControl) : m_Root(EngineRoot::GetPtr()), m_EditorControl(editorControl)
+	EngineEditorSubsystem::EngineEditorSubsystem(EngineEditorControl* editorControl) : m_Root(EngineRoot::GetPtr()), m_EditorControl(editorControl),m_AfterSystemInitDone(false)
 	{
 	}
 
@@ -23,9 +23,10 @@ namespace Czuch
 
 	void EngineEditorSubsystem::AfterSystemInit()
 	{
-		if (m_EditorControl != nullptr)
+		if (m_EditorControl != nullptr && !m_AfterSystemInitDone)
 		{
 			m_EditorControl->AfterSystemInit();
+			m_AfterSystemInitDone = true;
 		}
 
 	}

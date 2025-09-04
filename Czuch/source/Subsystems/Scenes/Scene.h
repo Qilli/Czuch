@@ -95,7 +95,7 @@ namespace Czuch
 		Array<SceneCameraControl>& GetCamerasControl() { return m_CamerasControl; }
 		RenderContext* GetRenderContext(RenderPassType type, Camera* camera);
 	public:
-		void OnAttached() { CheckAndAddStartCamera(); m_isDirty = false; UpdateAllCameras(); }
+		void OnAttached() { m_isDirty = false; UpdateAllCameras(); }
 		void OnDettached();
 	public:
 		virtual bool Serialize(YAML::Emitter& out, bool binary = false) override;

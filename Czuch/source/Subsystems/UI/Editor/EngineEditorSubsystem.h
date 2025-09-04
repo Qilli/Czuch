@@ -17,6 +17,7 @@ namespace Czuch
     private:
         EngineRoot* m_Root;
         EngineEditorControl* m_EditorControl;
+        bool m_AfterSystemInitDone;
 	};
 }
 

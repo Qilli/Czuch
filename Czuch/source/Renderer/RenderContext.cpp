@@ -125,6 +125,7 @@ namespace Czuch
 	void DefaultTransparentRenderContext::SortRenderObjects(Camera* cam)
 	{
 		Vec3 cameraPosition = cam->GetViewMatrix()[3];
+
 		std::sort(m_RenderObjects.begin(), m_RenderObjects.end(), [cameraPosition](const RenderObjectInstance& a, const RenderObjectInstance& b)
 			{
 				float distanceA = glm::length(a.worldPosition - cameraPosition);

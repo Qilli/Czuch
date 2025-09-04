@@ -85,7 +85,7 @@ int main()
 	settings.debugSettings.SetDebugDrawNormalForMeshesEnabled(true);
 
 	Czuch::Scene* scene = new Czuch::Scene("MainScene", root->GetRenderer().GetDevice());
-	scene->SetAmbientColor(Vec4(0.1f, 0.1f, 0.1f, 1.0f));
+	scene->SetAmbientColor(Vec4(0.6f, 0.6f, 0.6f, 1.0f));
 
 	auto& sceneMgr = root->GetScenesManager();
 	sceneMgr.AddScene(scene, true);
@@ -93,8 +93,8 @@ int main()
 	auto& assetMgr = Czuch::AssetsManager::Get();
 
 	//load sponza
-	auto sponzaHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Sponza\\sponza.gltf");
-	auto sponzaEntity = scene->AddModelToScene(sponzaHandle, "SponzaObject");
+	//auto sponzaHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Sponza\\sponza.gltf");
+	//auto sponzaEntity = scene->AddModelToScene(sponzaHandle, "SponzaObject");
 	//auto bpHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Models\\backpack.obj");
 	//auto bpEntity = scene->AddModelToScene(bpHandle, "BpObject");
 
@@ -102,7 +102,7 @@ int main()
 	//auto barrelEntity = scene->AddModelToScene(barrelHandle, "BarrelObject");
 	//barrelEntity.Transform().SetLocalPosition(glm::vec3(2.0f, -2.0f, -4.0f));
 
-	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("Textures\\Orange\\texture_07.png");
+	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("Sponza\\5061699253647017043.png");
 
 	Czuch::MaterialInstanceCreateSettings instanceCreateSettings{};
 	instanceCreateSettings.materialInstanceName = "DefaultAncientMaterial";
@@ -114,7 +114,7 @@ int main()
 	Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(Czuch::MaterialObjectGPUData), Czuch::DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
 	instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
-	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
+	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_TRANSPARENT_MATERIAL_ASSET;
 	auto matInstanceHandle = Czuch::AssetsManager::GetPtr()->CreateMaterialInstance(instanceCreateSettings);
 
 
@@ -124,16 +124,16 @@ int main()
 	planeEntity.Transform().SetLocalScale(glm::vec3(10.0f, 1.0f, 10.0f));
 
 	Czuch::Entity cubeEntity = scene->CreateEntity("CubeObject");
-	//cubeEntity.AddRenderable(Czuch::DefaultAssets::CUBE_ASSET, Czuch::DefaultAssets::CUBE_HANDLE, Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET);
-	cubeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 0.0f, 1.0f));
+	cubeEntity.AddRenderable(Czuch::DefaultAssets::CUBE_ASSET, Czuch::DefaultAssets::CUBE_HANDLE, matInstanceHandle);
+	cubeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 1.0f, 1.0f));
 	auto& scripts = cubeEntity.AddComponent<Czuch::NativeBehaviourComponent>();
 	RotateAround& rotateAround = scripts.AddNativeBehaviour<RotateAround>();
 	rotateAround.SetEnabled(true);
 	Czuch::NativeFree3DCameraController& camController = scripts.AddNativeBehaviour<Czuch::NativeFree3DCameraController>();
 
-	/*Czuch::Entity cubeEntity2 = scene->CreateEntity("CubeObject2");
-	cubeEntity2.AddRenderable(Czuch::DefaultAssets::CUBE_ASSET, Czuch::DefaultAssets::CUBE_HANDLE, Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET);
-	cubeEntity2.Transform().SetLocalPosition(glm::vec3(0.0f, 0.0f, -5.0f));*/
+	Czuch::Entity cubeEntity2 = scene->CreateEntity("CubeObject2");
+	cubeEntity2.AddRenderable(Czuch::DefaultAssets::CUBE_ASSET, Czuch::DefaultAssets::CUBE_HANDLE, matInstanceHandle);
+	cubeEntity2.Transform().SetLocalPosition(glm::vec3(0.0f, 1.0f, 3.0f));
 
 	/*Czuch::Entity planeEntity2 = scene->CreateEntity("PlaneObject2");
 	planeEntity2.AddRenderable(Czuch::DefaultAssets::PLANE_ASSET, Czuch::DefaultAssets::PLANE_HANDLE, matInstanceHandle);

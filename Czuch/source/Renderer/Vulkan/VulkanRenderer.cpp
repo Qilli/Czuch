@@ -133,6 +133,7 @@ namespace Czuch
 			return;
 		}
 
+
 		BeforeFrameGraphExecute();
 		vkResetFences(device, 1, &GetCurrentFrame().inFlightFence);
 
@@ -145,20 +146,23 @@ namespace Czuch
 			auto mainFrameGraph = m_ActiveScene->GetFrameGraphControl(0);
 			mainFrameGraph->Execute(m_Device, cmdBuffer);
 			auto finalInfo = mainFrameGraph->GetFinalFrameGraphNodeInfo();
-			m_FullScreenRenderPass->SetSourceTexture(cmdBuffer, finalInfo.finalTexture, finalInfo.finalDepthTexture, finalInfo.finalRenderPass);
 
-			for (int a = 1; a < m_ActiveScene->GetActiveFrameGraphsCount(); ++a)
+			if (EngineRoot::Get().GetEngineStateMode() != EngineStateMode::Editor)
 			{
-				auto* frameGraph = m_ActiveScene->GetFrameGraphControl(a);
+				m_FullScreenRenderPass->SetSourceTexture(cmdBuffer, finalInfo.finalTexture, finalInfo.finalDepthTexture, finalInfo.finalRenderPass);
+				for (int a = 1; a < m_ActiveScene->GetActiveFrameGraphsCount(); ++a)
+				{
+					auto* frameGraph = m_ActiveScene->GetFrameGraphControl(a);
 
-				frameGraph->Execute(m_Device, cmdBuffer);
+					frameGraph->Execute(m_Device, cmdBuffer);
 
-				auto finalCurrentInfo = frameGraph->GetFinalFrameGraphNodeInfo();
-				m_FullScreenRenderPass->SetViewportAndScissor(frameGraph->GetCamera());
-				m_FullScreenRenderPass->SetTargetTexture(cmdBuffer, finalCurrentInfo.finalTexture);
-				m_FullScreenRenderPass->PreDraw(cmdBuffer, this);
-				m_FullScreenRenderPass->Execute(cmdBuffer);
-				m_FullScreenRenderPass->PostDraw(cmdBuffer, this);
+					auto finalCurrentInfo = frameGraph->GetFinalFrameGraphNodeInfo();
+					m_FullScreenRenderPass->SetViewportAndScissor(frameGraph->GetCamera());
+					m_FullScreenRenderPass->SetTargetTexture(cmdBuffer, finalCurrentInfo.finalTexture);
+					m_FullScreenRenderPass->PreDraw(cmdBuffer, this);
+					m_FullScreenRenderPass->Execute(cmdBuffer);
+					m_FullScreenRenderPass->PostDraw(cmdBuffer, this);
+				}
 			}
 
 			m_FinalRenderPass->SetViewportAndScissor(mainFrameGraph->GetCamera());
@@ -410,6 +414,7 @@ namespace Czuch
 				{
 					m_ActiveScene->OnResize(it->width, it->height, false);
 				}
+				m_FullScreenRenderPass->Resize(it->width, it->height);
 			}
 			else
 			{

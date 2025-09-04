@@ -66,6 +66,7 @@ namespace Czuch
 		}
 		m_UITextureSource = true;
 		m_TextureSource = new UITextureSource(m_Device, m_FrameGraph, &m_FrameGraph->GetNode(m_Node));
+		m_TextureSource->Init();
 	}
 
 

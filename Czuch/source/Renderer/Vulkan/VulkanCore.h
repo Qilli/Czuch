@@ -325,7 +325,6 @@ namespace Czuch
 			return VK_BLEND_FACTOR_CONSTANT_COLOR;
 		case Blend::ONE_MINUS_CONSTANT_COLOR:
 			return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
-			break;
 		case Blend::SRC1_COLOR:
 			return VK_BLEND_FACTOR_SRC1_COLOR;
 		case Blend::ONE_MINUS_SRC1_COLOR:

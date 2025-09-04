@@ -13,7 +13,7 @@ namespace Czuch
 		void Init();
 		void TransitionToShaderReadOnly(CommandBuffer* cmd);
 		void Release();
-		void* GetTargetTextureDescriptor() { return (void*)m_Descriptor; }
+		void* GetTargetTextureDescriptor();
 		FrameGraphNode* m_Node;
 		FrameGraph* m_FrameGraph;
 		VkDescriptorSet m_Descriptor;

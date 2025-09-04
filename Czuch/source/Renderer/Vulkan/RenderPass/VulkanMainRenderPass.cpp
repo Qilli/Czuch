@@ -92,7 +92,7 @@ namespace Czuch
 		bool setForMaterial =!HANDLE_IS_VALID(m_FinalTexture);
 		m_FinalTexture = texture;
 		m_Device->TryTransitionImageLayout(cmd,m_FinalTexture, ImageLayout::SHADER_READ_ONLY_OPTIMAL, 0, 1);
-		if (setForMaterial)
+		if (setForMaterial && EngineRoot::GetEngineSettings().engineMode != EngineMode::Editor)
 		{
 			MaterialInstance* mat = m_Device->AccessMaterialInstance(DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);
 			mat->params[0].SetSampler(0,texture,0);

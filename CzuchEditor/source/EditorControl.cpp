@@ -175,7 +175,6 @@ namespace Czuch
 			targetViewportSize.y = 1;
 		}
 
-
 		if (UpdateOffscreenPass((U32)targetViewportSize.x, (U32)targetViewportSize.y))
 		{
 			ImGui::Image((ImTextureID)m_Root->GetRenderer().GetFrameGraphFinalResult(nullptr), ImGui::GetContentRegionAvail());

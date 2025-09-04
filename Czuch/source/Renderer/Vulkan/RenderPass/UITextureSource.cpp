@@ -38,7 +38,7 @@ namespace Czuch
 	{
 		if (m_Descriptor == VK_NULL_HANDLE)
 		{
-			return;
+			Init();
 		}
 		m_Device->TryTransitionImageLayout(cmd, m_Texture, ImageLayout::SHADER_READ_ONLY_OPTIMAL, 0, 1);
 	}
@@ -50,6 +50,11 @@ namespace Czuch
 			ImGui_ImplVulkan_RemoveTexture(m_Descriptor);
 			m_Descriptor = VK_NULL_HANDLE;
 		}
+	}
+
+	void* UITextureSource::GetTargetTextureDescriptor()
+	{
+		return (void*)m_Descriptor;
 	}
 
 }
