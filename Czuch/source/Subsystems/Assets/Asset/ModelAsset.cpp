@@ -441,7 +441,7 @@ namespace Czuch
 
 				MaterialObjectGPUData materialGPUData;
 				materialGPUData.albedoColor = Vec4(diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a);
-				materialGPUData.metallicColor = Vec4(specularColor.r, specularColor.g, specularColor.b, shininess);
+				materialGPUData.metallicSpecularPower = Vec4(specularColor.r, specularColor.g, specularColor.b, shininess);
 				materialGPUData.albedoMetallicTextures = iVec4(textureHandle.ToGlobalIndex(), -1, -1, -1);
 				Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 

@@ -85,15 +85,15 @@ namespace Czuch
 
 	struct MaterialObjectGPUData
 	{
-		Vec4 albedoColor;
-		Vec4 metallicColor;
-		iVec4 albedoMetallicTextures;
+		alignas(16)Vec4 albedoColor;
+		alignas(16)Vec4 metallicSpecularPower;
+		alignas(16)iVec4 albedoMetallicTextures;
 	};
 
 	struct LightData
 	{
 		Vec4 positionWithType;
-		Vec4 color;
+		Vec4 colorWithIntensity;
 		Vec4 directionWithRange;
 		Vec4 spotInnerOuterAngle;
 	};
@@ -1693,6 +1693,7 @@ namespace Czuch
 	{
 		PARAM_TEXTURE,
 		PARAM_BUFFER,
+		PARAM_SINGLE_STORAGE_BUFFER,
 		PARAM_UNKNOWN
 	};
 

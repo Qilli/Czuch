@@ -217,7 +217,8 @@ namespace Czuch
 		void OnSceneActive(Camera* cam, GraphicsDevice* device);
 		void Release(GraphicsDevice* device);
 		bool FillDebugBuffersData(GraphicsDevice* device, U32 frame);
-		void UpdateDebugMaterialInfo();
+		void FillSceneDataBuffer(Czuch::GraphicsDevice* device, const Czuch::MaterialInstanceHandle debugLightsMaterial, U32 frame);
+		void UpdateDebugMaterialInfo(GraphicsDevice* device,U32 frame);
 		IndirectDrawForCommandBufferData& FillAndGetIndirectDrawDataForDebugLinesDrawing(MaterialInstanceHandle material, U32 frame);
 		IndirectDrawForCommandBufferData& FillAndGetIndirectDrawDataForDebugTrianglesDrawing(MaterialInstanceHandle material, U32 frame);
 		IndirectDrawForCommandBufferData& FillAndGetIndirectDrawDataForDebugPointsDrawing(MaterialInstanceHandle material, U32 frame);

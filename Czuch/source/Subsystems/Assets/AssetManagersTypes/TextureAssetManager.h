@@ -18,6 +18,7 @@ namespace Czuch
 		bool IsFormatSupported(const char* format)const override { return strcmp(format, ".png") == 0 || strcmp(format, ".jpg") == 0 || strcmp(format, ".jpeg") == 0 || strcmp(format, "bmp") == 0 || strcmp(format, "tga") == 0; }
 		void Init() override;
 		int GetAssetType() const override { return (int)AssetType::TEXTURE; }
+		TextureHandle GetGlobalTextureHandleWithIndex(I32 globalIndex);
 	protected:
 		Asset* CreateAsset(const CzuchStr& name, BaseCreateSettings& settings) override;
 		Asset* CreateAsset(const CzuchStr& path, BaseLoadSettings& settings) override;

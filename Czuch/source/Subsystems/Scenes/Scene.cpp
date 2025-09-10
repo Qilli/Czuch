@@ -32,11 +32,11 @@ namespace Czuch
 		m_ClearColor = Color(1.0f, 1.0f, 1.0f, 1.0f);
 
 		//create default game mode camera
-		Entity cameraEntity = CreateEntity("MainCamera", m_RootEntity);
+		/*Entity cameraEntity = CreateEntity("MainCamera", m_RootEntity);
 		auto& cam = cameraEntity.AddComponent<CameraComponent>();
 		cam.SetAsPrimary();
 		cam.SetType(CameraType::GameCamera);
-		cameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });
+		cameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });*/
 
 		CheckAndAddStartCamera();
 		Dirty();
@@ -94,8 +94,9 @@ namespace Czuch
 			auto& transform = lightView.get<TransformComponent>(entity);
 			auto position = std::move(transform.GetWorldPosition());
 			auto direction = transform.GetWorldForward();
+			Vec4 color = light.GetColor();
 			m_RenderObjects.allLights.push_back({ {.positionWithType=Vec4(position.x,position.y,position.z,light.GetLightType()),
-				.color=light.GetColor(),
+				.colorWithIntensity=Vec4(color.x,color.y,color.z,light.GetLightIntensity()),
 				.directionWithRange=Vec4(direction.x,direction.y,direction.z,light.GetLightRange()),
 				.spotInnerOuterAngle=Vec4(light.GetInnerAngleCos(),light.GetOuterAngleCos(),0,0)},& transform,& light});
 		}

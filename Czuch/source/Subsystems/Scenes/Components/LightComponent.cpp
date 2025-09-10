@@ -9,6 +9,7 @@ namespace Czuch
 		m_Color = Colors::White;
 		m_InnerAngle = 30.0f;
 		m_OuterAngle = 32.0f;
+		m_LightIntensity = 1.0f;
 		m_Type = LightType::Directional;
 	}
 
@@ -18,6 +19,7 @@ namespace Czuch
 		m_Color = Colors::White;
 		m_InnerAngle = 30.0f;
 		m_OuterAngle = 32.0f;
+		m_LightIntensity = 1.0f;
 		m_Type = LightType::Directional;
 	}
 }

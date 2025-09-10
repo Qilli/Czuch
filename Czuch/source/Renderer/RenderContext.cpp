@@ -954,7 +954,7 @@ namespace Czuch
 
 			if (FillDebugBuffersData(device, frame))
 			{
-				UpdateDebugMaterialInfo();
+				UpdateDebugMaterialInfo(device,frame);
 			}
 		}
 
@@ -1065,8 +1065,23 @@ namespace Czuch
 		return true;
 	}
 
-	void SceneCameraDebugRenderingControl::UpdateDebugMaterialInfo()
+	void SceneCameraDebugRenderingControl::FillSceneDataBuffer(Czuch::GraphicsDevice* device, const Czuch::MaterialInstanceHandle debugMaterial, U32 frame)
 	{
+		auto instance = device->AccessMaterialInstance(debugMaterial);
+		instance->params[0].SetUniformBuffer(0, m_SceneBuffer[frame], 0);
+	}
+
+	void SceneCameraDebugRenderingControl::UpdateDebugMaterialInfo(GraphicsDevice* device, U32 frame)
+	{
+		auto debugLightsMaterial=DefaultAssets::DEBUG_DRAW_LIGHT_MATERIAL_INSTANCE;
+		auto debugLinesMaterial= DefaultAssets::DEBUG_DRAW_LINES_MATERIAL_INSTANCE;
+		auto debugTrianglesMaterial=DefaultAssets::DEBUG_DRAW_TRIANGLES_MATERIAL_INSTANCE;
+		auto debugDrawPointsMaterial= DefaultAssets::DEBUG_DRAW_POINTS_MATERIAL_INSTANCE;
+
+		FillSceneDataBuffer(device, debugLightsMaterial, frame);
+		FillSceneDataBuffer(device, debugLinesMaterial, frame);
+		FillSceneDataBuffer(device, debugTrianglesMaterial, frame);
+		FillSceneDataBuffer(device, debugDrawPointsMaterial, frame);
 	}
 
 	IndirectDrawForCommandBufferData& SceneCameraDebugRenderingControl::FillAndGetIndirectDrawDataForDebugLinesDrawing(MaterialInstanceHandle material, U32 frame)

@@ -49,6 +49,9 @@ namespace Czuch
 		inline float GetLightRange() const { return m_LightRange; }
 		void SetLightRange(float range) { m_LightRange = range; }
 
+		inline float GetLightIntensity() const { return m_LightIntensity; }
+		void SetLightIntensity(float intensity) { m_LightIntensity = intensity; }
+
 		inline Color GetColor() const { return GammaToLinear(m_Color); }
 		void SetColor(Color color) { m_Color = color; }
 
@@ -68,7 +71,9 @@ namespace Czuch
 	private:
 		Color m_Color;
 		LightType m_Type;
+		float m_LightIntensity;
 		float m_LightRange;
+		float m_SpecularPower;
 		float m_InnerAngle;//radians
 		float m_OuterAngle;//radians
 	};

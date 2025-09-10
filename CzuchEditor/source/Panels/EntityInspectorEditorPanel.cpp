@@ -416,7 +416,41 @@ namespace Czuch
 						m_TextureAssetHelper.ShowSelectAsset();
 					}
 				}
+				else if (paramType == MaterialParamType::PARAM_SINGLE_STORAGE_BUFFER)
+				{
+					auto info = materialAsset->GetInfoDescriptorTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA, 0);
+					if (info.index >= 0)//if less than 0 then it means that material does not have this tag, so we do not need to add data
+					{
+						void* gpuData = materialAsset->GetParameterDataWithInfo(info);
+						MaterialObjectGPUData* matData = (MaterialObjectGPUData*)gpuData;
+
+						if (CustomDrawers::DrawLinearColor("Albedo", &matData->albedoColor))
+						{
+							changed = true;
+						}
+
+						if (CustomDrawers::DrawLinearColor("Specular Color", (Vec3*) & matData->metallicSpecularPower))
+						{
+							changed = true;
+						}
+
+						if (ImGui::DragFloat("Specular Power,", &matData->metallicSpecularPower.w, 0.1f,8.0f,255.0f))
+						{
+							changed = true;
+						}
+
+						CzuchStr nameAlbedo = "Albedo";
+						m_TextureAssetHelper.SetMaterialInstance(materialAsset, matData->albedoMetallicTextures.x, [&matData](int newIndex) {matData->albedoMetallicTextures.x = newIndex; }, nameAlbedo);
+						m_TextureAssetHelper.ShowSelectAsset();
+
+						if (changed)
+						{
+							materialAsset->ChangeDataForDescriptorWithTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA, gpuData, sizeof(MaterialObjectGPUData));
+						}
+					}
+				}
 			}
+		
 
 			ImGui::Separator();
 			if (ImGui::Button("Copy Material"))
@@ -465,6 +499,14 @@ namespace Czuch
 				{
 					light.SetColor(lightColor);
 				}
+
+				//display and edit light intensity
+				float lightIntensity = light.GetLightIntensity();
+				if (ImGui::DragFloat("Light Intensity", &lightIntensity, 0.1f, 1.0f, 1000.0f, "%.1f"))
+				{
+					light.SetLightIntensity(lightIntensity);
+				}
+
 
 				if (lightType != LightType::Directional)
 				{

@@ -108,6 +108,7 @@ namespace Czuch
 		StringID strId = StringID::MakeStringID(path);
 		MaterialInstanceCreateSettings& matSettings = (MaterialInstanceCreateSettings&)settings;
 		MaterialInstanceAsset* matRes = new MaterialInstanceAsset(path,m_Device,matSettings,AssetsManager::GetPtr());
+		matRes->SetMaterialInstanceAssetManager(this);
 		RegisterAsset(strId, matRes);
 		MaterialAsset* matAsset = AssetsManager::GetPtr()->GetAsset<MaterialAsset>(matSettings.desc.materialAsset, false);
 

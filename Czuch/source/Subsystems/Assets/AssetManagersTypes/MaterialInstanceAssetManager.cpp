@@ -18,12 +18,13 @@ namespace Czuch
 		CZUCH_BE_ASSERT(materialsCount < MATERIAL_DATA_CAPACITY, "Materials data capacity exceeded. Increase MATERIAL_DATA_CAPACITY if needed.");
 
 		U32 index = materialsCount++;
-		void* mappedDataPtr = device->GetMappedBufferDataPtr(materialsBufferHandle);
-		
+		// Get a pointer to the array of structs, not a byte pointer
+		MaterialObjectGPUData* mappedDataPtr = static_cast<MaterialObjectGPUData*>(device->GetMappedBufferDataPtr(materialsBufferHandle));
+
 		if (mappedDataPtr)
 		{
-			uint8_t* byteData = static_cast<uint8_t*>(mappedDataPtr);
-			memcpy(byteData + index * elementSize, data, elementSize);
+			// Directly dereference and assign to the correct element in the array
+			mappedDataPtr[index] = *static_cast<MaterialObjectGPUData*>(data);
 		}
 		else
 		{

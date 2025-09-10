@@ -7,6 +7,7 @@
 #include "Asset/MaterialAsset.h"
 #include "./Subsystems/Assets/AssetManagersTypes/MaterialAssetManager.h"
 #include "./Subsystems/Assets/AssetManagersTypes/MaterialInstanceAssetManager.h"
+#include "./Subsystems/Assets/AssetManagersTypes/TextureAssetManager.h"
 
 
 namespace Czuch
@@ -104,6 +105,12 @@ namespace Czuch
 			}
 		}
 		return m_AssetsInfoTemp;
+	}
+
+	TextureHandle AssetsManager::GetGlobalTextureHandleForIndex(I32 index)
+	{
+		TextureAssetManager* mgr = GetManagerOfType<TextureAssetManager, TextureAsset>();
+		return mgr->GetGlobalTextureHandleWithIndex(index);
 	}
 
 	bool AssetsManager::IsFormatSupported(const char* format) const

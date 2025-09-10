@@ -11,6 +11,23 @@ namespace Czuch
 		m_DefaultAsset = GetAsset(DefaultAssets::PINK_TEXTURE_ASSET);
 	}
 
+	TextureHandle TextureAssetManager::GetGlobalTextureHandleWithIndex(I32 globalIndex)
+	{
+		TextureHandle result;
+		ExecuteOnAllAssets([&result,globalIndex](Asset* asset){
+			TextureAsset* tex = dynamic_cast<TextureAsset*>(asset);
+			if (tex != nullptr)
+			{
+				auto handle=	tex->GetTextureResourceHandle();
+				if (handle.globalIndex == globalIndex)
+				{
+					result = handle;
+				}
+			}
+			});
+		return result;
+	}
+
 	Asset* TextureAssetManager::CreateAsset(const CzuchStr& path, BaseCreateSettings& settings)
 	{
 		TextureAsset* texRes = new TextureAsset(path, (TextureCreateSettings&)settings, m_Device, AssetsManager::GetPtr());

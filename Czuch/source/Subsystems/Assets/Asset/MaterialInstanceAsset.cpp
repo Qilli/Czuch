@@ -143,6 +143,8 @@ namespace Czuch
 			return MaterialParamType::PARAM_BUFFER;
 		case DescriptorType::SAMPLER:
 			return MaterialParamType::PARAM_TEXTURE;
+		case DescriptorType::STORAGE_BUFFER_SINGLE_DATA:
+			return MaterialParamType::PARAM_SINGLE_STORAGE_BUFFER;
 		default:	
 			return MaterialParamType::PARAM_UNKNOWN;
 		}

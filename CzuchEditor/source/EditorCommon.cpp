@@ -2,6 +2,7 @@
 #include"imgui.h"
 #include"imgui_internal.h"
 #include"Subsystems/Assets/AssetsManager.h"
+#include"Subsystems/Assets/AssetManagersTypes/TextureAssetManager.h"
 #include"Subsystems/Scenes/Components/MeshComponent.h"
 #include"Subsystems/Scenes/Components/MeshRendererComponent.h"
 #include"Subsystems/Assets/Asset/MaterialInstanceAsset.h"
@@ -266,6 +267,21 @@ namespace Czuch
 		return changed;
 	}
 
+	bool CustomDrawers::DrawLinearColor(const CzuchStr& name, Vec3* color)
+	{
+		bool changed = false;
+		ImGui::PushID(name.c_str());
+		Vec3 gammaColor = LinearToGamma(*color);
+		if (ImGui::ColorEdit3(name.c_str(), &gammaColor.x, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_NoOptions))
+		{
+			changed = true;
+			*color = GammaToLinear(gammaColor);
+		}
+
+		ImGui::PopID();
+		return changed;
+	}
+
 
 #pragma endregion
 
@@ -482,22 +498,36 @@ namespace Czuch
 	{
 		m_MaterialInstance = mat;
 		m_ParamIndex = index;
+		m_GlobalTexture = false;
 		m_AssetNameType = " "+m_MaterialInstance->GetParameterAtIndexName(index)+": ";
+	}
+
+	void SelectTextureAssetHelper::SetMaterialInstance(MaterialInstanceAsset* mat, int currentTexture, std::function<void(int)> onTextureSelected, CzuchStr& pramName)
+	{
+		m_MaterialInstance = mat;
+		m_ParamIndex = currentTexture;
+		m_AssetNameType = " " + pramName + ": ";
+		m_GlobalTexture = true;
+		m_OnTextureSelected = onTextureSelected;
 	}
 
 	bool SelectTextureAssetHelper::HasSelectedAsset()
 	{
-		if (m_ParamIndex >= 0)
+		if (m_ParamIndex >= 0 && !m_GlobalTexture)
 		{
 			auto [asset, resource] = m_MaterialInstance->GetTextureAssetAtIndex(m_ParamIndex);
 			return HANDLE_IS_VALID(asset);
+		}
+		else
+		{
+			return m_ParamIndex >= 0;
 		}
 		return false;
 	}
 
 	const CzuchStr* SelectTextureAssetHelper::GetSelectedAssetName()
 	{
-		if (m_ParamIndex >= 0)
+		if (m_ParamIndex >= 0 && !m_GlobalTexture)
 		{
 			auto [asset, resource] = m_MaterialInstance->GetTextureAssetAtIndex(m_ParamIndex);
 			if (HANDLE_IS_VALID(asset))
@@ -507,14 +537,27 @@ namespace Czuch
 				return &name;
 			}
 		}
+		else if (m_ParamIndex >= 0 && m_GlobalTexture)
+		{
+			auto handle=AssetsManager::GetPtr()->GetGlobalTextureHandleForIndex(m_ParamIndex);
+			auto textureAsset=AssetsManager::GetPtr()->GetAsset<TextureAsset>(handle.assetHandle);
+			auto& name = textureAsset->AssetName();
+			return &name;
+		}
 		return nullptr;
 	}
 
 	void SelectTextureAssetHelper::SetSelected(AssetHandle asset, I32 resource)
 	{
-		if (m_ParamIndex >= 0)
+		if (m_ParamIndex >= 0 && !m_GlobalTexture)
 		{
 			m_MaterialInstance->SetTextureParameterAtIndex(m_ParamIndex, asset, resource);
+		}
+		else if (m_ParamIndex >= 0 && m_GlobalTexture)
+		{
+			auto textureAsset = AssetsManager::GetPtr()->GetAsset<TextureAsset>(asset);
+			auto texHandle = textureAsset->GetTextureResourceHandle();
+			m_OnTextureSelected(texHandle.globalIndex);
 		}
 	}
 

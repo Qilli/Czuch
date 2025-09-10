@@ -85,7 +85,7 @@ int main()
 	settings.debugSettings.SetDebugDrawNormalForMeshesEnabled(true);
 
 	Czuch::Scene* scene = new Czuch::Scene("MainScene", root->GetRenderer().GetDevice());
-	scene->SetAmbientColor(Vec4(0.6f, 0.6f, 0.6f, 1.0f));
+	scene->SetAmbientColor(Vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
 	auto& sceneMgr = root->GetScenesManager();
 	sceneMgr.AddScene(scene, true);
@@ -102,20 +102,20 @@ int main()
 	//auto barrelEntity = scene->AddModelToScene(barrelHandle, "BarrelObject");
 	//barrelEntity.Transform().SetLocalPosition(glm::vec3(2.0f, -2.0f, -4.0f));
 
-	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("Sponza\\5061699253647017043.png");
+	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("Textures\\texture.jpg");
 
 	Czuch::MaterialInstanceCreateSettings instanceCreateSettings{};
 	instanceCreateSettings.materialInstanceName = "DefaultAncientMaterial";
 
 	Czuch::MaterialObjectGPUData materialGPUData;
-	materialGPUData.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	materialGPUData.metallicColor = Vec4(1.0f, 1.0f, 1.0f, 256.0f);
-	materialGPUData.albedoMetallicTextures = iVec4(texHandle.ToGlobalIndex(), -1, -1, -1);
+	materialGPUData.albedoColor = Vec4(0.0f, 0.0f, 1.0f, 1.0f);
+	materialGPUData.metallicSpecularPower = Vec4(1.0f, 1.0f, 1.0f, 256.0f);
+	materialGPUData.albedoMetallicTextures = iVec4(-1, -1, -1, -1);
 	Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(Czuch::MaterialObjectGPUData), Czuch::DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
 	instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
 	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_TRANSPARENT_MATERIAL_ASSET;
-	auto matInstanceHandle = Czuch::AssetsManager::GetPtr()->CreateMaterialInstance(instanceCreateSettings);
+	auto matInstanceHandle = Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET;//Czuch::AssetsManager::GetPtr()->CreateMaterialInstance(instanceCreateSettings);
 
 
 	Czuch::Entity planeEntity = scene->CreateEntity("PlaneObject");

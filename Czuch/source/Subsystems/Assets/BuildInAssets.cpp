@@ -229,13 +229,12 @@ namespace Czuch
 
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "DefaultMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
 
 		MaterialObjectGPUData materialGPUData;
-		materialGPUData.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialGPUData.metallicColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialGPUData.albedoColor = Vec4(1.0f,0.0f, 0.0f, 1.0f);
+		materialGPUData.metallicSpecularPower = Vec4(1.0f, 1.0f, 1.0f, 8.0f);
 		
-		materialGPUData.albedoMetallicTextures = iVec4(DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), -1, -1, -1);
+		materialGPUData.albedoMetallicTextures = iVec4(DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), -1, -1);
 		Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
 		instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
@@ -679,19 +678,14 @@ namespace Czuch
 
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "DefaultTransparentMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
 
-		ColorUBO colorUbo;
-		colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
-
-		instanceCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorUbo, sizeof(ColorUBO), DescriptorBindingTagType::NONE));
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEFAULT_SIMPLE_TRANSPARENT_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = true;
 
 		MaterialObjectGPUData materialGPUData;
-		materialGPUData.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialGPUData.metallicColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialGPUData.albedoMetallicTextures = iVec4(DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), -1, -1, -1);
+		materialGPUData.albedoColor = Vec4(1.0f, 0.0f, 1.0f, 1.0f);
+		materialGPUData.metallicSpecularPower = Vec4(1.0f, 1.0f, 1.0f, 8.0f);
+		materialGPUData.albedoMetallicTextures = iVec4(DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), -1, -1);
 		Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
 		instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));

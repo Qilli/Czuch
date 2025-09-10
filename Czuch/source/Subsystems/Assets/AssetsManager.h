@@ -58,6 +58,7 @@ namespace Czuch
 		void InitManagers();
 	public: 
 		const Array<ShortAssetInfo*>& GetAssetsOfTypes(int assetsFilter);
+		TextureHandle GetGlobalTextureHandleForIndex(I32 index);
 	public:
 		int GetAssetsTypeCount() const { return m_AssetsMgrs.size(); }
 		auto GetAssetManagerIterator() const { return m_AssetsMgrs.begin(); }

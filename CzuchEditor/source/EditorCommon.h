@@ -57,6 +57,7 @@ namespace Czuch
 		static void* GetIconForType(AssetType type);
 		static void DrawTextureParameter(const char* label, AssetHandle& asset, I32& resource, bool& showPopup, AssetType type);
 		static bool DrawLinearColor(const CzuchStr& name, Vec4* color);
+		static bool DrawLinearColor(const CzuchStr& name, Vec3* color);
 	};
 
 	struct ShowAssetSelectorPopupHelper
@@ -136,7 +137,10 @@ namespace Czuch
 
 		MaterialInstanceAsset* m_MaterialInstance;
 		void SetMaterialInstance(MaterialInstanceAsset* mat, int index);
+		void SetMaterialInstance(MaterialInstanceAsset* mat, int currentTexture, std::function<void(int)> onTextureSelected,CzuchStr& pramName);
 		int m_ParamIndex;
+		bool m_GlobalTexture;
+		std::function<void(int)> m_OnTextureSelected;
 		bool HasSelectedAsset() override;
 		const CzuchStr* GetSelectedAssetName() override;
 		void SetSelected(AssetHandle asset, I32 resource) override;
