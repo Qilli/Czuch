@@ -407,13 +407,13 @@ namespace Czuch
 				}
 				else if(paramType == MaterialParamType::PARAM_TEXTURE )
 				{
-					m_TextureAssetHelper.SetMaterialInstance(materialAsset, i);
+					m_TextureAssetHelpers[0].SetMaterialInstance(materialAsset, i);
 
 					auto param = materialAsset->GetTextureAssetAtIndex(i);
 					auto textureAsset = AssetsManager::Get().GetAsset<TextureAsset>(std::get<0>(param));
 					if (textureAsset != nullptr)
 					{
-						m_TextureAssetHelper.ShowSelectAsset();
+						m_TextureAssetHelpers[0].ShowSelectAsset();
 					}
 				}
 				else if (paramType == MaterialParamType::PARAM_SINGLE_STORAGE_BUFFER)
@@ -440,8 +440,12 @@ namespace Czuch
 						}
 
 						CzuchStr nameAlbedo = "Albedo";
-						m_TextureAssetHelper.SetMaterialInstance(materialAsset, matData->albedoMetallicTextures.x, [&matData](int newIndex) {matData->albedoMetallicTextures.x = newIndex; }, nameAlbedo);
-						m_TextureAssetHelper.ShowSelectAsset();
+						m_TextureAssetHelpers[0].SetMaterialInstance(materialAsset, matData->albedoMetallicTextures.x, [&matData, &changed](int newIndex) {matData->albedoMetallicTextures.x = newIndex; changed = true; }, nameAlbedo);
+						m_TextureAssetHelpers[0].ShowSelectAsset();
+
+						CzuchStr nameSpecular = "Specular";
+						m_TextureAssetHelpers[1].SetMaterialInstance(materialAsset, matData->albedoMetallicTextures.y, [&matData, &changed](int newIndex) {matData->albedoMetallicTextures.y = newIndex; changed = true; }, nameSpecular);
+						m_TextureAssetHelpers[1].ShowSelectAsset();
 
 						if (changed)
 						{

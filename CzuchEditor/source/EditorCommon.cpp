@@ -82,14 +82,15 @@ namespace Czuch
 			ImGui::OpenPopup(m_AssetPopupName.c_str());
 			m_AssetSelectorPopup.filterOnEnter = true;
 		}
-
+		
 		auto selected = m_AssetSelectorPopup.ShowAssetSelectorPopup(m_AssetPopupName.c_str(), false);
 
-		if (selected != nullptr && !ImGui::IsPopupOpen(m_AssetPopupName.c_str()))
+		if (selected != nullptr && HANDLE_IS_VALID(selected->asset) && !ImGui::IsPopupOpen(m_AssetPopupName.c_str()))
 		{
 			SetSelected(selected->asset,selected->resource);
 			m_AssetSelectorPopup.selected = nullptr;
 		}
+		
 		return reset;
 	}
 

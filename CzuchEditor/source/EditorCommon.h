@@ -70,6 +70,11 @@ namespace Czuch
 		bool filterOnEnter;
 		void Reset();
 		const ShortAssetInfo* ShowAssetSelectorPopup(const char* popupId,bool canChangeType);
+
+		ShowAssetSelectorPopupHelper()
+		{
+			selected = nullptr;
+		}
 	};
 
 
@@ -133,6 +138,12 @@ namespace Czuch
 			m_AssetSelectorPopup.filterOnEnter = true;
 			m_AssetSelectorPopup.selectedType = AssetType::TEXTURE;
 			m_ParamIndex = -1;
+		}
+
+		SelectTextureAssetHelper(int instanceId) : SelectTextureAssetHelper()
+		{
+			m_AssetSelectButtonID = "Select##Mesh" + std::to_string(instanceId);
+			m_AssetPopupName = "SelectTexturePopup" + std::to_string(instanceId);
 		}
 
 		MaterialInstanceAsset* m_MaterialInstance;

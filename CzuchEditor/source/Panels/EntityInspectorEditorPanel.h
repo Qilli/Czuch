@@ -15,12 +15,12 @@ namespace Czuch
 		virtual void DrawComponent(Entity entity) {}
 		virtual void OnSelectionChanged(Entity entity) {}
 		virtual void OnRemoveComponent(Entity entity) { m_ModalData.show = true; m_ModalData.title = "Info"; m_ModalData.text = "You cannot remove this component"; }
-		bool DrawComponentHeader(const char* name,Entity entity);
+		bool DrawComponentHeader(const char* name, Entity entity);
 		void DrawModalWindow();
 
 	};
 
-	struct HeaderDrawer: public ComponentDrawer
+	struct HeaderDrawer : public ComponentDrawer
 	{
 		void DrawComponent(Entity entity) override;
 		void OnSelectionChanged(Entity entity) override;
@@ -57,18 +57,24 @@ namespace Czuch
 		void OnSelectionChanged(Entity entity) override;
 		void OnRemoveComponent(Entity entity) override;
 		MeshInspectorDrawer() {
-			id = 4; }
+			id = 4;
+		}
 	};
 
 	struct MeshRendererInspectorDrawer : public ComponentDrawer
 	{
 		SelectMaterialInstanceAssetHelper m_MaterialAssetHelper;
-		SelectTextureAssetHelper m_TextureAssetHelper;
+		SelectTextureAssetHelper m_TextureAssetHelpers[8];
 		void DrawComponent(Entity entity) override;
 		void OnSelectionChanged(Entity entity) override;
 		void OnRemoveComponent(Entity entity) override;
 		MeshRendererInspectorDrawer() {
 			id = 5;
+			for (I32 a = 0; a < 8; a++)
+			{
+				m_TextureAssetHelpers[a] = SelectTextureAssetHelper(a);
+			}
+
 		}
 	private:
 		void DrawMaterialInstance(MeshRendererComponent& meshRendererComponent);
