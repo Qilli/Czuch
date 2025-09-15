@@ -32,11 +32,11 @@ namespace Czuch
 		m_ClearColor = Color(1.0f, 1.0f, 1.0f, 1.0f);
 
 		//create default game mode camera
-		/*Entity cameraEntity = CreateEntity("MainCamera", m_RootEntity);
+		Entity cameraEntity = CreateEntity("MainCamera", m_RootEntity);
 		auto& cam = cameraEntity.AddComponent<CameraComponent>();
 		cam.SetAsPrimary();
 		cam.SetType(CameraType::GameCamera);
-		cameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f });*/
+		cameraEntity.GetComponent<TransformComponent>().SetLocalPosition({ 0.0f,0.0f,3.0f});
 
 		CheckAndAddStartCamera();
 		Dirty();
@@ -146,11 +146,11 @@ namespace Czuch
 		return nullptr;
 	}
 
-	void Scene::AfterFrameGraphExecute(CommandBufferHandle cmdBuffer)
+	void Scene::AfterFrameGraphExecute(CommandBufferHandle cmdBuffer,U32 index)
 	{
-		for (auto& cameraControl : m_CamerasControl)
+		if (index < m_CamerasControl.size())
 		{
-			cameraControl.frameGraphControl.AfterFrameGraphExecute(m_Device->AccessCommandBuffer(cmdBuffer));
+			m_CamerasControl[index].frameGraphControl.AfterFrameGraphExecute(m_Device->AccessCommandBuffer(cmdBuffer));
 		}
 	}
 
@@ -324,12 +324,12 @@ namespace Czuch
 		}
 	}
 
-	void Scene::BeforeFrameGraphExecute(CommandBufferHandle cmdBuffer,U32 currentFrame, DeletionQueue& deletionQueue)
+	void Scene::BeforeFrameGraphExecute(CommandBufferHandle cmdBuffer,U32 currentFrame,U32 index, DeletionQueue& deletionQueue)
 	{
-		for (auto& cameraControl : m_CamerasControl)
+		if (m_CamerasControl.size() > index)
 		{
-			cameraControl.UpdateSceneDataBuffers(m_Device,currentFrame, deletionQueue);
-			cameraControl.frameGraphControl.BeforeFrameGraphExecute(m_Device->AccessCommandBuffer(cmdBuffer));
+			m_CamerasControl[index].UpdateSceneDataBuffers(m_Device, currentFrame, deletionQueue);
+			m_CamerasControl[index].frameGraphControl.BeforeFrameGraphExecute(m_Device->AccessCommandBuffer(cmdBuffer));
 		}
 	}
 

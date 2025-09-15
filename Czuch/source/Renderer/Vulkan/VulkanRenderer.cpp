@@ -133,8 +133,6 @@ namespace Czuch
 			return;
 		}
 
-
-		BeforeFrameGraphExecute();
 		vkResetFences(device, 1, &GetCurrentFrame().inFlightFence);
 
 		auto cmdBuffer = m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer);
@@ -142,16 +140,18 @@ namespace Czuch
 
 		if (m_ActiveScene->GetActiveFrameGraphsCount() > 0)
 		{
-
+			BeforeFrameGraphExecute(0);
 			auto mainFrameGraph = m_ActiveScene->GetFrameGraphControl(0);
 			mainFrameGraph->Execute(m_Device, cmdBuffer);
 			auto finalInfo = mainFrameGraph->GetFinalFrameGraphNodeInfo();
+			AfterFrameGraphExecute(0);
 
 			if (EngineRoot::Get().GetEngineStateMode() != EngineStateMode::Editor)
 			{
 				m_FullScreenRenderPass->SetSourceTexture(cmdBuffer, finalInfo.finalTexture, finalInfo.finalDepthTexture, finalInfo.finalRenderPass);
 				for (int a = 1; a < m_ActiveScene->GetActiveFrameGraphsCount(); ++a)
 				{
+					BeforeFrameGraphExecute(a);
 					auto* frameGraph = m_ActiveScene->GetFrameGraphControl(a);
 
 					frameGraph->Execute(m_Device, cmdBuffer);
@@ -162,6 +162,7 @@ namespace Czuch
 					m_FullScreenRenderPass->PreDraw(cmdBuffer, this);
 					m_FullScreenRenderPass->Execute(cmdBuffer);
 					m_FullScreenRenderPass->PostDraw(cmdBuffer, this);
+					AfterFrameGraphExecute(a);
 				}
 			}
 
@@ -178,7 +179,6 @@ namespace Czuch
 		SubmitCommandBuffer();
 		m_Device->Present(imageIndex, GetCurrentFrame().renderFinishedSemaphote);
 
-		AfterFrameGraphExecute();
 
 		CheckForResizeQueries();
 
@@ -369,19 +369,19 @@ namespace Czuch
 		m_Device->SubmitToGraphicsQueue(submitInfo, GetCurrentFrame().inFlightFence);
 	}
 
-	void VulkanRenderer::BeforeFrameGraphExecute()
+	void VulkanRenderer::BeforeFrameGraphExecute(U32 index)
 	{
 		if (m_ActiveScene != nullptr)
 		{
-			m_ActiveScene->BeforeFrameGraphExecute(GetCurrentFrame().commandBuffer, m_CurrentFrame, m_FramesData[m_CurrentFrame].frameDeletionQueue);
+			m_ActiveScene->BeforeFrameGraphExecute(GetCurrentFrame().commandBuffer, m_CurrentFrame,index, m_FramesData[m_CurrentFrame].frameDeletionQueue);
 		}
 	}
 
-	void VulkanRenderer::AfterFrameGraphExecute()
+	void VulkanRenderer::AfterFrameGraphExecute(U32 index)
 	{
 		if (m_ActiveScene != nullptr)
 		{
-			m_ActiveScene->AfterFrameGraphExecute(GetCurrentFrame().commandBuffer);
+			m_ActiveScene->AfterFrameGraphExecute(GetCurrentFrame().commandBuffer,index);
 		}
 	}
 

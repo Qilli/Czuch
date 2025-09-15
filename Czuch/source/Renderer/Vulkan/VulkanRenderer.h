@@ -51,8 +51,8 @@ namespace Czuch
 		void CreateSyncObjects();
 		void ReleaseSyncObjects();
 		void SubmitCommandBuffer();
-		void BeforeFrameGraphExecute();
-		void AfterFrameGraphExecute();
+		void BeforeFrameGraphExecute(U32 index);
+		void AfterFrameGraphExecute(U32 index);
 
 		void InitImmediateSubmitData();
 	protected:

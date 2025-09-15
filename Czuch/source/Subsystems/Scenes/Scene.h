@@ -64,11 +64,11 @@ namespace Czuch
 		/// <summary>
 		/// This method is called when we are about to start rendering next frame, after we aquire the next image from swapchain
 		/// </summary>
-		void BeforeFrameGraphExecute(CommandBufferHandle cmdBuffer,U32 currentFrame, DeletionQueue& deletionQueue);
+		void BeforeFrameGraphExecute(CommandBufferHandle cmdBuffer,U32 currentFrame, U32 index, DeletionQueue& deletionQueue);
 		/// <summary>
 		/// Here we want to make all render contexts dirty so we can update them at the beginning of the next frame
 		/// </summary>
-		void AfterFrameGraphExecute(CommandBufferHandle cmdBuffer);
+		void AfterFrameGraphExecute(CommandBufferHandle cmdBuffer,U32 index);
 		/// <summary>
 		/// Get scene data buffers for selected camera, if null then use primary camera
 		/// </summary>

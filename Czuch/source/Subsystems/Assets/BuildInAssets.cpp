@@ -231,7 +231,7 @@ namespace Czuch
 		instanceCreateSettings.materialInstanceName = "DefaultMaterialInstance";
 
 		MaterialObjectGPUData materialGPUData;
-		materialGPUData.albedoColor = Vec4(1.0f,0.0f, 0.0f, 1.0f);
+		materialGPUData.albedoColor = Vec4(1.0f,1.0f, 1.0f, 1.0f);
 		materialGPUData.metallicSpecularPower = Vec4(1.0f, 1.0f, 1.0f, 8.0f);
 		
 		materialGPUData.albedoMetallicTextures = iVec4(DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), -1, -1);
@@ -683,7 +683,7 @@ namespace Czuch
 		instanceCreateSettings.desc.isTransparent = true;
 
 		MaterialObjectGPUData materialGPUData;
-		materialGPUData.albedoColor = Vec4(1.0f, 0.0f, 1.0f, 1.0f);
+		materialGPUData.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		materialGPUData.metallicSpecularPower = Vec4(1.0f, 1.0f, 1.0f, 8.0f);
 		materialGPUData.albedoMetallicTextures = iVec4(DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), -1, -1);
 		Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
