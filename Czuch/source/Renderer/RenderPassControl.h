@@ -34,6 +34,7 @@ namespace Czuch
 		virtual void SetCamera(Camera* cam) { m_Camera = cam; }
 		virtual void Execute(CommandBuffer* cmd) = 0;
 		virtual void* GetRenderPassResult() { return nullptr; }
+		virtual TextureHandle GetMainAttachmentTexureHandle() { return TextureHandle(); }
 		virtual void ReleaseDependencies() = 0;
 		virtual void TransitionResultsToShaderReadOnly(CommandBuffer* cmd) = 0;
 
@@ -72,12 +73,15 @@ namespace Czuch
 		void AddMaterialForInputBinding(MaterialInstanceHandle material);
 		void ForceSingleMaterialForAll(MaterialInstanceHandle material,bool ignoreTransparent);
 		void ClearForceSingleMaterialForAll();
+		void SetInnerIndex(I32 index) { m_InnerIndex = index; }
+		I32 GetInnerIndex() const { return m_InnerIndex; }
 	protected:
 		MaterialsForInputBinding m_MaterialsForInputBinding;
 		RenderContextFillParams m_FillParams;
-		int m_Width, m_Height;
-		int m_LastWidth, m_LastHeight;
-		int m_Priority;
+		I32 m_Width, m_Height;
+		I32 m_LastWidth, m_LastHeight;
+		I32 m_Priority;
+		I32 m_InnerIndex; // it can be used when we have the same pass multiple times(like multiple shadow pass for more than one light)
 		bool m_HandleWindowResize;
 		bool m_UITextureSource;
 		bool m_Active;

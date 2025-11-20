@@ -45,6 +45,15 @@ namespace Czuch
 		return m_TextureSource->GetTargetTextureDescriptor();
 	}
 
+	TextureHandle VulkanRenderPassControlBase::GetMainAttachmentTexureHandle()
+	{
+		if (m_TextureSource)
+		{
+			return m_TextureSource->m_Texture;
+		}
+		return TextureHandle();
+	}
+
 	void VulkanRenderPassControlBase::TransitionResultsToShaderReadOnly(CommandBuffer* cmd)
 	{
 		if (m_TextureSource)

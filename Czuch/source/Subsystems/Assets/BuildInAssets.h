@@ -65,6 +65,14 @@ namespace Czuch
 		static AssetHandle DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE_ASSET;
 		static MaterialInstanceHandle DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE;
 
+		//material for depth linear prepass for directional shadow map
+
+		static MaterialInstanceHandle DEPTH_SM_LINEAR_PREPASS_MATERIAL_INSTANCE;
+
+		//material for directional shadow map pass
+		static AssetHandle DIRECTIONAL_SHADOWMAP_MATERIAL_ASSET;
+		static MaterialInstanceHandle DIRECTIONAL_SHADOWMAP_MATERIAL_INSTANCE;
+
 		//material for debug draw material index
 		static MaterialHandle DEBUG_DRAW_MATERIAL_INDEX_MATERIAL;
 		static AssetHandle DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_ASSET;
@@ -120,6 +128,8 @@ namespace Czuch
 		void CreateDepthPrePassMaterial();
 		void CreateFinalPassMaterial();
 		void CreateDepthLinearPrePassMaterial();
+		void CreateDepthLinearSMPrePassMaterial();
+		void CreateDirectionalShadowMapMaterial();
 		void CreateDefaultSimpleTransparentMaterial();
 		void CreateDebugDrawMaterials();
 		void CreateDebugLinesMaterial();

@@ -7,7 +7,7 @@
 
 namespace Czuch
 {
-	RenderPassControl::RenderPassControl(Camera* cam, int width, int height, RenderPassType type, bool handleWindowResize, bool uiTextureSource) : m_Width(width), m_Height(height), Type(type), m_HandleWindowResize(handleWindowResize), m_Camera(cam), m_Priority(10), m_UITextureSource(uiTextureSource)
+	RenderPassControl::RenderPassControl(Camera* cam, int width, int height, RenderPassType type, bool handleWindowResize, bool uiTextureSource) : m_Width(width), m_Height(height), Type(type), m_HandleWindowResize(handleWindowResize), m_Camera(cam), m_Priority(10), m_UITextureSource(uiTextureSource),m_InnerIndex(0)
 	{
 		m_LastWidth = m_Width;
 		m_LastHeight = m_Height;

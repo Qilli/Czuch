@@ -164,6 +164,7 @@ namespace Czuch
 		U32 targetHeight = 0;
 		std::string startPath = "Czuch";
 		DebugSettings debugSettings;
+		U32 directionalShadowMapResolution = 1024.0f;
 
 		const CzuchStr& GetStartPath() const
 		{

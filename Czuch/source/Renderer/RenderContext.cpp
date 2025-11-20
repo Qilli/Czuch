@@ -8,7 +8,7 @@
 #include "Subsystems/Scenes/Components/LightComponent.h"
 #include "Subsystems/Scenes/Components/NativeBehaviourComponent.h"
 #include "Subsystems/Assets/AssetsManager.h"
-#include "Subsystems/Scenes/Components/NativeBehaviourComponent.h"
+#include "Subsystems/Scenes/Components/HeaderComponent.h"
 #include"Renderer/RenderPassControl.h"
 #include"Renderer/FrameGraph/FrameGraphBuilderHelper.h"
 
@@ -17,6 +17,7 @@
 #include"Renderer/Vulkan/RenderPass/VulkanDepthLinearPrepassRenderPass.h"
 #include"Renderer/Vulkan/RenderPass/VulkanDefaultForwardTransparentLightingRenderPass.h"
 #include"Renderer/Vulkan/RenderPass/VulkanDebugDrawRenderPass.h"
+#include"Renderer/Vulkan/RenderPass/VulkanDirectionalShadowMapRenderPass.h"
 
 
 namespace Czuch
@@ -93,7 +94,7 @@ namespace Czuch
 
 				renderObjectInstance.localToClipSpaceTransformation = cam->GetViewProjectionMatrix() * obj.transform->GetLocalToWorld();
 				renderObjectInstance.worldPosition = obj.transform->GetWorldPosition();
-				renderObjectInstance.paramData.x =counter;
+				renderObjectInstance.paramData.x = counter;
 				renderObjectInstance.mesh = obj.mesh->GetMesh();
 				renderObjectInstance.overrideMaterial = material;
 				renderObjectInstance.passIndex = index;
@@ -170,6 +171,29 @@ namespace Czuch
 		return (U32)type & SUPPORTED_RENDER_PASSES_FLAGS;
 	}
 
+	Vec3 SceneCameraControl::ComputeDirectionalShadowCasterPosition()
+	{
+		if (cameraLightsInfo.directionalLight == nullptr)
+		{
+			return Vec3(0.0f);
+		}
+		const AABB& cameraAABB = visibleRenderObjects.visibleObjectsAABB;
+		const Vec3 cameraCenter = cameraAABB.GetCenter();
+		const Vec3 cameraHalfSize = cameraAABB.GetHalfSize();
+		const Vec3 lightDir = cameraLightsInfo.directionalLight->GetEntity().GetComponent<TransformComponent>().GetForward();
+		//position for shadow caster is from AABB center * distance of half size *2 for now. In full impelementation we should compute it better and take / of the box plus compute width of visible aabb at specified direction
+		return cameraCenter - lightDir * cameraHalfSize.y * 2.0f;
+	}
+
+	Camera* SceneCameraControl::GetCameraForContext(RenderPassType renderPassType)
+	{
+		if (renderPassType == RenderPassType::DirectionalShadowMap)
+		{
+			return &cameraLightsInfo.directionalLightCamera;
+		}
+		return camera;
+	}
+
 	void SceneCameraControl::Release(GraphicsDevice* device)
 	{
 		frameGraphControl.ReleaseFrameGraph();
@@ -194,15 +218,15 @@ namespace Czuch
 		U32 startWidth = handleWindowResize ? device->GetSwapchainWidth() : EngineRoot::GetEngineSettings().targetWidth;
 		U32 startHeight = handleWindowResize ? device->GetSwapchainHeight() : EngineRoot::GetEngineSettings().targetHeight;
 
-		frameGraphControl.CreateFrameGraph(camera,device, renderer, Vec2(startWidth, startHeight), handleWindowResize);
+		frameGraphControl.CreateFrameGraph(camera, device, renderer, Vec2(startWidth, startHeight), handleWindowResize);
 		cameraRendering.OnSceneActive(camera, device, scene);
 		currentScene = scene;
 	}
 
 	void SceneCameraControl::AfterSceneActive()
 	{
-		if(currentScene ==nullptr)
-		{ 
+		if (currentScene == nullptr)
+		{
 			return; // this is a call from first scene initialization,scene is not yet active so the renderer is not valid
 		}
 		frameGraphControl.Init();
@@ -223,6 +247,15 @@ namespace Czuch
 	{
 		cameraRendering.cameraControl.UpdateSceneDataBuffers(cameraRendering.activeScene, device, visibleRenderObjects, frame, deletionQueue);
 		cameraRendering.debugCameraControl.UpdateSceneDataBuffer(cameraRendering.activeScene, device, frame);
+	}
+
+	void SceneCameraControl::UpdateLightsInfo()
+	{
+		cameraLightsInfo.Reset();
+		std::function<Vec3()> callback = [this]() { // No explicit return type needed
+			return ComputeDirectionalShadowCasterPosition();
+			};
+		cameraLightsInfo.Rebuild(currentScene,&frameGraphControl, camera,callback); //[TODO] pass here AABB for all visible objects, compute it once per frame from visible objects list
 	}
 
 	RenderContext* SceneCameraControl::GetRenderContext(RenderPassType type, bool createIfNotExist)
@@ -263,6 +296,7 @@ namespace Czuch
 			renderContext = new DefaultRenderContext(ctx);
 			break;
 		case RenderPassType::DepthPrePass:
+		case RenderPassType::DepthLinearShadowMapPrePass:
 		case RenderPassType::DepthLinearPrePass:
 			renderContext = new DefaultDepthPrePassRenderContext(ctx);
 			break;
@@ -272,8 +306,8 @@ namespace Czuch
 		case RenderPassType::DebugDraw:
 			renderContext = new DebugRenderContext(ctx);
 			break;
-		case RenderPassType::ShadowMap:
-			renderContext = new DefaultRenderContext(ctx);
+		case RenderPassType::DirectionalShadowMap:
+			renderContext = new DefaultDirectionalShadowMapRenderContext(ctx);
 			break;
 		default:
 			renderContext = new DefaultRenderContext(ctx);
@@ -286,7 +320,7 @@ namespace Czuch
 		auto context = GetRenderContext(fillParams.renderPassType, true);
 		if (context->IsDirty())
 		{
-			context->FillRenderList(device, camera, visibleRenderObjects, fillParams);
+			context->FillRenderList(device, GetCameraForContext(fillParams.renderPassType), visibleRenderObjects, fillParams);
 		}
 		return context;
 	}
@@ -438,6 +472,29 @@ namespace Czuch
 			visibleRenderObjects.allLights.push_back(obj);
 		}
 
+		//here we are computing AABB for all visible objects so we can then use it for example for calculating shadow casting position for directinal light
+		constexpr float minValue = std::numeric_limits<float>().lowest();
+		constexpr float maxValue = std::numeric_limits<float>().max();
+		Vec3 min = Vec3(maxValue);
+		Vec3 max = Vec3(minValue);
+
+		for (auto& obj : visibleRenderObjects.allObjects)
+		{
+			auto pos=obj.transform->GetWorldPosition();
+
+			min.x = std::min<float>(min.x, pos.x);
+			min.y = std::min<float>(min.y, pos.y);
+			min.z = std::min<float>(min.z, pos.z);
+
+			max.x = std::max<float>(max.x, pos.x);
+			max.y = std::max<float>(max.y, pos.y);
+			max.z = std::max<float>(max.z, pos.z);
+		}
+
+		//DEDEBUG
+		min = Vec3(-10, -10, -10);
+		max = Vec3(10, 10, 10);
+		visibleRenderObjects.visibleObjectsAABB = AABB(min, max);
 	}
 
 	void SceneCameraControl::ReleaseRenderContexts()
@@ -493,7 +550,7 @@ namespace Czuch
 		InitTilesBuffer(device, false, 0, 0);
 		InitRenderObjectsBuffer(device, false, INIT_MAX_RENDER_OBJECTS);
 
-		sceneData.ambientColor = Vec4(0.0f, 0.0f,0.0f, 1);
+		sceneData.ambientColor = Vec4(0.0f, 0.0f, 0.0f, 1);
 
 		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
@@ -568,7 +625,7 @@ namespace Czuch
 			lightsBuffer[frame],
 			lightsListBuffer[frame],
 			tilesBuffer[frame],
-			renderObjectsBuffer[frame]};
+			renderObjectsBuffer[frame] };
 	}
 
 	void SceneCameraRenderingControl::UpdateSceneDataBuffers(IScene* scene, GraphicsDevice* device, RenderObjectsContainer& visibleObjects, U32 frame, DeletionQueue& deletionQueue)
@@ -719,7 +776,7 @@ namespace Czuch
 			RenderObjectGPUData renderObjectData;
 			renderObjectData.localToWorldTransformation = obj.transform->GetLocalToWorld();
 			renderObjectData.invTransposeToWorldMatrix = glm::inverse(glm::transpose((renderObjectData.localToWorldTransformation)));
-			renderObjectData.materialAndFlags.x = materialInstance->GetIndexForInternalBufferForTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA,0);
+			renderObjectData.materialAndFlags.x = materialInstance->GetIndexForInternalBufferForTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA, 0);
 			renderObjectsData.push_back(std::move(renderObjectData));
 		}
 
@@ -954,7 +1011,7 @@ namespace Czuch
 
 			if (FillDebugBuffersData(device, frame))
 			{
-				UpdateDebugMaterialInfo(device,frame);
+				UpdateDebugMaterialInfo(device, frame);
 			}
 		}
 
@@ -1073,10 +1130,10 @@ namespace Czuch
 
 	void SceneCameraDebugRenderingControl::UpdateDebugMaterialInfo(GraphicsDevice* device, U32 frame)
 	{
-		auto debugLightsMaterial=DefaultAssets::DEBUG_DRAW_LIGHT_MATERIAL_INSTANCE;
-		auto debugLinesMaterial= DefaultAssets::DEBUG_DRAW_LINES_MATERIAL_INSTANCE;
-		auto debugTrianglesMaterial=DefaultAssets::DEBUG_DRAW_TRIANGLES_MATERIAL_INSTANCE;
-		auto debugDrawPointsMaterial= DefaultAssets::DEBUG_DRAW_POINTS_MATERIAL_INSTANCE;
+		auto debugLightsMaterial = DefaultAssets::DEBUG_DRAW_LIGHT_MATERIAL_INSTANCE;
+		auto debugLinesMaterial = DefaultAssets::DEBUG_DRAW_LINES_MATERIAL_INSTANCE;
+		auto debugTrianglesMaterial = DefaultAssets::DEBUG_DRAW_TRIANGLES_MATERIAL_INSTANCE;
+		auto debugDrawPointsMaterial = DefaultAssets::DEBUG_DRAW_POINTS_MATERIAL_INSTANCE;
 
 		FillSceneDataBuffer(device, debugLightsMaterial, frame);
 		FillSceneDataBuffer(device, debugLinesMaterial, frame);
@@ -1262,13 +1319,15 @@ namespace Czuch
 		DrawCircle(baseCenter, -forward, radius, color);
 	}
 
-	void FrameGraphControl::CreateFrameGraph(Camera* camera,GraphicsDevice* device, Renderer* renderer, Vec2 targetSize, bool handleWindowResize)
+	void FrameGraphControl::CreateFrameGraph(Camera* camera, GraphicsDevice* device, Renderer* renderer, Vec2 targetSize, bool handleWindowResize)
 	{
 		m_FrameGraphBuilder = new FrameGraphBuilderHelper();
 		//here we will use frame graph builder to create frame graphs
 		//and we will take info of what kind of graph we need from render settings
 		//or use can provide his own frame graph in the future
 		m_FrameGraphBuilder->Init(device, renderer);
+
+		auto& settings = Czuch::EngineRoot::GetEngineSettings();
 
 		U32 startWidth = targetSize.x;
 		U32 startHeight = targetSize.y;
@@ -1291,6 +1350,54 @@ namespace Czuch
 		m_FrameGraphBuilder->EndNode();
 		//////////////////////////
 
+		////////////////DirectionalShadowMapping
+		FrameGraphResourceOutputCreation depthDirectionalSMOutput;
+		depthDirectionalSMOutput.name = "DepthDirectionalSM";
+		depthDirectionalSMOutput.type = FrameGraphResourceType::Attachment;
+		depthDirectionalSMOutput.resource_info.texture.format = Format::D32_FLOAT;
+		depthDirectionalSMOutput.resource_info.texture.width = settings.directionalShadowMapResolution;
+		depthDirectionalSMOutput.resource_info.texture.height = settings.directionalShadowMapResolution;
+		depthDirectionalSMOutput.resource_info.texture.depth = 1;
+		depthDirectionalSMOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
+		depthDirectionalSMOutput.resource_info.texture.usage = ImageUsageFlag::DEPTH_STENCIL_ATTACHMENT;
+		depthDirectionalSMOutput.ignoreResize = true;
+
+
+
+		m_FrameGraphBuilder->BeginNewNode("DirectionalShadowMapPass");
+		m_FrameGraphBuilder->AddOutput(depthDirectionalSMOutput);
+		m_FrameGraphBuilder->SetIgnoreResize(true);
+		m_FrameGraphBuilder->SetRenderPassControl(RegisterRenderPassControl(new VulkanDirectionalShadowMapRenderPass((VulkanRenderer*)renderer, (VulkanDevice*)device, startWidth, startWidth, false)));
+		m_FrameGraphBuilder->SetClearColor(Vec3(0.0f));
+		m_FrameGraphBuilder->EndNode();
+		/////////////////////////////
+
+
+		///////////////Directional shadowmap pass to linear depth
+
+		/*FrameGraphResourceInputCreation smDepthAsTextureInput;
+		smDepthAsTextureInput.type = FrameGraphResourceType::Texture;
+		smDepthAsTextureInput.name = "DepthDirectionalSM";
+
+		FrameGraphResourceOutputCreation smDepthLinearPrepassOutput;
+		smDepthLinearPrepassOutput.name = "smDepthLinear";
+		smDepthLinearPrepassOutput.type = FrameGraphResourceType::Attachment;
+		smDepthLinearPrepassOutput.resource_info.texture.format = Format::R8G8B8A8_UNORM;
+		smDepthLinearPrepassOutput.resource_info.texture.width = startWidth;
+		smDepthLinearPrepassOutput.resource_info.texture.height = startHeight;
+		smDepthLinearPrepassOutput.resource_info.texture.depth = 1;
+		smDepthLinearPrepassOutput.resource_info.texture.loadOp = AttachmentLoadOp::CLEAR;
+		smDepthLinearPrepassOutput.resource_info.texture.usage = ImageUsageFlag::COLOR_ATTACHMENT;
+
+		m_FrameGraphBuilder->BeginNewNode("smDepthLinearPrepass");
+		m_FrameGraphBuilder->AddInput(smDepthAsTextureInput);
+		m_FrameGraphBuilder->SetClearColor(Vec3(0.0f, 0.0f, 1.0f));
+		m_FrameGraphBuilder->AddOutput(smDepthLinearPrepassOutput);
+		m_FrameGraphBuilder->SetRenderPassControl(RegisterRenderPassControl(new VulkanDepthLinearPrepassRenderPass((VulkanRenderer*)renderer, (VulkanDevice*)device, startWidth, startHeight, RenderPassType::DepthLinearShadowMapPrePass, &DefaultAssets::DEPTH_SM_LINEAR_PREPASS_MATERIAL_INSTANCE, handleWindowResize)));
+		m_FrameGraphBuilder->EndNode();*/
+		/////////////////////////////
+
+
 		///////////////Depth to linear pass
 
 		FrameGraphResourceInputCreation depthAsTextureInput;
@@ -1311,9 +1418,10 @@ namespace Czuch
 		m_FrameGraphBuilder->AddInput(depthAsTextureInput);
 		m_FrameGraphBuilder->SetClearColor(Vec3(0.0f, 0.0f, 1.0f));
 		m_FrameGraphBuilder->AddOutput(depthLinearPrepassOutput);
-		m_FrameGraphBuilder->SetRenderPassControl(RegisterRenderPassControl(new VulkanDepthLinearPrepassRenderPass((VulkanRenderer*)renderer, (VulkanDevice*)device, startWidth, startHeight, handleWindowResize)));
+		m_FrameGraphBuilder->SetRenderPassControl(RegisterRenderPassControl(new VulkanDepthLinearPrepassRenderPass((VulkanRenderer*)renderer, (VulkanDevice*)device, startWidth, startHeight,RenderPassType::DepthLinearPrePass,&DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE, handleWindowResize)));
 		m_FrameGraphBuilder->EndNode();
 		/////////////////////////////
+
 
 
 		///////////////Lighting pass
@@ -1387,7 +1495,7 @@ namespace Czuch
 
 		////////////////
 		m_FrameGraph = new FrameGraph();
-		m_FrameGraph->Init(camera,device, renderer);
+		m_FrameGraph->Init(camera, device, renderer);
 		m_FrameGraphBuilder->Build(m_FrameGraph);
 	}
 
@@ -1520,6 +1628,113 @@ namespace Czuch
 		else
 		{
 			LOG_BE_ERROR("Frame graph is not initialized, cannot set debug render flags group");
+		}
+	}
+
+	void DefaultDirectionalShadowMapRenderContext::FillRenderList(GraphicsDevice* device, Camera* cam, RenderObjectsContainer& allObjects, RenderContextFillParams& fillParams)
+	{
+		U32 id = 0;
+
+		auto material = fillParams.forcedMaterial;
+		auto materialInstance = device->AccessMaterialInstance(material);
+		if (!materialInstance)
+		{
+			LOG_BE_ERROR("Material instance is null");
+			return;
+		}
+
+		I32 index = device->AccessMaterial(materialInstance->handle)->GetRenderPassIndexForType(fillParams.renderPassType);
+
+		if (index < 0)
+		{
+			LOG_BE_ERROR("[DirectionalShadowMapRenderContext] Selected material do not support shadow pass");
+			return;
+		}
+
+		for (auto& obj : allObjects.allObjects)
+		{
+			auto currentMaterial = obj.meshRenderer->GetOverrideMaterial();
+			auto currentMaterialInstance = device->AccessMaterialInstance(currentMaterial);
+
+			if (fillParams.ignoreTransparent && currentMaterialInstance->IsTransparent() || !obj.meshRenderer->IsShadowCaster())
+			{
+				continue;
+			}
+
+			RenderObjectInstance renderObjectInstance;
+
+			renderObjectInstance.localToClipSpaceTransformation = cam->GetViewProjectionMatrix() * obj.transform->GetLocalToWorld();
+			renderObjectInstance.worldPosition = obj.transform->GetWorldPosition();
+			renderObjectInstance.paramData.x = 0;
+			renderObjectInstance.mesh = obj.mesh->GetMesh();
+			renderObjectInstance.overrideMaterial = material;
+			renderObjectInstance.passIndex = index;
+			AddToRenderList(renderObjectInstance);
+
+		}
+		m_IsDirty = false;
+	}
+
+	bool DefaultDirectionalShadowMapRenderContext::SupportRenderPass(RenderPassType type) const
+	{
+		return (U32)type & SUPPORTED_RENDER_PASSES_FLAGS;
+	}
+
+	void CameraLightsInfo::Rebuild(IScene* scene,FrameGraphControl* frameGraph, Camera* camera,std::function<Vec3()> computePos)
+	{
+		auto& allLights = scene->GetAllLightObjects();
+		//first find first directional light
+		for (auto& light : allLights)
+		{
+			if (light.light->GetLightType() == LightType::Directional)
+			{
+				this->directionalLight = light.light;
+				//set texture global id for directional shadow map
+				this->directionalLight->SetShadowMapTextureHandle(frameGraph->GetRenderPassControlByType(RenderPassType::DirectionalShadowMap)->GetMainAttachmentTexureHandle());
+				break;
+			}
+		}
+
+		if (directionalLight != nullptr)
+		{
+			if (directionalCameraShadowCasterTransform == nullptr)
+			{
+				//we will use fake invisible objects to control camerea position for dirctional shadow caster
+				entt::entity newObj=scene->CreateEmptyEntity("DirectionalShadowCasterPosition");
+				Entity entity(newObj,scene);
+				directionalCameraShadowCasterTransform=&entity.GetComponent<TransformComponent>();
+
+				//make it invisible in editor hierarchy
+				auto& headerComponent = entity.GetComponent<HeaderComponent>();
+				headerComponent.SetVisibleInEditorHierarchy(true);
+			}
+
+			auto shadowCasterPosition = computePos();
+			//set position from input for our directional camera special transform + rotation
+			directionalCameraShadowCasterTransform->SetLocalPosition(shadowCasterPosition);
+			//set rotation
+			Vec3 direction = -directionalLight->GetEntity().GetComponent<TransformComponent>().GetForward();
+			auto lookAt = shadowCasterPosition + direction * 10.0f;
+			directionalCameraShadowCasterTransform->LookAt(lookAt);
+			directionalCameraShadowCasterTransform->ForceUpdateLocalTransform();
+
+			//now we need to create camera for our light
+			//directional light will have orto camera
+			//position, look at, ortho width, ortho height
+			directionalLightCamera = Camera::CreateOrthoCamera(directionalCameraShadowCasterTransform, 1.0f, 50.0f, 20.0f, 20.0f);
+
+			directionalLight->SetDirecionalLightViewProj(directionalLightCamera.GetViewProjectionMatrix());
+		}
+	}
+
+	void CameraLightsInfo::Reset()
+	{
+		this->directionalLight = nullptr;
+		this->lightsCount = 0;
+
+		for (U32 a = 0; a < MAX_LIGHTS_WITH_SHADOWS; a++)
+		{
+			this->spotAndPointLights[a] = nullptr;
 		}
 	}
 

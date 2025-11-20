@@ -151,7 +151,7 @@ namespace Czuch
 		for (int i = 0; i < node.outputs.size(); i++)
 		{
 			auto& output = m_Resources.GetResource(node.outputs[i]);
-			if (output.type == FrameGraphResourceType::Attachment)
+			if (output.type == FrameGraphResourceType::Attachment && output.resizable)
 			{
 				m_Device->ResizeTexture(output.info.texture.texture, width, height);
 			}
@@ -394,6 +394,12 @@ namespace Czuch
 
 	void FrameGraphNode::Resize(GraphicsDevice* device, U32 width, U32 height)
 	{
+		//if we have offscreen rendering nodes like directional shadow maps we dont resize them on window resize
+		if (!supportResize)
+		{
+			return;
+		}
+
 		device->ResizeFrameBuffer(frameBuffer, width, height);
 		if (renderPassControl)
 		{

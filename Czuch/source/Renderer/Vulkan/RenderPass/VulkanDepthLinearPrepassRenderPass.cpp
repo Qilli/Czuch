@@ -8,14 +8,14 @@
 
 namespace Czuch
 {
-	VulkanDepthLinearPrepassRenderPass::VulkanDepthLinearPrepassRenderPass(VulkanRenderer* renderer, VulkanDevice* device, U32 width, U32 height, bool handleWindowResize) :VulkanRenderPassControlBase(device,renderer,nullptr,width,height,RenderPassType::DepthLinearPrePass,handleWindowResize)
+	VulkanDepthLinearPrepassRenderPass::VulkanDepthLinearPrepassRenderPass(VulkanRenderer* renderer, VulkanDevice* device, U32 width, U32 height, RenderPassType renderPass, MaterialInstanceHandle* materialInstance, bool handleWindowResize) :VulkanRenderPassControlBase(device,renderer,nullptr,width,height,renderPass,handleWindowResize)
 	{
-		
+		m_MaterialInstancePtr = materialInstance;
 	}
 
 	void VulkanDepthLinearPrepassRenderPass::Execute(CommandBuffer* cmd)
 	{
-		m_Renderer->DrawFullScreenQuad((VulkanCommandBuffer*)cmd, DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE);
+		m_Renderer->DrawFullScreenQuad((VulkanCommandBuffer*)cmd, *m_MaterialInstancePtr);
 	}
 	void VulkanDepthLinearPrepassRenderPass::PreDraw(CommandBuffer* cmdBuffer, Renderer* renderer)
 	{
@@ -23,7 +23,7 @@ namespace Czuch
 		if (!m_MaterialsAdded)
 		{
 			m_MaterialsAdded = true;
-			AddMaterialForInputBinding(DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE);
+			AddMaterialForInputBinding(*m_MaterialInstancePtr);
 
 			//create new uniform buffer
 			BufferDesc desc{};
@@ -35,14 +35,14 @@ namespace Czuch
 			m_PlanesBuffer=m_Device->CreateBuffer(&desc);
 			m_PlanesBufferID = StringID::MakeStringID("CameraPlanesData");
 		}
-		MaterialInstance* mat = m_Device->AccessMaterialInstance(DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE);
+		MaterialInstance* mat = m_Device->AccessMaterialInstance(*m_MaterialInstancePtr);
 		mat->SetUniformBuffer(m_PlanesBufferID, m_PlanesBuffer);
 	}
 	void VulkanDepthLinearPrepassRenderPass::Init()
 	{
 		VulkanRenderPassControlBase::Init();
-		m_PlanesData.nearPlane = 0.1f;
-		m_PlanesData.farPlane = 1000.0f;
+		m_PlanesData.nearPlane = 1.0f;
+		m_PlanesData.farPlane = 50.0f;
 	}
 	void VulkanDepthLinearPrepassRenderPass::Release()
 	{

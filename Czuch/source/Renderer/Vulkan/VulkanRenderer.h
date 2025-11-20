@@ -37,6 +37,7 @@ namespace Czuch
 		U32 GetCurrentFrameIndex() const override { return m_CurrentFrame; }
 	public:
 		void SetActiveScene(Scene* scene) override;
+		Scene* GetActiveScene() override;
 	public:
 		void ImmediateSubmitWithCommandBuffer(std::function<void(CommandBuffer* cmd)>&& processor);
 		void DrawScene(VulkanCommandBuffer* cmdBuffer, Camera* camera,RenderContextFillParams* params);

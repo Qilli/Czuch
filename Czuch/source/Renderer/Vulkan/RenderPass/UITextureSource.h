@@ -14,6 +14,7 @@ namespace Czuch
 		void TransitionToShaderReadOnly(CommandBuffer* cmd);
 		void Release();
 		void* GetTargetTextureDescriptor();
+		U32 GetTextureGlobalIndex() const;
 		FrameGraphNode* m_Node;
 		FrameGraph* m_FrameGraph;
 		VkDescriptorSet m_Descriptor;

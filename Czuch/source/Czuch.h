@@ -18,6 +18,8 @@
 #include"Subsystems/Scenes/Components/LightComponent.h"
 #include"Subsystems/Scenes/Components/NativeBehaviourComponent.h"
 #include"Subsystems/Scenes/Components/CameraComponent.h"
+#include"Subsystems/Scenes/Components/MeshComponent.h"
+#include"Subsystems/Scenes/Components/MeshRendererComponent.h"
 #include"Subsystems/Scenes/NativeBehaviour.h"
 #include"Subsystems/Scenes/NativeBehaviours/NativeFree3DCameraController.h"
 #include"Subsystems/UI/UIBaseElement.h"

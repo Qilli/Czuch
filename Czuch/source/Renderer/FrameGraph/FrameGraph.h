@@ -65,6 +65,7 @@ namespace Czuch
 		FrameGraphResourceInfo info;
 		FrameGraphNodeHandle producer;
 		FrameGraphResourceHandle output_target;
+		bool resizable = true;
 		U32 refCount = 0;
 		CzuchStr name;
 		StringID nameID;
@@ -81,6 +82,7 @@ namespace Czuch
 		Array<FrameGraphNodeHandle> edges;
 		Vec3 clearColor=Vec3(0,0,0);
 		CzuchStr name;
+		bool supportResize = true;
 
 		void Release(GraphicsDevice* device);
 		void Resize(GraphicsDevice* device, U32 width, U32 height);

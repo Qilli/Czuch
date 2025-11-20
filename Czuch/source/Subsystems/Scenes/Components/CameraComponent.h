@@ -4,10 +4,20 @@
 
 namespace Czuch
 {
+
+	enum CameraMode
+	{
+		PERSPECTIVE=0,
+		ORTOGRAPHIC=1,
+	};
+
 	struct CZUCH_API Camera
 	{
 	public:
+		static Camera CreateOrthoCamera(TransformComponent* transform, float nearPlane, float farPlane, float width, float height);
+	public:
 		Camera(float fov,float aspect,float nearPlane,float farPlane);
+		Camera(Vec2 size, float nearPlane, float farPlane);
 		Camera();
 		~Camera();
 
@@ -31,10 +41,13 @@ namespace Czuch
 			m_Viewport.height = height;
 		}
 
+		inline CameraMode GetCameraMode() const { return m_CameraMode; }
+
 		Mat4x4 GetProjectionMatrix();
 		Mat4x4 GetViewMatrix();
 		Mat4x4 GetInverseViewMatrix();
 		Mat4x4 GetViewProjectionMatrix();
+		inline TransformComponent* GetTransform() { return m_Transform; }
 	private:
 		void Recalculate();
 	private:
@@ -45,6 +58,9 @@ namespace Czuch
 		float m_AspectRatio;
 		float m_NearPlane;
 		float m_FarPlane;
+		float m_Width;
+		float m_Height;
+		CameraMode m_CameraMode;
 	};
 
 	enum CameraType

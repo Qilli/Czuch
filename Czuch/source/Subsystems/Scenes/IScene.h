@@ -31,6 +31,7 @@ namespace Czuch
 		virtual void CameraRemoved(CameraComponent* camera) = 0;
 		virtual FrameGraphControl* GetFrameGraphControl(Camera* camera) = 0;
 		virtual FrameGraphControl* GetFrameGraphControl(int index) = 0;
+		virtual entt::entity CreateEmptyEntity(const CzuchStr& entityName)=0;
 		bool IsDirty() const { return m_isDirty; }
 		void Dirty() { m_isDirty = true; }
 		void SetDirty(bool dirty) { m_isDirty = dirty; }

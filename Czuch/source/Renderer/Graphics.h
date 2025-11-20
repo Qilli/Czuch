@@ -28,6 +28,7 @@ namespace Czuch
 	static constexpr U32 MAX_DEBUG_TRIANGLES_IN_SCENE = 10000;
 	static constexpr U32 MAX_DEBUG_POINTS_IN_SCENE = 10000;
 	static constexpr U32 MAX_SINGLE_BUFFER_SIZE = 10000000; // 10 MB
+	static constexpr U32 MAX_LIGHTS_WITH_SHADOWS = 4;
 
 	typedef I32 Handle;
 #define INVALID_HANDLE(Type) Type() 
@@ -95,7 +96,8 @@ namespace Czuch
 		Vec4 positionWithType;
 		Vec4 colorWithIntensity;
 		Vec4 directionWithRange;
-		Vec4 spotInnerOuterAngle;
+		Vec4 spotInnerOuterAngle_ShadowMapID;
+		Mat4x4 viewProjMatrix;
 	};
 
 
@@ -125,9 +127,10 @@ namespace Czuch
 		DepthLinearPrePass = 1 << 8,
 		ForwardLightingTransparent = 1 << 9,
 		DebugDraw = 1 << 10,
-		ShadowMap = 1 << 11,
+		DirectionalShadowMap = 1 << 11,
 		FullScreenPass = 1 << 12,
-		Custom = 1 << 13
+		DepthLinearShadowMapPrePass = 1 << 13,
+		Custom = 1 << 14
 	};
 
 
@@ -1721,8 +1724,8 @@ namespace Czuch
 		void GetAllTexturesDependencies(Array<TextureHandle>& dependencies);
 
 		MaterialInstanceDesc& Reset();
-		MaterialInstanceDesc& AddStorageBufferSingleData(const CzuchStr& name, MaterialCustomBufferData&& data);
-		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, MaterialCustomBufferData&& data);
+		MaterialInstanceDesc& AddStorageBufferSingleData(const CzuchStr& name, MaterialCustomBufferData&& data,bool isInternal);
+		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, MaterialCustomBufferData&& data,bool isInternal);
 		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, BufferHandle buffer);
 		MaterialInstanceDesc& AddStorageBuffer(const CzuchStr& name, BufferHandle buffer);
 		MaterialInstanceDesc& AddSampler(const CzuchStr& name, TextureHandle color_texture, bool isInternal);
@@ -1774,6 +1777,12 @@ namespace Czuch
 		bool anisoEnabled = false;
 	};
 
+	enum class TextureTag
+	{
+		DEFAULT,
+		DIRECTIONAL_SHADOW_MAP,
+	};
+
 	struct TextureDesc
 	{
 		SamplerDesc samplerDesc;
@@ -1801,6 +1810,7 @@ namespace Czuch
 		Swizzle swizzle;
 		U8* texData;
 		const char* name = nullptr;
+		TextureTag tag = TextureTag::DEFAULT;
 
 		inline U32 GetSize() const
 		{

@@ -7,6 +7,7 @@ namespace Czuch
 	struct FrameGraphResourceInputCreation {
 		FrameGraphResourceType type;
 		FrameGraphResourceInfo resource_info;
+		bool ignoreResize = false;
 
 		const char* name;
 
@@ -17,6 +18,7 @@ namespace Czuch
 	struct FrameGraphResourceOutputCreation {
 		FrameGraphResourceType type;
 		FrameGraphResourceInfo resource_info;
+		bool ignoreResize = false;
 
 		const char* name;
 
@@ -30,6 +32,7 @@ namespace Czuch
 		Array<FrameGraphResourceOutputCreation> outputs;
 		RenderPassControl* control;
 		CzuchStr name;
+		bool ignoreResize = false;
 		Vec3 clearColor;
 		void Clear()
 		{
@@ -37,6 +40,7 @@ namespace Czuch
 			outputs.clear();
 			control = nullptr;
 			clearColor = Vec3(0.0f);
+			ignoreResize = false;
 		}
 	};
 
@@ -48,6 +52,7 @@ namespace Czuch
 		void AddInput(FrameGraphResourceInputCreation input);
 		void AddOutput(FrameGraphResourceOutputCreation output);
 		void SetClearColor(const Vec3& color);
+		void SetIgnoreResize(bool ignoreResize);
 		void SetRenderPassControl(RenderPassControl* control);
 		void EndNode();
 		void Build(FrameGraph* graph);

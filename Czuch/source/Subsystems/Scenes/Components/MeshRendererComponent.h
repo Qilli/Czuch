@@ -14,6 +14,12 @@ namespace Czuch
 		void SetOverrideMaterial(AssetHandle overrideMaterial);
 		AssetHandle GetMaterialAsset() const { return m_MaterialAsset; }
 
+		inline void SetShadowCasting(bool castShadow) { m_CastShadow = castShadow; }
+		inline bool IsShadowCaster() const { return m_CastShadow; }
+
+		inline void SetReceiveShadow(bool receiveShadow) { m_ReceiveShadow = receiveShadow; }
+		inline bool IsReceivingShadow() const { return m_ReceiveShadow; }
+
 		void OnRemoved() override {
 			if (HasMaterial())
 			{
@@ -25,6 +31,8 @@ namespace Czuch
 		void DecrementDependenciesReference();
 		MaterialInstanceHandle m_Material;
 		AssetHandle m_MaterialAsset;
+		bool m_CastShadow;
+		bool m_ReceiveShadow;
 	};
 }
 

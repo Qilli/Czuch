@@ -5,7 +5,7 @@
 
 namespace Czuch
 {
-	Czuch::MeshRendererComponent::MeshRendererComponent(Entity owner) : Component(owner)
+	Czuch::MeshRendererComponent::MeshRendererComponent(Entity owner) : Component(owner),m_CastShadow(true)
 	{
 		SetOverrideMaterial(DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET);
 	}

@@ -57,5 +57,10 @@ namespace Czuch
 		return (void*)m_Descriptor;
 	}
 
+	U32 UITextureSource::GetTextureGlobalIndex() const
+	{
+		return m_Texture.globalIndex;
+	}
+
 }
 

@@ -20,11 +20,17 @@ void main()
 	 int count=lightListRange.x+lightListRange.y;
 	 vec3 normal =normalize(inNormal.xyz);
 	 RenderObject obj = renderObjects[PushConstants.paramsIDObject.x];
-	 MaterialData materialData = materials[obj.materialIndexAndFlags.x];
+	 MaterialData material = materials[obj.materialIndexAndFlags.x];
+
+	// int sm=int(lights[0].spotInnerOuterAngle_ShadowMapID.z);
+	vec4 albedo = material.albedoMetallicTextures.x == -1 ? material.albedo.rgba : texture(globalTextures[material.albedoMetallicTextures.x],inUV.xy).rgba*material.albedo.rgba;
+	//vec4 albedo = sm == -1 ? material.albedo.rgba : texture(globalTextures[sm],inUV.xy).rgba*material.albedo.rgba;
+	vec4 metallicSpecularPower = material.albedoMetallicTextures.y == -1 ? material.metallicSpecularPower : texture(globalTextures[material.albedoMetallicTextures.y],inUV.xy)*material.metallicSpecularPower.rgba;
 
 	for( int i = lightListRange.x; i < count; ++i )
 	{
-		LightData lightData=lights[lightIndices[i]];
-		outColor+=ComputeLighting(lightData,sceneData.cameraWorldPos,materialData,inPos,normal,inUV.xy,sceneData.ambientColor.xyz);
+		outColor+=ComputeLighting(lightIndices[i],sceneData.cameraWorldPos,material,inPos,normal,inUV.xy,albedo,metallicSpecularPower);
 	}
+	outColor.rgb+=sceneData.ambientColor.rgb * albedo.rgb;
+	outColor.a=albedo.a;
 }

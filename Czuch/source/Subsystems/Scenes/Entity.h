@@ -54,6 +54,7 @@ namespace Czuch
 
 		TransformComponent& Transform();
 		intptr_t GetID() const { return (intptr_t)m_EntityHandle; }
+		entt::entity GetRawEntityHandle() const { return m_EntityHandle; }
 	public:
 		virtual bool Serialize(YAML::Emitter& out, bool binary = false) override;
 		virtual bool Deserialize(const YAML::Node& in, bool binary = false) override;

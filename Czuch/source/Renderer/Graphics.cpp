@@ -522,15 +522,15 @@ namespace Czuch
 		INVALIDATE_HANDLE(materialAsset);
 		return *this;
 	}
-	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name, MaterialCustomBufferData&& data)
+	MaterialInstanceDesc& MaterialInstanceDesc::AddBuffer(const CzuchStr& name, MaterialCustomBufferData&& data,bool isInternal)
 	{
-		paramsDesc.push_back({ .name = name,.data = std::move(data),.type = DescriptorType::UNIFORM_BUFFER,.resource = Invalid_Handle_Id,.isInternal = false });
+		paramsDesc.push_back({ .name = name,.data = std::move(data),.type = DescriptorType::UNIFORM_BUFFER,.resource = Invalid_Handle_Id,.isInternal = isInternal });
 		return *this;
 	}
 
-	MaterialInstanceDesc& MaterialInstanceDesc::AddStorageBufferSingleData(const CzuchStr& name, MaterialCustomBufferData&& data)
+	MaterialInstanceDesc& MaterialInstanceDesc::AddStorageBufferSingleData(const CzuchStr& name, MaterialCustomBufferData&& data, bool isInternal)
 	{
-		paramsDesc.push_back({ .name = name,.data = std::move(data),.type = DescriptorType::STORAGE_BUFFER_SINGLE_DATA,.resource = Invalid_Handle_Id,.isInternal = false });
+		paramsDesc.push_back({ .name = name,.data = std::move(data),.type = DescriptorType::STORAGE_BUFFER_SINGLE_DATA,.resource = Invalid_Handle_Id,.isInternal = isInternal });
 		return *this;
 	}
 
@@ -563,7 +563,16 @@ namespace Czuch
 			else if (param.type == DescriptorType::UNIFORM_BUFFER)
 			{
 				MaterialCustomBufferData uboCopy(param.data.GetData(), param.data.GetSize(), DescriptorBindingTagType::NONE);
-				desc.AddBuffer(param.name, std::move(uboCopy));
+				desc.AddBuffer(param.name, std::move(uboCopy),param.isInternal);
+			}
+			else if (param.type == DescriptorType::STORAGE_BUFFER)
+			{
+				desc.AddStorageBuffer(param.name, BufferHandle(param.resource));
+			}
+			else if (param.type == DescriptorType::STORAGE_BUFFER_SINGLE_DATA)
+			{
+				MaterialCustomBufferData dataCopy(param.data.GetData(),param.data.GetSize(),param.data.tagType);
+				desc.AddStorageBufferSingleData(param.name, std::move(dataCopy),true);
 			}
 		}
 		desc.isTransparent = isTransparent;

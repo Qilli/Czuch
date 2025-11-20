@@ -97,6 +97,7 @@ namespace Czuch
 
 		Mat3x3 newOrientation = GetNewSpaceOrientation(GetWorldPosition(), direction);
 		m_LocalRotation = glm::quat_cast(newOrientation);
+		m_LocalEulerAngles = glm::degrees(glm::eulerAngles(m_LocalRotation));
 		m_State.SetDirty();
 	}
 

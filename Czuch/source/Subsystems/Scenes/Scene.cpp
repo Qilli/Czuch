@@ -94,11 +94,14 @@ namespace Czuch
 			auto& transform = lightView.get<TransformComponent>(entity);
 			auto position = std::move(transform.GetWorldPosition());
 			auto direction = transform.GetWorldForward();
+			Mat4x4 lightViewProj = light.GetLightType() == LightType::Directional ? light.GetDirecionalLightViewProj() : Mat4x4(1.0f);
+			I32 shadowMapGlobalIndex = light.GetShadowMapTextureHandle().ToGlobalIndex();
 			Vec4 color = light.GetColor();
 			m_RenderObjects.allLights.push_back({ {.positionWithType=Vec4(position.x,position.y,position.z,light.GetLightType()),
 				.colorWithIntensity=Vec4(color.x,color.y,color.z,light.GetLightIntensity()),
 				.directionWithRange=Vec4(direction.x,direction.y,direction.z,light.GetLightRange()),
-				.spotInnerOuterAngle=Vec4(light.GetInnerAngleCos(),light.GetOuterAngleCos(),0,0)},& transform,& light});
+				.spotInnerOuterAngle_ShadowMapID =Vec4(light.GetInnerAngleCos(),light.GetOuterAngleCos(),shadowMapGlobalIndex,0),
+				.viewProjMatrix = lightViewProj},& transform,& light});
 		}
 
 
@@ -138,6 +141,10 @@ namespace Czuch
 		{
 			if (cameraControl.camera == currentCamera)
 			{
+				if (fillParams.isDirectionalShadowPass && !cameraControl.cameraLightsInfo.HasDirectionalLightWithShadows())
+				{
+					return nullptr; // if we do not have a single directional light casting shadows return null
+				}
 				RenderContext* context= cameraControl.FillRenderList(renderer->GetDevice(),fillParams);
 				return context;
 			}
@@ -220,6 +227,11 @@ namespace Czuch
 		}
 		Dirty();
 		return entity;
+	}
+
+	entt::entity Scene::CreateEmptyEntity(const CzuchStr& entityName)
+	{
+		return CreateEntity(entityName).GetRawEntityHandle();
 	}
 
 	Entity Scene::AddModelToScene(Czuch::AssetHandle model, const CzuchStr& entityName, Entity parent)
@@ -329,6 +341,7 @@ namespace Czuch
 		if (m_CamerasControl.size() > index)
 		{
 			m_CamerasControl[index].UpdateSceneDataBuffers(m_Device, currentFrame, deletionQueue);
+			m_CamerasControl[index].UpdateLightsInfo();
 			m_CamerasControl[index].frameGraphControl.BeforeFrameGraphExecute(m_Device->AccessCommandBuffer(cmdBuffer));
 		}
 	}

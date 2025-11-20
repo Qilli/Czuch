@@ -445,7 +445,7 @@ namespace Czuch
 				materialGPUData.albedoMetallicTextures = iVec4(textureHandle.ToGlobalIndex(), -1, -1, -1);
 				Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
-				instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
+				instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData),false);
 
 
 				if (IsMaterialTransparent(material))

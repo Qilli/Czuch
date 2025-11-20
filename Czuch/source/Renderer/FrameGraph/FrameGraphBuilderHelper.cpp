@@ -41,6 +41,11 @@ namespace Czuch
 		m_CurrentNodeData.clearColor = color;
 	}
 
+	void FrameGraphBuilderHelper::SetIgnoreResize(bool ignoreResize)
+	{
+		m_CurrentNodeData.ignoreResize = ignoreResize;
+	}
+
 	void FrameGraphBuilderHelper::SetRenderPassControl(RenderPassControl* control)
 	{
 		m_CurrentNodeData.control = control;
@@ -174,6 +179,7 @@ namespace Czuch
 					}
 
 					resource->info.texture.texture = m_Device->CreateTexture(&texDesc);
+					resource->info.texture.texture = m_Device->BindGlobalTexture(resource->info.texture.texture);
 				}
 				else if (resource->type == FrameGraphResourceType::Buffer) {
 					BufferDesc info;
@@ -225,6 +231,7 @@ namespace Czuch
 		node->renderPass = RenderPassHandle{ Invalid_Handle_Id };
 		node->renderPassControl = data.control;
 		node->clearColor = data.clearColor;
+		node->supportResize = !data.ignoreResize;
 
 		for (size_t i = 0; i < data.outputs.size(); ++i) {
 			const FrameGraphResourceOutputCreation& output_creation = data.outputs[i];
@@ -252,6 +259,7 @@ namespace Czuch
 		resource->name = output.name;
 		resource->nameID = std::move(StringID::MakeStringID(output.name));
 		resource->type = output.type;
+		resource->resizable = !output.ignoreResize;
 
 		if (output.type != FrameGraphResourceType::Reference) {
 			resource->info = output.resource_info;

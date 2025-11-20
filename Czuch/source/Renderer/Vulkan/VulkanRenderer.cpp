@@ -212,6 +212,12 @@ namespace Czuch
 		scene->OnSceneActive(this, m_Device);
 	}
 
+	Scene* VulkanRenderer::GetActiveScene()
+	{
+		CZUCH_BE_ASSERT(m_ActiveScene != nullptr, "Rednerer need active scene to work correctly!");
+		return m_ActiveScene;
+	}
+
 	void VulkanRenderer::ImmediateSubmitWithCommandBuffer(std::function<void(CommandBuffer* cmd)>&& processor)
 	{
 		auto device = m_Device->GetNativeDevice();
@@ -464,6 +470,11 @@ namespace Czuch
 		if (m_ActiveScene != nullptr)
 		{
 			RenderContext* ctx = m_ActiveScene->FillRenderContexts(cam, this, width, height, *fillParams);
+
+			if (ctx == nullptr)
+			{
+				return;
+			}
 
 			auto& renderList = ctx->GetRenderObjectsList();
 			auto sceneDataBuffers = m_ActiveScene->GetSceneDataBuffers(cam, m_CurrentFrame, fillParams->renderPassType);

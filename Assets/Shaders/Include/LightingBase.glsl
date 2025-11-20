@@ -1,15 +1,7 @@
-struct LightData
-{
-	vec4 positionWithType;
-	vec4 color;
-	vec4 directionWithRange;
-	vec4 spotInnerOuterAngle;
-};
-
 struct MaterialData
 {
 	vec4 albedo;
-	vec4 metallicRoughness;
+	vec4 metallicSpecularPower;
 	ivec4 albedoMetallicTextures;
 };
 
@@ -55,10 +47,41 @@ float ComputeLightAttenuationWithCutoff(float distance, float range)
 float ComputeSpecularLighting(vec3 normal, vec3 lightingDir, vec3 view,float power)
 {
 	vec3 halfv = normalize(view+lightingDir);
-	return clamp(pow(dot(normal,halfv),power),0.0,1.0);
+	return pow(clamp(dot(normal,halfv),0.0,1.0),power);
 }
 
-vec4 ComputeLighting(LightData lightData,vec4 cameraWorldPos,MaterialData material, vec4 position, vec3 normal,vec2 inUV,vec3 ambient)
+
+float ComputeShadow(LightData light, vec4 fragPosWorldSpace)
+{
+	if(light.spotInnerOuterAngle_ShadowMapID.z < 0)
+	{
+	  return 0.0;
+	}
+
+	// Perform perspective divide
+	vec4 fragPosLightSpace = light.lightViewProjMatrix * fragPosWorldSpace;
+	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	// Transform to [0,1] range
+	projCoords.xy = projCoords.xy * 0.5 + 0.5;
+	//flip y coord because texture coord system is upside down
+	projCoords.y = 1.0 - projCoords.y;
+	// Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+	float closestDepth = texture(globalTextures[int(light.spotInnerOuterAngle_ShadowMapID.w)], projCoords.xy).r; 
+	// Get depth of current fragment from light's perspective
+	float currentDepth = projCoords.z;
+
+	if (projCoords.x < 0.0 || projCoords.x > 1.0 ||
+        projCoords.y < 0.0 || projCoords.y > 1.0 || projCoords.z>1.0)
+        return 0.0;
+
+	// Check whether current frag pos is in shadow
+	float bias = 0.005;
+	float shadow = currentDepth-bias > closestDepth ? 1.0 : 0.0;
+	return shadow;
+}
+
+
+vec4 ComputeLighting(uint lightIndex,vec4 cameraWorldPos,MaterialData material, vec4 position, vec3 normal,vec2 inUV,vec4 albedo,vec4 metallicSpecularPower)
 {
 	float diffuse = 0.0;
 	float specular = 0.0;
@@ -66,14 +89,12 @@ vec4 ComputeLighting(LightData lightData,vec4 cameraWorldPos,MaterialData materi
 	float intensity=1.0;
 	vec3 cameraDir =normalize(cameraWorldPos.xyz - position.xyz);
 	vec3 lightDir = vec3(0,0,0);
-
-	vec3 albedo = material.albedoMetallicTextures.x == -1 ? material.albedo.rgb : texture(globalTextures[material.albedoMetallicTextures.x],inUV.xy).rgb;
-	vec3 metallicRoughness = material.albedoMetallicTextures.y == -1 ? material.metallicRoughness.rgb : texture(globalTextures[material.albedoMetallicTextures.y],inUV.xy).rgb;
+	LightData lightData = lights[lightIndex];
 
 	if(lightData.positionWithType.w == 0.0) //directional light
 	{
 		diffuse = max(dot(normal.xyz,-lightData.directionWithRange.xyz), 0.0);
-		lightDir=lightData.directionWithRange.xyz;
+		lightDir=-lightData.directionWithRange.xyz;
 	}
 	else if(lightData.positionWithType.w == 1.0) //point light
 	{
@@ -88,9 +109,9 @@ vec4 ComputeLighting(LightData lightData,vec4 cameraWorldPos,MaterialData materi
 		vec3 fromLightDir = normalize( position.xyz-lightData.positionWithType.xyz);
 		float delta = max(dot(fromLightDir,lightData.directionWithRange.xyz),0.0);
 
-		if(delta > lightData.spotInnerOuterAngle.y)
+		if(delta > lightData.spotInnerOuterAngle_ShadowMapID.y)
 		{
-			intensity = min(1.0,(delta - lightData.spotInnerOuterAngle.y) / (lightData.spotInnerOuterAngle.x - lightData.spotInnerOuterAngle.y));
+			intensity = min(1.0,(delta - lightData.spotInnerOuterAngle_ShadowMapID.y) / (lightData.spotInnerOuterAngle_ShadowMapID.x - lightData.spotInnerOuterAngle_ShadowMapID.y));
 			diffuse = intensity*max(dot(normal.xyz,-fromLightDir), 0.0);
 			float distance = length(lightData.positionWithType.xyz - position.xyz);
 
@@ -105,16 +126,18 @@ vec4 ComputeLighting(LightData lightData,vec4 cameraWorldPos,MaterialData materi
 			diffuse = 0.0;
 		}
 	}
-	if(diffuse>0)
+	if(diffuse>0.0)
 	{
-	specular = ComputeSpecularLighting(normal.xyz,-lightDir, cameraDir, material.metallicRoughness.w);
+	specular =ComputeSpecularLighting(normal.xyz,lightDir, cameraDir,metallicSpecularPower.w);
 	}
 
 
-	vec4 result=vec4(lightData.color.xyz*albedo*diffuse, 1.0);
-	result += vec4(lightData.color.xyz * specular *metallicRoughness.rgb, 1.0);
+	vec4 result=vec4(albedo.rgb*diffuse, 1.0);
+	result += vec4(specular*metallicSpecularPower.rgb, 1.0);
+	result *= vec4(lightData.colorWithIntensity.rgb,1.0f);
+	result *= lightData.colorWithIntensity.w;
 	result*=attenuation;
-	result+=vec4(ambient*albedo,1.0);
+	result *= (1.0 - ComputeShadow(lightData, position));
 	
 	return result;
 }

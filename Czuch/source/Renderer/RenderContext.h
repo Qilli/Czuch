@@ -2,15 +2,14 @@
 #include"Graphics.h"
 #include"Core/Math.h"
 #include"DebugDraw.h"
+#include"Subsystems/Scenes/Components/CameraComponent.h"
 
 namespace Czuch
 {
 	class GraphicsDevice;
-	struct TransformComponent;
 	struct MeshComponent;
 	struct MeshRendererComponent;
 	struct LightComponent;
-	struct Camera;
 	struct FrameGraphBuilderHelper;
 	struct FrameGraph;
 	class Renderer;
@@ -26,6 +25,7 @@ namespace Czuch
 		bool forceMaterialForAll = false;
 		bool ignoreTransparent = false;
 		bool isLightPass = false;
+		bool isDirectionalShadowPass = false;
 	};
 
 	struct RenderContextControl
@@ -56,6 +56,7 @@ namespace Czuch
 		Array<LightObjectInfo> allLights;
 		Array<RenderObjectGPUData> *renderObjectsData;
 		BufferHandle currentRenderObjectsBuffer;
+		AABB visibleObjectsAABB;
 
 		void Clear()
 		{
@@ -305,6 +306,23 @@ namespace Czuch
 		void OnSceneActive(Camera* camera, GraphicsDevice* device, IScene* scene);
 	};
 
+	struct CameraLightsInfo
+	{
+		LightComponent* directionalLight=nullptr;
+		LightComponent* spotAndPointLights[MAX_LIGHTS_WITH_SHADOWS];
+		TransformComponent* directionalCameraShadowCasterTransform=nullptr;
+
+		Camera directionalLightCamera;
+		Camera spotAndPointLightsCamera[MAX_LIGHTS_WITH_SHADOWS];
+
+		void Reset();
+		void Rebuild(IScene* scene, FrameGraphControl* frameGraph, Camera* camera, std::function<Vec3()> computePos);
+
+		U32 lightsCount = 0;
+		bool HasDirectionalLightWithShadows() const { return directionalLight != nullptr; }
+		Camera* GetShadowCastingCameraForDirectionalLight() { return &directionalLightCamera; }
+	};
+
 
 	struct SceneCameraControl
 	{
@@ -322,6 +340,12 @@ namespace Czuch
 		Array<RenderContextControl> renderContexts;
 		RenderObjectsContainer visibleRenderObjects;
 		FrameGraphControl frameGraphControl;
+		CameraLightsInfo cameraLightsInfo;
+
+		Vec3 ComputeDirectionalShadowCasterPosition(); //Compute position for directional light shadow caster based on current camera position and direction
+
+		Camera* GetCameraForContext(RenderPassType renderPassType);
+
 		/// <summary>
 		/// Release is called when we are leaving the scene or when the scene is destroyed or when camera is removed
 		/// We clear all render data for current camera
@@ -338,6 +362,7 @@ namespace Czuch
 		void OnResize(GraphicsDevice* device, U32 width, U32 height, bool windowSizeChanged);
 		SceneDataBuffers GetSceneDataBuffers(U32 frame);
 		void UpdateSceneDataBuffers(GraphicsDevice* device, U32 frame, DeletionQueue& deletionQueue);
+		void UpdateLightsInfo();
 
 		RenderContext* GetRenderContext(RenderPassType type, bool createIfNotExist = true);
 		void AddRenderContext(RenderContextCreateInfo ctx, RenderPassType type);
@@ -398,7 +423,17 @@ namespace Czuch
 		void FillRenderList(GraphicsDevice* device, Camera* cam, RenderObjectsContainer& allObjects, RenderContextFillParams& fillParams) override;
 		bool SupportRenderPass(RenderPassType type) const override;
 	private:
-		const U32 SUPPORTED_RENDER_PASSES_FLAGS = (U32)RenderPassType::DepthPrePass | (U32)RenderPassType::DepthLinearPrePass;
+		const U32 SUPPORTED_RENDER_PASSES_FLAGS = (U32)RenderPassType::DepthPrePass | (U32)RenderPassType::DepthLinearPrePass | (U32)RenderPassType::DepthLinearShadowMapPrePass;
+	};
+
+	class CZUCH_API DefaultDirectionalShadowMapRenderContext : public DefaultRenderContext
+	{
+	public:
+		DefaultDirectionalShadowMapRenderContext(RenderContextCreateInfo& createInfo) :DefaultRenderContext(createInfo) {}
+		void FillRenderList(GraphicsDevice* device, Camera* cam, RenderObjectsContainer& allObjects, RenderContextFillParams& fillParams) override;
+		bool SupportRenderPass(RenderPassType type) const override;
+	private:
+		const U32 SUPPORTED_RENDER_PASSES_FLAGS = (U32)RenderPassType::DirectionalShadowMap;
 	};
 
 	class CZUCH_API DefaultTransparentRenderContext : public DefaultRenderContext

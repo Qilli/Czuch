@@ -35,6 +35,7 @@ namespace Czuch
 		virtual void ReleaseDependencies() = 0;
 		virtual void AwaitDeviceIdle() = 0;
 		virtual void SetActiveScene(Scene* scene) = 0;
+		virtual Scene* GetActiveScene() = 0;
 		virtual GraphicsDevice* GetDevice() = 0;
 		virtual void RegisterRenderPassResizeEventResponse(U32 width, U32 height, bool handleWindowResize, std::function<void(U32, U32)>* onResize) = 0;
 		virtual void* GetRenderPassResult(Camera* cam,RenderPassType type) = 0;

@@ -113,7 +113,7 @@ int main()
 	materialGPUData.albedoMetallicTextures = iVec4(-1, -1, -1, -1);
 	Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(Czuch::MaterialObjectGPUData), Czuch::DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
-	instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
+	instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData),false);
 	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_TRANSPARENT_MATERIAL_ASSET;
 	auto matInstanceHandle = Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET;//Czuch::AssetsManager::GetPtr()->CreateMaterialInstance(instanceCreateSettings);
 

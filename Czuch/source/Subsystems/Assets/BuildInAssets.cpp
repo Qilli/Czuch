@@ -61,6 +61,11 @@ namespace Czuch
 	AssetHandle DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE_ASSET;
 	AssetHandle DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_ASSET;
 
+	MaterialInstanceHandle DefaultAssets::DEPTH_SM_LINEAR_PREPASS_MATERIAL_INSTANCE;
+
+	AssetHandle DefaultAssets::DIRECTIONAL_SHADOWMAP_MATERIAL_ASSET;
+	MaterialInstanceHandle DefaultAssets::DIRECTIONAL_SHADOWMAP_MATERIAL_INSTANCE;
+
 	AssetHandle DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_ASSET;
 	MaterialHandle DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL;
 	MaterialInstanceHandle DefaultAssets::DEBUG_DRAW_MATERIAL_INDEX_MATERIAL_INSTANCE;
@@ -237,7 +242,7 @@ namespace Czuch
 		materialGPUData.albedoMetallicTextures = iVec4(DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), -1, -1);
 		Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
-		instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
+		instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData),true);
 
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = false;
@@ -251,6 +256,8 @@ namespace Czuch
 		CreateDepthPrePassMaterial();
 		CreateFinalPassMaterial();
 		CreateDepthLinearPrePassMaterial();
+		//CreateDepthLinearSMPrePassMaterial();
+		CreateDirectionalShadowMapMaterial();
 		CreateDebugDrawMaterials();
 	}
 
@@ -582,7 +589,6 @@ namespace Czuch
 
 	void BuildInAssets::CreateDepthLinearPrePassMaterial()
 	{
-		// Final pass material
 		auto fullscreenVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\VertexFinalPassShader.vert", {});
 		auto depthLinearPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DepthLinearPrepassShader.frag", {});
 
@@ -629,6 +635,98 @@ namespace Czuch
 		DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE_ASSET = instanceAssetHandle;
 		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
 		DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
+	}
+
+	void BuildInAssets::CreateDepthLinearSMPrePassMaterial()
+	{
+		auto fullscreenVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\VertexFinalPassShader.vert", {});
+		auto depthLinearPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DepthLinearPrepassShader.frag", {});
+
+		MaterialPassDesc desc;
+		desc.vs = fullscreenVS;
+		desc.ps = depthLinearPS;
+		desc.pt = PrimitiveTopology::TRIANGLELIST;
+		desc.rs.cull_mode = CullMode::BACK;
+		desc.rs.fill_mode = PolygonMode::SOLID;
+		desc.dss.depth_enable = true;
+		desc.dss.depth_func = CompFunc::ALWAYS;
+		desc.dss.depth_write_mask = DepthWriteMask::ZERO;
+		desc.dss.stencil_enable = false;
+		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
+		desc.passType = RenderPassType::DepthLinearShadowMapPrePass;
+
+		DescriptorSetLayoutDesc desc_layout{};
+		desc_layout.shaderStage = (U32)ShaderStage::PS;
+		desc_layout.AddBinding("smDepthLinear", DescriptorType::SAMPLER, 0, 1, 0, false);
+		desc_layout.AddBinding("CameraPlanesData", DescriptorType::UNIFORM_BUFFER, 1, 1, sizeof(CameraPlanesData), true);
+
+		desc.AddLayout(desc_layout);
+
+		MaterialDefinitionDesc matDesc(1);
+		matDesc.EmplacePass(desc);
+		matDesc.materialName = "DepthsSMLinearMaterial";
+
+		MaterialCreateSettings createSettings;
+		createSettings.desc = std::move(matDesc);
+
+		auto assetHandle = m_AssetsMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createSettings.desc.materialName, createSettings);
+		auto materialAsset = m_AssetsMgr->GetAsset<MaterialAsset>(assetHandle);
+		materialAsset->SetPersistentStatus(true);
+		auto materialResource= materialAsset->GetMaterialResourceHandle();
+
+		MaterialInstanceCreateSettings instanceCreateSettings{};
+		instanceCreateSettings.materialInstanceName = "DepthLinearSMPrePassMaterialInstance";
+		instanceCreateSettings.desc.AddSampler("smDepthLinear", DefaultAssets::WHITE_TEXTURE, true);
+		instanceCreateSettings.desc.AddBuffer("CameraPlanesData", BufferHandle{ Invalid_Handle_Id });
+		instanceCreateSettings.desc.materialAsset = assetHandle;
+		instanceCreateSettings.desc.isTransparent = false;
+
+		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
+		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
+		DefaultAssets::DEPTH_SM_LINEAR_PREPASS_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
+	}
+
+	void BuildInAssets::CreateDirectionalShadowMapMaterial()
+	{
+		//Directional shadowmap pass
+		auto depthVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DepthPrepassShader.vert", {});
+		auto depthPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\EmptyFragmentShader.frag", {});
+
+		MaterialPassDesc desc;
+		desc.vs = depthVS;
+		desc.ps = depthPS;
+		desc.pt = PrimitiveTopology::TRIANGLELIST;
+		desc.rs.cull_mode = CullMode::BACK;
+		desc.rs.fill_mode = PolygonMode::SOLID;
+		desc.dss.depth_enable = true;
+		desc.dss.depth_func = CompFunc::LESS_EQUAL;
+		desc.dss.depth_write_mask = DepthWriteMask::ZERO;
+		desc.dss.stencil_enable = false;
+		desc.bindPoint = BindPoint::BIND_POINT_GRAPHICS;
+		desc.passType = RenderPassType::DirectionalShadowMap;
+
+		FillVertexStreamwithAttributes(desc);
+
+
+		MaterialDefinitionDesc matDesc(1);
+		matDesc.EmplacePass(desc);
+		matDesc.materialName = "DirectionalShadowMapMaterial";
+
+		MaterialCreateSettings createSettings;
+		createSettings.desc = std::move(matDesc);
+
+		DefaultAssets::DIRECTIONAL_SHADOWMAP_MATERIAL_ASSET = m_AssetsMgr->CreateAsset<MaterialAsset, MaterialCreateSettings>(createSettings.desc.materialName, createSettings);
+		auto materialAsset = m_AssetsMgr->GetAsset<MaterialAsset>(DefaultAssets::DIRECTIONAL_SHADOWMAP_MATERIAL_ASSET);
+		materialAsset->SetPersistentStatus(true);
+
+		MaterialInstanceCreateSettings instanceCreateSettings{};
+		instanceCreateSettings.materialInstanceName = "DirectionalShadopwMapMaterialInstance";
+		instanceCreateSettings.desc.materialAsset = DefaultAssets::DIRECTIONAL_SHADOWMAP_MATERIAL_ASSET;
+		instanceCreateSettings.desc.isTransparent = false;
+
+		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
+		MaterialInstanceAsset* instanceAsset = m_AssetsMgr->GetAsset<MaterialInstanceAsset>(instanceAssetHandle);
+		DefaultAssets::DIRECTIONAL_SHADOWMAP_MATERIAL_INSTANCE = instanceAsset->GetMaterialInstanceResourceHandle();
 	}
 
 	void BuildInAssets::CreateDefaultSimpleTransparentMaterial()
@@ -688,7 +786,7 @@ namespace Czuch
 		materialGPUData.albedoMetallicTextures = iVec4(DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), DefaultAssets::WHITE_TEXTURE.ToGlobalIndex(), -1, -1);
 		Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(MaterialObjectGPUData), DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
-		instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData));
+		instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData),false);
 
 		AssetHandle instanceAssetHandle = m_AssetsMgr->CreateAsset<MaterialInstanceAsset, MaterialInstanceCreateSettings>(instanceCreateSettings.materialInstanceName, instanceCreateSettings);
 		DefaultAssets::DEFAULT_SIMPLE_TRANSPARENT_MATERIAL_INSTANCE_ASSET = instanceAssetHandle;
@@ -755,7 +853,7 @@ namespace Czuch
 		ColorUBO colorUbo;
 		colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
 
-		instanceCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorUbo, sizeof(ColorUBO), DescriptorBindingTagType::NONE));
+		instanceCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorUbo, sizeof(ColorUBO), DescriptorBindingTagType::NONE),false);
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEBUG_DRAW_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = false;
 
@@ -772,7 +870,7 @@ namespace Czuch
 		ColorUBO colorLightUbo;
 		colorLightUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
 
-		instanceLightCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorLightUbo, sizeof(ColorUBO), DescriptorBindingTagType::NONE));
+		instanceLightCreateSettings.desc.AddBuffer("Color", Czuch::MaterialCustomBufferData((void*)&colorLightUbo, sizeof(ColorUBO), DescriptorBindingTagType::NONE),false);
 		instanceLightCreateSettings.desc.materialAsset = DefaultAssets::DEBUG_DRAW_MATERIAL_ASSET;
 		instanceLightCreateSettings.desc.isTransparent = false;
 

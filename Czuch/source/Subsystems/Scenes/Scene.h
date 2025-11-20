@@ -44,6 +44,7 @@ namespace Czuch
 		void FillDebugDrawElements(Camera* cam, Renderer* renderer,RenderContextFillParams& fillParams);
 		void OnPostRender(Camera* camera, RenderContextFillParams* fillParams);
 		Entity CreateEntity(const CzuchStr& entityName, Entity parent = Entity());
+		entt::entity CreateEmptyEntity(const CzuchStr& entityName);
 		Entity AddModelToScene(Czuch::AssetHandle model, const CzuchStr& entityName, Entity parent = Entity());
 		void DestroyEntity(Entity entity);
 		void MarkEntityForDestroy(Entity entity);
