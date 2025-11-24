@@ -7,7 +7,7 @@
 
 class EventHandler : public Czuch::IEventsListener
 {
-	// Odziedziczono za poœrednictwem elementu IEventsListener
+	// Odziedziczono za poï¿½rednictwem elementu IEventsListener
 	virtual void OnEvent(Czuch::Event& e) override
 	{
 		LOG_BE_ERROR(e.ToString());
@@ -93,29 +93,29 @@ int main()
 	auto& assetMgr = Czuch::AssetsManager::Get();
 
 	//load sponza
-	//auto sponzaHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Sponza\\sponza.gltf");
+	//auto sponzaHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Sponza/sponza.gltf");
 	//auto sponzaEntity = scene->AddModelToScene(sponzaHandle, "SponzaObject");
-	//auto bpHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Models\\backpack.obj");
+	//auto bpHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Models/backpack.obj");
 	//auto bpEntity = scene->AddModelToScene(bpHandle, "BpObject");
 
-	//auto barrelHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Models\\barrel.obj");
+	//auto barrelHandle = assetMgr.LoadAsset<Czuch::ModelAsset>("Models/barrel.obj");
 	//auto barrelEntity = scene->AddModelToScene(barrelHandle, "BarrelObject");
 	//barrelEntity.Transform().SetLocalPosition(glm::vec3(2.0f, -2.0f, -4.0f));
 
-	auto texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("Textures\\texture.jpg");
+	Czuch::TextureHandle texHandle = Czuch::AssetsManager::GetPtr()->Load2DTexture("Textures/texture.jpg");
 
 	Czuch::MaterialInstanceCreateSettings instanceCreateSettings{};
 	instanceCreateSettings.materialInstanceName = "DefaultAncientMaterial";
 
 	Czuch::MaterialObjectGPUData materialGPUData;
-	materialGPUData.albedoColor = Vec4(0.0f, 0.0f, 1.0f, 1.0f);
+	materialGPUData.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	materialGPUData.metallicSpecularPower = Vec4(1.0f, 1.0f, 1.0f, 256.0f);
-	materialGPUData.albedoMetallicTextures = iVec4(-1, -1, -1, -1);
+	materialGPUData.albedoMetallicTextures = iVec4(texHandle.ToGlobalIndex(), -1, -1, -1);
 	Czuch::MaterialCustomBufferData materialData((void*)&materialGPUData, sizeof(Czuch::MaterialObjectGPUData), Czuch::DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 
 	instanceCreateSettings.desc.AddStorageBufferSingleData("MaterialsData", std::move(materialData),false);
-	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_TRANSPARENT_MATERIAL_ASSET;
-	auto matInstanceHandle = Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET;//Czuch::AssetsManager::GetPtr()->CreateMaterialInstance(instanceCreateSettings);
+	instanceCreateSettings.desc.materialAsset = Czuch::DefaultAssets::DEFAULT_SIMPLE_MATERIAL_ASSET;
+	auto matInstanceHandle = Czuch::AssetsManager::GetPtr()->CreateMaterialInstance(instanceCreateSettings);
 
 
 	Czuch::Entity planeEntity = scene->CreateEntity("PlaneObject");

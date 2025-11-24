@@ -4,8 +4,8 @@
 
 namespace Czuch
 {
-	class CameraComponent;
-	class Entity;
+	struct CameraComponent;
+	struct Entity;
 	struct Camera;
 	struct FrameGraphControl;
 	struct LightObjectInfo;

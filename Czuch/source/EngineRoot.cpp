@@ -33,7 +33,7 @@ namespace Czuch
 		m_EngineSettings.engineMode = control!=nullptr?EngineMode::Editor:EngineMode::Runtime;
 		m_EngineSettings.targetWidth = 800;
 		m_EngineSettings.targetHeight = 600;
-		m_EngineSettings.startPath = std::filesystem::current_path().string() + "\\Assets\\";
+		m_EngineSettings.startPath = std::filesystem::current_path().string() + "/Assets/";
 
 		//create subsystems
 		m_Logging = new Logging();

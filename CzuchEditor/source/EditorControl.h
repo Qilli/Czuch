@@ -4,11 +4,8 @@
 #include"Panels/EntityInspectorEditorPanel.h"
 #include"Commands/EditorCommandsControl.h"
 #include"EditorCommon.h"
+#include "ImGuizmo.h"
 
-namespace ImGuizmo
-{
-	enum OPERATION;
-}
 
 namespace Czuch
 {

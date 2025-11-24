@@ -89,7 +89,7 @@ namespace Czuch
 		{
 			m_Device->TryTransitionImageLayout(cmd, m_TargetTexture, ImageLayout::SHADER_READ_ONLY_OPTIMAL, 0, 1);
 			MaterialInstance* mat = m_Device->AccessMaterialInstance(m_MaterialInstanceHandle);
-			mat->params[0].SetSampler(0, m_TargetTexture,0);
+			mat->params[0].SetCombinedSampler(0, m_TargetTexture,0);
 		}
 	}
 
@@ -153,8 +153,8 @@ namespace Czuch
 	void VulkanFullScreenRenderPass::CreateMaterial()
 	{
 		// fullscreen pass material
-		auto finalVS = AssetsManager::Get().LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\VertexFinalPassShader.vert", {});
-		auto finalPS = AssetsManager::Get().LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\FragmentFinalPassShader.frag", {});
+		auto finalVS = AssetsManager::Get().LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/VertexFinalPassShader.vert", {});
+		auto finalPS = AssetsManager::Get().LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/FragmentFinalPassShader.frag", {});
 
 		MaterialPassDesc desc;
 		desc.vs = finalVS;
@@ -171,7 +171,7 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
-		desc_tex.AddBinding("MainTexture", DescriptorType::SAMPLER, 0, 1, 0, false);
+		desc_tex.AddBinding("MainTexture", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, 1, 0, false);
 
 		desc.AddLayout(desc_tex);
 
@@ -187,7 +187,7 @@ namespace Czuch
 
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "FullScreenPassMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
+		instanceCreateSettings.desc.AddCombinedSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
 		instanceCreateSettings.desc.materialAsset = m_MaterialAsset;
 		instanceCreateSettings.desc.isTransparent = false;
 

@@ -7,7 +7,7 @@ namespace Czuch
 {
 	class VulkanRenderer;
 	class CommandBuffer;
-	class Camera;
+	struct Camera;
 	class VulkanDevice;
 
 	class VulkanRenderPassControlBase : public RenderPassControl

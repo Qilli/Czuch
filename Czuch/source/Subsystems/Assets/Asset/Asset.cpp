@@ -28,7 +28,7 @@ namespace Czuch
 
 	CzuchStr Asset::GetNameFromPath(const CzuchStr& inStr)
 	{
-		size_t result=inStr.find_last_of("/\\");
+		size_t result=inStr.find_last_of("//");
 		CzuchStr str=inStr.substr(result + 1);
 		return str;
 	}

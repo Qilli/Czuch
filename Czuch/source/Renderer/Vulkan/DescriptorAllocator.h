@@ -8,7 +8,7 @@ namespace Czuch
 	struct DescriptorSet;
 	struct ShaderParamsSet;
 	struct DescriptorSetLayout;
-	enum DescriptorType;
+	enum DescriptorType: int;
 	struct Buffer;
 	struct Texture;
 
@@ -18,7 +18,8 @@ namespace Czuch
 	{
 		void WriteBuffer(int binding, Buffer* buffer, size_t size, size_t offset, DescriptorType type);
 		void WriteTexture(int binding, Texture* color_texture, DescriptorType type);
-		void WriteAndUpdateGlobalTexture(int binding, Texture* tex, VulkanDevice* device, DescriptorSet* descriptorSet, I32 index);
+		void WriteAndUpdateGlobalTexture(Texture* tex, VulkanDevice* device, DescriptorSet* descriptorSet, I32 index);
+		void WriteGlobalSampler(VulkanDevice* device, DescriptorSet* descriptorSet, VkSampler globalSampler);
 		void Clear();
 		void UpdateSet(VulkanDevice* device,DescriptorSet* descriptorSet);
 

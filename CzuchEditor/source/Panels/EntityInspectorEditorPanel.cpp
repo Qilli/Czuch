@@ -1,20 +1,20 @@
 #include "BaseEditorPanel.h"
 #include "EntityInspectorEditorPanel.h"
-#include"imgui.h"
-#include"imgui_internal.h"
-#include"Subsystems/Scenes/Components/HeaderComponent.h"
-#include"Subsystems/Scenes/Components/TransformComponent.h"
-#include"Subsystems/Scenes/Components/CameraComponent.h"
-#include"Subsystems/Scenes/Components/MeshComponent.h"
-#include"Subsystems/Scenes/Components/MeshRendererComponent.h"
-#include"Subsystems/Scenes/Components/LightComponent.h"
-#include"Subsystems/Assets/Asset/MaterialInstanceAsset.h"
-#include"Subsystems/Assets/AssetsManager.h"
-#include"Subsystems/Assets/Asset/ModelAsset.h"
-#include"Subsystems/Assets/Asset/TextureAsset.h"
-#include"../Commands/CommandTypes/ChangeTransformCommand.h"
-#include"../Commands/EditorCommandsControl.h"
-#include"../EditorCommon.h"
+#include "imgui.h"
+#include "imgui_internal.h"
+#include "Subsystems/Scenes/Components/HeaderComponent.h"
+#include "Subsystems/Scenes/Components/TransformComponent.h"
+#include "Subsystems/Scenes/Components/CameraComponent.h"
+#include "Subsystems/Scenes/Components/MeshComponent.h"
+#include "Subsystems/Scenes/Components/MeshRendererComponent.h"
+#include "Subsystems/Scenes/Components/LightComponent.h"
+#include "Subsystems/Assets/Asset/MaterialInstanceAsset.h"
+#include "Subsystems/Assets/AssetsManager.h"
+#include "Subsystems/Assets/Asset/ModelAsset.h"
+#include "Subsystems/Assets/Asset/TextureAsset.h"
+#include "../Commands/CommandTypes/ChangeTransformCommand.h"
+#include "../Commands/EditorCommandsControl.h"
+#include "../EditorCommon.h"
 
 namespace Czuch
 {
@@ -31,9 +31,9 @@ namespace Czuch
 			ImVec4 headerActiveColor = ImGui::GetStyle().Colors[ImGuiCol_HeaderActive];
 
 			// Set new colors for the header
-			ImGui::GetStyle().Colors[ImGuiCol_Header] = ImVec4(0, 0, 0, 0.2f); // Transparent background
+			ImGui::GetStyle().Colors[ImGuiCol_Header] = ImVec4(0, 0, 0, 0.2f);		  // Transparent background
 			ImGui::GetStyle().Colors[ImGuiCol_HeaderHovered] = ImVec4(0, 0, 0, 0.2f); // Transparent background
-			ImGui::GetStyle().Colors[ImGuiCol_HeaderActive] = ImVec4(0, 0, 0, 0.2f); // Transparent background
+			ImGui::GetStyle().Colors[ImGuiCol_HeaderActive] = ImVec4(0, 0, 0, 0.2f);  // Transparent background
 
 			m_HeaderDrawer.DrawComponent(m_SelectedEntity);
 			m_TransformDrawer.DrawComponent(m_SelectedEntity);
@@ -137,12 +137,11 @@ namespace Czuch
 		}
 	}
 
-
 	void HeaderDrawer::DrawComponent(Entity entity)
 	{
 		if (entity.HasComponent<HeaderComponent>())
 		{
-			auto& header = entity.GetComponent<HeaderComponent>();
+			auto &header = entity.GetComponent<HeaderComponent>();
 
 			bool open = DrawComponentHeader(m_HeaderText.c_str(), entity);
 
@@ -151,8 +150,13 @@ namespace Czuch
 				static char nameBuffer[256];
 				std::string currentName = header.GetHeader();
 				memset(nameBuffer, 0, sizeof(nameBuffer));
+#ifdef CZUCH_PLATFORM_WINDOWS
 				strcpy_s(nameBuffer, sizeof(nameBuffer), currentName.c_str());
-				nameBuffer[currentName.length()] = '\0';  // Ensure null-terminated string
+#else
+				strncpy(nameBuffer, currentName.c_str(), sizeof(nameBuffer));
+				nameBuffer[sizeof(nameBuffer) - 1] = '\0'; // Zabezpieczenie końca
+#endif
+				nameBuffer[currentName.length()] = '\0'; // Ensure null-terminated string
 
 				int flags = ImGuiInputTextFlags_EnterReturnsTrue;
 				if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer), flags))
@@ -174,9 +178,9 @@ namespace Czuch
 
 	void HeaderDrawer::UpdateTexts(Entity entity)
 	{
-		auto& header = entity.GetComponent<HeaderComponent>();
+		auto &header = entity.GetComponent<HeaderComponent>();
 		strncpy(m_CurrentName, header.GetHeader().c_str(), sizeof(m_CurrentName));
-		m_CurrentName[sizeof(m_CurrentName) - 1] = '\0';  // Ensure null-terminated string
+		m_CurrentName[sizeof(m_CurrentName) - 1] = '\0'; // Ensure null-terminated string
 		m_HeaderText = "Header Component: " + header.GetHeader();
 	}
 
@@ -184,7 +188,7 @@ namespace Czuch
 	{
 		if (entity.HasComponent<TransformComponent>())
 		{
-			auto& transform = entity.GetComponent<TransformComponent>();
+			auto &transform = entity.GetComponent<TransformComponent>();
 			bool open = DrawComponentHeader("Transform Component", entity);
 			if (open)
 			{
@@ -208,7 +212,7 @@ namespace Czuch
 
 				if (changed)
 				{
-					auto command = NEW(ChangeTransformCommand((Scene*)entity.GetScene(), entity, m_Position.value, m_Rotation.value, m_Scale.value));
+					auto command = NEW(ChangeTransformCommand((Scene *)entity.GetScene(), entity, m_Position.value, m_Rotation.value, m_Scale.value));
 					m_Position.isLocked = false;
 					m_Rotation.isLocked = false;
 					m_Scale.isLocked = false;
@@ -232,11 +236,11 @@ namespace Czuch
 	{
 		if (entity.HasComponent<CameraComponent>())
 		{
-			auto& camComponent = entity.GetComponent<CameraComponent>();
+			auto &camComponent = entity.GetComponent<CameraComponent>();
 			bool open = DrawComponentHeader("Camera Component", entity);
 			if (open)
 			{
-				auto& camera = camComponent.GetCamera();
+				auto &camera = camComponent.GetCamera();
 				// Display and edit Near Plane
 				float nearPlane = camera.GetNearPlane();
 				if (ImGui::DragFloat("Near Plane", &nearPlane, 0.1f, 0.01f, 100.0f, "%.1f"))
@@ -257,11 +261,9 @@ namespace Czuch
 				{
 					camera.SetVerticalFov(fov);
 				}
-
 			}
 		}
 	}
-
 
 	void CameraDrawer::OnSelectionChanged(Entity entity)
 	{
@@ -274,7 +276,7 @@ namespace Czuch
 
 #pragma endregion
 
-	bool ComponentDrawer::DrawComponentHeader(const char* name, Entity entity)
+	bool ComponentDrawer::DrawComponentHeader(const char *name, Entity entity)
 	{
 		int collapseFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap;
 		bool open = ImGui::CollapsingHeader(name, collapseFlags);
@@ -309,13 +311,12 @@ namespace Czuch
 		}
 	}
 
-
 #pragma region MeshComponent
 	void MeshInspectorDrawer::DrawComponent(Entity entity)
 	{
 		if (entity.HasComponent<MeshComponent>())
 		{
-			auto& meshComponent = entity.GetComponent<MeshComponent>();
+			auto &meshComponent = entity.GetComponent<MeshComponent>();
 			m_MeshAssetHelper.m_MeshComponent = &meshComponent;
 			bool open = DrawComponentHeader("Mesh Component", entity);
 			if (open)
@@ -326,7 +327,6 @@ namespace Czuch
 	}
 	void MeshInspectorDrawer::OnSelectionChanged(Entity entity)
 	{
-
 	}
 	void MeshInspectorDrawer::OnRemoveComponent(Entity entity)
 	{
@@ -339,7 +339,7 @@ namespace Czuch
 	{
 		if (entity.HasComponent<MeshRendererComponent>())
 		{
-			auto& meshRendererComponent = entity.GetComponent<MeshRendererComponent>();
+			auto &meshRendererComponent = entity.GetComponent<MeshRendererComponent>();
 			m_MaterialAssetHelper.m_MeshRendererComponent = &meshRendererComponent;
 			bool open = DrawComponentHeader("Mesh Renderer Component", entity);
 			if (open)
@@ -359,7 +359,7 @@ namespace Czuch
 		removeComponent = true;
 	}
 
-	void MeshRendererInspectorDrawer::DrawMaterialInstance(MeshRendererComponent& meshRendererComponent)
+	void MeshRendererInspectorDrawer::DrawMaterialInstance(MeshRendererComponent &meshRendererComponent)
 	{
 		auto materialAsset = AssetsManager::Get().GetAsset<MaterialInstanceAsset>(meshRendererComponent.GetMaterialAsset());
 		if (materialAsset != nullptr)
@@ -371,7 +371,7 @@ namespace Czuch
 			for (int i = 0; i < materialAsset->GetParametersCount(); i++)
 			{
 				auto paramType = materialAsset->GetParameterAtIndexType(i);
-				if (paramType == MaterialParamType::PARAM_BUFFER && materialAsset->IsParameterAtIndexInternal(i)==false)
+				if (paramType == MaterialParamType::PARAM_BUFFER && materialAsset->IsParameterAtIndexInternal(i) == false)
 				{
 					auto param = materialAsset->GetUBOBufferAtIndex(i);
 					auto buffer = std::get<0>(param);
@@ -389,7 +389,7 @@ namespace Czuch
 									changed = true;
 								}
 							}
-							else if(element.elementType == UBOElementType::ColorType)
+							else if (element.elementType == UBOElementType::ColorType)
 							{
 								auto vec = buffer->desc.customData->GetVec4(element.offset);
 								if (CustomDrawers::DrawLinearColor(element.name.GetStrName().c_str(), vec))
@@ -405,7 +405,7 @@ namespace Czuch
 						}
 					}
 				}
-				else if(paramType == MaterialParamType::PARAM_TEXTURE )
+				else if (paramType == MaterialParamType::PARAM_TEXTURE)
 				{
 					m_TextureAssetHelpers[0].SetMaterialInstance(materialAsset, i);
 
@@ -419,32 +419,34 @@ namespace Czuch
 				else if (paramType == MaterialParamType::PARAM_SINGLE_STORAGE_BUFFER)
 				{
 					auto info = materialAsset->GetInfoDescriptorTag(DescriptorBindingTagType::MATERIALS_LIGHTING_DATA, 0);
-					if (info.index >= 0)//if less than 0 then it means that material does not have this tag, so we do not need to add data
+					if (info.index >= 0) // if less than 0 then it means that material does not have this tag, so we do not need to add data
 					{
-						void* gpuData = materialAsset->GetParameterDataWithInfo(info);
-						MaterialObjectGPUData* matData = (MaterialObjectGPUData*)gpuData;
+						void *gpuData = materialAsset->GetParameterDataWithInfo(info);
+						MaterialObjectGPUData *matData = (MaterialObjectGPUData *)gpuData;
 
 						if (CustomDrawers::DrawLinearColor("Albedo", &matData->albedoColor))
 						{
 							changed = true;
 						}
 
-						if (CustomDrawers::DrawLinearColor("Specular Color", (Vec3*) & matData->metallicSpecularPower))
+						if (CustomDrawers::DrawLinearColor("Specular Color", (Vec3 *)&matData->metallicSpecularPower))
 						{
 							changed = true;
 						}
 
-						if (ImGui::DragFloat("Specular Power,", &matData->metallicSpecularPower.w, 0.1f,8.0f,255.0f))
+						if (ImGui::DragFloat("Specular Power,", &matData->metallicSpecularPower.w, 0.1f, 8.0f, 255.0f))
 						{
 							changed = true;
 						}
 
 						CzuchStr nameAlbedo = "Albedo";
-						m_TextureAssetHelpers[0].SetMaterialInstance(materialAsset, matData->albedoMetallicTextures.x, [&matData, &changed](int newIndex) {matData->albedoMetallicTextures.x = newIndex; changed = true; }, nameAlbedo);
+						m_TextureAssetHelpers[0].SetMaterialInstance(materialAsset, matData->albedoMetallicTextures.x, [&matData, &changed](int newIndex)
+																	 {matData->albedoMetallicTextures.x = newIndex; changed = true; }, nameAlbedo);
 						m_TextureAssetHelpers[0].ShowSelectAsset();
 
 						CzuchStr nameSpecular = "Specular";
-						m_TextureAssetHelpers[1].SetMaterialInstance(materialAsset, matData->albedoMetallicTextures.y, [&matData, &changed](int newIndex) {matData->albedoMetallicTextures.y = newIndex; changed = true; }, nameSpecular);
+						m_TextureAssetHelpers[1].SetMaterialInstance(materialAsset, matData->albedoMetallicTextures.y, [&matData, &changed](int newIndex)
+																	 {matData->albedoMetallicTextures.y = newIndex; changed = true; }, nameSpecular);
 						m_TextureAssetHelpers[1].ShowSelectAsset();
 
 						if (changed)
@@ -454,15 +456,13 @@ namespace Czuch
 					}
 				}
 			}
-		
 
 			ImGui::Separator();
 			if (ImGui::Button("Copy Material"))
 			{
-				auto newMaterial=materialAsset->CloneMaterialInstance();
+				auto newMaterial = materialAsset->CloneMaterialInstance();
 				meshRendererComponent.SetOverrideMaterial(newMaterial->GetHandle());
 			}
-			
 		}
 	}
 #pragma endregion
@@ -472,11 +472,11 @@ namespace Czuch
 	{
 		if (entity.HasComponent<LightComponent>())
 		{
-			auto& lightComponent = entity.GetComponent<LightComponent>();
+			auto &lightComponent = entity.GetComponent<LightComponent>();
 			bool open = DrawComponentHeader("Light Component", entity);
 			if (open)
 			{
-				auto& light = lightComponent;
+				auto &light = lightComponent;
 				// Display and edit Light Type
 				LightType lightType = light.GetLightType();
 				if (ImGui::BeginCombo("Light Type", GetLightTypeString(lightType)))
@@ -504,13 +504,12 @@ namespace Czuch
 					light.SetColor(lightColor);
 				}
 
-				//display and edit light intensity
+				// display and edit light intensity
 				float lightIntensity = light.GetLightIntensity();
 				if (ImGui::DragFloat("Light Intensity", &lightIntensity, 0.1f, 1.0f, 1000.0f, "%.1f"))
 				{
 					light.SetLightIntensity(lightIntensity);
 				}
-
 
 				if (lightType != LightType::Directional)
 				{
@@ -522,20 +521,19 @@ namespace Czuch
 					}
 				}
 
-
 				if (lightType == LightType::Spot)
 				{
 					// Display and edit Light Spot Inner Angle
-					float lightSpotInnerAngle = light.GetInnerAngle()*RAD2DEG;
+					float lightSpotInnerAngle = light.GetInnerAngle() * RAD2DEG;
 					if (ImGui::DragFloat("Light Spot Inner Angle", &lightSpotInnerAngle, 0.1f, 0.0f, 180.0f, "%.1f"))
 					{
-						light.SetInnerAngle(lightSpotInnerAngle*DEG2RAD);
+						light.SetInnerAngle(lightSpotInnerAngle * DEG2RAD);
 					}
 
-					float lightSpotOuterAngle = light.GetOuterAngle()*RAD2DEG;
+					float lightSpotOuterAngle = light.GetOuterAngle() * RAD2DEG;
 					if (ImGui::DragFloat("Light Spot Outer Angle", &lightSpotOuterAngle, 0.1f, 0.0f, 180.0f, "%.1f"))
 					{
-						light.SetOuterAngle(lightSpotOuterAngle*DEG2RAD);
+						light.SetOuterAngle(lightSpotOuterAngle * DEG2RAD);
 					}
 				}
 			}

@@ -409,6 +409,7 @@ namespace Czuch
 							rendering.DrawCone(transform.GetWorldPosition(), transform.GetWorldForward(), lightComp.GetLightRange(), lightComp.GetOuterAngle(), Colors::Yellow);
 							break;
 						case LightType::Directional:
+						{
 							rendering.DrawCircle(transform.GetWorldPosition(), transform.GetWorldForward(), 0.2f, Colors::Yellow);
 							rendering.DrawLine(transform.GetWorldPosition(), transform.GetWorldPosition() + transform.GetWorldForward() * 0.5f, Colors::Yellow);
 
@@ -424,6 +425,7 @@ namespace Czuch
 							}
 
 							break;
+						}
 						default:
 							break;
 						}

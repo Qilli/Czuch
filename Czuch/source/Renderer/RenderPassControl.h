@@ -7,7 +7,7 @@ namespace Czuch
 {
 
 	class Renderer;
-	class Camera;
+	struct Camera;
 	class CommandBuffer; 
 	struct FrameGraph;
 	struct FrameGraphNode;
@@ -84,7 +84,7 @@ namespace Czuch
 		I32 m_InnerIndex; // it can be used when we have the same pass multiple times(like multiple shadow pass for more than one light)
 		bool m_HandleWindowResize;
 		bool m_UITextureSource;
-		bool m_Active;
+		bool m_Active=true;
 		Camera* m_Camera;
 		Camera* m_LastCamera;
 		RenderPassType Type;

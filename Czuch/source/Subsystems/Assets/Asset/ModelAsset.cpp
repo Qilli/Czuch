@@ -352,7 +352,7 @@ namespace Czuch
 		material->GetTexture(type, index, &str);
 
 		LOG_BE_INFO("Checking if texture {0} already exist and is loaded", str.C_Str());
-		auto texPath = GetRelativePath().parent_path().string() + "\\" + str.C_Str();
+		auto texPath = GetRelativePath().parent_path().string() + "/" + str.C_Str();
 		TextureLoadSettings settings;
 		settings.isUITexture = false;
 		settings.type = TextureDesc::Type::TEXTURE_2D;
@@ -364,7 +364,7 @@ namespace Czuch
 		}
 
 		std::filesystem::path localPath = str.C_Str();
-		texPath = GetRelativePath().parent_path().string() + "\\" + localPath.filename().string();
+		texPath = GetRelativePath().parent_path().string() + "/" + localPath.filename().string();
 		handle= AssetsManager::GetPtr()->LoadAsset<TextureAsset, TextureLoadSettings>(texPath, settings);
 
 		if (HANDLE_IS_VALID(handle))

@@ -24,7 +24,7 @@ namespace Czuch
 
 	inline ShaderAssetManager::ShaderAssetManager(GraphicsDevice* device):m_Device(device)
 	{
-		ShaderAssetManager::s_ShaderIncludePath = AssetsManager::GetStartPath() + "Shaders\\Include";
+		ShaderAssetManager::s_ShaderIncludePath = AssetsManager::GetStartPath() + "Shaders/Include";
 	}
 
 	inline Asset* ShaderAssetManager::CreateAsset(const CzuchStr& path, BaseCreateSettings& settings)

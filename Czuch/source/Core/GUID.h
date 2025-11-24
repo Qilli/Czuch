@@ -1,6 +1,10 @@
 #pragma once
 
-#include<xhash>
+#ifdef CZUCH_PLATFORM_WINDOWS
+    #include <xhash>
+#else
+    #include <functional> // Standardowe haszowanie dla Maca
+#endif
 namespace Czuch
 {
 	class CZUCH_API GUID

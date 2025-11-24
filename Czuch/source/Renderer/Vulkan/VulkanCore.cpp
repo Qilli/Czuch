@@ -23,9 +23,9 @@ namespace Czuch
 				{
 					writer.WriteBuffer(binding.index, device->AccessBuffer(BufferHandle(param.resource)), param.size, 0, binding.type);
 				}
-				else if (binding.type == DescriptorType::SAMPLER)
+				else if (binding.type == DescriptorType::COMBINED_IMAGE_SAMPLER)
 				{
-					writer.WriteTexture(binding.index, device->AccessTexture({ param.resource,AssetHandle() }), DescriptorType::SAMPLER);
+					writer.WriteTexture(binding.index, device->AccessTexture({ param.resource,AssetHandle() }), DescriptorType::COMBINED_IMAGE_SAMPLER);
 				}
 				else if (binding.type == DescriptorType::STORAGE_BUFFER)
 				{
@@ -50,9 +50,9 @@ namespace Czuch
 			{
 				writer.WriteBuffer(binding.index, device->AccessBuffer(BufferHandle(param.resource)), binding.size, 0, binding.type);
 			}
-			else if (binding.type == DescriptorType::SAMPLER)
+			else if (binding.type == DescriptorType::COMBINED_IMAGE_SAMPLER)
 			{
-				writer.WriteTexture(binding.index, device->AccessTexture({ param.resource,AssetHandle() }), DescriptorType::SAMPLER);
+				writer.WriteTexture(binding.index, device->AccessTexture({ param.resource,AssetHandle() }), DescriptorType::COMBINED_IMAGE_SAMPLER);
 			}
 			else if (binding.type == DescriptorType::STORAGE_BUFFER)
 			{

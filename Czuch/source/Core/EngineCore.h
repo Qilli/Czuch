@@ -5,17 +5,22 @@
 #include<assert.h>
 #include<memory>
 #include <tuple>
+#include <list>
 #include"Common.h"
 
 
 #ifdef CZUCH_PLATFORM_WINDOWS
-#ifdef CZUCH_BUILD_DLL
-#define CZUCH_API __declspec(dllexport)
+    #ifdef CZUCH_BUILD_DLL
+        #define CZUCH_API __declspec(dllexport)
+    #else
+        #define CZUCH_API __declspec(dllimport)
+    #endif
+#elif defined(CZUCH_PLATFORM_MACOS)
+    // --- DODANA SEKCJA DLA MACA ---
+    // Na macOS/Linux symbole są widoczne domyślnie, ale dla porządku używamy:
+    #define CZUCH_API __attribute__((visibility("default")))
 #else
-#define CZUCH_API __declspec(dllimport)
-#endif
-#else
-#error Czuch do not support this platform
+    #error Czuch do not support this platform
 #endif
 
 #ifdef CZUCH_ENABLE_ASSERTS

@@ -39,7 +39,7 @@ namespace Czuch
 		IncludeResult* includeLocal(const char* headerName, const char* includerName,
 			size_t inclusionDepth) override
 		{
-			CzuchStr fullPath = shaderDirectory+ "\\" + headerName;
+			CzuchStr fullPath = shaderDirectory+ "/" + headerName;
 			std::ifstream fileStream(fullPath, std::ios::in);
 			if (!fileStream.is_open()) {
 				CzuchStr errMsg = "Failed to open included file: ";

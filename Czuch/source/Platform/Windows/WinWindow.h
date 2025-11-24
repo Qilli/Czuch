@@ -16,7 +16,7 @@ namespace Czuch
 		virtual U32 GetHeight() const override;
 		virtual void SetVSync(bool enabled) override;
 		virtual bool IsVsSync() const override;
-		virtual void* GetNativeWindowPtr() const { return m_Window; }
+		virtual void* GetNativeWindowPtr() const override { return m_Window; }
 	private:
 		virtual void Init(const WindowParams& params);
 		virtual void Shutdown();

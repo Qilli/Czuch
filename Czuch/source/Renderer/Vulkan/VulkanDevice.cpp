@@ -2,65 +2,68 @@
 #include "VulkanDevice.h"
 #include "VulkanPipelineBuilder.h"
 #include "./Renderer/CommandBuffer.h"
-#include"Core/Window.h"
-#include"VulkanCommandBuffer.h"
-#include"VulkanCore.h"
-#include"Subsystems/EventsManager.h"
-#include"Events/EventsTypes/ApplicationEvents.h"
-#include"Core/Common.h"
-#include"DescriptorLayoutCache.h"
-#include"DescriptorAllocator.h"
-#include"./Subsystems/Assets/AssetsManager.h"
-#include"./Subsystems/Assets/Asset/ShaderAsset.h"
-#include"./Subsystems/Assets/Asset/MaterialAsset.h"
-#include"./Subsystems/Assets/Asset/MaterialInstanceAsset.h"
+#include "Core/Window.h"
+#include "VulkanCommandBuffer.h"
+#include "VulkanCore.h"
+#include "Subsystems/EventsManager.h"
+#include "Events/EventsTypes/ApplicationEvents.h"
+#include "Core/Common.h"
+#include "DescriptorLayoutCache.h"
+#include "DescriptorAllocator.h"
+#include "./Subsystems/Assets/AssetsManager.h"
+#include "./Subsystems/Assets/Asset/ShaderAsset.h"
+#include "./Subsystems/Assets/Asset/MaterialAsset.h"
+#include "./Subsystems/Assets/Asset/MaterialInstanceAsset.h"
 #include "imgui.h"
-#include"backends/imgui_impl_glfw.h"
-#include"backends/imgui_impl_vulkan.h"
-#include"Renderer/Renderer.h"
-#include<set>
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_vulkan.h"
+#include "Renderer/Renderer.h"
+#include <set>
 
+#ifdef __APPLE__
+#include <vulkan/vulkan_beta.h> // Wymagane dla definicji PORTABILITY
+#endif
 
 namespace Czuch
 {
 	const CzuchStr Tag = "[VulkanDevice]";
 
-	const std::vector<const char*> deviceExtensions = {
+	const std::vector<const char *> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 		VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
 		VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
 		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
 		VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+		VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,
 	};
-	const std::vector<const char*> validationLayers = {
-"VK_LAYER_KHRONOS_validation"
-	};
+	const std::vector<const char *> validationLayers = {
+		"VK_LAYER_KHRONOS_validation"};
 
 #pragma region Create methods
 
 	VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice, bool includeStencil);
 	bool CreateImage(VmaAllocator allocator, TextureDesc::Type type, U32 width, U32 height, U32 depth, U32 mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memUsage,
-		VkImage& image, VmaAllocation& alloc);
+					 VkImage &image, VmaAllocation &alloc);
 	bool HasStencilComponent(VkFormat format);
-	VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+	VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
 	Format VulkanDevice::GetDepthFormat() const
 	{
 		return ConvertVkFormat(m_DepthImage.depthFormat);
 	}
 
-	void VulkanDevice::DrawUI(CommandBuffer* commandBuffer)
+	void VulkanDevice::DrawUI(CommandBuffer *commandBuffer)
 	{
-		ImGuiIO& io = ImGui::GetIO();
+		ImGuiIO &io = ImGui::GetIO();
 		io.DisplaySize = ImVec2((float)WindowInfo::Width, (float)WindowInfo::Height);
 
 		ImGui::Render();
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), static_cast<VulkanCommandBuffer*>(commandBuffer)->GetNativeBuffer());
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), static_cast<VulkanCommandBuffer *>(commandBuffer)->GetNativeBuffer());
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
-			GLFWwindow* backup_current_context = glfwGetCurrentContext();
+			GLFWwindow *backup_current_context = glfwGetCurrentContext();
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
 			glfwMakeContextCurrent(backup_current_context);
@@ -73,10 +76,9 @@ namespace Czuch
 
 	void VulkanDevice::PreDrawFrame()
 	{
-
 	}
 
-	void* VulkanDevice::CreatePointerForUITexture(TextureHandle tex)
+	void *VulkanDevice::CreatePointerForUITexture(TextureHandle tex)
 	{
 		auto texture = AccessTexture(tex);
 		auto vulkanTexture = Internal_to_Texture(texture);
@@ -84,14 +86,14 @@ namespace Czuch
 		return set;
 	}
 
-	PipelineHandle VulkanDevice::CreatePipelineState(const MaterialPassDesc* desc, RenderPass* rpass, bool dynamicRendering)
+	PipelineHandle VulkanDevice::CreatePipelineState(const MaterialPassDesc *desc, RenderPass *rpass, bool dynamicRendering)
 	{
 		CZUCH_BE_ASSERT(desc, "CreatePipelineState NULL desc input");
 
-		RenderPass* rp = rpass;
+		RenderPass *rp = rpass;
 		if (!dynamicRendering)
 		{
-			if (rpass==nullptr)
+			if (rpass == nullptr)
 			{
 				rp = AccessRenderPass(m_SwapChainRenderPass);
 			}
@@ -103,8 +105,7 @@ namespace Czuch
 			return INVALID_HANDLE(PipelineHandle);
 		}
 
-
-		Pipeline* ps = new Pipeline();
+		Pipeline *ps = new Pipeline();
 		ps->m_InternalResourceState = std::make_shared<Pipeline_Vulkan>();
 		ps->m_desc = std::move(*desc);
 		ps->device = this;
@@ -120,7 +121,7 @@ namespace Czuch
 			ps->AddLayout(CreateDescriptorSetLayout(&ps->m_desc.layouts[a]));
 		}
 
-		//VkRenderPass renderPass = rp != nullptr ? Internal_to_RenderPass(rp)->renderPass : VK_NULL_HANDLE;
+		// VkRenderPass renderPass = rp != nullptr ? Internal_to_RenderPass(rp)->renderPass : VK_NULL_HANDLE;
 
 		VulkanPipelineBuilder builder(this, Internal_To_Pipeline(ps), ps);
 		if (!builder.BuildPipeline(rp))
@@ -136,23 +137,24 @@ namespace Czuch
 		return h;
 	}
 
-	ShaderHandle VulkanDevice::CreateShader(ShaderStage shaderStage, const char* shaderCode, size_t shaderCodeSize)
+	ShaderHandle VulkanDevice::CreateShader(ShaderStage shaderStage, const char *shaderCode, size_t shaderCodeSize)
 	{
 		CZUCH_BE_ASSERT(shaderCode, "CreateShader NULL shader code input");
 
-		Shader* shader = new Shader();
+		Shader *shader = new Shader();
 		shader->m_InternalResourceState = std::make_shared<Shader_Vulkan>();
 		shader->stage = shaderStage;
 
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		createInfo.codeSize = shaderCodeSize;
-		createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode);
+		createInfo.pCode = reinterpret_cast<const uint32_t *>(shaderCode);
 
-		Shader_Vulkan* vulkan_shader = Internal_To_Shader(shader);
+		Shader_Vulkan *vulkan_shader = Internal_To_Shader(shader);
 		vulkan_shader->device = m_Device;
 
-		if (vkCreateShaderModule(m_Device, &createInfo, nullptr, &vulkan_shader->shaderModule) != VK_SUCCESS) {
+		if (vkCreateShaderModule(m_Device, &createInfo, nullptr, &vulkan_shader->shaderModule) != VK_SUCCESS)
+		{
 			LOG_BE_ERROR("{0} Failed to create new shader module", Tag);
 			delete shader;
 			return INVALID_HANDLE(ShaderHandle);
@@ -176,7 +178,7 @@ namespace Czuch
 	VkSubpassDescription subpass = {};
 	VkAttachmentDescription attachments[k_max_image_outputs + 1]{};
 
-	void FillRenderPassInfo(VkRenderPassCreateInfo& info, const RenderPassDesc& desc)
+	void FillRenderPassInfo(VkRenderPassCreateInfo &info, const RenderPassDesc &desc)
 	{
 		VkAttachmentLoadOp depthOp, stencilOp;
 		VkImageLayout depthStart;
@@ -210,8 +212,9 @@ namespace Czuch
 			break;
 		}
 
-		//color attachments
-		for (U32 c = 0; c < desc.attachmentsCount; ++c) {
+		// color attachments
+		for (U32 c = 0; c < desc.attachmentsCount; ++c)
+		{
 			VkAttachmentLoadOp colorOp;
 			VkImageLayout colorInitial;
 
@@ -231,7 +234,7 @@ namespace Czuch
 				break;
 			}
 
-			VkAttachmentDescription& color_attachment = colorAttachments[c];
+			VkAttachmentDescription &color_attachment = colorAttachments[c];
 			color_attachment.format = ConvertFormat(desc.colorAttachments[c].format);
 			color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
 			color_attachment.loadOp = colorOp;
@@ -242,13 +245,14 @@ namespace Czuch
 			color_attachment.finalLayout = ConvertImageLayout(desc.colorAttachments[c].layout);
 			color_attachment.flags = 0;
 
-			VkAttachmentReference& color_attachment_ref = colorAttachmentsRef[c];
+			VkAttachmentReference &color_attachment_ref = colorAttachmentsRef[c];
 			color_attachment_ref.attachment = c;
 			color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		}
 
 		// Depth attachment
-		if (IsDepthFormat(desc.depthStencilFormat)) {
+		if (IsDepthFormat(desc.depthStencilFormat))
+		{
 
 			depthAttachment.format = ConvertFormat(desc.depthStencilFormat);
 			depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -266,11 +270,12 @@ namespace Czuch
 
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-		for (U32 activeAttachments = 0; activeAttachments < desc.attachmentsCount; ++activeAttachments) {
+		for (U32 activeAttachments = 0; activeAttachments < desc.attachmentsCount; ++activeAttachments)
+		{
 			attachments[activeAttachments] = colorAttachments[activeAttachments];
 		}
 		subpass.colorAttachmentCount = desc.attachmentsCount;
-		subpass.pColorAttachments = desc.attachmentsCount==0?nullptr:colorAttachmentsRef;
+		subpass.pColorAttachments = desc.attachmentsCount == 0 ? nullptr : colorAttachmentsRef;
 
 		subpass.pDepthStencilAttachment = nullptr;
 
@@ -289,9 +294,9 @@ namespace Czuch
 		info.pSubpasses = &subpass;
 	}
 
-	RenderPassHandle VulkanDevice::CreateRenderPass(const RenderPassDesc* desc)
+	RenderPassHandle VulkanDevice::CreateRenderPass(const RenderPassDesc *desc)
 	{
-		//First check if given render pass already exists
+		// First check if given render pass already exists
 		if (desc != nullptr)
 		{
 			auto handle = GetRenderPassWithDescIfExist(desc);
@@ -301,8 +306,7 @@ namespace Czuch
 			}
 		}
 
-
-		RenderPass* rp = new RenderPass();
+		RenderPass *rp = new RenderPass();
 		rp->m_InternalResourceState = std::make_shared<RenderPass_Vulkan>();
 		if (desc != nullptr)
 		{
@@ -317,7 +321,7 @@ namespace Czuch
 		}
 
 		bool mainPass = desc == nullptr;
-		const VulkanRenderPassDesc* m_RpDesc = !mainPass ? dynamic_cast<const VulkanRenderPassDesc*>(desc) : nullptr;
+		const VulkanRenderPassDesc *m_RpDesc = !mainPass ? dynamic_cast<const VulkanRenderPassDesc *>(desc) : nullptr;
 
 		if (m_RpDesc != nullptr && m_RpDesc->mainRenderPass)
 		{
@@ -360,10 +364,11 @@ namespace Czuch
 			dependency.dstSubpass = 0;
 			dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 			dependency.srcAccessMask = 0;
-			dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;;
+			dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+			;
 			dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-			VkAttachmentDescription attachmentsArray[2] = { colorAttachment,depthAttachment };
+			VkAttachmentDescription attachmentsArray[2] = {colorAttachment, depthAttachment};
 
 			VkRenderPassCreateInfo renderPassInfo{};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -374,10 +379,11 @@ namespace Czuch
 			renderPassInfo.dependencyCount = 1;
 			renderPassInfo.pDependencies = &dependency;
 
-			RenderPass_Vulkan* rpass = Internal_to_RenderPass(rp);
+			RenderPass_Vulkan *rpass = Internal_to_RenderPass(rp);
 			rpass->device = m_Device;
 
-			if (vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &(rpass->renderPass)) != VK_SUCCESS) {
+			if (vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &(rpass->renderPass)) != VK_SUCCESS)
+			{
 				LOG_BE_ERROR("{0} Failed to create new render pass", Tag);
 				delete rp;
 				return INVALID_HANDLE(RenderPassHandle);
@@ -388,26 +394,26 @@ namespace Czuch
 			return h;
 		}
 
-
-		RenderPass_Vulkan* rpass = Internal_to_RenderPass(rp);
+		RenderPass_Vulkan *rpass = Internal_to_RenderPass(rp);
 		rpass->device = m_Device;
 
 		if (m_RpDesc != nullptr)
 		{
-			if (vkCreateRenderPass(m_Device, &m_RpDesc->renderPassInfo, nullptr, &(rpass->renderPass)) != VK_SUCCESS) {
+			if (vkCreateRenderPass(m_Device, &m_RpDesc->renderPassInfo, nullptr, &(rpass->renderPass)) != VK_SUCCESS)
+			{
 				LOG_BE_ERROR("{0} Failed to create new render pass", Tag);
 				delete rp;
 				return INVALID_HANDLE(RenderPassHandle);
 			}
-
 		}
 		else
 		{
-			//create vk render pass info from base struct
+			// create vk render pass info from base struct
 			VkRenderPassCreateInfo renderPassInfo{};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 			FillRenderPassInfo(renderPassInfo, rp->desc);
-			if (vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &(rpass->renderPass)) != VK_SUCCESS) {
+			if (vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &(rpass->renderPass)) != VK_SUCCESS)
+			{
 				LOG_BE_ERROR("{0} Failed to create new render pass", Tag);
 				delete rp;
 				return INVALID_HANDLE(RenderPassHandle);
@@ -420,7 +426,7 @@ namespace Czuch
 		return h;
 	}
 
-	VkDescriptorSetLayoutBinding CreateBinding(const DescriptorSetLayoutDesc::Binding& binding, U32 stages)
+	VkDescriptorSetLayoutBinding CreateBinding(const DescriptorSetLayoutDesc::Binding &binding, U32 stages)
 	{
 		VkDescriptorSetLayoutBinding vkBinding{};
 		vkBinding.binding = binding.index;
@@ -431,7 +437,7 @@ namespace Czuch
 		return vkBinding;
 	}
 
-	DescriptorSetLayoutHandle VulkanDevice::CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* desc)
+	DescriptorSetLayoutHandle VulkanDevice::CreateDescriptorSetLayout(const DescriptorSetLayoutDesc *desc)
 	{
 		if (desc->hasCombinedImageSampler && HANDLE_IS_VALID(m_BindlessDescriptorSetLayoutHandle))
 		{
@@ -440,7 +446,7 @@ namespace Czuch
 
 		CZUCH_BE_ASSERT(desc != nullptr, "Invalid descriptor set layout desc.");
 
-		DescriptorSetLayout* dsl = new DescriptorSetLayout();
+		DescriptorSetLayout *dsl = new DescriptorSetLayout();
 		dsl->m_InternalResourceState = std::make_shared<DescriptorSetLayout_Vulkan>();
 		dsl->desc = *desc;
 
@@ -458,45 +464,47 @@ namespace Czuch
 		layoutInfo.pNext = desc->next;
 		if (desc->next == nullptr && desc->hasCombinedImageSampler)
 		{
-			VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+			VkDescriptorBindingFlags bindlessFlags[] =
+				{VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
+				 0};
 			VkDescriptorSetLayoutBindingFlagsCreateInfo layoutFlagsCreateInfo = {};
 			layoutFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-			layoutFlagsCreateInfo.bindingCount = 1;
-			layoutFlagsCreateInfo.pBindingFlags = &bindlessFlags;
+			layoutFlagsCreateInfo.bindingCount = 2;
+			layoutFlagsCreateInfo.pBindingFlags = bindlessFlags;
 
 			layoutInfo.pNext = &layoutFlagsCreateInfo;
 			layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 		}
 
-		DescriptorSetLayout_Vulkan* dslayout = Internal_to_DescriptorSetLayout(dsl);
+		DescriptorSetLayout_Vulkan *dslayout = Internal_to_DescriptorSetLayout(dsl);
 		dslayout->device = m_Device;
 
 		dslayout->layout = m_DescriptorLayoutCache->CreateDescriptorLayout(&layoutInfo);
 
-		if (dslayout->layout == nullptr) {
+		if (dslayout->layout == nullptr)
+		{
 			LOG_BE_ERROR("{0} Failed to create new descriptor set layout", Tag);
 			delete dsl;
 			return INVALID_HANDLE(DescriptorSetLayoutHandle);
 		}
-
 
 		DescriptorSetLayoutHandle h;
 		h.handle = m_ResContainer.descriptorSetLayouts.Add(dsl);
 		return h;
 	}
 
-	FrameBufferHandle VulkanDevice::CreateFrameBuffer(const FrameBufferDesc* desc, bool resize, FrameBufferHandle handle)
+	FrameBufferHandle VulkanDevice::CreateFrameBuffer(const FrameBufferDesc *desc, bool resize, FrameBufferHandle handle)
 	{
 		CZUCH_BE_ASSERT(desc != nullptr, "Invalid frame buffer desc.");
 
 		if (resize)
 		{
-			FrameBuffer* fb = AccessFrameBuffer(handle);
+			FrameBuffer *fb = AccessFrameBuffer(handle);
 			if (HasDynamicRenderingEnabled())
 			{
 				return handle;
 			}
-			FrameBuffer_Vulkan* vulkanFramebuffer = Internal_to_Framebuffer(fb);
+			FrameBuffer_Vulkan *vulkanFramebuffer = Internal_to_Framebuffer(fb);
 			vulkanFramebuffer->Release();
 
 			VkImageView attachments[k_max_image_outputs];
@@ -504,13 +512,13 @@ namespace Czuch
 
 			for (U32 a = 0; a < desc->renderTargetsCount; a++)
 			{
-				Texture* colorTexture = AccessTexture(desc->renderTextures[a]);
+				Texture *colorTexture = AccessTexture(desc->renderTextures[a]);
 				attachments[a] = Internal_to_Texture(colorTexture)->imageView;
 			}
 
 			if (HANDLE_IS_VALID(desc->depthStencilTexture))
 			{
-				Texture* depthTexture = AccessTexture(desc->depthStencilTexture);
+				Texture *depthTexture = AccessTexture(desc->depthStencilTexture);
 				attachments[desc->renderTargetsCount] = Internal_to_Texture(depthTexture)->imageView;
 			}
 
@@ -518,7 +526,8 @@ namespace Czuch
 			vulkanFramebuffer->createInfo.width = desc->width;
 			vulkanFramebuffer->createInfo.height = desc->height;
 
-			if (vkCreateFramebuffer(m_Device, &vulkanFramebuffer->createInfo, nullptr, &vulkanFramebuffer->framebuffer) != VK_SUCCESS) {
+			if (vkCreateFramebuffer(m_Device, &vulkanFramebuffer->createInfo, nullptr, &vulkanFramebuffer->framebuffer) != VK_SUCCESS)
+			{
 				LOG_BE_ERROR("{0} Failed to create new frame buffer", Tag);
 				return INVALID_HANDLE(FrameBufferHandle);
 			}
@@ -526,7 +535,7 @@ namespace Czuch
 			return handle;
 		}
 
-		FrameBuffer* fb = new FrameBuffer();
+		FrameBuffer *fb = new FrameBuffer();
 		fb->m_InternalResourceState = std::make_shared<FrameBuffer_Vulkan>();
 		fb->desc = *desc;
 
@@ -537,20 +546,20 @@ namespace Czuch
 			return h;
 		}
 
-		RenderPass* rp = AccessRenderPass(desc->renderPass);
+		RenderPass *rp = AccessRenderPass(desc->renderPass);
 
 		VkImageView attachments[k_max_image_outputs];
 		U32 count = HANDLE_IS_VALID(desc->depthStencilTexture) ? desc->renderTargetsCount + 1 : desc->renderTargetsCount;
 
 		for (U32 a = 0; a < desc->renderTargetsCount; a++)
 		{
-			Texture* colorTexture = AccessTexture(desc->renderTextures[a]);
+			Texture *colorTexture = AccessTexture(desc->renderTextures[a]);
 			attachments[a] = Internal_to_Texture(colorTexture)->imageView;
 		}
 
 		if (HANDLE_IS_VALID(desc->depthStencilTexture))
 		{
-			Texture* depthTexture = AccessTexture(desc->depthStencilTexture);
+			Texture *depthTexture = AccessTexture(desc->depthStencilTexture);
 			attachments[desc->renderTargetsCount] = Internal_to_Texture(depthTexture)->imageView;
 		}
 
@@ -565,12 +574,12 @@ namespace Czuch
 		framebufferInfo.height = desc->height;
 		framebufferInfo.layers = 1;
 
-
 		auto vulkanFramebuffer = Internal_to_Framebuffer(fb);
 		vulkanFramebuffer->createInfo = framebufferInfo;
 		vulkanFramebuffer->device = m_Device;
 
-		if (vkCreateFramebuffer(m_Device, &framebufferInfo, nullptr, &vulkanFramebuffer->framebuffer) != VK_SUCCESS) {
+		if (vkCreateFramebuffer(m_Device, &framebufferInfo, nullptr, &vulkanFramebuffer->framebuffer) != VK_SUCCESS)
+		{
 			LOG_BE_ERROR("{0} Failed to create new frame buffer", Tag);
 			delete fb;
 			return INVALID_HANDLE(FrameBufferHandle);
@@ -581,18 +590,20 @@ namespace Czuch
 		return h;
 	}
 
-	CommandBufferHandle VulkanDevice::CreateCommandBuffer(bool isPrimary, void* pool)
+	CommandBufferHandle VulkanDevice::CreateCommandBuffer(bool isPrimary, void *pool)
 	{
-		VulkanCommandBuffer* cmdBuffer = nullptr;
+		VulkanCommandBuffer *cmdBuffer = nullptr;
 		VkCommandBuffer commandBuffer;
 
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = pool == nullptr ? m_CommandPool : (VkCommandPool)pool;;
+		allocInfo.commandPool = pool == nullptr ? m_CommandPool : (VkCommandPool)pool;
+		;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandBufferCount = 1;
 
-		if (vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
+		if (vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer) != VK_SUCCESS)
+		{
 			LOG_BE_ERROR("{0} Failed to create new command buffer", Tag);
 			return INVALID_HANDLE(CommandBufferHandle);
 		}
@@ -622,7 +633,8 @@ namespace Czuch
 		I32 mipWidth = texWidth;
 		I32 mipHeight = texHeight;
 
-		for (U32 i = 1; i < mipLevels; i++) {
+		for (U32 i = 1; i < mipLevels; i++)
+		{
 			barrier.subresourceRange.baseMipLevel = i - 1;
 			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 			barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -630,30 +642,30 @@ namespace Czuch
 			barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
 			vkCmdPipelineBarrier(commandBuffer,
-				VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-				0, nullptr,
-				0, nullptr,
-				1, &barrier);
+								 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+								 0, nullptr,
+								 0, nullptr,
+								 1, &barrier);
 
 			VkImageBlit blit{};
-			blit.srcOffsets[0] = { 0, 0, 0 };
-			blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+			blit.srcOffsets[0] = {0, 0, 0};
+			blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
 			blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			blit.srcSubresource.mipLevel = i - 1;
 			blit.srcSubresource.baseArrayLayer = 0;
 			blit.srcSubresource.layerCount = 1;
-			blit.dstOffsets[0] = { 0, 0, 0 };
-			blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+			blit.dstOffsets[0] = {0, 0, 0};
+			blit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
 			blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			blit.dstSubresource.mipLevel = i;
 			blit.dstSubresource.baseArrayLayer = 0;
 			blit.dstSubresource.layerCount = 1;
 
 			vkCmdBlitImage(commandBuffer,
-				image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-				image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-				1, &blit,
-				VK_FILTER_LINEAR);
+						   image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+						   image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+						   1, &blit,
+						   VK_FILTER_LINEAR);
 
 			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 			barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -661,13 +673,15 @@ namespace Czuch
 			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
 			vkCmdPipelineBarrier(commandBuffer,
-				VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-				0, nullptr,
-				0, nullptr,
-				1, &barrier);
+								 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+								 0, nullptr,
+								 0, nullptr,
+								 1, &barrier);
 
-			if (mipWidth > 1) mipWidth /= 2;
-			if (mipHeight > 1) mipHeight /= 2;
+			if (mipWidth > 1)
+				mipWidth /= 2;
+			if (mipHeight > 1)
+				mipHeight /= 2;
 		}
 
 		barrier.subresourceRange.baseMipLevel = mipLevels - 1;
@@ -677,20 +691,20 @@ namespace Czuch
 		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
 		vkCmdPipelineBarrier(commandBuffer,
-			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-			0, nullptr,
-			0, nullptr,
-			1, &barrier);
+							 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+							 0, nullptr,
+							 0, nullptr,
+							 1, &barrier);
 
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	TextureHandle VulkanDevice::CreateTexture(const TextureDesc* desc, bool resize, TextureHandle handle)
+	TextureHandle VulkanDevice::CreateTexture(const TextureDesc *desc, bool resize, TextureHandle handle)
 	{
 		CZUCH_BE_ASSERT(desc != nullptr, "Invalid texture desc.");
 
-		Texture* color_texture = nullptr;
-		Texture_Vulkan* vulkanTexture = nullptr;
+		Texture *color_texture = nullptr;
+		Texture_Vulkan *vulkanTexture = nullptr;
 
 		if (resize == false)
 		{
@@ -709,7 +723,6 @@ namespace Czuch
 			vulkanTexture->Release();
 		}
 
-
 		if (desc->texData != nullptr)
 		{
 
@@ -726,14 +739,14 @@ namespace Czuch
 				return INVALID_HANDLE(TextureHandle);
 			}
 
-			void* data;
+			void *data;
 			vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
 			memcpy(data, desc->texData, settingsStageBuffer.inSize);
 			vmaUnmapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc);
 			VkFormat targetFormat = ConvertFormat(desc->format);
 
 			auto imageWithAlloc = CreateImage(desc->type, desc->width, desc->height, desc->mip_levels, ConvertSamplesCount(desc->sample_count), targetFormat,
-				VK_IMAGE_TILING_OPTIMAL,/* VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT*/ ConvertImageUsageFlags((U32)desc->usageFlags), VK_IMAGE_LAYOUT_UNDEFINED, VK_SHARING_MODE_EXCLUSIVE);
+											  VK_IMAGE_TILING_OPTIMAL, /* VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT*/ ConvertImageUsageFlags((U32)desc->usageFlags), VK_IMAGE_LAYOUT_UNDEFINED, VK_SHARING_MODE_EXCLUSIVE);
 
 			if (imageWithAlloc.allocation == nullptr || imageWithAlloc.image == nullptr)
 			{
@@ -744,10 +757,10 @@ namespace Czuch
 			vulkanTexture->image = imageWithAlloc.image;
 			vulkanTexture->allocation = imageWithAlloc.allocation;
 
-			//transition
-			TransitionImageLayout(nullptr,vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,0,desc->mip_levels,IsDepthFormat(desc->format));
+			// transition
+			TransitionImageLayout(nullptr, vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, desc->mip_levels, IsDepthFormat(desc->format));
 
-			//copy staging buffe to target image
+			// copy staging buffe to target image
 			CopyBufferToImage(settingsStageBuffer.outBuffer, vulkanTexture->image, desc->width, desc->height);
 
 			if (desc->mip_levels > 1)
@@ -756,10 +769,9 @@ namespace Czuch
 			}
 			else
 			{
-				//transition for read in ps
+				// transition for read in ps
 				TransitionImageLayout(nullptr, vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, ConvertImageLayout(ImageLayout::SHADER_READ_ONLY_OPTIMAL), 0, desc->mip_levels, IsDepthFormat(desc->format));
 			}
-	
 
 			vmaDestroyBuffer(m_VmaAllocator, settingsStageBuffer.outBuffer, settingsStageBuffer.outMemAlloc);
 		}
@@ -767,7 +779,7 @@ namespace Czuch
 		{
 			VkFormat targetFormat = ConvertFormat(desc->format);
 			auto imageWithAlloc = CreateImage(desc->type, desc->width, desc->height, desc->mip_levels, ConvertSamplesCount(desc->sample_count), targetFormat,
-				VK_IMAGE_TILING_OPTIMAL, ConvertImageUsageFlags((U32)desc->usageFlags), VK_IMAGE_LAYOUT_UNDEFINED, VK_SHARING_MODE_EXCLUSIVE);
+											  VK_IMAGE_TILING_OPTIMAL, ConvertImageUsageFlags((U32)desc->usageFlags), VK_IMAGE_LAYOUT_UNDEFINED, VK_SHARING_MODE_EXCLUSIVE);
 
 			if (imageWithAlloc.allocation == nullptr || imageWithAlloc.image == nullptr)
 			{
@@ -778,11 +790,11 @@ namespace Czuch
 			vulkanTexture->image = imageWithAlloc.image;
 			vulkanTexture->allocation = imageWithAlloc.allocation;
 
-			if (desc->resourceType & ResourceState::SHADER_RESOURCE && desc->mip_levels<=1)
+			if (desc->resourceType & ResourceState::SHADER_RESOURCE && desc->mip_levels <= 1)
 			{
-				TransitionImageLayout(nullptr,vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,0,desc->mip_levels,IsDepthFormat(desc->format));
+				TransitionImageLayout(nullptr, vulkanTexture->image, targetFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, desc->mip_levels, IsDepthFormat(desc->format));
 			}
-			else if(desc->mip_levels > 1)
+			else if (desc->mip_levels > 1)
 			{
 				GenerateMipmaps(vulkanTexture->image, targetFormat, desc->width, desc->height, desc->mip_levels);
 			}
@@ -790,7 +802,7 @@ namespace Czuch
 
 		auto aspect = ConvertImageAspect((U32)desc->aspectFlags);
 
-		vulkanTexture->imageView = CreateImageView(vulkanTexture->image, ConvertFormat(desc->format), aspect,desc->mip_levels);
+		vulkanTexture->imageView = CreateImageView(vulkanTexture->image, ConvertFormat(desc->format), aspect, desc->mip_levels);
 		vulkanTexture->sampler = CreateImageSampler(desc->samplerDesc);
 
 		if (resize)
@@ -800,14 +812,13 @@ namespace Czuch
 
 		TextureHandle h;
 		h.handle = m_ResContainer.textures.Add(color_texture);
-		LOG_BE_INFO("{0} Texture created with name: {1} with id: {2}",Tag,desc->name, h.handle);
+		LOG_BE_INFO("{0} Texture created with name: {1} with id: {2}", Tag, desc->name, h.handle);
 		return h;
 	}
 
-
-	MeshHandle VulkanDevice::CreateMesh(MeshData& meshData)
+	MeshHandle VulkanDevice::CreateMesh(MeshData &meshData)
 	{
-		Mesh* mesh = new Mesh();
+		Mesh *mesh = new Mesh();
 		mesh->data = &meshData;
 		mesh->device = this;
 		MaterialInstanceHandle matInstanceHandle = AssetsManager::GetPtr()->GetAsset<MaterialInstanceAsset>(meshData.materialInstanceAssetHandle)->GetMaterialInstanceResourceHandle();
@@ -821,7 +832,7 @@ namespace Czuch
 		vbDesc.stride = sizeof(Vertex);
 		vbDesc.usage = Usage::DEFAULT;
 		vbDesc.bind_flags = BindFlag::VERTEX_BUFFER;
-		vbDesc.initData = (void*)mesh->data->vertices.data();
+		vbDesc.initData = (void *)mesh->data->vertices.data();
 		vbDesc.exclusiveBuffer = false;
 		vbDesc.bufferType = BufferType::VERTEX;
 
@@ -833,7 +844,7 @@ namespace Czuch
 		indicesDesc.stride = sizeof(U32);
 		indicesDesc.usage = Usage::DEFAULT;
 		indicesDesc.bind_flags = BindFlag::INDEX_BUFFER;
-		indicesDesc.initData = (void*)mesh->data->indices.data();
+		indicesDesc.initData = (void *)mesh->data->indices.data();
 		indicesDesc.exclusiveBuffer = false;
 		indicesDesc.bufferType = BufferType::INDICES;
 
@@ -844,15 +855,15 @@ namespace Czuch
 		return h;
 	}
 
-	MaterialHandle VulkanDevice::CreateMaterial(MaterialDefinitionDesc* materialData)
+	MaterialHandle VulkanDevice::CreateMaterial(MaterialDefinitionDesc *materialData)
 	{
 		U32 passesCount = materialData->PassesCount();
-		Material* material = new Material();
-		material->desc =materialData;
+		Material *material = new Material();
+		material->desc = materialData;
 		material->pipelines.resize(passesCount);
 		for (U32 a = 0; a < passesCount; a++)
 		{
-			auto& passDesc = material->GetDesc().GetMaterialPassDescAt(a);
+			auto &passDesc = material->GetDesc().GetMaterialPassDescAt(a);
 			material->pipelines[a] = CreatePipelineState(&passDesc, GetRenderPassOfType(passDesc.passType), m_RenderSettings->dynamicRendering);
 		}
 
@@ -861,9 +872,9 @@ namespace Czuch
 		return h;
 	}
 
-	MaterialInstanceHandle VulkanDevice::CreateMaterialInstance(MaterialInstanceDesc& materialInstanceDesc)
+	MaterialInstanceHandle VulkanDevice::CreateMaterialInstance(MaterialInstanceDesc &materialInstanceDesc)
 	{
-		MaterialInstance* matInstance = new MaterialInstance();
+		MaterialInstance *matInstance = new MaterialInstance();
 		matInstance->device = this;
 		matInstance->desc = &materialInstanceDesc;
 		auto asset = AssetsManager::GetPtr()->GetAsset<MaterialAsset>(matInstance->desc->materialAsset);
@@ -871,14 +882,14 @@ namespace Czuch
 		matInstance->desc->isTransparent = asset->IsTransparent();
 		matInstance->passesCount = asset->GetPassesCount();
 		auto material = AccessMaterial(matInstance->handle);
-		auto* matDesc = material->desc;
+		auto *matDesc = material->desc;
 
-		//make sure all buffers are created
-		auto desc= &materialInstanceDesc;
+		// make sure all buffers are created
+		auto desc = &materialInstanceDesc;
 		for (int i = 0; i < desc->paramsDesc.size(); ++i)
 		{
-			auto& paramDesc = desc->paramsDesc[i];
-			if (paramDesc.type == DescriptorType::UNIFORM_BUFFER && paramDesc.isInternal==false)
+			auto &paramDesc = desc->paramsDesc[i];
+			if (paramDesc.type == DescriptorType::UNIFORM_BUFFER && paramDesc.isInternal == false)
 			{
 				if (paramDesc.resource == Invalid_Handle_Id)
 				{
@@ -898,7 +909,7 @@ namespace Czuch
 		return h;
 	}
 
-	BufferHandle VulkanDevice::CreateUBOBuffer(MaterialCustomBufferData* ubo)
+	BufferHandle VulkanDevice::CreateUBOBuffer(MaterialCustomBufferData *ubo)
 	{
 		BufferDesc bufferDesc{};
 		bufferDesc.size = ubo->GetSize();
@@ -907,7 +918,7 @@ namespace Czuch
 		bufferDesc.stride = ubo->GetSize();
 		bufferDesc.elementsCount = 1;
 		bufferDesc.bind_flags = BindFlag::UNIFORM_BUFFER;
-		bufferDesc.initData =ubo->GetData();
+		bufferDesc.initData = ubo->GetData();
 		bufferDesc.exclusiveBuffer = true;
 
 		bufferDesc.customData = ubo;
@@ -917,8 +928,8 @@ namespace Czuch
 	BufferHandle VulkanDevice::CreateSSBOBuffer(U32 elementsCount, U32 elemSize, bool permaMapped)
 	{
 		BufferDesc bufferDesc{};
-		bufferDesc.size = elementsCount*elemSize;
-		bufferDesc.usage = permaMapped?Usage::MEMORY_USAGE_CPU_TO_GPU:Usage::MEMORY_USAGE_GPU_ONLY;
+		bufferDesc.size = elementsCount * elemSize;
+		bufferDesc.usage = permaMapped ? Usage::MEMORY_USAGE_CPU_TO_GPU : Usage::MEMORY_USAGE_GPU_ONLY;
 		bufferDesc.stride = elemSize;
 		bufferDesc.elementsCount = elementsCount;
 		bufferDesc.bind_flags = BindFlag::STORAGE_BUFFER;
@@ -929,7 +940,7 @@ namespace Czuch
 		return CreateBuffer(&bufferDesc);
 	}
 
-	bool VulkanDevice::CopyDataToBuffer(Buffer_Vulkan* bufferVulkan, const void* dataIn, U32 size, U32 offset) const
+	bool VulkanDevice::CopyDataToBuffer(Buffer_Vulkan *bufferVulkan, const void *dataIn, U32 size, U32 offset) const
 	{
 		BufferInternalSettings settingsStageBuffer{};
 		settingsStageBuffer.inSize = size;
@@ -945,7 +956,7 @@ namespace Czuch
 		}
 
 		// Map memory and check for success
-		void* data = nullptr;
+		void *data = nullptr;
 		VkResult result = vmaMapMemory(m_VmaAllocator, settingsStageBuffer.outMemAlloc, &data);
 
 		if (result != VK_SUCCESS)
@@ -972,31 +983,31 @@ namespace Czuch
 		return true;
 	}
 
-	BufferHandle VulkanDevice::CreateBuffer(const BufferDesc* desc)
+	BufferHandle VulkanDevice::CreateBuffer(const BufferDesc *desc)
 	{
 		CZUCH_BE_ASSERT(desc != nullptr, "Invalid buffer desc.");
 
 		if (desc->exclusiveBuffer == false && desc->persistentMapped == false)
 		{
-			//check if buffer already exists
+			// check if buffer already exists
 			auto handle = m_MultipleBuffers.GetBuffer(*desc);
 			if (HANDLE_IS_VALID(handle))
 			{
-				auto buffer=AccessBuffer(handle);
+				auto buffer = AccessBuffer(handle);
 				CopyDataToBuffer(Internal_to_Buffer(buffer), desc->initData, desc->size, handle.offset);
 				handle.size = desc->size;
 				return handle;
 			}
 
-			//if not, create new one
-			auto handleBuffer=m_MultipleBuffers.CreateBuffer(*desc,this,MAX_SINGLE_BUFFER_SIZE);
+			// if not, create new one
+			auto handleBuffer = m_MultipleBuffers.CreateBuffer(*desc, this, MAX_SINGLE_BUFFER_SIZE);
 			auto bufferVulkan = AccessBuffer(handleBuffer);
 			CopyDataToBuffer(Internal_to_Buffer(bufferVulkan), desc->initData, desc->size, handleBuffer.offset);
 			handleBuffer.size = desc->size;
 			return handleBuffer;
 		}
 
-		Buffer* buffer = new Buffer();
+		Buffer *buffer = new Buffer();
 		buffer->desc = *desc;
 		buffer->m_InternalResourceState = std::make_shared<Buffer_Vulkan>();
 
@@ -1037,7 +1048,6 @@ namespace Czuch
 		{
 			usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 		}
-		
 
 		auto bufferVulkan = Internal_to_Buffer(buffer);
 		bufferVulkan->device = m_Device;
@@ -1053,7 +1063,8 @@ namespace Czuch
 		settings.inCreateMapped = desc->persistentMapped;
 		settings.inFlags = usage;
 
-		if (!CreateBuffer_Internal(settings)) {
+		if (!CreateBuffer_Internal(settings))
+		{
 			LOG_BE_ERROR("{0} Failed to create new vulkan buffer", Tag);
 			return INVALID_HANDLE(BufferHandle);
 		}
@@ -1061,12 +1072,11 @@ namespace Czuch
 		bufferVulkan->buffer = settings.outBuffer;
 		bufferVulkan->allocation = settings.outMemAlloc;
 
-
 		if ((HasFlag(desc->bind_flags, BindFlag::VERTEX_BUFFER) || HasFlag(desc->bind_flags, BindFlag::INDEX_BUFFER)) && desc->initData != nullptr)
 		{
 			CopyDataToBuffer(bufferVulkan, desc->initData, desc->size, 0);
 		}
-		else if (desc->persistentMapped==false && desc->initData!=nullptr)
+		else if (desc->persistentMapped == false && desc->initData != nullptr)
 		{
 			CopyDataToBuffer(bufferVulkan, desc->initData, desc->size, 0);
 		}
@@ -1081,7 +1091,7 @@ namespace Czuch
 		return h;
 	}
 
-	bool VulkanDevice::CreateBuffer_Internal(BufferInternalSettings& settings) const
+	bool VulkanDevice::CreateBuffer_Internal(BufferInternalSettings &settings) const
 	{
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -1111,7 +1121,7 @@ namespace Czuch
 		return true;
 	}
 
-	void VulkanDevice::TransitionImageLayout(VkCommandBuffer cmd ,VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout,U32 baseMipLevel,U32 mipCount,bool isDepth)const
+	void VulkanDevice::TransitionImageLayout(VkCommandBuffer cmd, VkImage image, VkFormat format, VkImageLayout currentLayout, VkImageLayout targetLayout, U32 baseMipLevel, U32 mipCount, bool isDepth) const
 	{
 		bool singleTime = false;
 		if (cmd == nullptr)
@@ -1128,14 +1138,17 @@ namespace Czuch
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
-		if (isDepth) {
+		if (isDepth)
+		{
 			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-			if (HasStencilComponent(format)) {
+			if (HasStencilComponent(format))
+			{
 				barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
 			}
 		}
-		else {
+		else
+		{
 			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		}
 
@@ -1148,21 +1161,24 @@ namespace Czuch
 		VkPipelineStageFlags sourceStage;
 		VkPipelineStageFlags destinationStage;
 
-		if (currentLayout == VK_IMAGE_LAYOUT_UNDEFINED && targetLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+		if (currentLayout == VK_IMAGE_LAYOUT_UNDEFINED && targetLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+		{
 			barrier.srcAccessMask = 0;
 			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		}
-		else if (currentLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && targetLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+		else if (currentLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && targetLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		{
 			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
 			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		}
-		else if (currentLayout == VK_IMAGE_LAYOUT_UNDEFINED && targetLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+		else if (currentLayout == VK_IMAGE_LAYOUT_UNDEFINED && targetLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+		{
 			barrier.srcAccessMask = 0;
 			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
@@ -1172,7 +1188,7 @@ namespace Czuch
 		else if (currentLayout == VK_IMAGE_LAYOUT_UNDEFINED && targetLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)
 		{
 			barrier.srcAccessMask = 0;
-			barrier.dstAccessMask =  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
@@ -1257,7 +1273,8 @@ namespace Czuch
 			sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 			destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		}
-		else {
+		else
+		{
 			LOG_BE_ERROR("{0} Failed to find proper source and destinations settings for image transition layer. From {1} to {2}", Tag, VulkanImageLayoutToString(currentLayout), VulkanImageLayoutToString(targetLayout));
 			if (singleTime)
 			{
@@ -1266,15 +1283,13 @@ namespace Czuch
 			return;
 		}
 
-
 		vkCmdPipelineBarrier(
 			cmd,
 			sourceStage, destinationStage,
 			0,
 			0, nullptr,
 			0, nullptr,
-			1, &barrier
-		);
+			1, &barrier);
 
 		if (singleTime)
 		{
@@ -1317,12 +1332,11 @@ namespace Czuch
 		region.imageSubresource.baseArrayLayer = 0;
 		region.imageSubresource.layerCount = 1;
 
-		region.imageOffset = { 0, 0, 0 };
+		region.imageOffset = {0, 0, 0};
 		region.imageExtent = {
 			w,
 			h,
-			1
-		};
+			1};
 
 		vkCmdCopyBufferToImage(
 			cmd,
@@ -1330,18 +1344,16 @@ namespace Czuch
 			dstImage,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			1,
-			&region
-		);
+			&region);
 
 		EndSingleTimeCommands(cmd);
 	}
-
 
 #pragma endregion
 
 #pragma region Release
 
-	bool VulkanDevice::Release(BufferHandle& buffer)
+	bool VulkanDevice::Release(BufferHandle &buffer)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(buffer), "Invalid buffer passed to release.");
 
@@ -1351,122 +1363,122 @@ namespace Czuch
 			return true;
 		}
 
-		Buffer* b = nullptr;
+		Buffer *b = nullptr;
 		bool result = m_ResContainer.buffers.Get(buffer.handle, &b);
 		m_ResContainer.buffers.Remove(buffer.handle);
 		INVALIDATE_HANDLE(buffer)
 		return true;
 	}
 
-	bool VulkanDevice::Release(PipelineHandle& pipeline)
+	bool VulkanDevice::Release(PipelineHandle &pipeline)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(pipeline), "Invalid pipeline passed to release.");
-		Pipeline* p = nullptr;
+		Pipeline *p = nullptr;
 		m_ResContainer.pipelines.Get(pipeline.handle, &p);
 		m_ResContainer.pipelines.Remove(pipeline.handle);
 		INVALIDATE_HANDLE(pipeline)
-			return true;
+		return true;
 	}
 
-	bool VulkanDevice::Release(ShaderHandle& shader)
+	bool VulkanDevice::Release(ShaderHandle &shader)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(shader), "Invalid shader passed to release.");
-		Shader* s = nullptr;
+		Shader *s = nullptr;
 		m_ResContainer.shaders.Get(shader.handle, &s);
 		m_ResContainer.shaders.Remove(shader.handle);
 		INVALIDATE_HANDLE(shader)
-			return true;
+		return true;
 	}
 
-	bool VulkanDevice::Release(RenderPassHandle& rp)
+	bool VulkanDevice::Release(RenderPassHandle &rp)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(rp), "Invalid render pass passed to release.");
-		RenderPass* r = nullptr;
+		RenderPass *r = nullptr;
 		m_ResContainer.renderPasses.Get(rp.handle, &r);
 		m_ResContainer.renderPasses.Remove(rp.handle);
 		INVALIDATE_HANDLE(rp)
-			return true;
+		return true;
 	}
 
-	bool VulkanDevice::Release(DescriptorSetLayoutHandle& dsl)
+	bool VulkanDevice::Release(DescriptorSetLayoutHandle &dsl)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(dsl), "Invalid descriptor set layout to release");
-		DescriptorSetLayout* d = nullptr;
+		DescriptorSetLayout *d = nullptr;
 		m_ResContainer.descriptorSetLayouts.Get(dsl.handle, &d);
 		m_ResContainer.descriptorSetLayouts.Remove(dsl.handle);
 		INVALIDATE_HANDLE(dsl)
-			return true;
+		return true;
 	}
 
-	bool VulkanDevice::Release(FrameBufferHandle& fb)
+	bool VulkanDevice::Release(FrameBufferHandle &fb)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(fb), "Invalid frame buffer to release");
-		FrameBuffer* f = nullptr;
+		FrameBuffer *f = nullptr;
 		m_ResContainer.frameBuffers.Get(fb.handle, &f);
 		m_ResContainer.frameBuffers.Remove(fb.handle);
 		INVALIDATE_HANDLE(fb)
-			return true;
+		return true;
 	}
 
-	bool VulkanDevice::Release(CommandBufferHandle& cb)
+	bool VulkanDevice::Release(CommandBufferHandle &cb)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(cb), "Invalid frame buffer to release");
-		CommandBuffer* c = nullptr;
+		CommandBuffer *c = nullptr;
 		m_ResContainer.commandBuffers.Get(cb.handle, &c);
 		c->Release();
 		m_ResContainer.commandBuffers.Remove(cb.handle);
 		INVALIDATE_HANDLE(cb)
-			return true;
+		return true;
 	}
 
-	bool VulkanDevice::Release(TextureHandle& color_texture)
+	bool VulkanDevice::Release(TextureHandle &color_texture)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(color_texture), "Invalid texture to release");
-		Texture* t = nullptr;
+		Texture *t = nullptr;
 		m_ResContainer.textures.Get(color_texture.handle, &t);
 		m_ResContainer.textures.Remove(color_texture.handle);
 		INVALIDATE_HANDLE(color_texture)
-			return true;
+		return true;
 	}
 
-	bool VulkanDevice::Release(MeshHandle& mesh)
+	bool VulkanDevice::Release(MeshHandle &mesh)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(mesh), "Invalid mesh to release");
-		Mesh* m = nullptr;
+		Mesh *m = nullptr;
 		m_ResContainer.meshes.Get(mesh.handle, &m);
 		m_ResContainer.meshes.Remove(mesh.handle);
 		INVALIDATE_HANDLE(mesh)
-			return true;
+		return true;
 	}
 
-	bool VulkanDevice::Release(MaterialHandle& material)
+	bool VulkanDevice::Release(MaterialHandle &material)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(material), "Invalid material to release");
-		Material* m = nullptr;
+		Material *m = nullptr;
 		m_ResContainer.materials.Get(material.handle, &m);
 		m_ResContainer.materials.Remove(material.handle);
 		INVALIDATE_HANDLE(material)
-			return true;
+		return true;
 	}
 
-	bool VulkanDevice::Release(MaterialInstanceHandle& materialInstance)
+	bool VulkanDevice::Release(MaterialInstanceHandle &materialInstance)
 	{
 		CZUCH_BE_ASSERT(HANDLE_IS_VALID(materialInstance), "Invalid material instance to release");
-		MaterialInstance* m = nullptr;
+		MaterialInstance *m = nullptr;
 		m_ResContainer.materialInstances.Get(materialInstance.handle, &m);
 		m_ResContainer.materialInstances.Remove(materialInstance.handle);
 		INVALIDATE_HANDLE(materialInstance)
 		return true;
 	}
 
-	DescriptorAllocator* VulkanDevice::CreateDescriptorAllocator()
+	DescriptorAllocator *VulkanDevice::CreateDescriptorAllocator()
 	{
 		auto allocator = new DescriptorAllocator();
 		allocator->Init(this);
 		return allocator;
 	}
 
-	void VulkanDevice::ReleaseDescriptorAllocator(DescriptorAllocator* allocator)
+	void VulkanDevice::ReleaseDescriptorAllocator(DescriptorAllocator *allocator)
 	{
 		if (allocator != nullptr)
 		{
@@ -1536,7 +1548,8 @@ namespace Czuch
 		poolInfo.flags = flags;
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-		if (vkCreateCommandPool(m_Device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+		if (vkCreateCommandPool(m_Device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
+		{
 			LOG_BE_ERROR("{0} Failed to create command pool.", Tag);
 			return nullptr;
 		}
@@ -1554,7 +1567,7 @@ namespace Czuch
 		return info;
 	}
 
-	VkSubmitInfo2 VulkanDevice::CreateSubmitInfo(VkCommandBufferSubmitInfo* cmdBufferSubmitInfo, VkSemaphoreSubmitInfo* signalSemaphoreInfo, VkSemaphoreSubmitInfo* waitSemaphoreInfo)
+	VkSubmitInfo2 VulkanDevice::CreateSubmitInfo(VkCommandBufferSubmitInfo *cmdBufferSubmitInfo, VkSemaphoreSubmitInfo *signalSemaphoreInfo, VkSemaphoreSubmitInfo *waitSemaphoreInfo)
 	{
 		VkSubmitInfo2 info = {};
 		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
@@ -1585,25 +1598,26 @@ namespace Czuch
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = &semaphore;
 
-		VkSwapchainKHR swapChains[] = { m_SwapChainData.swapChain };
+		VkSwapchainKHR swapChains[] = {m_SwapChainData.swapChain};
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &imageIndex;
 		presentInfo.pResults = nullptr;
 		VkResult result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
 
-		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FrameBufferResized) {
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FrameBufferResized)
+		{
 			m_FrameBufferResized = false;
 			RecreateSwapChain();
 		}
 	}
 
-	void VulkanDevice::BindSwapChainRenderPass(CommandBuffer* cmdBuffer, uint32_t imageIndex)
+	void VulkanDevice::BindSwapChainRenderPass(CommandBuffer *cmdBuffer, uint32_t imageIndex)
 	{
 		cmdBuffer->BindPass(m_SwapChainRenderPass, m_SwapChainData.swapChainFrameBuffers[imageIndex]);
 	}
 
-	void VulkanDevice::StartDynamicRenderPass(VulkanCommandBuffer* cmdBuffer, uint32_t imageIndex)
+	void VulkanDevice::StartDynamicRenderPass(VulkanCommandBuffer *cmdBuffer, uint32_t imageIndex)
 	{
 		cmdBuffer->BeginDynamicRenderPassForMainPass(m_SwapChainData.swapChainImageViews[imageIndex], m_DepthImage.depthImageView, m_SwapChainData.swapChainExtent.width, m_SwapChainData.swapChainExtent.height);
 	}
@@ -1618,7 +1632,7 @@ namespace Czuch
 		m_DebugWindows.DrawAll();
 	}
 
-	void VulkanDevice::AddDebugWindow(DrawDebugBaseGuiWindow* window)
+	void VulkanDevice::AddDebugWindow(DrawDebugBaseGuiWindow *window)
 	{
 		m_DebugWindows.windows.push_back(window);
 	}
@@ -1626,8 +1640,9 @@ namespace Czuch
 	void VulkanDevice::SubmitToGraphicsQueue(VkSubmitInfo info, VkFence fence)
 	{
 		VkResult result = vkQueueSubmit(m_GraphicsQueue, 1, &info, fence);
-		if (result != VK_SUCCESS) {
-			LOG_BE_ERROR("{0} Failed to submit to graphics queue due: {1}", Tag,VkResultToString(result));
+		if (result != VK_SUCCESS)
+		{
+			LOG_BE_ERROR("{0} Failed to submit to graphics queue due: {1}", Tag, VkResultToString(result));
 		}
 	}
 
@@ -1635,26 +1650,30 @@ namespace Czuch
 	{
 		VkCommandBufferSubmitInfo cmdInfo = CreateCommandBufferSubmitInfo(cmdBuffer);
 		VkSubmitInfo2 info = CreateSubmitInfo(&cmdInfo, nullptr, nullptr);
-		if (vkQueueSubmit2(m_GraphicsQueue, 1, &info, fence) != VK_SUCCESS) {
+		if (vkQueueSubmit2(m_GraphicsQueue, 1, &info, fence) != VK_SUCCESS)
+		{
 			LOG_BE_ERROR("{0} Failed to  immediate submit to graphics queue", Tag);
 		}
 
-		if (vkWaitForFences(m_Device, 1, &fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
+		if (vkWaitForFences(m_Device, 1, &fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS)
+		{
 			LOG_BE_ERROR("{0} Failed to wait for fence", Tag);
 		}
 	}
 
-	uint32_t VulkanDevice::AcquireNextSwapChainImage(VkSemaphore sem, bool& aquireFailed)
+	uint32_t VulkanDevice::AcquireNextSwapChainImage(VkSemaphore sem, bool &aquireFailed)
 	{
 		uint32_t imageIndex;
 		VkResult result = vkAcquireNextImageKHR(m_Device, m_SwapChainData.swapChain, UINT64_MAX, sem, VK_NULL_HANDLE, &imageIndex);
 
-		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
 			RecreateSwapChain();
 			aquireFailed = true;
 			return 0;
 		}
-		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		{
 			aquireFailed = true;
 			return 0;
 		}
@@ -1668,8 +1687,10 @@ namespace Czuch
 
 	U32 VulkanDevice::FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags properties) const
 	{
-		for (U32 i = 0; i < m_MemProperties.memoryTypeCount; i++) {
-			if ((typeFilter & (1 << i)) && (m_MemProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+		for (U32 i = 0; i < m_MemProperties.memoryTypeCount; i++)
+		{
+			if ((typeFilter & (1 << i)) && (m_MemProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			{
 				return i;
 			}
 		}
@@ -1691,7 +1712,8 @@ namespace Czuch
 
 		VkDeviceMemory vertexBufferMemory;
 
-		if (vkAllocateMemory(m_Device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
+		if (vkAllocateMemory(m_Device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
+		{
 			LOG_BE_ERROR("{0} Failed to allocate memory for a buffer.", Tag);
 			return nullptr;
 		}
@@ -1701,7 +1723,7 @@ namespace Czuch
 		return vertexBufferMemory;
 	}
 
-	VkSampler VulkanDevice::CreateImageSampler(const SamplerDesc& desc) const
+	VkSampler VulkanDevice::CreateImageSampler(const SamplerDesc &desc) const
 	{
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1746,7 +1768,8 @@ namespace Czuch
 
 		VkImageView imageView;
 
-		if (vkCreateImageView(m_Device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+		if (vkCreateImageView(m_Device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
+		{
 			LOG_BE_ERROR("{0} failed to create texture image view!", Tag);
 			return nullptr;
 		}
@@ -1780,14 +1803,14 @@ namespace Czuch
 		VmaAllocation alloc;
 
 		VkImage textureImage;
-		if (vmaCreateImage(m_VmaAllocator, &image, &allocCreateInfo, &img, &alloc, nullptr) != VK_SUCCESS) {
+		if (vmaCreateImage(m_VmaAllocator, &image, &allocCreateInfo, &img, &alloc, nullptr) != VK_SUCCESS)
+		{
 			LOG_BE_ERROR("{0} failed to create image!", Tag);
-			return { nullptr,nullptr };
+			return {nullptr, nullptr};
 		}
 
-		return { img,alloc };
+		return {img, alloc};
 	}
-
 
 	VulkanDevice::QueueFamiliesIndexes VulkanDevice::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
 	{
@@ -1798,9 +1821,9 @@ namespace Czuch
 		std::vector<VkQueueFamilyProperties> properties(familiesCount);
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &familiesCount, properties.data());
 
-		//find family with graphics support
+		// find family with graphics support
 		int i = 0;
-		for (const auto& family : properties)
+		for (const auto &family : properties)
 		{
 			if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT && family.queueFlags & VK_QUEUE_COMPUTE_BIT)
 			{
@@ -1828,7 +1851,7 @@ namespace Czuch
 #pragma region helpers
 
 	bool CreateImage(VmaAllocator allocator, TextureDesc::Type type, U32 width, U32 height, U32 depth, U32 mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memUsage,
-		VkImage& image, VmaAllocation& alloc)
+					 VkImage &image, VmaAllocation &alloc)
 	{
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1858,50 +1881,52 @@ namespace Czuch
 		return true;
 	}
 
-	bool HasStencilComponent(VkFormat format) {
+	bool HasStencilComponent(VkFormat format)
+	{
 		return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 	}
 
-	VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+	VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 	{
-		for (VkFormat format : candidates) {
+		for (VkFormat format : candidates)
+		{
 			VkFormatProperties props;
 			vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
 
-			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+			{
 				return format;
 			}
-			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+			{
 				return format;
 			}
 			return VkFormat::VK_FORMAT_UNDEFINED;
 		}
 	}
 
-
 	VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice, bool includeStencil)
 	{
 		if (includeStencil)
 		{
 			return FindSupportedFormat(physicalDevice,
-				{ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-				VK_IMAGE_TILING_OPTIMAL,
-				VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-			);
+									   {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+									   VK_IMAGE_TILING_OPTIMAL,
+									   VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 		}
 
 		return FindSupportedFormat(physicalDevice,
-			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-			VK_IMAGE_TILING_OPTIMAL,
-			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-		);
+								   {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+								   VK_IMAGE_TILING_OPTIMAL,
+								   VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	}
-
 
 	VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> availableFormats)
 	{
-		for (const auto& availableFormat : availableFormats) {
-			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+		for (const auto &availableFormat : availableFormats)
+		{
+			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+			{
 				return availableFormat;
 			}
 		}
@@ -1909,9 +1934,12 @@ namespace Czuch
 		return availableFormats[0];
 	}
 
-	VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
-		for (const auto& availablePresentMode : availablePresentModes) {
-			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+	VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
+	{
+		for (const auto &availablePresentMode : availablePresentModes)
+		{
+			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+			{
 				return availablePresentMode;
 			}
 		}
@@ -1919,19 +1947,21 @@ namespace Czuch
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 
-	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window) {
+	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *window)
+	{
 		auto maxVal = (std::numeric_limits<uint32_t>::max)();
-		if (capabilities.currentExtent.width != maxVal) {
+		if (capabilities.currentExtent.width != maxVal)
+		{
 			return capabilities.currentExtent;
 		}
-		else {
+		else
+		{
 			int width, height;
 			glfwGetFramebufferSize(window, &width, &height);
 
 			VkExtent2D actualExtent = {
 				static_cast<uint32_t>(width),
-				static_cast<uint32_t>(height)
-			};
+				static_cast<uint32_t>(height)};
 
 			actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
 			actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
@@ -1951,7 +1981,8 @@ namespace Czuch
 		uint32_t formatCount;
 		vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
 
-		if (formatCount != 0) {
+		if (formatCount != 0)
+		{
 			swapChainDetails.formats.resize(formatCount);
 			vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, swapChainDetails.formats.data());
 		}
@@ -1959,7 +1990,8 @@ namespace Czuch
 		uint32_t presentModeCount;
 		vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
 
-		if (presentModeCount != 0) {
+		if (presentModeCount != 0)
+		{
 			swapChainDetails.presentModes.resize(presentModeCount);
 			vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, swapChainDetails.presentModes.data());
 		}
@@ -1983,7 +2015,7 @@ namespace Czuch
 		return true;
 	}
 
-	void VulkanDevice::OnEvent(Czuch::Event& e)
+	void VulkanDevice::OnEvent(Czuch::Event &e)
 	{
 		if (e.GetEventType() == WindowSizeChangedEvent::GetStaticEventType())
 		{
@@ -2025,12 +2057,12 @@ namespace Czuch
 		return commandBuffer;
 	}
 
-	bool VulkanDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size,VkDeviceSize dstOffset) const
+	bool VulkanDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize dstOffset) const
 	{
 		auto cmd = BeginSingleTimeCommands();
 
 		VkBufferCopy copyRegion{};
-		copyRegion.srcOffset = 0; // Optional
+		copyRegion.srcOffset = 0;		  // Optional
 		copyRegion.dstOffset = dstOffset; // Optional
 		copyRegion.size = size;
 		vkCmdCopyBuffer(cmd, srcBuffer, dstBuffer, 1, &copyRegion);
@@ -2040,13 +2072,13 @@ namespace Czuch
 		return true;
 	}
 
-
 	bool VulkanDevice::RecreateSwapChain()
 	{
 		int width = 0, height = 0;
-		glfwGetFramebufferSize((GLFWwindow*)m_AttachedWindow->GetNativeWindowPtr(), &width, &height);
-		while (width == 0 || height == 0) {
-			glfwGetFramebufferSize((GLFWwindow*)m_AttachedWindow->GetNativeWindowPtr(), &width, &height);
+		glfwGetFramebufferSize((GLFWwindow *)m_AttachedWindow->GetNativeWindowPtr(), &width, &height);
+		while (width == 0 || height == 0)
+		{
+			glfwGetFramebufferSize((GLFWwindow *)m_AttachedWindow->GetNativeWindowPtr(), &width, &height);
 			glfwWaitEvents();
 		}
 
@@ -2084,13 +2116,13 @@ namespace Czuch
 		return familesIndexes.IsFullfilled() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 	}
 
-	std::vector<const char*> VulkanDevice::GetRequiredExtensions()
+	std::vector<const char *> VulkanDevice::GetRequiredExtensions()
 	{
 		uint32_t extensionsCount = 0;
-		const char** glfwExtensions = nullptr;
+		const char **glfwExtensions = nullptr;
 		glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
 
-		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + extensionsCount);
+		std::vector<const char *> extensions(glfwExtensions, glfwExtensions + extensionsCount);
 
 		if (m_RenderSettings->validationMode == ValidationMode::Enabled)
 		{
@@ -2098,6 +2130,14 @@ namespace Czuch
 		}
 
 		extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+#ifdef __APPLE__
+		// 1. Dodaj rozszerzenie pozwalające enumerować urządzenia "nie w pełni zgodne" (czyli MoltenVK)
+		extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+
+		// Opcjonalnie: Często wymagane jest też to rozszerzenie na nowszych SDK
+		extensions.push_back("VK_KHR_get_physical_device_properties2");
+#endif
 
 		return extensions;
 	}
@@ -2111,7 +2151,7 @@ namespace Czuch
 
 		std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
-		for (const auto& property : properties)
+		for (const auto &property : properties)
 		{
 			requiredExtensions.erase(property.extensionName);
 		}
@@ -2126,17 +2166,21 @@ namespace Czuch
 		std::vector<VkLayerProperties> layers(layersCount);
 		vkEnumerateInstanceLayerProperties(&layersCount, layers.data());
 
-		for (const char* layerName : validationLayers) {
+		for (const char *layerName : validationLayers)
+		{
 			bool layerFound = false;
 
-			for (const auto& layerProperties : layers) {
-				if (strcmp(layerName, layerProperties.layerName) == 0) {
+			for (const auto &layerProperties : layers)
+			{
+				if (strcmp(layerName, layerProperties.layerName) == 0)
+				{
 					layerFound = true;
 					break;
 				}
 			}
 
-			if (!layerFound) {
+			if (!layerFound)
+			{
 				return false;
 			}
 		}
@@ -2144,18 +2188,13 @@ namespace Czuch
 		return true;
 	}
 
-
-
-#pragma endregion 
+#pragma endregion
 
 #pragma endregion
 
-
-	VulkanDevice::VulkanDevice(Window* window) :m_AttachedWindow(window), m_FrameBufferResized(false), m_CurrentFrameInFlight(0), m_Surface(nullptr), m_VmaAllocator(nullptr), m_DescriptorLayoutCache(nullptr), m_PersistentDescriptorAllocator(nullptr)
+	VulkanDevice::VulkanDevice(Window *window) : m_AttachedWindow(window), m_FrameBufferResized(false), m_CurrentFrameInFlight(0), m_Surface(nullptr), m_VmaAllocator(nullptr), m_DescriptorLayoutCache(nullptr), m_PersistentDescriptorAllocator(nullptr)
 	{
-
 	}
-
 
 	VulkanDevice::~VulkanDevice()
 	{
@@ -2165,7 +2204,7 @@ namespace Czuch
 		m_DescriptorLayoutCache->CleanUp();
 		delete m_DescriptorLayoutCache;
 
-		EventsManager::Get().RemoveListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
+		EventsManager::Get().RemoveListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener *)this);
 		m_ResContainer.ReleaseAll();
 
 		ReleaseCommandPool(m_CommandPool);
@@ -2182,8 +2221,7 @@ namespace Czuch
 		vkDestroyInstance(m_Instance, nullptr);
 	}
 
-
-	bool VulkanDevice::InitDevice(EngineSettings* settings)
+	bool VulkanDevice::InitDevice(EngineSettings *settings)
 	{
 		m_RenderSettings = settings;
 		m_GlobalTexturesCount = 0;
@@ -2269,16 +2307,14 @@ namespace Czuch
 			LOG_BE_INFO("[VulkanDevice] Vulkan frame buffers created.");
 		}
 
-
-		EventsManager::Get().AddListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener*)this);
+		EventsManager::Get().AddListener(WindowSizeChangedEvent::GetStaticEventType(), (Czuch::IEventsListener *)this);
 
 		m_DescriptorLayoutCache = new DescriptorLayoutCache();
 		m_DescriptorLayoutCache->Init(m_Device);
 
 		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_DeviceProperties);
 
-
-		auto allocator=CreateDescriptorAllocator();
+		auto allocator = CreateDescriptorAllocator();
 		if (allocator == nullptr)
 		{
 			LOG_BE_ERROR("{0} Failed to create descriptor allocator", Tag);
@@ -2289,14 +2325,27 @@ namespace Czuch
 
 		if (!HANDLE_IS_VALID(m_BindlessDescriptorSetLayoutHandle))
 		{
-			//create bindless layout
+			// create bindless layout
 			DescriptorSetLayoutDesc desc_;
-			desc_.AddBinding("BindlessTextures", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, MAX_BINDLESS_TEXTURES, 0, true);
+			desc_.AddBinding("BindlessTextures", DescriptorType::SAMPLED_IMAGE, 0, MAX_BINDLESS_TEXTURES, 0, true);
+			desc_.AddBinding("BindlessSampler", DescriptorType::SAMPLER, 1, 1, 0, true);
 			desc_.shaderStage = (U32)ShaderStage::PS;
 			desc_.hasCombinedImageSampler = true;
 			m_BindlessDescriptorSetLayoutHandle = CreateDescriptorSetLayout(&desc_);
 			ShaderParamsSet set;
-			m_TexturesBindlessDescriptorSet=m_PersistentDescriptorAllocator->Allocate(set, AccessDescriptorSetLayout(m_BindlessDescriptorSetLayoutHandle));
+			m_TexturesBindlessDescriptorSet = m_PersistentDescriptorAllocator->Allocate(set, AccessDescriptorSetLayout(m_BindlessDescriptorSetLayoutHandle));
+
+			// create and udpate global sampler
+			SamplerDesc samplerDesc;
+			samplerDesc.addressModeU = TextureAddressMode::WRAP;
+			samplerDesc.addressModeV = TextureAddressMode::WRAP;
+			samplerDesc.addressModeW = TextureAddressMode::WRAP;
+			samplerDesc.anisoEnabled = true;
+			samplerDesc.magFilter = TextureFilter::LINEAR;
+			samplerDesc.minFilter = TextureFilter::LINEAR;
+			samplerDesc.maxMipLevel = VK_LOD_CLAMP_NONE;
+			m_GlobalSampler = CreateImageSampler(samplerDesc);
+			m_BindlessDescriptorSetWriter.WriteGlobalSampler(this, m_TexturesBindlessDescriptorSet, m_GlobalSampler);
 		}
 
 		AddDebugWindow(&m_MultipleBuffers);
@@ -2307,8 +2356,8 @@ namespace Czuch
 	VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		void* pUserData)
+		const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+		void *pUserData)
 	{
 		std::cerr << "Validation Layer: " << pCallbackData->pMessage << std::endl;
 		LOG_BE_ERROR("{0} Vulkan Problem: {1}", Tag, pCallbackData->pMessage);
@@ -2317,32 +2366,32 @@ namespace Czuch
 
 	TextureHandle VulkanDevice::BindGlobalTexture(TextureHandle texture)
 	{
-		auto tex=AccessTexture(texture);
-		m_BindlessDescriptorSetWriter.WriteAndUpdateGlobalTexture(0, tex,this, m_TexturesBindlessDescriptorSet,m_GlobalTexturesCount);
+		auto tex = AccessTexture(texture);
+		m_BindlessDescriptorSetWriter.WriteAndUpdateGlobalTexture(tex, this, m_TexturesBindlessDescriptorSet, m_GlobalTexturesCount);
 		texture.globalIndex = m_GlobalTexturesCount++;
 		return texture;
 	}
 
-	RenderPassHandle VulkanDevice::GetRenderPassWithDescIfExist(const RenderPassDesc* desc)
+	RenderPassHandle VulkanDevice::GetRenderPassWithDescIfExist(const RenderPassDesc *desc)
 	{
-			auto& renderPasses = m_ResContainer.renderPasses;
-			U32 currentIndex = renderPasses.GetCount();
-			
-			for (auto it = renderPasses.Rbegin_const(); it != renderPasses.Rend_const(); it++)
+		auto &renderPasses = m_ResContainer.renderPasses;
+		U32 currentIndex = renderPasses.GetCount();
+
+		for (auto it = renderPasses.Rbegin_const(); it != renderPasses.Rend_const(); it++)
+		{
+			currentIndex--;
+			RenderPass *renderPass = *it;
+
+			if (renderPass == nullptr)
 			{
-				currentIndex--;
-				RenderPass* renderPass = *it;
-
-				if (renderPass == nullptr)
-				{
-					continue;
-				}
-
-				if (renderPass->desc == *desc)
-				{
-					return RenderPassHandle(currentIndex);
-				}
+				continue;
 			}
+
+			if (renderPass->desc == *desc)
+			{
+				return RenderPassHandle(currentIndex);
+			}
+		}
 		return RenderPassHandle();
 	}
 
@@ -2366,6 +2415,11 @@ namespace Czuch
 		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		createInfo.pApplicationInfo = &appInfo;
 
+#ifdef __APPLE__
+		// Flaga, która mówi loaderowi: "Tak, wiem, że to MoltenVK, pokaż mi go"
+		createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
+
 		auto extensions = GetRequiredExtensions();
 
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -2388,13 +2442,10 @@ namespace Czuch
 			createInfo.enabledLayerCount = 0;
 		}
 
-
-
 		uint32_t vkExtensionsCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionsCount, nullptr);
 		std::vector<VkExtensionProperties> extensionsVector(vkExtensionsCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionsCount, extensionsVector.data());
-
 
 		VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
 
@@ -2414,7 +2465,7 @@ namespace Czuch
 			return false;
 		}
 
-		if (glfwCreateWindowSurface(m_Instance, (GLFWwindow*)m_AttachedWindow->GetNativeWindowPtr(), nullptr, &m_Surface) != VK_SUCCESS)
+		if (glfwCreateWindowSurface(m_Instance, (GLFWwindow *)m_AttachedWindow->GetNativeWindowPtr(), nullptr, &m_Surface) != VK_SUCCESS)
 		{
 			LOG_BE_ERROR("{0} Failed to create vulkan window surface.", Tag);
 			return false;
@@ -2427,10 +2478,10 @@ namespace Czuch
 		QueueFamiliesIndexes families = FindQueueFamilies(m_PhysicalDevice, m_Surface);
 
 		std::vector<VkDeviceQueueCreateInfo> queueInfos;
-		std::set<uint32_t> indices = { families.graphicsFamily.value(),families.presentFamily.value() };
+		std::set<uint32_t> indices = {families.graphicsFamily.value(), families.presentFamily.value()};
 
 		float priority = 1.0f;
-		for (const auto& elem : indices)
+		for (const auto &elem : indices)
 		{
 			VkDeviceQueueCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -2476,7 +2527,6 @@ namespace Czuch
 			deviceCreateInfo.enabledLayerCount = 0;
 		}
 
-
 		if (m_RenderSettings->dynamicRendering)
 		{
 
@@ -2492,7 +2542,7 @@ namespace Czuch
 
 			features12.pNext = &dynamicRenderingCreateInfo;
 
-			//shader draw parameters(gl_BaseInstance)
+			// shader draw parameters(gl_BaseInstance)
 			VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features = {};
 			shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
 			shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
@@ -2518,7 +2568,8 @@ namespace Czuch
 
 		vkGetPhysicalDeviceFeatures2(m_PhysicalDevice, &checkFeatures2);
 
-		if (checkFeature.dynamicRendering) {
+		if (checkFeature.dynamicRendering)
+		{
 			LOG_BE_INFO("{0} Dynamic Rendering is supported!", Tag);
 		}
 		else
@@ -2542,7 +2593,7 @@ namespace Czuch
 		}
 
 		auto imageWithAlloc = CreateImage(TextureDesc::Type::TEXTURE_2D, m_SwapChainData.swapChainExtent.width, m_SwapChainData.swapChainExtent.height, 1, ConvertSamplesCount(1), depthStencilFormat,
-			VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_SHARING_MODE_EXCLUSIVE);
+										  VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_SHARING_MODE_EXCLUSIVE);
 
 		if (imageWithAlloc.allocation == nullptr || imageWithAlloc.image == nullptr)
 		{
@@ -2553,10 +2604,10 @@ namespace Czuch
 		m_DepthImage.depthImage = imageWithAlloc.image;
 		m_DepthImage.allocation = imageWithAlloc.allocation;
 
-		m_DepthImage.depthImageView = CreateImageView(m_DepthImage.depthImage, depthStencilFormat, VK_IMAGE_ASPECT_DEPTH_BIT,1);
+		m_DepthImage.depthImageView = CreateImageView(m_DepthImage.depthImage, depthStencilFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 		m_DepthImage.depthFormat = depthStencilFormat;
 
-		TransitionImageLayout(nullptr,m_DepthImage.depthImage, depthStencilFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,0,1,true);
+		TransitionImageLayout(nullptr, m_DepthImage.depthImage, depthStencilFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 0, 1, true);
 		return true;
 	}
 
@@ -2567,7 +2618,7 @@ namespace Czuch
 
 		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapchainDetails.formats);
 		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapchainDetails.presentModes);
-		VkExtent2D extent = ChooseSwapExtent(swapchainDetails.capabilities, (GLFWwindow*)m_AttachedWindow->GetNativeWindowPtr());
+		VkExtent2D extent = ChooseSwapExtent(swapchainDetails.capabilities, (GLFWwindow *)m_AttachedWindow->GetNativeWindowPtr());
 
 		m_SwapChainData.swapChainExtent = extent;
 		m_SwapChainData.swapChainImageFormat = surfaceFormat.format;
@@ -2587,19 +2638,21 @@ namespace Czuch
 		createInfo.imageColorSpace = surfaceFormat.colorSpace;
 		createInfo.imageExtent = extent;
 		createInfo.imageArrayLayers = 1;
-		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; //when postprocessing added it should change to VK_IMAGE_USAGE_TRANSFER_DST_BIT and then we just copy render target texture to swap chaing after all postprocessing is done
+		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; // when postprocessing added it should change to VK_IMAGE_USAGE_TRANSFER_DST_BIT and then we just copy render target texture to swap chaing after all postprocessing is done
 
 		QueueFamiliesIndexes indices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
-		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+		uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
-		if (indices.graphicsFamily != indices.presentFamily) {
+		if (indices.graphicsFamily != indices.presentFamily)
+		{
 			createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			createInfo.queueFamilyIndexCount = 2;
 			createInfo.pQueueFamilyIndices = queueFamilyIndices;
 		}
-		else {
+		else
+		{
 			createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-			createInfo.queueFamilyIndexCount = 0; // Optional
+			createInfo.queueFamilyIndexCount = 0;	  // Optional
 			createInfo.pQueueFamilyIndices = nullptr; // Optional
 		}
 
@@ -2608,7 +2661,8 @@ namespace Czuch
 		createInfo.clipped = VK_TRUE;
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		if (vkCreateSwapchainKHR(m_Device, &createInfo, nullptr, &m_SwapChainData.swapChain) != VK_SUCCESS) {
+		if (vkCreateSwapchainKHR(m_Device, &createInfo, nullptr, &m_SwapChainData.swapChain) != VK_SUCCESS)
+		{
 			LOG_BE_ERROR("{0} Failed to Create Swap chain.", Tag);
 			return false;
 		}
@@ -2619,11 +2673,12 @@ namespace Czuch
 
 		m_SwapChainData.swapChainImageViews.resize(m_SwapChainData.swapChainImages.size());
 
-		for (size_t i = 0; i < m_SwapChainData.swapChainImageViews.size(); i++) {
-			m_SwapChainData.swapChainImageViews[i] = CreateImageView(m_SwapChainData.swapChainImages[i], m_SwapChainData.swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT,1);
+		for (size_t i = 0; i < m_SwapChainData.swapChainImageViews.size(); i++)
+		{
+			m_SwapChainData.swapChainImageViews[i] = CreateImageView(m_SwapChainData.swapChainImages[i], m_SwapChainData.swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 		}
 
-		LOG_BE_INFO("{0} Swap chain created with size {1}x{2}", Tag,m_SwapChainData.swapChainExtent.width,m_SwapChainData.swapChainExtent.height);
+		LOG_BE_INFO("{0} Swap chain created with size {1}x{2}", Tag, m_SwapChainData.swapChainExtent.width, m_SwapChainData.swapChainExtent.height);
 
 		return true;
 	}
@@ -2643,7 +2698,7 @@ namespace Czuch
 		std::vector<VkPhysicalDevice> devices(devicesCount);
 		vkEnumeratePhysicalDevices(m_Instance, &devicesCount, devices.data());
 
-		for (const auto& device : devices)
+		for (const auto &device : devices)
 		{
 			if (IsDeviceSuitable(device, m_Surface))
 			{
@@ -2669,24 +2724,25 @@ namespace Czuch
 	{
 		m_SwapChainData.swapChainFrameBuffers.resize(m_SwapChainData.swapChainImageViews.size());
 
-		//create swap chain render pass
+		// create swap chain render pass
 		if (createRenderPass)
 		{
 			VulkanRenderPassDesc renderPassDesc;
-			renderPassDesc.AddAttachment(ConvertVkFormat(m_SwapChainData.swapChainImageFormat), ImageLayout::PRESENT_SRC_KHR,AttachmentLoadOp::CLEAR);
+			renderPassDesc.AddAttachment(ConvertVkFormat(m_SwapChainData.swapChainImageFormat), ImageLayout::PRESENT_SRC_KHR, AttachmentLoadOp::CLEAR);
 			renderPassDesc.SetDepthStencilTexture(ConvertVkFormat(m_DepthImage.depthFormat), ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 			renderPassDesc.type = RenderPassType::Final;
 			renderPassDesc.mainRenderPass = true;
 			m_SwapChainRenderPass = CreateRenderPass(&renderPassDesc);
 		}
 
-		RenderPass_Vulkan* rpass = Internal_to_RenderPass(AccessRenderPass(m_SwapChainRenderPass));
+		RenderPass_Vulkan *rpass = Internal_to_RenderPass(AccessRenderPass(m_SwapChainRenderPass));
 
-		for (size_t i = 0; i < m_SwapChainData.swapChainImageViews.size(); i++) {
+		for (size_t i = 0; i < m_SwapChainData.swapChainImageViews.size(); i++)
+		{
 
-			FrameBuffer* framebuffer = new FrameBuffer();
+			FrameBuffer *framebuffer = new FrameBuffer();
 
-			auto& desc = framebuffer->desc;
+			auto &desc = framebuffer->desc;
 			desc.isFinalFrameBuffer = true;
 
 			framebuffer->m_InternalResourceState = std::make_shared<FrameBuffer_Vulkan>();
@@ -2713,12 +2769,13 @@ namespace Czuch
 			framebufferInfo.height = m_SwapChainData.swapChainExtent.height;
 			framebufferInfo.layers = 1;
 
-			FrameBuffer_Vulkan* fbuffer = Internal_to_Framebuffer(framebuffer);
+			FrameBuffer_Vulkan *fbuffer = Internal_to_Framebuffer(framebuffer);
 
 			fbuffer->createInfo = framebufferInfo;
 			fbuffer->device = m_Device;
 
-			if (vkCreateFramebuffer(m_Device, &framebufferInfo, nullptr, &fbuffer->framebuffer) != VK_SUCCESS) {
+			if (vkCreateFramebuffer(m_Device, &framebufferInfo, nullptr, &fbuffer->framebuffer) != VK_SUCCESS)
+			{
 				LOG_BE_ERROR("{0} Failed to Create Swap chain frame buffers.", Tag);
 				return false;
 			}
@@ -2727,7 +2784,6 @@ namespace Czuch
 		return true;
 	}
 
-
 	bool VulkanDevice::CreateCommandsPool()
 	{
 		m_CommandPool = CreateCommandPool(false, true);
@@ -2735,7 +2791,6 @@ namespace Czuch
 
 		return true;
 	}
-
 
 	void VulkanDevice::ResourcesContainer::ReleaseAll()
 	{
@@ -2752,12 +2807,11 @@ namespace Czuch
 		meshes.RemoveAll();
 	}
 
-
-	Shader* VulkanDevice::AccessShader(ShaderHandle handle)
+	Shader *VulkanDevice::AccessShader(ShaderHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
-			Shader* result = nullptr;
+			Shader *result = nullptr;
 			m_ResContainer.shaders.Get(handle.handle, &result);
 			return result;
 		}
@@ -2765,11 +2819,11 @@ namespace Czuch
 		return nullptr;
 	}
 
-	CommandBuffer* VulkanDevice::AccessCommandBuffer(CommandBufferHandle handle)
+	CommandBuffer *VulkanDevice::AccessCommandBuffer(CommandBufferHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
-			CommandBuffer* result = nullptr;
+			CommandBuffer *result = nullptr;
 			m_ResContainer.commandBuffers.Get(handle.handle, &result);
 			return result;
 		}
@@ -2777,11 +2831,11 @@ namespace Czuch
 		return nullptr;
 	}
 
-	Buffer* VulkanDevice::AccessBuffer(BufferHandle handle)
+	Buffer *VulkanDevice::AccessBuffer(BufferHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
-			Buffer* result = nullptr;
+			Buffer *result = nullptr;
 			m_ResContainer.buffers.Get(handle.handle, &result);
 			return result;
 		}
@@ -2789,11 +2843,11 @@ namespace Czuch
 		return nullptr;
 	}
 
-	Texture* VulkanDevice::AccessTexture(TextureHandle handle)
+	Texture *VulkanDevice::AccessTexture(TextureHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
-			Texture* result = nullptr;
+			Texture *result = nullptr;
 			m_ResContainer.textures.Get(handle.handle, &result);
 			return result;
 		}
@@ -2801,11 +2855,11 @@ namespace Czuch
 		return nullptr;
 	}
 
-	Mesh* VulkanDevice::AccessMesh(MeshHandle handle)
+	Mesh *VulkanDevice::AccessMesh(MeshHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
-			Mesh* result = nullptr;
+			Mesh *result = nullptr;
 			m_ResContainer.meshes.Get(handle.handle, &result);
 			return result;
 		}
@@ -2813,11 +2867,11 @@ namespace Czuch
 		return nullptr;
 	}
 
-	Material* VulkanDevice::AccessMaterial(MaterialHandle handle)
+	Material *VulkanDevice::AccessMaterial(MaterialHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
-			Material* result = nullptr;
+			Material *result = nullptr;
 			m_ResContainer.materials.Get(handle.handle, &result);
 			return result;
 		}
@@ -2825,11 +2879,11 @@ namespace Czuch
 		return nullptr;
 	}
 
-	MaterialInstance* VulkanDevice::AccessMaterialInstance(MaterialInstanceHandle handle)
+	MaterialInstance *VulkanDevice::AccessMaterialInstance(MaterialInstanceHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
-			MaterialInstance* result = nullptr;
+			MaterialInstance *result = nullptr;
 			m_ResContainer.materialInstances.Get(handle.handle, &result);
 			return result;
 		}
@@ -2839,7 +2893,7 @@ namespace Czuch
 
 	void VulkanDevice::ResizeTexture(TextureHandle texture, U32 width, U32 height)
 	{
-		Texture* tex = AccessTexture(texture);
+		Texture *tex = AccessTexture(texture);
 		if (tex == nullptr)
 		{
 			LOG_BE_ERROR("{0} ResizeTexture with invalid handle.", Tag);
@@ -2857,12 +2911,12 @@ namespace Czuch
 		LOG_BE_INFO("{0} Resizing texture {1} to {2}x{3}", Tag, texture.handle, width, height);
 		tex->desc.layoutInfo.currentFormat = ImageLayout::UNDEFINED;
 		tex->desc.layoutInfo.lastFormat = ImageLayout::UNDEFINED;
-		CreateTexture(&tex->desc,true,texture);
+		CreateTexture(&tex->desc, true, texture);
 	}
 
 	void VulkanDevice::ResizeFrameBuffer(FrameBufferHandle handle, U32 width, U32 height)
 	{
-		FrameBuffer* fbuffer = AccessFrameBuffer(handle);
+		FrameBuffer *fbuffer = AccessFrameBuffer(handle);
 		if (fbuffer == nullptr)
 		{
 			LOG_BE_ERROR("{0} ResizeFrameBuffer with invalid handle.", Tag);
@@ -2876,11 +2930,11 @@ namespace Czuch
 		}
 
 		LOG_BE_INFO("{0} Resizing framebuffer {1} to {2}x{3}", Tag, handle.handle, width, height);
-		fbuffer->desc.SetWidthAndHeight(width,height);
-		CreateFrameBuffer(&fbuffer->desc, true,handle);	
+		fbuffer->desc.SetWidthAndHeight(width, height);
+		CreateFrameBuffer(&fbuffer->desc, true, handle);
 	}
 
-	void VulkanDevice::TransitionSwapChainImageLayoutPreDraw(VulkanCommandBuffer* cmd, uint32_t imageIndex)
+	void VulkanDevice::TransitionSwapChainImageLayoutPreDraw(VulkanCommandBuffer *cmd, uint32_t imageIndex)
 	{
 		DoImageMemoryBarrier(
 			cmd->GetNativeBuffer(),
@@ -2891,7 +2945,7 @@ namespace Czuch
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+			VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
 
 		bool isDepthStencil = IsDepthFormatWithStencil(ConvertVkFormat(m_DepthImage.depthFormat));
 		DoImageMemoryBarrier(
@@ -2900,13 +2954,13 @@ namespace Czuch
 			0,
 			VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
 			VK_IMAGE_LAYOUT_UNDEFINED,
-			isDepthStencil? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL :VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+			isDepthStencil ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
 			VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
 			VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-			VkImageSubresourceRange{ VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 });
+			VkImageSubresourceRange{VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1});
 	}
 
-	void VulkanDevice::TransitionSwapChainImageLayoutPostDraw(VulkanCommandBuffer* cmd, uint32_t imageIndex)
+	void VulkanDevice::TransitionSwapChainImageLayoutPostDraw(VulkanCommandBuffer *cmd, uint32_t imageIndex)
 	{
 		DoImageMemoryBarrier(
 			cmd->GetNativeBuffer(),
@@ -2917,7 +2971,7 @@ namespace Czuch
 			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+			VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
 	}
 
 	static void check_vk_result(VkResult err)
@@ -2929,20 +2983,19 @@ namespace Czuch
 			abort();
 	}
 
-
-	void* VulkanDevice::InitImGUI()
+	void *VulkanDevice::InitImGUI()
 	{
-		VkDescriptorPoolSize pool_sizes[] = { { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 } };
+		VkDescriptorPoolSize pool_sizes[] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+											 {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+											 {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+											 {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+											 {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+											 {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+											 {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+											 {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
+											 {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+											 {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+											 {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
 
 		VkDescriptorPoolCreateInfo pool_info = {};
 		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -2951,19 +3004,18 @@ namespace Czuch
 		pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);
 		pool_info.pPoolSizes = pool_sizes;
 
-
 		vkCreateDescriptorPool(m_Device, &pool_info, nullptr, &m_ImguiPool);
 
 		IMGUI_CHECKVERSION();
 		auto ctx = ImGui::CreateContext();
 
-		ImGuiIO& io = ImGui::GetIO();
-		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+		ImGuiIO &io = ImGui::GetIO();
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;	  // IF using Docking Branch
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;	  // Enable Multi-Viewport / Platform Windows
 
-		ImGui_ImplGlfw_InitForVulkan((GLFWwindow*)m_AttachedWindow->GetNativeWindowPtr(), true);
+		ImGui_ImplGlfw_InitForVulkan((GLFWwindow *)m_AttachedWindow->GetNativeWindowPtr(), true);
 		ImGui_ImplVulkan_InitInfo init_info{};
 
 		init_info.Instance = m_Instance;
@@ -2978,7 +3030,7 @@ namespace Czuch
 		init_info.RenderPass = Internal_to_RenderPass(AccessRenderPass(m_SwapChainRenderPass))->renderPass;
 		init_info.UseDynamicRendering = HasDynamicRenderingEnabled();
 
-		init_info.PipelineRenderingCreateInfo = { .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
+		init_info.PipelineRenderingCreateInfo = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
 		init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
 		init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &m_SwapChainData.swapChainImageFormat;
 		init_info.PipelineRenderingCreateInfo.depthAttachmentFormat = m_DepthImage.depthFormat;
@@ -3000,21 +3052,21 @@ namespace Czuch
 		vkDestroyDescriptorPool(m_Device, m_ImguiPool, nullptr);
 	}
 
-	void VulkanDevice::TransitionImageLayoutImmediate(TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout,U32 baseMipLevel, U32 mipCount, bool isDepth)
+	void VulkanDevice::TransitionImageLayoutImmediate(TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount, bool isDepth)
 	{
 		auto texture = AccessTexture(handle);
 		if (texture == nullptr)
 		{
 			LOG_BE_ERROR("TransitionImageLayoutImmediate with invalid handle.");
-			CZUCH_BE_ASSERT(false,"TransitionImageLayoutImmediate with invalid handle.");
+			CZUCH_BE_ASSERT(false, "TransitionImageLayoutImmediate with invalid handle.");
 			return;
 		}
 		VkFormat format = ConvertFormat(texture->desc.format);
 		auto textureVulkan = Internal_to_Texture(texture);
-		TransitionImageLayout(nullptr,textureVulkan->image, format, ConvertImageLayout(oldLayout), ConvertImageLayout(newLayout),baseMipLevel,mipCount,isDepth);
+		TransitionImageLayout(nullptr, textureVulkan->image, format, ConvertImageLayout(oldLayout), ConvertImageLayout(newLayout), baseMipLevel, mipCount, isDepth);
 	}
 
-	void VulkanDevice::TransitionImageLayout(CommandBuffer* cmd, TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount, bool isDepth)
+	void VulkanDevice::TransitionImageLayout(CommandBuffer *cmd, TextureHandle handle, ImageLayout oldLayout, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount, bool isDepth)
 	{
 		auto texture = AccessTexture(handle);
 		if (texture == nullptr)
@@ -3025,11 +3077,11 @@ namespace Czuch
 		}
 		VkFormat format = ConvertFormat(texture->desc.format);
 		auto textureVulkan = Internal_to_Texture(texture);
-		VulkanCommandBuffer* vcmd = (VulkanCommandBuffer*)cmd;
+		VulkanCommandBuffer *vcmd = (VulkanCommandBuffer *)cmd;
 		TransitionImageLayout(vcmd->GetNativeBuffer(), textureVulkan->image, format, ConvertImageLayout(oldLayout), ConvertImageLayout(newLayout), baseMipLevel, mipCount, isDepth);
 	}
 
-	bool VulkanDevice::TryTransitionImageLayout(CommandBuffer* cmd, TextureHandle textureHandle, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount)
+	bool VulkanDevice::TryTransitionImageLayout(CommandBuffer *cmd, TextureHandle textureHandle, ImageLayout newLayout, U32 baseMipLevel, U32 mipCount)
 	{
 		auto texture = AccessTexture(textureHandle);
 		CZUCH_BE_ASSERT(texture != nullptr, "TryTransitionImageLayout with invalid handle.");
@@ -3038,13 +3090,13 @@ namespace Czuch
 		auto targetLayout = newLayout;
 		if (texture->desc.layoutInfo.TryToTransitionTo(targetLayout))
 		{
-			TransitionImageLayout(cmd,textureHandle, texture->desc.layoutInfo.lastFormat, targetLayout, baseMipLevel, mipCount, isDepth);
+			TransitionImageLayout(cmd, textureHandle, texture->desc.layoutInfo.lastFormat, targetLayout, baseMipLevel, mipCount, isDepth);
 			return true;
 		}
 		return false;
 	}
 
-	bool VulkanDevice::UploadDataToBuffer(BufferHandle buffer, const void* dataIn, U32 size,U32 offset)
+	bool VulkanDevice::UploadDataToBuffer(BufferHandle buffer, const void *dataIn, U32 size, U32 offset)
 	{
 		auto bufferPtr = AccessBuffer(buffer);
 		if (bufferPtr == nullptr)
@@ -3067,11 +3119,11 @@ namespace Czuch
 			return false;
 		}
 
-		void* data = bufferPtr->desc.customData->GetData();
+		void *data = bufferPtr->desc.customData->GetData();
 		return UploadDataToBuffer(buffer, data, bufferPtr->desc.customData->GetSize(), 0);
 	}
 
-	void* VulkanDevice::GetMappedBufferDataPtr(BufferHandle buffer)
+	void *VulkanDevice::GetMappedBufferDataPtr(BufferHandle buffer)
 	{
 		auto bufferPtr = AccessBuffer(buffer);
 		if (bufferPtr == nullptr)
@@ -3084,11 +3136,11 @@ namespace Czuch
 		return bufferVulkan->GetMappedData();
 	}
 
-	Pipeline* VulkanDevice::AccessPipeline(PipelineHandle handle)
+	Pipeline *VulkanDevice::AccessPipeline(PipelineHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
-			Pipeline* result = nullptr;
+			Pipeline *result = nullptr;
 			bool success = m_ResContainer.pipelines.Get(handle.handle, &result);
 			if (success)
 			{
@@ -3101,11 +3153,11 @@ namespace Czuch
 		return nullptr;
 	}
 
-	RenderPass* VulkanDevice::AccessRenderPass(RenderPassHandle handle)
+	RenderPass *VulkanDevice::AccessRenderPass(RenderPassHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
-			RenderPass* result = nullptr;
+			RenderPass *result = nullptr;
 			m_ResContainer.renderPasses.Get(handle.handle, &result);
 			return result;
 		}
@@ -3113,12 +3165,12 @@ namespace Czuch
 		return nullptr;
 	}
 
-	RenderPass* VulkanDevice::GetRenderPassOfType(RenderPassType type)
+	RenderPass *VulkanDevice::GetRenderPassOfType(RenderPassType type)
 	{
-		auto& renderPasses = m_ResContainer.renderPasses;
-		for (auto it=renderPasses.Rbegin_const();it!=renderPasses.Rend_const();it++)
+		auto &renderPasses = m_ResContainer.renderPasses;
+		for (auto it = renderPasses.Rbegin_const(); it != renderPasses.Rend_const(); it++)
 		{
-			RenderPass* renderPass =*it;
+			RenderPass *renderPass = *it;
 
 			if (renderPass == nullptr)
 			{
@@ -3132,14 +3184,13 @@ namespace Czuch
 		}
 		LOG_BE_ERROR("{0} GetRenderPassHandleOfType with invalid type.", Tag);
 		return nullptr;
-		
 	}
 
-	FrameBuffer* VulkanDevice::AccessFrameBuffer(FrameBufferHandle handle)
+	FrameBuffer *VulkanDevice::AccessFrameBuffer(FrameBufferHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
-			FrameBuffer* result = nullptr;
+			FrameBuffer *result = nullptr;
 			m_ResContainer.frameBuffers.Get(handle.handle, &result);
 			return result;
 		}
@@ -3147,11 +3198,11 @@ namespace Czuch
 		return nullptr;
 	}
 
-	DescriptorSetLayout* VulkanDevice::AccessDescriptorSetLayout(DescriptorSetLayoutHandle handle)
+	DescriptorSetLayout *VulkanDevice::AccessDescriptorSetLayout(DescriptorSetLayoutHandle handle)
 	{
 		if (HANDLE_IS_VALID(handle))
 		{
-			DescriptorSetLayout* result = nullptr;
+			DescriptorSetLayout *result = nullptr;
 			m_ResContainer.descriptorSetLayouts.Get(handle.handle, &result);
 			return result;
 		}
@@ -3159,13 +3210,11 @@ namespace Czuch
 		return nullptr;
 	}
 
-
 	void VulkanDevice::DepthImage::Release(VkDevice device, VmaAllocator allocator)
 	{
 		vkDestroyImageView(device, depthImageView, nullptr);
 		vmaDestroyImage(allocator, depthImage, allocation);
 	}
-
 
 	void VulkanDevice::DebugWindowsContainer::DrawAll()
 	{
@@ -3173,7 +3222,7 @@ namespace Czuch
 		{
 			if (ImGui::BeginMenu("Windows"))
 			{
-				for (auto& window : windows)
+				for (auto &window : windows)
 				{
 					ImGui::MenuItem(window->GetWindowName().c_str(), NULL, window->IsWindowOpen());
 				}
@@ -3182,9 +3231,9 @@ namespace Czuch
 			ImGui::EndMainMenuBar();
 		}
 
-		for(auto& window : windows)
+		for (auto &window : windows)
 		{
-			if(*window->IsWindowOpen())
+			if (*window->IsWindowOpen())
 			{
 				window->DrawDebugWindow();
 			}

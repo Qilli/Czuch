@@ -28,6 +28,11 @@ namespace Czuch
 	void WinWindow::Update()
 	{
 		glfwPollEvents();
+		// Only swap buffers if NOT Vulkan (Vulkan handles its own swapchain)
+        if (Renderer::GetUsedAPI() != RendererAPI::Vulkan)
+        {
+            glfwSwapBuffers(m_Window);
+        }
 	}
 
 	U32 WinWindow::GetWidth() const
@@ -44,14 +49,14 @@ namespace Czuch
 	{
 		m_WndParams.VSync = enabled;
 
-		/*if (enabled)
-		{
-			glfwSwapInterval(1);
+		if (Renderer::GetUsedAPI() != RendererAPI::Vulkan)
+        {
+			if (enabled)
+				glfwSwapInterval(1);
+			else
+				glfwSwapInterval(0);
 		}
-		else
-		{
-			glfwSwapInterval(0);
-		}*/
+	
 	}
 
 	bool WinWindow::IsVsSync() const

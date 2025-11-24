@@ -177,16 +177,16 @@ namespace Czuch
 		desc_LightBuffers.AddBinding("LightBuffer", DescriptorType::STORAGE_BUFFER, 0, 1, sizeof(LightData), true, DescriptorBindingTagType::LIGHTS_CONTAINER);
 		desc_LightBuffers.AddBinding("LightIndexBuffer", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(LightsTileData), true, DescriptorBindingTagType::LIGHTS_INDEXES);
 		desc_LightBuffers.AddBinding("TileDataBuffer", DescriptorType::STORAGE_BUFFER, 2, 1, sizeof(U32), true, DescriptorBindingTagType::LIGHTS_TILES);
-		desc_LightBuffers.AddBinding("MaterialsData", DescriptorType::STORAGE_BUFFER, 3, MAX_MATERIALS_OBJECTS, sizeof(MaterialObjectGPUData), true, DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
+		desc_LightBuffers.AddBinding("MaterialsData", DescriptorType::STORAGE_BUFFER, 3, 1, sizeof(MaterialObjectGPUData), true, DescriptorBindingTagType::MATERIALS_LIGHTING_DATA);
 	}
 
 	void BuildInAssets::CreateDefaultMaterials()
 	{
 		//Simple material
-		auto handleVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\PhongLightingVertexShader.vert", {});
-		auto handlePS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\PhongLightingFragmentShader.frag", {});
+		auto handleVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/PhongLightingVertexShader.vert", {});
+		auto handlePS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/PhongLightingFragmentShader.frag", {});
 		//debug draw shader
-		DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugDrawFragmentShader.frag", {});
+		DefaultAssets::DEBUG_DRAW_PS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/Debug/DebugDrawFragmentShader.frag", {});
 
 		DefaultAssets::PHONG_VS_SHADER_ASSET = handleVS;
 		DefaultAssets::PHONG_PS_SHADER_ASSET = handlePS;
@@ -210,7 +210,7 @@ namespace Czuch
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
 		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true,DescriptorBindingTagType::SCENE_DATA);
-		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, INIT_MAX_RENDER_OBJECTS, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
+		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
 
 		DescriptorSetLayoutDesc desc_LightBuffers{};
 		FillLightingLayoutDesc(desc_LightBuffers);
@@ -481,23 +481,23 @@ namespace Czuch
 		if (m_Mode == EngineMode::Editor)
 		{
 			//Transform icons for editor
-			DefaultAssets::EDITOR_ICON_TRANSLATE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_TranslateIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
-			DefaultAssets::EDITOR_ICON_ROTATE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_RotateIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
-			DefaultAssets::EDITOR_ICON_SCALE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_ScaleIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
-			DefaultAssets::EDITOR_ICON_FILE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_FileIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
-			DefaultAssets::EDITOR_ICON_FOLDER = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_FolderIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
-			DefaultAssets::EDITOR_ICON_MODEL = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_ModelIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
-			DefaultAssets::EDITOR_ICON_MATERIAL = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_MaterialIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
-			DefaultAssets::EDITOR_ICON_TEXTURE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_TextureIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
-			DefaultAssets::EDITOR_ICON_SHADER = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_ShaderIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
-			DefaultAssets::EDITOR_ICON_MATERIAL_INSTANCE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor\\Icons\\Editor_MaterialInstanceIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_TRANSLATE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor/Icons/Editor_TranslateIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_ROTATE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor/Icons/Editor_RotateIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_SCALE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor/Icons/Editor_ScaleIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_FILE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor/Icons/Editor_FileIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_FOLDER = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor/Icons/Editor_FolderIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_MODEL = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor/Icons/Editor_ModelIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_MATERIAL = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor/Icons/Editor_MaterialIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_TEXTURE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor/Icons/Editor_TextureIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_SHADER = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor/Icons/Editor_ShaderIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
+			DefaultAssets::EDITOR_ICON_MATERIAL_INSTANCE = m_AssetsMgr->LoadAsset<TextureAsset, TextureLoadSettings>("Editor/Icons/Editor_MaterialInstanceIcon.png", { .type = TextureDesc::Type::TEXTURE_2D,.isUITexture = true });
 		}
 	}
 	void BuildInAssets::CreateDepthPrePassMaterial()
 	{
 		//Depth prepass material
-		auto depthVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DepthPrepassShader.vert", {});
-		auto depthPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\EmptyFragmentShader.frag", {});
+		auto depthVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/DepthPrepassShader.vert", {});
+		auto depthPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/EmptyFragmentShader.frag", {});
 
 		MaterialPassDesc desc;
 		desc.vs = depthVS;
@@ -541,8 +541,8 @@ namespace Czuch
 	void BuildInAssets::CreateFinalPassMaterial()
 	{
 		// Final pass material
-		auto finalVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\VertexFinalPassShader.vert", {});
-		auto finalPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\FragmentFinalPassShader.frag", {});
+		auto finalVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/VertexFinalPassShader.vert", {});
+		auto finalPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/FragmentFinalPassShader.frag", {});
 
 		MaterialPassDesc desc;
 		desc.vs = finalVS;
@@ -559,7 +559,7 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
-		desc_tex.AddBinding("MainTexture", DescriptorType::SAMPLER, 0, 1, 0, false);
+		desc_tex.AddBinding("MainTexture", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, 1, 0, false);
 
 		desc.AddLayout(desc_tex);
 
@@ -577,7 +577,7 @@ namespace Czuch
 
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "FinalPassMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
+		instanceCreateSettings.desc.AddCombinedSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::FINAL_PASS_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = false;
 
@@ -589,8 +589,8 @@ namespace Czuch
 
 	void BuildInAssets::CreateDepthLinearPrePassMaterial()
 	{
-		auto fullscreenVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\VertexFinalPassShader.vert", {});
-		auto depthLinearPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DepthLinearPrepassShader.frag", {});
+		auto fullscreenVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/VertexFinalPassShader.vert", {});
+		auto depthLinearPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/DepthLinearPrepassShader.frag", {});
 
 		MaterialPassDesc desc;
 		desc.vs = fullscreenVS;
@@ -607,7 +607,7 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc desc_layout{};
 		desc_layout.shaderStage = (U32)ShaderStage::PS;
-		desc_layout.AddBinding("Depth", DescriptorType::SAMPLER, 0, 1, 0, false);
+		desc_layout.AddBinding("Depth", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, 1, 0, false);
 		desc_layout.AddBinding("CameraPlanesData", DescriptorType::UNIFORM_BUFFER, 1, 1, sizeof(CameraPlanesData), true);
 
 		desc.AddLayout(desc_layout);
@@ -626,7 +626,7 @@ namespace Czuch
 
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "DepthLinearPrePassMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("Depth", DefaultAssets::WHITE_TEXTURE, true);
+		instanceCreateSettings.desc.AddCombinedSampler("Depth", DefaultAssets::WHITE_TEXTURE, true);
 		instanceCreateSettings.desc.AddBuffer("CameraPlanesData", BufferHandle{ Invalid_Handle_Id });
 		instanceCreateSettings.desc.materialAsset = DefaultAssets::DEPTH_LINEAR_PREPASS_MATERIAL_ASSET;
 		instanceCreateSettings.desc.isTransparent = false;
@@ -639,8 +639,8 @@ namespace Czuch
 
 	void BuildInAssets::CreateDepthLinearSMPrePassMaterial()
 	{
-		auto fullscreenVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\VertexFinalPassShader.vert", {});
-		auto depthLinearPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DepthLinearPrepassShader.frag", {});
+		auto fullscreenVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/VertexFinalPassShader.vert", {});
+		auto depthLinearPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/DepthLinearPrepassShader.frag", {});
 
 		MaterialPassDesc desc;
 		desc.vs = fullscreenVS;
@@ -657,7 +657,7 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc desc_layout{};
 		desc_layout.shaderStage = (U32)ShaderStage::PS;
-		desc_layout.AddBinding("smDepthLinear", DescriptorType::SAMPLER, 0, 1, 0, false);
+		desc_layout.AddBinding("smDepthLinear", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, 1, 0, false);
 		desc_layout.AddBinding("CameraPlanesData", DescriptorType::UNIFORM_BUFFER, 1, 1, sizeof(CameraPlanesData), true);
 
 		desc.AddLayout(desc_layout);
@@ -676,7 +676,7 @@ namespace Czuch
 
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "DepthLinearSMPrePassMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("smDepthLinear", DefaultAssets::WHITE_TEXTURE, true);
+		instanceCreateSettings.desc.AddCombinedSampler("smDepthLinear", DefaultAssets::WHITE_TEXTURE, true);
 		instanceCreateSettings.desc.AddBuffer("CameraPlanesData", BufferHandle{ Invalid_Handle_Id });
 		instanceCreateSettings.desc.materialAsset = assetHandle;
 		instanceCreateSettings.desc.isTransparent = false;
@@ -689,8 +689,8 @@ namespace Czuch
 	void BuildInAssets::CreateDirectionalShadowMapMaterial()
 	{
 		//Directional shadowmap pass
-		auto depthVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\DepthPrepassShader.vert", {});
-		auto depthPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\EmptyFragmentShader.frag", {});
+		auto depthVS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/DepthPrepassShader.vert", {});
+		auto depthPS = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/EmptyFragmentShader.frag", {});
 
 		MaterialPassDesc desc;
 		desc.vs = depthVS;
@@ -796,7 +796,7 @@ namespace Czuch
 
 	void BuildInAssets::CreateDebugDrawMaterials()
 	{
-		DefaultAssets::DEBUG_DRAW_VS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugDrawVertexShader.vert", {});
+		DefaultAssets::DEBUG_DRAW_VS_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/Debug/DebugDrawVertexShader.vert", {});
 
 		//Debug material for standard debug meshes
 		MaterialPassDesc desc;
@@ -821,7 +821,7 @@ namespace Czuch
 
 		DescriptorSetLayoutDesc desc_tex{};
 		desc_tex.shaderStage = (U32)ShaderStage::PS;
-		desc_tex.AddBinding("MainTexture", DescriptorType::SAMPLER, 0, 1, 0, false);
+		desc_tex.AddBinding("MainTexture", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, 1, 0, false);
 		desc_tex.AddBinding("Color", DescriptorType::UNIFORM_BUFFER, 1, 1, sizeof(ColorUBO), false);
 
 
@@ -848,7 +848,7 @@ namespace Czuch
 		//Create Instance for debug draw material
 		MaterialInstanceCreateSettings instanceCreateSettings{};
 		instanceCreateSettings.materialInstanceName = "DefaultDebugMaterialInstance";
-		instanceCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
+		instanceCreateSettings.desc.AddCombinedSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
 
 		ColorUBO colorUbo;
 		colorUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
@@ -865,7 +865,7 @@ namespace Czuch
 		//create instance for lights
 		MaterialInstanceCreateSettings instanceLightCreateSettings{};
 		instanceLightCreateSettings.materialInstanceName = "DefaultDebugLightMaterialInstance";
-		instanceLightCreateSettings.desc.AddSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
+		instanceLightCreateSettings.desc.AddCombinedSampler("MainTexture", DefaultAssets::WHITE_TEXTURE, false);
 
 		ColorUBO colorLightUbo;
 		colorLightUbo.color = Vec4(1.0f, 1.0f, 1.0f, 1);
@@ -887,8 +887,8 @@ namespace Czuch
 	}
 	void BuildInAssets::CreateDebugLinesMaterial()
 	{
-		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_LINES_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugDrawIndirectLinesVertexShader.vert", {});
-		DefaultAssets::DEFAULT_SIMPLE_COLOR_PS_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\SimpleColorFragmentShader.frag", {});
+		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_LINES_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/Debug/DebugDrawIndirectLinesVertexShader.vert", {});
+		DefaultAssets::DEFAULT_SIMPLE_COLOR_PS_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/SimpleColorFragmentShader.frag", {});
 
 		//Debug material for standard debug lines/points/tris
 		MaterialPassDesc descDebug;
@@ -944,7 +944,7 @@ namespace Czuch
 	}
 	void BuildInAssets::CreateDebugTrianglesMaterial()
 	{
-		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_TRIANGLES_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugDrawIndirectTrianglesVertexShader.vert", {});
+		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_TRIANGLES_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/Debug/DebugDrawIndirectTrianglesVertexShader.vert", {});
 
 		//Debug material for standard debug lines/points/tris
 		MaterialPassDesc descDebug;
@@ -1001,7 +1001,7 @@ namespace Czuch
 	}
 	void BuildInAssets::CreateDebugPointsMaterial()
 	{
-		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_POINTS_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugDrawIndirectPointsVertexShader.vert", {});
+		DefaultAssets::DEBUG_DRAW_VS_INSTANCED_POINTS_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/Debug/DebugDrawIndirectPointsVertexShader.vert", {});
 
 		//Debug material for standard debug lines/points/tris
 		MaterialPassDesc descDebug;
@@ -1058,7 +1058,7 @@ namespace Czuch
 
 	void BuildInAssets::CreateDebugDrawMaterialIndexMaterial()
 	{
-		DefaultAssets::DEBUG_DRAW_PS_MATERIAL_INDEX_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders\\Debug\\DebugPhongLightingFragmentShaderMaterialIndex.frag", {});
+		DefaultAssets::DEBUG_DRAW_PS_MATERIAL_INDEX_SHADER_ASSET = m_AssetsMgr->LoadAsset<ShaderAsset, LoadSettingsDefault>("Shaders/Debug/DebugPhongLightingFragmentShaderMaterialIndex.frag", {});
 
 		MaterialPassDesc desc;
 		desc.vs = DefaultAssets::PHONG_VS_SHADER_ASSET;
@@ -1079,7 +1079,7 @@ namespace Czuch
 		DescriptorSetLayoutDesc desc_SceneData{};
 		desc_SceneData.shaderStage = (U32)ShaderStage::PS | (U32)ShaderStage::VS;
 		desc_SceneData.AddBinding("SceneData", DescriptorType::UNIFORM_BUFFER, 0, 1, sizeof(SceneData), true);
-		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, INIT_MAX_RENDER_OBJECTS, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
+		desc_SceneData.AddBinding("RenderObjectsData", DescriptorType::STORAGE_BUFFER, 1, 1, sizeof(RenderObjectGPUData), true, DescriptorBindingTagType::RENDER_OBJECTS);
 
 		DescriptorSetLayoutDesc desc_LightBuffers{};
 		FillLightingLayoutDesc(desc_LightBuffers);

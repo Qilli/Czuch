@@ -95,7 +95,7 @@ namespace Czuch
 		if (setForMaterial && EngineRoot::GetEngineSettings().engineMode != EngineMode::Editor)
 		{
 			MaterialInstance* mat = m_Device->AccessMaterialInstance(DefaultAssets::FINAL_PASS_MATERIAL_INSTANCE);
-			mat->params[0].SetSampler(0,texture,0);
+			mat->params[0].SetCombinedSampler(0,texture,0);
 		}
 	}
 

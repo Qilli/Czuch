@@ -16,7 +16,7 @@ namespace Czuch
 	class DescriptorAllocator;
 	class CommandBuffer;
 	struct DescriptorSet;
-	class Camera;
+	struct Camera;
 
 
 	class CZUCH_API VulkanRenderer final : public Renderer
@@ -116,8 +116,6 @@ namespace Czuch
 		uint32_t m_CurrentFrame = 0;
 		RenderContextFillParams m_DefaultContextFillParams;
 		Scene* m_ActiveScene;
-		int m_LastWidth = 0;
-		int m_LastHeight = 0;
 	};
 
 }

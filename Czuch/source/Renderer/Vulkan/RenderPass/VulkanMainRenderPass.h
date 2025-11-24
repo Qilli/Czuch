@@ -7,7 +7,7 @@ namespace Czuch
 	class Texture_Vulkan;
 	class VulkanDevice;
 	class CommandBuffer;
-	class Camera;
+	struct Camera;
 	class VulkanMainRenderPass : public VulkanRenderPassControlBase
 	{
 	public:

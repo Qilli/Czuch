@@ -18,7 +18,7 @@ namespace Czuch
 	class RenderContext;
 	class RenderPassControl;
 	class Scene;
-	class Camera;
+	struct Camera;
 	struct RenderContextFillParams;
 	struct FrameGraph;
 

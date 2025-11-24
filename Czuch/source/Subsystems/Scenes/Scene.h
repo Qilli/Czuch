@@ -11,7 +11,7 @@ namespace Czuch
 {
 	class Renderer;
 	class UIBaseElement;
-	class Camera;
+	struct Camera;
 	class CZUCH_API Scene : public IScene, public ISerializer
 	{
 	public:

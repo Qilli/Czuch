@@ -153,9 +153,9 @@ namespace Czuch
 				{
 					writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
 				}
-				else if (binding.type == DescriptorType::SAMPLER)
+				else if (binding.type == DescriptorType::COMBINED_IMAGE_SAMPLER)
 				{
-					writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(paramsDesc[a].descriptors[b].resource,AssetHandle())), DescriptorType::SAMPLER);
+					writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(paramsDesc[a].descriptors[b].resource,AssetHandle())), DescriptorType::COMBINED_IMAGE_SAMPLER);
 				}
 				else if (binding.type == DescriptorType::STORAGE_BUFFER)
 				{
@@ -374,9 +374,9 @@ namespace Czuch
 					{
 						m_Writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), paramsDesc[a].descriptors[b].size, 0, binding.type);
 					}
-					else if (binding.type == DescriptorType::SAMPLER)
+					else if (binding.type == DescriptorType::COMBINED_IMAGE_SAMPLER)
 					{
-						m_Writer.WriteTexture(binding.index, m_Device->AccessTexture({ paramsDesc[a].descriptors[b].resource,AssetHandle() }), DescriptorType::SAMPLER);
+						m_Writer.WriteTexture(binding.index, m_Device->AccessTexture({ paramsDesc[a].descriptors[b].resource,AssetHandle() }), DescriptorType::COMBINED_IMAGE_SAMPLER);
 					}
 					else if (binding.type == DescriptorType::STORAGE_BUFFER)
 					{
@@ -534,9 +534,9 @@ namespace Czuch
 				{
 					writer.WriteBuffer(binding.index, m_Device->AccessBuffer(BufferHandle(paramsDesc[a].descriptors[b].resource)), binding.size, 0, binding.type);
 				}
-				else if (binding.type == DescriptorType::SAMPLER)
+				else if (binding.type == DescriptorType::COMBINED_IMAGE_SAMPLER)
 				{
-					writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(paramsDesc[a].descriptors[b].resource, AssetHandle())), DescriptorType::SAMPLER);
+					writer.WriteTexture(binding.index, m_Device->AccessTexture(TextureHandle(paramsDesc[a].descriptors[b].resource, AssetHandle())), DescriptorType::COMBINED_IMAGE_SAMPLER);
 				}
 				else if (binding.type == DescriptorType::STORAGE_BUFFER)
 				{

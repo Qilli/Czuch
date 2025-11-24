@@ -1,13 +1,19 @@
 #directories
 .vs/
+.vscode/
 build/
 CMakeCache.txt
 CMakeFiles/
+vcpkg/
+vcpkg_installed/
 Makefile
 cmake_install.cmake
-*.vcxproj.user
-*.sln
-*.ninja
+
 
 #files
 *.user
+*.vcxproj.user
+*.sln
+*.ninja
+.DS_Store
+**/.DS_Store

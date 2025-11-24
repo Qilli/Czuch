@@ -1,5 +1,6 @@
 #include"czpch.h"
 #include"WinUtils.h"
+#if defined(CZUCH_PLATFORM_WINDOWS)
 #include<commdlg.h>
 #include<WinUser.h>
 #include"GLFW/glfw3.h"
@@ -72,3 +73,25 @@ namespace Czuch
 		return false;
 	}
 }
+#else 
+
+namespace Czuch
+{
+    // Puste implementacje, żeby linker nie krzyczał na Macu
+    std::string WinUtils::GetOpenFileNameDialog(const char* filter, const char* title)
+    {
+        return ""; 
+    }
+
+    std::string WinUtils::GetSaveFileNameDialog(const char* filter, const char* title)
+    {
+        return ""; 
+    }
+
+    bool WinUtils::ShowYesNoDialog(const char* title, const char* message)
+    {
+        return false; 
+    }
+}
+
+#endif

@@ -141,7 +141,7 @@ namespace Czuch
 
 		case DescriptorType::UNIFORM_BUFFER:
 			return MaterialParamType::PARAM_BUFFER;
-		case DescriptorType::SAMPLER:
+		case DescriptorType::COMBINED_IMAGE_SAMPLER:
 			return MaterialParamType::PARAM_TEXTURE;
 		case DescriptorType::STORAGE_BUFFER_SINGLE_DATA:
 			return MaterialParamType::PARAM_SINGLE_STORAGE_BUFFER;

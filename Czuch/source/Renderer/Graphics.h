@@ -398,7 +398,7 @@ namespace Czuch
 		INDIRECT_BUFFER = 1 << 10,
 	};
 
-	enum CZUCH_API DescriptorType
+	enum CZUCH_API DescriptorType:int
 	{
 		SAMPLER = 0,
 		UNIFORM_BUFFER = 1,
@@ -408,6 +408,7 @@ namespace Czuch
 		INPUT_ATTACHMENT = 5,
 		STORAGE_BUFFER_SINGLE_DATA = 6,
 		COMBINED_IMAGE_SAMPLER =7,
+		SAMPLED_IMAGE =8,
 	};
 
 	enum BufferType
@@ -1100,7 +1101,7 @@ namespace Czuch
 	{
 		BufferDesc desc;
 		BufferHandle handle;
-		U32 currentOffset;
+		I32 currentOffset;
 		U32 parts;
 
 		BufferHandle AddNewBufferPart(const BufferDesc& descIn)
@@ -1236,11 +1237,11 @@ namespace Czuch
 
 		ShaderParamsSet& Reset();
 		ShaderParamsSet& AddBuffer(CzuchStr name, BufferHandle buffer, U16 binding,I32 size=-1);
-		ShaderParamsSet& AddSampler(CzuchStr name, TextureHandle color_texture, U16 binding, DescriptorBindingTagType tag);
+		ShaderParamsSet& AddCombinedSampler(CzuchStr name, TextureHandle color_texture, U16 binding, DescriptorBindingTagType tag);
 		ShaderParamsSet& AddStorageBuffer(CzuchStr name, BufferHandle buffer, U16 binding, DescriptorBindingTagType tag, I32 size = -1);
 		ShaderParamsSet& AddStorageBufferWithData(CzuchStr name, MaterialCustomBufferData* customData, U16 binding, DescriptorBindingTagType tag);
-		void SetSampler(int descriptor, TextureHandle color_texture);
-		bool TrySetSampler(StringID& name, TextureHandle texture);
+		void SetCombinedSampler(int descriptor, TextureHandle color_texture);
+		bool TrySetCombinedSampler(StringID& name, TextureHandle texture);
 		bool TrySetBuffer(StringID& name, BufferHandle buffer);
 		bool SetBuffer(DescriptorBindingTagType tag, BufferHandle buffer, I32 size = -1);
 		bool SetBuffer(U32 descriptor, BufferHandle buffer, I32 size = -1);
@@ -1437,8 +1438,6 @@ namespace Czuch
 				return;
 			}
 			DescriptorSetLayoutDesc desc_tex{};
-			desc_tex.shaderStage = (U32)ShaderStage::PS;
-			desc_tex.AddBinding("BindlessTextures", DescriptorType::COMBINED_IMAGE_SAMPLER, 0, 1, 0, true, DescriptorBindingTagType::BINDLESS_TEXTURES);
 			desc_tex.hasCombinedImageSampler = true;
 			AddLayout(desc_tex);
 		}
@@ -1728,7 +1727,7 @@ namespace Czuch
 		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, MaterialCustomBufferData&& data,bool isInternal);
 		MaterialInstanceDesc& AddBuffer(const CzuchStr& name, BufferHandle buffer);
 		MaterialInstanceDesc& AddStorageBuffer(const CzuchStr& name, BufferHandle buffer);
-		MaterialInstanceDesc& AddSampler(const CzuchStr& name, TextureHandle color_texture, bool isInternal);
+		MaterialInstanceDesc& AddCombinedSampler(const CzuchStr& name, TextureHandle color_texture, bool isInternal);
 
 		void SetTransparent(bool value) { isTransparent = value; }
 
@@ -1751,11 +1750,12 @@ namespace Czuch
 		MaterialInstanceParams& AddBuffer(I32 set, const CzuchStr& name, BufferHandle buffer, U16 binding, I32 size = -1);
 		MaterialInstanceParams& AddStorageBuffer(I32 set, const CzuchStr& name, BufferHandle buffer, U16 binding, DescriptorBindingTagType tag, I32 size = -1);
 		MaterialInstanceParams& AddStorageBufferWithData(I32 set,const CzuchStr& name, MaterialCustomBufferData* customData, U16 binding, DescriptorBindingTagType tag);
-		MaterialInstanceParams& AddSampler(I32 set, const CzuchStr& name, TextureHandle color_texture, U16 binding);
+		MaterialInstanceParams& AddCombinedSampler(I32 set, const CzuchStr& name, TextureHandle color_texture, U16 binding);
+	
 		void SetAsTextureBindlessSet(int set);
 
-		void SetSampler(I32 set, TextureHandle color_texture, I32 descriptor);
-		void SetSampler(StringID& name, TextureHandle texture);
+		void SetCombinedSampler(I32 set, TextureHandle color_texture, I32 descriptor);
+		void SetCombinedSampler(StringID& name, TextureHandle texture);
 		void SetUniformBuffer(StringID& name, BufferHandle buffer);
 		void SetUniformBuffer(I32 set, BufferHandle buffer,I32 descriptor,I32 size=-1);
 		void SetStorageBuffer(I32 set, BufferHandle buffer, I32 descriptor, I32 size = -1);

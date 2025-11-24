@@ -28,7 +28,7 @@ namespace Czuch
 		template<typename T>
 		Entity FindEntityWitComponent()
 		{
-			return m_Entity->FindEntityWithComponent<T>();
+			return m_Entity.FindEntityWithComponent<T>();
 		}
 
 		virtual void OnCreate() {}

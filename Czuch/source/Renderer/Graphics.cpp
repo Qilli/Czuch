@@ -131,7 +131,7 @@ namespace Czuch
 	}
 
 
-	ShaderParamsSet& ShaderParamsSet::AddSampler(CzuchStr name, TextureHandle color_texture, U16 binding, DescriptorBindingTagType tag)
+	ShaderParamsSet& ShaderParamsSet::AddCombinedSampler(CzuchStr name, TextureHandle color_texture, U16 binding, DescriptorBindingTagType tag)
 	{
 		if (descriptorsCount >= s_max_descriptors_per_set)
 		{
@@ -143,7 +143,7 @@ namespace Czuch
 		descriptors[descriptorsCount].resource = color_texture.handle;
 		descriptors[descriptorsCount].assetHandle = color_texture.assetHandle.handle;
 		descriptors[descriptorsCount].tag = tag;
-		descriptors[descriptorsCount++].type = DescriptorType::SAMPLER;
+		descriptors[descriptorsCount++].type = DescriptorType::COMBINED_IMAGE_SAMPLER;
 
 
 		return *this;
@@ -214,16 +214,16 @@ namespace Czuch
 		}
 	}*/
 
-	void ShaderParamsSet::SetSampler(I32 descriptor, TextureHandle color_texture)
+	void ShaderParamsSet::SetCombinedSampler(I32 descriptor, TextureHandle color_texture)
 	{
-		if (descriptor < descriptorsCount && descriptors[descriptor].type == DescriptorType::SAMPLER)
+		if (descriptor < descriptorsCount && descriptors[descriptor].type == DescriptorType::COMBINED_IMAGE_SAMPLER)
 		{
 			descriptors[descriptor].resource = color_texture.handle;
 		}
 	}
 
 
-	bool ShaderParamsSet::TrySetSampler(StringID& name, TextureHandle texture)
+	bool ShaderParamsSet::TrySetCombinedSampler(StringID& name, TextureHandle texture)
 	{
 		for (I32 a = 0; a < descriptorsCount; ++a)
 		{
@@ -363,7 +363,7 @@ namespace Czuch
 		shaderParamsDesc[set].AddStorageBufferWithData(name, customData, binding, tag);
 		return *this;
 	}
-	MaterialInstanceParams& MaterialInstanceParams::AddSampler(I32 set, const CzuchStr& name, TextureHandle color_texture, U16 binding)
+	MaterialInstanceParams& MaterialInstanceParams::AddCombinedSampler(I32 set, const CzuchStr& name, TextureHandle color_texture, U16 binding)
 	{
 		if (set >= k_max_descriptor_set_layouts)
 		{
@@ -371,7 +371,7 @@ namespace Czuch
 		}
 		setsCount = std::max(set + 1, this->setsCount);
 
-		shaderParamsDesc[set].AddSampler(name, color_texture, binding,DescriptorBindingTagType::NONE);
+		shaderParamsDesc[set].AddCombinedSampler(name, color_texture, binding,DescriptorBindingTagType::NONE);
 		return *this;
 	}
 
@@ -384,20 +384,20 @@ namespace Czuch
 		shaderParamsDesc[set].isBindlessTexturesSet = true;
 	}
 
-	void MaterialInstanceParams::SetSampler(I32 set, TextureHandle color_texture, I32 descriptor)
+	void MaterialInstanceParams::SetCombinedSampler(I32 set, TextureHandle color_texture, I32 descriptor)
 	{
 		if (set >= k_max_descriptor_set_layouts)
 		{
 			return;
 		}
-		shaderParamsDesc[set].SetSampler(descriptor, color_texture);
+		shaderParamsDesc[set].SetCombinedSampler(descriptor, color_texture);
 	}
 
-	void MaterialInstanceParams::SetSampler(StringID& name, TextureHandle texture)
+	void MaterialInstanceParams::SetCombinedSampler(StringID& name, TextureHandle texture)
 	{
 		for (I32 a = 0; a < setsCount; ++a)
 		{
-			if (shaderParamsDesc[a].TrySetSampler(name, texture) == true)
+			if (shaderParamsDesc[a].TrySetCombinedSampler(name, texture) == true)
 			{
 				return;
 			}
@@ -509,7 +509,7 @@ namespace Czuch
 	{
 		for (auto& param : paramsDesc)
 		{
-			if (param.type == DescriptorType::SAMPLER)
+			if (param.type == DescriptorType::COMBINED_IMAGE_SAMPLER || param.type == DescriptorType::SAMPLED_IMAGE)
 			{
 				dependencies.push_back(TextureHandle(param.resource, param.resourceAsset));
 			}
@@ -544,9 +544,9 @@ namespace Czuch
 		paramsDesc.push_back({ .name = name,.data = MaterialCustomBufferData(),.type = DescriptorType::STORAGE_BUFFER,.resource = handle.handle,.isInternal = true });
 		return *this;
 	}
-	MaterialInstanceDesc& MaterialInstanceDesc::AddSampler(const CzuchStr& name, TextureHandle color_texture, bool isInternal)
+	MaterialInstanceDesc& MaterialInstanceDesc::AddCombinedSampler(const CzuchStr& name, TextureHandle color_texture, bool isInternal)
 	{
-		paramsDesc.push_back({ .name = name,.data = MaterialCustomBufferData(),.type = DescriptorType::SAMPLER,.resourceAsset = color_texture.assetHandle.handle,.resource = color_texture.handle,.isInternal = isInternal });
+		paramsDesc.push_back({ .name = name,.data = MaterialCustomBufferData(),.type = DescriptorType::COMBINED_IMAGE_SAMPLER,.resourceAsset = color_texture.assetHandle.handle,.resource = color_texture.handle,.isInternal = isInternal });
 		return *this;
 	}
 
@@ -556,9 +556,9 @@ namespace Czuch
 		for (I32 a = 0; a < paramsDesc.size(); a++)
 		{
 			auto& param = paramsDesc[a];
-			if (param.type == DescriptorType::SAMPLER)
+			if (param.type == DescriptorType::COMBINED_IMAGE_SAMPLER)
 			{
-				desc.AddSampler(param.name, TextureHandle(param.resource, param.resourceAsset), param.isInternal);
+				desc.AddCombinedSampler(param.name, TextureHandle(param.resource, param.resourceAsset), param.isInternal);
 			}
 			else if (param.type == DescriptorType::UNIFORM_BUFFER)
 			{
@@ -588,9 +588,13 @@ namespace Czuch
 			for (I32 b = 0; b < current.bindingsCount; ++b)
 			{
 				auto& binding = current.bindings[b];
-				if (binding.type == DescriptorType::SAMPLER)
+				if (binding.type == DescriptorType::COMBINED_IMAGE_SAMPLER)
 				{
-					params.AddSampler(i, binding.bindingName.GetStrName(), TextureHandle(), b);
+					params.AddCombinedSampler(i, binding.bindingName.GetStrName(), TextureHandle(), b);
+				}
+				else if(binding.type == DescriptorType::COMBINED_IMAGE_SAMPLER)
+				{
+					params.AddCombinedSampler(i, binding.bindingName.GetStrName(), TextureHandle(), b);
 				}
 				else if (binding.type == DescriptorType::UNIFORM_BUFFER)
 				{
@@ -604,7 +608,7 @@ namespace Czuch
 				{
 					params.AddStorageBufferWithData(i, binding.bindingName.GetStrName(), nullptr, b, binding.tag);
 				}
-				else if (binding.type == DescriptorType::COMBINED_IMAGE_SAMPLER)
+				else if (binding.type == DescriptorType::SAMPLED_IMAGE)
 				{
 					params.SetAsTextureBindlessSet(i);
 				}
@@ -623,9 +627,9 @@ namespace Czuch
 					auto& binding = current.bindings[b];
 					if (binding.bindingName.Compare(nameId) == 0)
 					{
-						if (param.type == DescriptorType::SAMPLER)
+						if (param.type == DescriptorType::COMBINED_IMAGE_SAMPLER)
 						{
-							params.SetSampler(i, TextureHandle(param.resource, param.resourceAsset), b);
+							params.SetCombinedSampler(i, TextureHandle(param.resource, param.resourceAsset), b);
 						}
 						else if (param.type == DescriptorType::UNIFORM_BUFFER)
 						{
@@ -728,7 +732,7 @@ namespace Czuch
 	{
 		for (I32 a = 0; a < passesCount; ++a)
 		{
-			params[a].SetSampler(name, texture);
+			params[a].SetCombinedSampler(name, texture);
 		}
 	}
 

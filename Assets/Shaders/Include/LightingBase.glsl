@@ -31,7 +31,19 @@ layout(std430, binding = 3, set = 1) readonly buffer MaterialsDataBuffer {
     MaterialData materials[];
 };
 
-layout(set = 2, binding = 0) uniform sampler2D globalTextures[];
+// Binding 0: The array of textures (No samplers attached)
+layout(set = 2, binding = 0) uniform texture2D globalTextures[1024];
+
+// Binding 1: The one sampler we use for everything
+layout(set = 2, binding = 1) uniform sampler globalSampler;
+
+// --- Helper Function ---
+vec4 SampleGlobalTexture(int index, vec2 uv)
+{
+    // 1. Get the texture object using nonuniformEXT
+    // 2. Combine it with the globalSampler using sampler2D() constructor
+    return texture(sampler2D(globalTextures[nonuniformEXT(index)], globalSampler), uv);
+}
 
 float ComputeNormalLightAttenuation(float distance, float range)
 {
@@ -66,7 +78,7 @@ float ComputeShadow(LightData light, vec4 fragPosWorldSpace)
 	//flip y coord because texture coord system is upside down
 	projCoords.y = 1.0 - projCoords.y;
 	// Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-	float closestDepth = texture(globalTextures[int(light.spotInnerOuterAngle_ShadowMapID.w)], projCoords.xy).r; 
+	float closestDepth = SampleGlobalTexture(int(light.spotInnerOuterAngle_ShadowMapID.w), projCoords.xy).r; 
 	// Get depth of current fragment from light's perspective
 	float currentDepth = projCoords.z;
 

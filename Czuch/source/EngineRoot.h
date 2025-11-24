@@ -15,7 +15,7 @@ namespace Czuch
 	class ScenesManager;
 	class UIBaseManager;
 	class EngineEditorControl;
-	class Camera;
+	struct Camera;
 	class EngineEditorSubsystem;
 
 	enum class CZUCH_API EngineStateMode
