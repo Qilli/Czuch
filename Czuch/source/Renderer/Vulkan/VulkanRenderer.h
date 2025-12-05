@@ -51,7 +51,7 @@ namespace Czuch
 	private:
 		void CreateSyncObjects();
 		void ReleaseSyncObjects();
-		void SubmitCommandBuffer();
+		void SubmitCommandBuffer(U32 swapChainIndex);
 		void BeforeFrameGraphExecute(U32 index);
 		void AfterFrameGraphExecute(U32 index);
 
@@ -67,7 +67,6 @@ namespace Czuch
 			DescriptorAllocator* descriptorAllocator;
 			CommandBufferHandle commandBuffer;
 			VkSemaphore imageAvailableSemaphore;
-			VkSemaphore renderFinishedSemaphote;
 			VkFence inFlightFence;
 			DeletionQueue frameDeletionQueue;
 
@@ -110,6 +109,7 @@ namespace Czuch
 		VulkanFullScreenRenderPass* m_FullScreenRenderPass;
 		std::vector<RenderPassResizeQuery> m_RenderPassResizeQueries;
 		FrameData m_FramesData[MAX_FRAMES_IN_FLIGHT];
+		Array<VkSemaphore> m_RenderFinishedSemaphores;
 		ImmediateSubmitData m_ImmediateSubmitData;
 		Window* m_AttachedWindow;
 		VulkanDevice* m_Device;

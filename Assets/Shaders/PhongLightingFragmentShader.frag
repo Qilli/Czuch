@@ -25,11 +25,11 @@ void main()
     vec4 albedo = material.albedoMetallicTextures.x == -1 ? material.albedo.rgba : SampleGlobalTexture(material.albedoMetallicTextures.x,inUV.xy).rgba*material.albedo.rgba;
     vec4 metallicSpecularPower = material.albedoMetallicTextures.y == -1 ? material.metallicSpecularPower : SampleGlobalTexture(material.albedoMetallicTextures.y,inUV.xy)*material.metallicSpecularPower.rgba;
 
-    for(int i = lightListRange.x; i < count; ++i)
-    {
-        outColor+=ComputeLighting(lightIndices[i],sceneData.cameraWorldPos,material,inPos,normal,inUV.xy,albedo,metallicSpecularPower);
-    }
-    //outColor.rgb+=sceneData.ambientColor.rgb * albedo.rgb;
-    outColor.rgb=vec3(1.0,0,0);
-    outColor.a=albedo.a;
+for(int i= lightListRange.x;i<count; ++i)
+{
+    outColor+= ComputeLighting(lightIndices[i],sceneData.cameraWorldPos,material,inPos,normal,inUV.xy,albedo,metallicSpecularPower);
+}
+
+    outColor.a = albedo.a;
+
 }

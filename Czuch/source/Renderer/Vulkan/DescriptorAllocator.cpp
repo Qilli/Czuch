@@ -81,7 +81,7 @@ namespace Czuch
 		allocInfo.descriptorPool = m_CurrentPool;
 		allocInfo.descriptorSetCount = 1;
 
-		if (layout->desc.hasCombinedImageSampler)
+		if (layout->desc.isGlobalTexturesSet)
 		{
 			VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count_info = {
 				.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO,

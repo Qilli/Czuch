@@ -585,7 +585,12 @@ namespace Czuch
 		for (I32 i = 0; i < layoutsCount; ++i)
 		{
 			auto& current = layouts[i];
-			for (I32 b = 0; b < current.bindingsCount; ++b)
+			if(current.isGlobalTexturesSet)
+			{
+				params.SetAsTextureBindlessSet(i);
+				continue;
+			}
+			for (U32 b = 0; b < current.bindingsCount; ++b)
 			{
 				auto& binding = current.bindings[b];
 				if (binding.type == DescriptorType::COMBINED_IMAGE_SAMPLER)

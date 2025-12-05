@@ -439,7 +439,7 @@ namespace Czuch
 
 	DescriptorSetLayoutHandle VulkanDevice::CreateDescriptorSetLayout(const DescriptorSetLayoutDesc *desc)
 	{
-		if (desc->hasCombinedImageSampler && HANDLE_IS_VALID(m_BindlessDescriptorSetLayoutHandle))
+		if (desc->isGlobalTexturesSet && HANDLE_IS_VALID(m_BindlessDescriptorSetLayoutHandle))
 		{
 			return m_BindlessDescriptorSetLayoutHandle;
 		}
@@ -462,7 +462,7 @@ namespace Czuch
 		layoutInfo.bindingCount = desc->bindingsCount;
 		layoutInfo.pBindings = bindingsArray;
 		layoutInfo.pNext = desc->next;
-		if (desc->next == nullptr && desc->hasCombinedImageSampler)
+		if (desc->next == nullptr && desc->isGlobalTexturesSet)
 		{
 			VkDescriptorBindingFlags bindlessFlags[] =
 				{VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
@@ -2330,7 +2330,7 @@ namespace Czuch
 			desc_.AddBinding("BindlessTextures", DescriptorType::SAMPLED_IMAGE, 0, MAX_BINDLESS_TEXTURES, 0, true);
 			desc_.AddBinding("BindlessSampler", DescriptorType::SAMPLER, 1, 1, 0, true);
 			desc_.shaderStage = (U32)ShaderStage::PS;
-			desc_.hasCombinedImageSampler = true;
+			desc_.isGlobalTexturesSet = true;
 			m_BindlessDescriptorSetLayoutHandle = CreateDescriptorSetLayout(&desc_);
 			ShaderParamsSet set;
 			m_TexturesBindlessDescriptorSet = m_PersistentDescriptorAllocator->Allocate(set, AccessDescriptorSetLayout(m_BindlessDescriptorSetLayoutHandle));

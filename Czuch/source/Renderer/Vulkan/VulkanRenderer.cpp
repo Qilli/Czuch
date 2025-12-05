@@ -176,8 +176,8 @@ namespace Czuch
 
 		cmdBuffer->End();
 
-		SubmitCommandBuffer();
-		m_Device->Present(imageIndex, GetCurrentFrame().renderFinishedSemaphote);
+		SubmitCommandBuffer(imageIndex);
+		m_Device->Present(imageIndex, m_RenderFinishedSemaphores[imageIndex]);
 
 
 		CheckForResizeQueries();
@@ -332,28 +332,40 @@ namespace Czuch
 	void VulkanRenderer::CreateSyncObjects()
 	{
 
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		for (U32 a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			m_FramesData[a].imageAvailableSemaphore = m_Device->CreateNewSemaphore();
-			m_FramesData[a].renderFinishedSemaphote = m_Device->CreateNewSemaphore();
 			m_FramesData[a].inFlightFence = m_Device->CreateNewFence(true);
 		}
+
+		U32 swapChainsCount = m_Device->GetSwapchainImageCount();
+		m_RenderFinishedSemaphores.reserve(swapChainsCount);
+		for (size_t i = 0; i < swapChainsCount; i++)
+		{
+			m_RenderFinishedSemaphores.push_back(m_Device->CreateNewSemaphore());
+		}
+		
 
 		m_ImmediateSubmitData.fence = m_Device->CreateNewFence(true);
 	}
 
 	void VulkanRenderer::ReleaseSyncObjects()
 	{
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		for (U32 a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			m_Device->ReleaseSemaphore(m_FramesData[a].imageAvailableSemaphore);
-			m_Device->ReleaseSemaphore(m_FramesData[a].renderFinishedSemaphote);
 			m_Device->ReleaseFence(m_FramesData[a].inFlightFence);
 		}
 
+		for (auto& sem : m_RenderFinishedSemaphores)
+		{
+			m_Device->ReleaseSemaphore(sem);
+		}
+		m_RenderFinishedSemaphores.clear();
+
 	}
 
-	void VulkanRenderer::SubmitCommandBuffer()
+	void VulkanRenderer::SubmitCommandBuffer(U32 swapChainIndex)
 	{
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -368,7 +380,7 @@ namespace Czuch
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &cmdBuffer;
 
-		VkSemaphore signalSemaphores[] = { GetCurrentFrame().renderFinishedSemaphote };
+		VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[swapChainIndex] };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 

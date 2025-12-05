@@ -39,6 +39,7 @@ namespace Czuch
 		light.SetLightType(LightType::Point);
 		light.SetColor(color);
 		light.SetLightRange(range);
+		light.SetLightIntensity(intensity);
 	}
 
 	void Entity::AddDirectionalLight(const Color& color, float intensity)

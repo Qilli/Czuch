@@ -172,9 +172,9 @@ int main()
 	//debugLines.cameraTransform = camTransform;
 
 	Czuch::Entity lightEntity = scene->CreateEntity("LightObject");
-	lightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 2.0f, -4.0f));
+	lightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 2.0f, -2.0f));
 	lightEntity.Transform().Rotate(0.0f);
-	lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 300.0f, 7.0f);
+	lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 6.0f, 20.0f);
 	//lightEntity.AddDirectionalLight(Czuch::Colors::White, 1.0f);
 
 	/*Czuch::Entity additionalCameraEntity = scene->CreateEntity("AdditionalCameraObject");

@@ -1160,7 +1160,7 @@ namespace Czuch
 		U32 setIndex = 0;
 		U32 shaderStage;
 		void* next=nullptr;
-		bool hasCombinedImageSampler=false;
+		bool isGlobalTexturesSet=false;
 
 		DescriptorSetLayoutDesc()
 		{
@@ -1438,7 +1438,7 @@ namespace Czuch
 				return;
 			}
 			DescriptorSetLayoutDesc desc_tex{};
-			desc_tex.hasCombinedImageSampler = true;
+			desc_tex.isGlobalTexturesSet = true;
 			AddLayout(desc_tex);
 		}
 

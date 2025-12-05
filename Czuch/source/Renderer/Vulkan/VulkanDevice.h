@@ -33,6 +33,7 @@ namespace Czuch
 		bool InitDevice(EngineSettings* settings) override;
 		float GetSwapchainWidth() const override { return m_SwapChainData.swapChainExtent.width; }
 		float GetSwapchainHeight() const override { return m_SwapChainData.swapChainExtent.height; }
+		U32 GetSwapchainImageCount() const { return m_SwapChainData.swapChainImages.size(); }
 		VkFormat* GetSwapchainFormat() { return &m_SwapChainData.swapChainImageFormat; }
 		VkFormat GetNativeDepthFormat() { return m_DepthImage.depthFormat; }
 
@@ -74,7 +75,7 @@ namespace Czuch
 		bool Release(MaterialHandle& material) override;
 		bool Release(MaterialInstanceHandle& materialInstance) override;
 
-		void SetCurrentFrameIndex(U32 frameIndex) {
+		void SetCurrentFrameIndex(U32 frameIndex) override  {
 			m_CurrentFrameInFlight = frameIndex;
 		}
 
@@ -133,7 +134,7 @@ namespace Czuch
 		DescriptorSetLayoutHandle GetBindlessDescriptorSetLayout() const { return m_BindlessDescriptorSetLayoutHandle; }
 		DescriptorSet* GetBindlessTexturesDescriptorSet() const { return m_TexturesBindlessDescriptorSet; }
 	public:
-		void DrawDebugWindows();
+		void DrawDebugWindows() override ; 
 		void AddDebugWindow(DrawDebugBaseGuiWindow* window) override;
 	private:
 

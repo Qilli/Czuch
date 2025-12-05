@@ -80,8 +80,11 @@ namespace Czuch
 			{
 				rightButtonDown = false;
 			}
-
-			m_Keys[keyCode] = 0;
+			if(keyCode>=0 && keyCode<512)
+			{
+				m_Keys[keyCode] = 0;
+			}
+		
 		}
 		else if (event.GetEventType() == MouseMovedEvent::GetStaticEventType())
 		{
