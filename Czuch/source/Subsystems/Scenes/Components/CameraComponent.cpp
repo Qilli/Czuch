@@ -4,7 +4,7 @@
 
 namespace Czuch
 {
-	CameraComponent::CameraComponent(Entity owner) :Component(owner),m_Camera(45.0f, (float)WindowInfo::Width/(float)WindowInfo::Height, 1.0f, 50.0f)
+	CameraComponent::CameraComponent(Entity owner) :Component(owner),m_Camera(45.0f, (float)WindowInfo::Width/(float)WindowInfo::Height, 1.0f, 100.0f)
 	{
 		m_Camera.SetTransform(&m_Owner.GetComponent<TransformComponent>());
 		m_Primary = false;
@@ -40,7 +40,7 @@ namespace Czuch
 		Recalculate();
 	}
 
-	Camera::Camera() :Camera(45.0f, (float)WindowInfo::Width / (float)WindowInfo::Height, 1.0f, 50.0f)
+	Camera::Camera() :Camera(45.0f, (float)WindowInfo::Width / (float)WindowInfo::Height, 1.0f, 100.0f)
 	{
 		
 	}

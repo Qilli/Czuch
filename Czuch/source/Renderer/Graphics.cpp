@@ -764,7 +764,7 @@ namespace Czuch
 
 	void MaterialInstance::UpdateSizeForTag(DescriptorBindingTagType tag, I32 size, int pass)
 	{
-		for (U32 j = 0; j < params[pass].setsCount; j++)
+		for (I32 j = 0; j < params[pass].setsCount; j++)
 		{
 			auto& set = params[pass].shaderParamsDesc[j];
 			for (U32 k = 0; k < set.descriptorsCount; k++)
@@ -780,7 +780,9 @@ namespace Czuch
 				}
 			}
 		}
-		LOG_BE_ERROR("[MaterialInstance] UpdateSizeForTag: No descriptor found for tag {0} in pass {1}.", static_cast<int>(tag), pass);
+		auto material = device->AccessMaterial(handle);
+		
+		LOG_BE_ERROR("[MaterialInstance] UpdateSizeForTag: No descriptor found for tag {0} in pass {1}, material name: {2}", static_cast<int>(tag), pass,material->desc->materialName);
 	}
 
 	void MaterialInstance::SetAsDirty()

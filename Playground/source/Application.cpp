@@ -120,12 +120,12 @@ int main()
 
 	Czuch::Entity planeEntity = scene->CreateEntity("PlaneObject");
 	planeEntity.AddRenderable(Czuch::DefaultAssets::PLANE_ASSET, Czuch::DefaultAssets::PLANE_HANDLE, matInstanceHandle);
-	planeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, -2.0f, -5.0f));
-	planeEntity.Transform().SetLocalScale(glm::vec3(10.0f, 1.0f, 10.0f));
+	planeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	planeEntity.Transform().SetLocalScale(glm::vec3(20.0f, 1.0f, 20.0f));
 
 	Czuch::Entity cubeEntity = scene->CreateEntity("CubeObject");
 	cubeEntity.AddRenderable(Czuch::DefaultAssets::CUBE_ASSET, Czuch::DefaultAssets::CUBE_HANDLE, matInstanceHandle);
-	cubeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 1.0f, 1.0f));
+	cubeEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 1.5f, 1.0f));
 	auto& scripts = cubeEntity.AddComponent<Czuch::NativeBehaviourComponent>();
 	RotateAround& rotateAround = scripts.AddNativeBehaviour<RotateAround>();
 	rotateAround.SetEnabled(true);
@@ -133,7 +133,7 @@ int main()
 
 	Czuch::Entity cubeEntity2 = scene->CreateEntity("CubeObject2");
 	cubeEntity2.AddRenderable(Czuch::DefaultAssets::CUBE_ASSET, Czuch::DefaultAssets::CUBE_HANDLE, matInstanceHandle);
-	cubeEntity2.Transform().SetLocalPosition(glm::vec3(0.0f, 1.0f, 3.0f));
+	cubeEntity2.Transform().SetLocalPosition(glm::vec3(0.0f, 2.0f, 3.0f));
 
 	/*Czuch::Entity planeEntity2 = scene->CreateEntity("PlaneObject2");
 	planeEntity2.AddRenderable(Czuch::DefaultAssets::PLANE_ASSET, Czuch::DefaultAssets::PLANE_HANDLE, matInstanceHandle);
@@ -173,9 +173,9 @@ int main()
 
 	Czuch::Entity lightEntity = scene->CreateEntity("LightObject");
 	lightEntity.Transform().SetLocalPosition(glm::vec3(0.0f, 2.0f, -2.0f));
-	lightEntity.Transform().Rotate(0.0f);
-	lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 6.0f, 20.0f);
-	//lightEntity.AddDirectionalLight(Czuch::Colors::White, 1.0f);
+	lightEntity.Transform().Rotate(45.0f,Vec3(1.0f,0,0));
+	//lightEntity.AddPointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 6.0f, 20.0f);
+	lightEntity.AddDirectionalLight(Czuch::Colors::White, 1.0f);
 
 	/*Czuch::Entity additionalCameraEntity = scene->CreateEntity("AdditionalCameraObject");
 	auto& cameraAdditional = additionalCameraEntity.AddComponent<Czuch::CameraComponent>();

@@ -34,7 +34,7 @@ namespace Czuch
 		virtual void SetCamera(Camera* cam) { m_Camera = cam; }
 		virtual void Execute(CommandBuffer* cmd) = 0;
 		virtual void* GetRenderPassResult() { return nullptr; }
-		virtual TextureHandle GetMainAttachmentTexureHandle() { return TextureHandle(); }
+		virtual TextureHandle GetMainAttachmentTextureHandle() { return TextureHandle(); }
 		virtual void ReleaseDependencies() = 0;
 		virtual void TransitionResultsToShaderReadOnly(CommandBuffer* cmd) = 0;
 

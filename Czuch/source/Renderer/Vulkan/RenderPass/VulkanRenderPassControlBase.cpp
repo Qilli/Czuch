@@ -45,7 +45,7 @@ namespace Czuch
 		return m_TextureSource->GetTargetTextureDescriptor();
 	}
 
-	TextureHandle VulkanRenderPassControlBase::GetMainAttachmentTexureHandle()
+	TextureHandle VulkanRenderPassControlBase::GetMainAttachmentTextureHandle()
 	{
 		if (m_TextureSource)
 		{
@@ -66,7 +66,7 @@ namespace Czuch
 	{
 		if (EngineRoot::GetEngineSettings().engineMode == EngineMode::Runtime)
 		{
-			return;
+			//return; [TODO] it should have different behaviour for editor and runtime mode
 		}
 
 		if (m_UITextureSource)

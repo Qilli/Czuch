@@ -18,7 +18,7 @@ namespace Czuch
 		void BindInputTextures(GraphicsDevice* device, FrameGraphNode* node) override;
 		void Execute(CommandBuffer* cmdBuffer) override;
 		void* GetRenderPassResult() override;
-		TextureHandle GetMainAttachmentTexureHandle() override;
+		TextureHandle GetMainAttachmentTextureHandle() override;
 		void TransitionResultsToShaderReadOnly(CommandBuffer* cmd) override;
 		void SetAsTextureSource() override;
 		void Release() override;

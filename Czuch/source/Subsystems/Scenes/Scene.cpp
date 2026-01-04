@@ -94,7 +94,7 @@ namespace Czuch
 			auto& transform = lightView.get<TransformComponent>(entity);
 			auto position = std::move(transform.GetWorldPosition());
 			auto direction = transform.GetWorldForward();
-			Mat4x4 lightViewProj = light.GetLightType() == LightType::Directional ? light.GetDirecionalLightViewProj() : Mat4x4(1.0f);
+			Mat4x4 lightViewProj = light.GetLightType() == LightType::Directional ? light.GetDirectionalLightViewProj() : Mat4x4(1.0f);
 			I32 shadowMapGlobalIndex = light.GetShadowMapTextureHandle().ToGlobalIndex();
 			Vec4 color = light.GetColor();
 			m_RenderObjects.allLights.push_back({ {.positionWithType=Vec4(position.x,position.y,position.z,light.GetLightType()),
@@ -340,8 +340,8 @@ namespace Czuch
 	{
 		if (m_CamerasControl.size() > index)
 		{
-			m_CamerasControl[index].UpdateSceneDataBuffers(m_Device, currentFrame, deletionQueue);
 			m_CamerasControl[index].UpdateLightsInfo();
+			m_CamerasControl[index].UpdateSceneDataBuffers(m_Device, currentFrame, deletionQueue);
 			m_CamerasControl[index].frameGraphControl.BeforeFrameGraphExecute(m_Device->AccessCommandBuffer(cmdBuffer));
 		}
 	}
@@ -724,7 +724,7 @@ namespace Czuch
 
 		//make sure primary camera is first in the list
 		//this sort should use move semantic! should.. [todo] profile it.
-		//dodac profile pamiêci tutaj
+		//dodac profile pamiï¿½ci tutaj
 		std::sort(m_CamerasControl.begin(), m_CamerasControl.end(), [](const SceneCameraControl& a, const SceneCameraControl& b)
 			{
 				return a.isPrimaryCamera > b.isPrimaryCamera;

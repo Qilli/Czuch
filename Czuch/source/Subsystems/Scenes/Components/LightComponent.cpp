@@ -11,6 +11,7 @@ namespace Czuch
 		m_OuterAngle = 32.0f;
 		m_LightIntensity = 1.0f;
 		m_Type = LightType::Directional;
+		m_ShadowDistance = 50.0f;
 	}
 
 	LightComponent::LightComponent(Entity owner, LightType type) : Component(owner), m_Type(type)
@@ -21,5 +22,6 @@ namespace Czuch
 		m_OuterAngle = 32.0f;
 		m_LightIntensity = 1.0f;
 		m_Type = LightType::Directional;
+		m_ShadowDistance = 50.0f;
 	}
 }

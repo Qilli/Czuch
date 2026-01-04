@@ -65,11 +65,14 @@ namespace Czuch
 		//in degrees
 		void SetOuterAngle(float angle) { m_OuterAngle = angle; }
 
-		inline Mat4x4 GetDirecionalLightViewProj() const { return m_DirecionalLightViewProj; }
-		void SetDirecionalLightViewProj(const Mat4x4& viewProj) { m_DirecionalLightViewProj = viewProj; }
+		inline Mat4x4 GetDirectionalLightViewProj() const { return m_DirecionalLightViewProj; }
+		void SetDirectionalLightViewProj(const Mat4x4& viewProj) { m_DirecionalLightViewProj = viewProj; }
 
 		inline TextureHandle GetShadowMapTextureHandle() const { return m_ShadowMapTextureHandle; }
 		void SetShadowMapTextureHandle(const TextureHandle handle) { m_ShadowMapTextureHandle = handle; }
+
+		inline float GetShadowDistance() const { return m_ShadowDistance; }
+		void SetShadowDistance(float distance) { m_ShadowDistance = distance; }
 
 		void OnRemoved() override {
 		
@@ -79,6 +82,7 @@ namespace Czuch
 		LightType m_Type;
 		Mat4x4 m_DirecionalLightViewProj;
 		TextureHandle m_ShadowMapTextureHandle;
+		float m_ShadowDistance;
 		float m_LightIntensity;
 		float m_LightRange;
 		float m_SpecularPower;

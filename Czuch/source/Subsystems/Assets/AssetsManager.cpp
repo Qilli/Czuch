@@ -217,6 +217,7 @@ namespace Czuch
 			{
 				return true;
 			}
+			return false;
 			});
 
 		for (auto asset : filtered)
@@ -245,6 +246,7 @@ namespace Czuch
 			{
 				return true;
 			}
+			return false;
 			});
 
 		for (auto asset : filtered)

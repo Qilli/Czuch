@@ -5,12 +5,12 @@
 
 namespace Czuch
 {
-	Czuch::MeshRendererComponent::MeshRendererComponent(Entity owner) : Component(owner),m_CastShadow(true)
+	Czuch::MeshRendererComponent::MeshRendererComponent(Entity owner) : Component(owner),m_CastShadow(true),m_ReceiveShadow(true)
 	{
 		SetOverrideMaterial(DefaultAssets::DEFAULT_SIMPLE_MATERIAL_INSTANCE_ASSET);
 	}
 
-	MeshRendererComponent::MeshRendererComponent(Entity owner,AssetHandle overrideMaterial): Component(owner)
+	MeshRendererComponent::MeshRendererComponent(Entity owner,AssetHandle overrideMaterial): Component(owner),m_CastShadow(true),m_ReceiveShadow(true)
 	{
 		SetOverrideMaterial(overrideMaterial);
 	}
