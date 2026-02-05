@@ -138,14 +138,17 @@ namespace Czuch
 		auto cmdBuffer = m_Device->AccessCommandBuffer(GetCurrentFrame().commandBuffer);
 		cmdBuffer->Begin();
 
+		//we are really checking here how many cameras we have with active frame graphs
 		if (m_ActiveScene->GetActiveFrameGraphsCount() > 0)
 		{
+			//Render main camera frame graph
 			BeforeFrameGraphExecute(0);
 			auto mainFrameGraph = m_ActiveScene->GetFrameGraphControl(0);
 			mainFrameGraph->Execute(m_Device, cmdBuffer);
 			auto finalInfo = mainFrameGraph->GetFinalFrameGraphNodeInfo();
 			AfterFrameGraphExecute(0);
 
+			//If we are not in editor mode we need to composite other cameras frame graphs on top of main camera(but should we really, for editor we can have split view top/bottom or side by side?)
 			if (EngineRoot::Get().GetEngineStateMode() != EngineStateMode::Editor)
 			{
 				m_FullScreenRenderPass->SetSourceTexture(cmdBuffer, finalInfo.finalTexture, finalInfo.finalDepthTexture, finalInfo.finalRenderPass);

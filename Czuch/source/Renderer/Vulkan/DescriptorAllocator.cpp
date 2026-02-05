@@ -241,7 +241,7 @@ namespace Czuch
 		writes.push_back(write);
 	}
 
-	void DescriptorWriter::WriteGlobalSampler(VulkanDevice *device, DescriptorSet *descriptorSet, VkSampler globalSampler)
+	void DescriptorWriter::WriteGlobalSampler(VulkanDevice *device, DescriptorSet *descriptorSet, VkSampler globalSampler,U32 binding)
 	{
 		VkDescriptorImageInfo samplerInfo = {};
 		samplerInfo.sampler = globalSampler;	
@@ -251,7 +251,7 @@ namespace Czuch
 
 		write.dstSet = descriptorSet->descriptorSet;
 		write.descriptorCount = 1;
-		write.dstBinding = 1;
+		write.dstBinding = binding;
 
 		write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 		write.pImageInfo = &samplerInfo;

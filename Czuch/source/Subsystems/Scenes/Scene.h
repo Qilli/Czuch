@@ -3,7 +3,7 @@
 #include"Core/EngineCore.h"
 #include"IScene.h"
 #include"Entity.h"
-#include"Renderer/RenderContext.h"
+#include"Renderer/SceneCameraControl.h"
 #include"Serialization/ISerializer.h"
 #include"Core/GUID.h"
 

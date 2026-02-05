@@ -696,7 +696,7 @@ namespace Czuch
 		desc.vs = depthVS;
 		desc.ps = depthPS;
 		desc.pt = PrimitiveTopology::TRIANGLELIST;
-		desc.rs.cull_mode = CullMode::BACK;
+		desc.rs.cull_mode = CullMode::FRONT;
 		desc.rs.fill_mode = PolygonMode::SOLID;
 		desc.dss.depth_enable = true;
 		desc.dss.depth_func = CompFunc::LESS_EQUAL;

@@ -19,7 +19,7 @@ namespace Czuch
 		void WriteBuffer(int binding, Buffer* buffer, size_t size, size_t offset, DescriptorType type);
 		void WriteTexture(int binding, Texture* color_texture, DescriptorType type);
 		void WriteAndUpdateGlobalTexture(Texture* tex, VulkanDevice* device, DescriptorSet* descriptorSet, I32 index);
-		void WriteGlobalSampler(VulkanDevice* device, DescriptorSet* descriptorSet, VkSampler globalSampler);
+		void WriteGlobalSampler(VulkanDevice* device, DescriptorSet* descriptorSet, VkSampler globalSampler, U32 binding);
 		void Clear();
 		void UpdateSet(VulkanDevice* device,DescriptorSet* descriptorSet);
 

@@ -1,3 +1,5 @@
+#ifndef COMMON_INPUT_GLSL
+#define COMMON_INPUT_GLSL
 
 layout(push_constant) uniform constants {
     mat4 worldViewProj;
@@ -21,3 +23,4 @@ struct LightData
 	mat4 lightViewProjMatrix;
 };
 
+#endif

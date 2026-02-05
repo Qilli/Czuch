@@ -15,7 +15,7 @@ int main()
 	root->Init("engineConfig.cfg",&editorControl);
 
 	Czuch::Scene* scene = new Czuch::Scene("MainScene", root->GetRenderer().GetDevice());
-	scene->SetAmbientColor(Vec4(0.1f, 0.1f, 0.1f, 1.0f));
+	scene->SetAmbientColor(Vec4(0.3f, 0.3f, 0.3f, 1.0f));
 	auto& sceneMgr = root->GetScenesManager();
 	sceneMgr.AddScene(scene, true);
 

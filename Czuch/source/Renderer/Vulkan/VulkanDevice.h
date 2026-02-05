@@ -250,7 +250,8 @@ namespace Czuch
 		DescriptorSet* m_TexturesBindlessDescriptorSet;
 		DescriptorWriter m_BindlessDescriptorSetWriter;
 		U32 m_GlobalTexturesCount;
-		VkSampler m_GlobalSampler;
+		VkSampler m_GlobalLinearSampler;
+		VkSampler m_GlobalPointSampler;
 	public:
 		TextureHandle BindGlobalTexture(TextureHandle texture) override;
 	private:

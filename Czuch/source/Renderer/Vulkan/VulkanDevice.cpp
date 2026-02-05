@@ -469,7 +469,7 @@ namespace Czuch
 				 0};
 			VkDescriptorSetLayoutBindingFlagsCreateInfo layoutFlagsCreateInfo = {};
 			layoutFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-			layoutFlagsCreateInfo.bindingCount = 2;
+			layoutFlagsCreateInfo.bindingCount = 3;
 			layoutFlagsCreateInfo.pBindingFlags = bindlessFlags;
 
 			layoutInfo.pNext = &layoutFlagsCreateInfo;
@@ -2198,6 +2198,9 @@ namespace Czuch
 
 	VulkanDevice::~VulkanDevice()
 	{
+		vkDestroySampler(m_Device, m_GlobalPointSampler, nullptr);
+		vkDestroySampler(m_Device, m_GlobalLinearSampler, nullptr);
+
 		m_PersistentDescriptorAllocator->CleanUp();
 		delete m_PersistentDescriptorAllocator;
 
@@ -2329,13 +2332,14 @@ namespace Czuch
 			DescriptorSetLayoutDesc desc_;
 			desc_.AddBinding("BindlessTextures", DescriptorType::SAMPLED_IMAGE, 0, MAX_BINDLESS_TEXTURES, 0, true);
 			desc_.AddBinding("BindlessSampler", DescriptorType::SAMPLER, 1, 1, 0, true);
+			desc_.AddBinding("BindlessSamplerPoint", DescriptorType::SAMPLER, 2, 1, 0, true);
 			desc_.shaderStage = (U32)ShaderStage::PS;
 			desc_.isGlobalTexturesSet = true;
 			m_BindlessDescriptorSetLayoutHandle = CreateDescriptorSetLayout(&desc_);
 			ShaderParamsSet set;
 			m_TexturesBindlessDescriptorSet = m_PersistentDescriptorAllocator->Allocate(set, AccessDescriptorSetLayout(m_BindlessDescriptorSetLayoutHandle));
 
-			// create and udpate global sampler
+			// create and udpate global sampler(linear)
 			SamplerDesc samplerDesc;
 			samplerDesc.addressModeU = TextureAddressMode::WRAP;
 			samplerDesc.addressModeV = TextureAddressMode::WRAP;
@@ -2344,8 +2348,19 @@ namespace Czuch
 			samplerDesc.magFilter = TextureFilter::LINEAR;
 			samplerDesc.minFilter = TextureFilter::LINEAR;
 			samplerDesc.maxMipLevel = VK_LOD_CLAMP_NONE;
-			m_GlobalSampler = CreateImageSampler(samplerDesc);
-			m_BindlessDescriptorSetWriter.WriteGlobalSampler(this, m_TexturesBindlessDescriptorSet, m_GlobalSampler);
+			m_GlobalLinearSampler = CreateImageSampler(samplerDesc);
+			m_BindlessDescriptorSetWriter.WriteGlobalSampler(this, m_TexturesBindlessDescriptorSet, m_GlobalLinearSampler,1);
+
+			SamplerDesc pointSamplerDesc;
+			pointSamplerDesc.addressModeU = TextureAddressMode::WRAP;
+			pointSamplerDesc.addressModeV = TextureAddressMode::WRAP;
+			pointSamplerDesc.addressModeW = TextureAddressMode::WRAP;
+			pointSamplerDesc.anisoEnabled = false;
+			pointSamplerDesc.magFilter = TextureFilter::NEAREST;
+			pointSamplerDesc.minFilter = TextureFilter::NEAREST;
+			pointSamplerDesc.maxMipLevel = VK_LOD_CLAMP_NONE;
+			m_GlobalPointSampler = CreateImageSampler(pointSamplerDesc);
+			m_BindlessDescriptorSetWriter.WriteGlobalSampler(this, m_TexturesBindlessDescriptorSet, m_GlobalPointSampler, 2);
 		}
 
 		AddDebugWindow(&m_MultipleBuffers);

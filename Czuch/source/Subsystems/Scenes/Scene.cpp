@@ -158,6 +158,7 @@ namespace Czuch
 		if (index < m_CamerasControl.size())
 		{
 			m_CamerasControl[index].frameGraphControl.AfterFrameGraphExecute(m_Device->AccessCommandBuffer(cmdBuffer));
+			//m_CamerasControl[index].OnPostRender();
 		}
 	}
 
