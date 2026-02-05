@@ -41,7 +41,6 @@ namespace Czuch
 		virtual void* GetRenderPassResult(Camera* cam,RenderPassType type) = 0;
 		virtual bool HasRenderPass(Camera* cam,RenderPassType type) = 0;
 		virtual void OnPreRenderUpdateContexts(Camera* camera, int width, int height,RenderContextFillParams* fillParams)=0;
-		virtual void OnPostRenderUpdateContexts(Camera* camera,RenderContextFillParams* fillParams)=0;
 		virtual void OnPreRenderUpdateDebugDrawElements(Camera* camera, RenderContextFillParams* fillParams) = 0;
 		virtual void* GetFrameGraphFinalResult(Camera* cam) = 0;
 		virtual void FlushDeletionQueue() = 0;

@@ -105,7 +105,7 @@ namespace Czuch
 		void SetClearColor(const Color& color) { m_ClearColor = color; }
 		const Color GetClearColor() const { return m_ClearColor; }
 		void SetAmbientColor(const Color& color) { m_AmbientColor = color; }
-		const Color GetAmbientColor() const { return GammaToLinear(m_AmbientColor); }
+		const Color GetAmbientColor() const override { return GammaToLinear(m_AmbientColor); }
 	public:
 		FrameGraphControl* GetFrameGraphControl(Camera* camera) override;
 		FrameGraphControl* GetFrameGraphControl(int index) override;

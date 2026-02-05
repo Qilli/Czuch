@@ -1350,7 +1350,7 @@ namespace Czuch
 		m_FrameGraph->BeforeFrameGraphExecute(cmdBuffer);
 	}
 
-	void FrameGraphControl::  AfterFrameGraphExecute(CommandBuffer *cmdBuffer)
+	void FrameGraphControl::AfterFrameGraphExecute(CommandBuffer *cmdBuffer)
 	{
 		m_FrameGraph->AfterFrameGraphExecute(cmdBuffer);
 	}

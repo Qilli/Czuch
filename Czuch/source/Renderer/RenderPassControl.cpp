@@ -42,7 +42,7 @@ namespace Czuch
 
 	void RenderPassControl::AfterFrameGraphExecute(CommandBuffer* cmd, Renderer* renderer)
 	{
-		renderer->OnPostRenderUpdateContexts(m_Camera, &m_FillParams);
+		
 	}
 
 	void RenderPassControl::Resize(int width, int height)

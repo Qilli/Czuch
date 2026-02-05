@@ -501,13 +501,6 @@ namespace Czuch
 
 	}
 
-	void VulkanRenderer::OnPostRenderUpdateContexts(Camera* camera, RenderContextFillParams* fillParams)
-	{
-		if (m_ActiveScene != nullptr)
-		{
-			m_ActiveScene->OnPostRender(camera, fillParams);
-		}
-	}
 
 	void VulkanRenderer::OnPreRenderUpdateDebugDrawElements(Camera* cam, RenderContextFillParams* fillParams)
 	{

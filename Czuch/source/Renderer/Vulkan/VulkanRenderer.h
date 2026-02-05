@@ -98,7 +98,6 @@ namespace Czuch
 
 	public:
 		void OnPreRenderUpdateContexts(Camera* cam, int width, int height,RenderContextFillParams* fillParams) override;
-		void OnPostRenderUpdateContexts(Camera* cam,RenderContextFillParams* fillParams) override;
 		void OnPreRenderUpdateDebugDrawElements(Camera* cam, RenderContextFillParams* fillParams) override;
 	public:
 		void* GetFrameGraphFinalResult(Camera* cam) override;
