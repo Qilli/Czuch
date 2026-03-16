@@ -408,7 +408,7 @@ namespace Czuch
 
 		sceneData.ambientColor = Vec4(0.3f, 0.3f, 0.3f, 1);
 
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		for (U32 a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			device->Release(sceneDataBuffer[a]);
 			device->Release(lightsBuffer[a]);
@@ -419,7 +419,7 @@ namespace Czuch
 
 	void SceneCameraRenderingControl::Release(GraphicsDevice *device)
 	{
-		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		for (U32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			device->Release(tilesBuffer[i]);
 			device->Release(lightsListBuffer[i]);
@@ -453,7 +453,7 @@ namespace Czuch
 		lightsListBufferDesc.size = sizeof(U32) * MAX_LIGHTS_IN_TILE * tiles_count + sizeof(glm::ivec4);
 		lightsListBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
 
-		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		for (U32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			device->Release(tilesBuffer[i]);
 			device->Release(lightsListBuffer[i]);
@@ -461,7 +461,7 @@ namespace Czuch
 
 		LOG_BE_INFO("Tiles count: " + std::to_string(tiles_count) + " tiles in width: " + std::to_string(tiles_in_width) + " tiles in height: " + std::to_string(tiles_in_height));
 
-		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		for (U32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			tilesBuffer[i] = device->CreateBuffer(&tilesBufferDesc);
 			lightsListBuffer[i] = device->CreateBuffer(&lightsListBufferDesc);
@@ -515,7 +515,7 @@ namespace Czuch
 	{
 		if (resize)
 		{
-			for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+			for (U32 frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
 			{
 				device->Release(renderObjectsBuffer[frame]);
 				INVALIDATE_HANDLE(renderObjectsBuffer[frame]);
@@ -528,7 +528,7 @@ namespace Czuch
 		renderObjectsBufferDesc.size = sizeof(RenderObjectGPUData) * size;
 		renderObjectsBufferDesc.usage = Usage::MEMORY_USAGE_CPU_TO_GPU;
 
-		for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+		for (U32 frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
 		{
 			renderObjectsBuffer[frame] = device->CreateBuffer(&renderObjectsBufferDesc);
 		}
@@ -620,11 +620,9 @@ namespace Czuch
 
 	bool SceneCameraRenderingControl::FillRenderObjectsData(GraphicsDevice *device, RenderObjectsContainer &allObjects, U32 frame)
 	{
-		bool changed = false;
 		if (renderObjectsData.capacity() < allObjects.allObjects.size())
 		{
 			InitRenderObjectsBuffer(device, true, allObjects.allObjects.size() * 2);
-			changed = true;
 		}
 
 		renderObjectsData.clear();
@@ -673,7 +671,7 @@ namespace Czuch
 		m_VertexBufferLines = device->CreateBuffer(&m_VertexBufferLinesDesc);
 		m_IndexBufferLines = device->CreateBuffer(&m_IndexBufferLinesDesc);
 
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		for (U32 a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			m_LinesBuffer[a] = device->CreateBuffer(&m_LinesBufferDesc);
 		}
@@ -681,7 +679,7 @@ namespace Czuch
 
 	void SceneCameraDebugRenderingControl::ReleaseLinesBuffer(GraphicsDevice *device)
 	{
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		for (U32 a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			device->Release(m_LinesBuffer[a]);
 			INVALIDATE_HANDLE(m_LinesBuffer[a]);
@@ -726,7 +724,7 @@ namespace Czuch
 
 	void SceneCameraDebugRenderingControl::ReleaseTrianglesBuffer(GraphicsDevice *device)
 	{
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		for (U32 a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			device->Release(m_TrianglesBuffer[a]);
 			INVALIDATE_HANDLE(m_TrianglesBuffer[a]);
@@ -754,7 +752,7 @@ namespace Czuch
 
 		m_VertexBufferPoints = device->CreateBuffer(&m_VertexBufferPointsDesc);
 
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		for (U32 a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			m_PointsBuffer[a] = device->CreateBuffer(&m_PointsBufferDesc);
 		}
@@ -762,7 +760,7 @@ namespace Czuch
 
 	void SceneCameraDebugRenderingControl::ReleasePointsBuffer(GraphicsDevice *device)
 	{
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		for (U32 a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			device->Release(m_PointsBuffer[a]);
 			INVALIDATE_HANDLE(m_PointsBuffer[a]);
@@ -814,7 +812,7 @@ namespace Czuch
 		CreateAndInitTrianglesBuffer(device);
 		CreateAndInitPointsBuffer(device);
 
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		for (U32 a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			m_SceneBuffer[a] = device->CreateBuffer(&m_SceneBufferDesc);
 			m_CommandsBuffer[a] = device->CreateBuffer(&m_CommandsBufferDesc);
@@ -826,7 +824,7 @@ namespace Czuch
 		ReleaseLinesBuffer(device);
 		ReleaseTrianglesBuffer(device);
 		ReleasePointsBuffer(device);
-		for (int a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
+		for (U32 a = 0; a < MAX_FRAMES_IN_FLIGHT; ++a)
 		{
 			device->Release(m_SceneBuffer[a]);
 			device->Release(m_CommandsBuffer[a]);

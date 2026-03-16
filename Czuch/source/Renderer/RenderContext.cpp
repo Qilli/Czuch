@@ -303,13 +303,13 @@ namespace Czuch
 			}
 
 			// compute world frustum from main camera
+			// do not use far plane from main camera, instead use shadow distance from directional light, this will help us to stabilize shadow map and reduce shimmering
 			WorldFrustum mainCameraFrustum = Math::CalculateFrustumForShadowDistance(camera->GetTransform()->GetLocalToWorld(), camera->GetFov(), camera->GetAspectRatio(), camera->GetNearPlane(), directionalLight->GetShadowDistance());
 
 			// compute shadow caster position based on main camera frustum
+			// we set caster position to the center of main camera frustum and then we will snap it to the nearest texel size, this will help us to stabilize shadow map and reduce shimmering
 			auto center = mainCameraFrustum.GetCenter();
 			auto radius = directionalLight->GetShadowDistance() * 0.5f;
-
-			// debugDraw->DrawLinesSphere(center, radius, Colors::Green);
 
 			auto transformComp = directionalLight->GetEntity().GetComponent<TransformComponent>();
 			Vec3 direction = transformComp.GetForward();
@@ -322,6 +322,9 @@ namespace Czuch
 			float worldUnitsPerTexel = (2.0f * radius) / (float)shadowMapResolution;
 
 			// 2. Transform the center position to Light Space (using the light's rotation)
+			// we do that to be able to snap position to texel size in light space, if we do that in world space 
+			//we will have shimmering. Because world space position is not aligned with light direction
+			//when we offset in light space it is always aligned with light direction and we can achieve stable snapping to texel size which will reduce shimmering
 			Mat4x4 lightView = CreateLightView(Vec3(0, 0, 0), direction); // View matrix without translation
 			Vec3 lightSpacePos = Vec3(lightView * Vec4(shadowCasterPosition, 1.0f));
 
